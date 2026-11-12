@@ -91,12 +91,20 @@ Room 3; şema dışa aktarılır, v1'den itibaren göç testi vardır.
   `FilterChips`, yüklenirken `SkeletonList`. Çoklu seçimde `SelectionBar` kabuğun `bottomBar`
   yuvasında. Okuma `DetailTransition` ve `CompactTopBar` ile; uzak görseller için `StatusBanner`.
   Yeni ileti üst çubukta vurgu renkli simge. Yazma tam ekran.
-- **Tablet (ray):** pencere yaklaşık 960 dp'den genişse `HorizontalSplitPane` ile liste ve okuma yan
-  yana, darsa `DetailTransition`.
+- **Tablet (ray):** rayın yanındaki alan 880 dp'den genişse `HorizontalSplitPane` ile liste ve okuma yan
+  yana, darsa `DetailTransition` (Tab S11 Ultra dik tutulunca 924 dp: liste → ileti).
 - **DeX ve büyük pencere:** menü çubuğu kısayol tablosundan; kenar çubuğunda akıllı klasörler ve hesap
-  başına bir bölüm; `badges` ve `NavDrop`. İçerik `WorkstationLayout`: `DenseTable` | okuma |
-  `InspectorPane`. Yazma `DeskWindows.openNewWindow` ile ayrı pencerede. `CommandPalette` klasörleri,
-  komutları ve ileti aramasını kapsar.
+  başına bir bölüm; `badges` ve `NavDrop`. İçerik `WorkstationLayout`: liste | okuma | `InspectorPane`.
+  Yazma `DeskWindows.openNewWindow` ile ayrı pencerede. `CommandPalette` klasörleri, komutları ve ileti
+  aramasını kapsar.
+- **Liste ile okuma arasındaki pay** (`MailLayout`): liste, kenar çubuğunun ya da rayın yanındaki alanın
+  bir payını alır (başlangıçta % 45; en az 320 dp, okuma bölmesine en az 360 dp kalır). Bölücü
+  sürüklenince pay değişir ve saklanır; genişlik değil pay saklandığı için pencere boyu değişince ve
+  başka boyda bir pencerede bölünme aynı kalır.
+- **Tablo mu satır mı:** büyük pencerede liste, fare kullanılırken ve en az 520 dp genişken `DenseTable`
+  (başlığından sıralanır); parmakla ya da dar listede iki satırlı `DeskListRow` (hep yeniden eskiye).
+  Kitin yoğunluğu "Sistem"deyken fareden parmağa geçince liste de biçim değiştirir; Ayarlar › Giriş
+  yoğunluğu sabitler.
 
 ## Kısayollar
 
@@ -122,6 +130,15 @@ Room 3; şema dışa aktarılır, v1'den itibaren göç testi vardır.
 Kit `NewWindow`'u (Ctrl+N) `CommonShortcuts.all` dışında tutar; DeskMail onu eklemez, "Yeni pencere"yi
 kitin metniyle Ctrl+Shift+N'e bağlar. Tek tuşlar ve Ctrl+Z, odak bir yazı alanındayken ve palet
 açıkken çalışmaz.
+
+- **alpha.1'de olanlar:** Ctrl+N (yer tutucu), Ctrl+Shift+N, Ctrl+K, Ctrl+,, Ctrl+B, Ctrl+/, J/K, S, U,
+  Esc, /. Kalanlar işleriyle birlikte gelir: F5 alpha.2, R/A/F ve Ctrl+Enter alpha.5, E/Delete ve
+  Ctrl+Z alpha.4.
+- **Tuşlar nereden geçer:** etkinlik her tuşu odaktaki görünümden önce `KeyRouter`'a sorar. Yazı
+  yazılıp yazılmadığı iki yerden okunur: odaktaki görünüm bir metin düzenleyici mi
+  (`View.onCheckIsTextEditor`), ve Compose'un kendi ekran tarifinde odakta bir yazı alanı var mı.
+- **Türkçe klavye:** "/" ayrı bir tuş değil (Shift+7); tek tuşlu "/" için yazılan karaktere de bakılır.
+  Kitin Ctrl+/ kısayolu Türkçe klavyede çalışmıyor (`docs/KIT-ISTEKLERI.md`, 10).
 
 ## Aşama 1: PR'lar
 
@@ -164,8 +181,12 @@ taşıma, bildirimden hızlı yanıt, satırı kaydırma.
 - **Microsoft:** yeni kişisel hesaplarda SMTP kapalı başlayabiliyor ve kullanıcı ayarı yok; IMAP
   varsayılan olarak kapalı (Settings › Mail › Forwarding and IMAP). Azure dizini etkinlik yokluğunda
   engellenebiliyor: istemci kimliği gelişmiş ayardan değiştirilebilir olacak.
-- **Kenar çubuğunun sıfırlanması:** klasör listesi değişince gezinme grafiği yeniden kurulur; testle
-  kesinleştirilir (`docs/KIT-ISTEKLERI.md`, madde 3).
+- **Kenar çubuğunun sıfırlanması:** klasör listesi değişince gezinme grafiği yeniden kurulur ve kabuk
+  başlangıç ekranına döner (testle doğrulandı; `docs/KIT-ISTEKLERI.md`, madde 3). Pencerenin gösterdiği
+  her şey bu yüzden ekranların dışında tutulur (`MailUiState`); alpha.2'de klasör listesi değişince
+  açık klasöre uygulama kendisi dönecek.
+- **Liste → ileti geçişinde listenin durumu:** telefonda ayrıntı açıkken liste bileşimden çıkar;
+  kendi hatırladıkları kaybolur (`docs/KIT-ISTEKLERI.md`, madde 9). Aynı çözüm: durum dışarıda.
 - **Room 3, KSP ve AGP 9.4.1 uyumu:** alpha.2'de görülür; yedek Room 2.8.5.
 - **Android 17:** uygulama bellek sınırı (aşan süreç öldürülür); ACTION_SEND'de otomatik URI izni
   Android 18'de kalkıyor, izinler baştan açıkça verilir.

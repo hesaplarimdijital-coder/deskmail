@@ -5,6 +5,9 @@ uygulamada yamanmaz, **kite yazılır** (kitin kendi sohbetinde). Kit yeni bir e
 DeskMail her maddede "Şimdilik" satırındaki yolla ilerler; etiket gelince sürüm yükseltilir ve geçici yol
 kaldırılır.
 
+Önerilen sıra: 12 (dolgu hatası), 3 (kenar çubuğu), 2 (tablo), 9 (liste durumu), 1 (rozetler),
+10 (klavye düzeni), 13 (bölücü); kalanlar ilgili PR'a kadar bekleyebilir. 12 ve 13 istek değil, hata.
+
 Satır ve dosya adları kitin 2.4.0 etiketine göredir.
 
 ## 1. Rozetler alt çubukta ve rayda da görünsün
@@ -34,22 +37,33 @@ Satır ve dosya adları kitin 2.4.0 etiketine göredir.
 
 - **Bugün:** kabuk gezinme grafiğini `ShellSpec` öğelerinden kurar (`shell/DesktopShell.kt`:
   `spec.items.forEach { composable(item.route) { … } }`). `ShellSpec` değişince `NavHost`'un kurucu
-  lambda'sı da değişir ve yeni bir grafik kurulur; rota kümesi farklıysa Navigation geri yığınını ve
-  kayıtlı ekran durumlarını sıfırlar. (Koddan okunan davranış; DeskMail'deki test sonucu buraya
-  eklenecek.) `NavItem`'da girinti ve menü yok.
+  lambda'sı da değişir ve yeni bir grafik kurulur. `NavItem`'da girinti ve menü yok; bir öğe her
+  gezinme türünde görünür.
+- **Testle doğrulandı** (`ShellNavigationTest.aNewFolderSendsTheShellBackToItsStartScreen`):
+  - aynı rotalarla yeni bir `ShellSpec` (etiket ya da dil değişimi): açık ekran ve durumu **korunur**;
+  - bir rota fazlası (sunucuda yeni klasör, yeni hesap): kabuk **başlangıç ekranına döner**, ekranların
+    `rememberSaveable` durumu **silinir**.
 - **İstek:**
   - öğe kümesi değişince açık ekranı, geri yığınını ve kaydırma konumlarını koruyan bir yol (ör. rota
     kümesi değişse de aynı kalan ekranların durumunu taşımak ya da argümanlı tek bir hedef);
   - `NavItem(indent = …)` ya da alt öğeler (iç içe klasörler), açılıp kapanan bölüm (hesap);
   - kenar çubuğu ve ray öğesinde sağ tık / uzun basma menüsü (`menu: () -> List<MenuEntry>`):
     "Tümünü okundu say", "Çöpü boşalt";
-  - telefonda `MoreStyle.Sheet` taşan bütün rotaları listeliyor; çok öğeli bölümleri sayfada gizleme
-    ya da daraltma seçeneği.
+  - öğeyi yalnızca bazı gezinme türlerinde gösterme (ör. `NavItem(showIn = setOf(NavKind.Sidebar))`):
+    klasörler yalnız kenar çubuğunda, "Klasörler" ve "Ara" yalnız alt çubukta ve rayda dursun. Bugün
+    telefonda "⋯" sayfası ve rayda "Daha fazla" ekranı bütün klasörleri (rayda bölüm başlıksız, iki
+    hesabın "Gelen Kutusu"su alt alta) listeliyor; kenar çubuğunda da "Klasörler" ve "Ara" fazladan
+    duruyor;
+  - alt rota açıkken üst sekmenin seçili kalması: telefonda Klasörler › bir klasör açılınca alt çubukta
+    "Klasörler" yerine "⋯" seçili görünüyor.
 - **Neden:** e-postada kenar çubuğu hesaplara ve klasörlere göre değişir: hesap eklenir, sunucuda
   klasör açılır.
-- **Şimdilik:** klasörler `NavItem` olarak verilir; ekran durumu ViewModel'de tutulur ve liste
-  değişince `ShellSpec(startRoute = açık rota)` ile aynı klasörde kalınır; alt klasörler yolu yazılarak
-  ("Projeler / 2026") gösterilir; klasör menüsü Klasörler ekranındaki satırlardadır.
+- **Şimdilik:** klasörler `NavItem` olarak verilir, her pencere boyunda aynı `ShellSpec` ile; pencerenin
+  gösterdiği (açık ileti, süzgeçler, kaydırma) ekranların dışında tutulur (`MailUiState`), klasör listesi
+  değişince açık klasöre uygulama kendisi döner (alpha.2'de, gerçek klasörlerle); alt klasörler yolu
+  yazılarak ("Projeler / 2026") gösterilir; telefonda ve rayda klasöre Klasörler ekranından gidilir
+  (klasör listenin üstüne açılır, Geri listeye döner); klasör menüsü Klasörler ekranındaki satırlarda
+  olacak.
 
 ## 4. Alıcı alanı: çipli adres girişi ve öneri listesi
 
@@ -97,3 +111,53 @@ Satır ve dosya adları kitin 2.4.0 etiketine göredir.
   için yaptığı gibi); liste geri gelince kendi durumunu bulsun.
 - **Şimdilik:** korunması gereken durum (`LazyListState`, süzgeçler, açık ileti) `DetailTransition`'ın
   dışında tutuluyor.
+
+## 10. Kısayollar tuşa göre eşleşiyor: Türkçe klavyede "/" yok
+
+- **Bugün:** `KeyChord` tuş koduyla eşleşir (`input/Shortcuts.kt`: `event.key == key`). Türkçe Q
+  klavyede "/" ayrı bir tuş değil, Shift+7 ile yazılır; `Key.Slash` hiç gelmez. Kitin kendi
+  "Klavye kısayolları" kısayolu (Ctrl+/) da bu yüzden Türkçe klavyede çalışmaz.
+- **İstek:** noktalama tuşları için yazılan karaktere göre eşleşme (`KeyChord(char = '/')` ya da
+  `matches` içinde `unicodeChar` denemesi), ya da bir kısayola ikinci bir tuş bileşimi.
+- **Şimdilik:** DeskMail tek tuşlu "/" için yazılan karaktere de bakıyor (`KeyRouter.typesSlash`);
+  Ctrl+/ kite kaldı.
+
+## 11. Ayrıntı paneli kapalı başlayabilsin (küçük)
+
+- **Bugün:** `rememberInspectorState(prefs)` paneli ilk açılışta açık getirir
+  (`DeskPreferences.inspectorCollapsed` varsayılanı `false`), ve durum ekrandan ekrana ortak değildir.
+- **İstek:** `rememberInspectorState(prefs, defaultCollapsed = true)`.
+- **Şimdilik:** DeskMail kendi `InspectorState`'ini kuruyor (kapalı başlar, genişliği ve durumu kendi
+  ayarlarında).
+
+## 12. `rememberShellContentPadding()` alt bileşimden çağrılınca kabuk fark etmiyor (hata)
+
+- **Bugün:** `ShellScreenFrame`, ekranı kendisinin dolgulayıp dolgulamayacağına **ölçüm sırasında**
+  bakar (`shell/ShellPadding.kt`: `layout { … if (screen.handlers > 0) … }`);
+  `rememberShellContentPadding()` sayacı bir `DisposableEffect` içinde artırır.
+  - Çağrı ekranın kendi bileşiminden gelirse sayaç çerçevenin ilk ölçümünden önce artar: doğru.
+  - Çağrı bir alt bileşimden gelirse (`BoxWithConstraints`, `SubcomposeLayout`) içerik çerçeve
+    **ölçülürken** bileşir. Sayaç o sırada artar; çerçevenin yeniden ölçüm isteği, düğüm o an ölçüldüğü
+    için yutulur (`MeasureAndLayoutDelegate.requestRemeasure`: `Measuring` → `false`). Çerçeve dolguyu
+    bırakmaz, ekran da kendi dolgusunu ekler: dolgu iki kat olur ve öyle kalır.
+- **Görülen:** telefonda ileti listesi ve okuma bölmesi bir üst çubuk boyu aşağıda başladı, altta da
+  çubuğun üstünde bitti (içerik çubukların altından geçmedi). `MailScreen` düzen seçmek için
+  `BoxWithConstraints` kullanıyordu; liste ve okuma bölmesi dolguyu onun içinden istiyordu.
+- **İstek:** çerçeve sayacı bileşimde okusun ya da sayaç değişince kendini yeniden ölçtürsün. Aynı tür
+  hata kitte bir kez düzeltilmiş: `DesktopKitRoot`'taki "read here, not while measuring" notu
+  (`RootInsets.shells`).
+- **Şimdilik:** DeskMail dolguyu ekranın kendi bileşiminde bir kez ister ve aşağıya parametre olarak
+  verir (`MailScreen`: `val bars = rememberShellContentPadding()`).
+  `MailScreenTest.aPhonesListAndReaderLieUnderTheBars` bunu tutar.
+
+## 13. Bölücü sürüklenirken `SplitState` sınırların dışına taşıyor (küçük hata)
+
+Koddan okundu, cihazda denenmedi.
+
+- **Bugün:** `HorizontalSplitPane` sürüklemede `state.startWidthDp += delta` yapar, sınırı yalnızca
+  ölçümde uygular (`components/SplitPane.kt`: `wanted.coerceIn(minStartPx, maxStart)`). İşaretçi sınırı
+  geçince durumdaki değer görünmeyen bir yere kaymayı sürdürür; geri sürüklerken o kadar yol boşa gider
+  (bölme kıpırdamaz). Saklanan değer de sınırın dışında kalabilir.
+- **İstek:** sürüklemede ve ok tuşlarında değer, son ölçümdeki sınırlara kıstırılsın.
+- **Şimdilik:** DeskMail bölücüden yalnızca payı alır (genişlik / alan), payı gösterilen genişlikten
+  hesaplar (`MailLayout.listShare`) ve pencere yeniden yerleşince genişliği sınırların içine geri yazar.
