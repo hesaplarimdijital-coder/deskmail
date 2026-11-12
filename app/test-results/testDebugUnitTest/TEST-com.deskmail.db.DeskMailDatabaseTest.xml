@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.db.DeskMailDatabaseTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-11-12T21:24:27.962Z" hostname="runnervmwuk1x" time="0.189">
+  <properties/>
+  <testcase name="accountsStandInTheUsersOrder" classname="com.deskmail.db.DeskMailDatabaseTest" time="0.048"/>
+  <testcase name="anAccountComesBackAsItWasStored" classname="com.deskmail.db.DeskMailDatabaseTest" time="0.028"/>
+  <testcase name="aFolderWithoutAnAccountIsRefused" classname="com.deskmail.db.DeskMailDatabaseTest" time="0.022"/>
+  <testcase name="aFolderIsListedOncePerAccount" classname="com.deskmail.db.DeskMailDatabaseTest" time="0.029"/>
+  <testcase name="anAccountTakesItsCredentialAndItsFoldersWithIt" classname="com.deskmail.db.DeskMailDatabaseTest" time="0.056"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[System.logW: A resource failed to call SQLiteConnection.close. 
+]]></system-err>
+</testsuite>

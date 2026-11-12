@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.data.LiveMailTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-11-12T21:24:16.473Z" hostname="runnervmwuk1x" time="6.015">
+  <properties/>
+  <testcase name="anAccountThatWasJustAddedIsSyncedOnce" classname="com.deskmail.data.LiveMailTest" time="0.775"/>
+  <testcase name="aViewThatComesToTheFrontIsSyncedUnlessItJustWas" classname="com.deskmail.data.LiveMailTest" time="2.339"/>
+  <testcase name="theScreensSeeTheAccountsTheFoldersAndTheMail" classname="com.deskmail.data.LiveMailTest" time="0.89"/>
+  <testcase name="aMessagesTextIsFetchedWhenSomebodyLooks" classname="com.deskmail.data.LiveMailTest" time="1.57"/>
+  <testcase name="aTextThatCannotBeFetchedSaysSo" classname="com.deskmail.data.LiveMailTest" time="0.436"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

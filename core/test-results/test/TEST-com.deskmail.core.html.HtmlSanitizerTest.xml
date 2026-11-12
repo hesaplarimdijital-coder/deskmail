@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.core.html.HtmlSanitizerTest" tests="7" skipped="0" failures="0" errors="0" timestamp="2026-11-12T21:22:17.213Z" hostname="runnervmwuk1x" time="0.196">
+  <properties/>
+  <testcase name="whatRunsOrEmbedsIsTakenOut" classname="com.deskmail.core.html.HtmlSanitizerTest" time="0.137"/>
+  <testcase name="handlersAndAddressesThatAreNotAddressesGo" classname="com.deskmail.core.html.HtmlSanitizerTest" time="0.008"/>
+  <testcase name="remotePicturesAreNoticedAndPicturesInsideTheMessageAreNot" classname="com.deskmail.core.html.HtmlSanitizerTest" time="0.02"/>
+  <testcase name="aStyleSheetCannotCloseItsOwnTag" classname="com.deskmail.core.html.HtmlSanitizerTest" time="0.003"/>
+  <testcase name="theMessagesOwnStylesStayWithoutImports" classname="com.deskmail.core.html.HtmlSanitizerTest" time="0.002"/>
+  <testcase name="theTextOfAPageReadsAsAPersonWouldReadIt" classname="com.deskmail.core.html.HtmlSanitizerTest" time="0.013"/>
+  <testcase name="aFormLosesItsFieldsAndKeepsItsWords" classname="com.deskmail.core.html.HtmlSanitizerTest" time="0.005"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

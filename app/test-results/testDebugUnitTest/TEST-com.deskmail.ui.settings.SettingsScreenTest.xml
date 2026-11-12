@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.ui.settings.SettingsScreenTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-11-12T21:24:49.541Z" hostname="runnervmwuk1x" time="0.095">
+  <properties/>
+  <testcase name="theExperimentSwitchesChangeTheSettings" classname="com.deskmail.ui.settings.SettingsScreenTest" time="0.094"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
