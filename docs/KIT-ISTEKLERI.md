@@ -9,7 +9,7 @@ kaldırılır.
 2 (tablo), 9 (liste durumu), 1 (rozetler), 10 (klavye düzeni), 13 (bölücü), 14 (çekerek yenileme);
 kalanlar ilgili PR'a kadar bekleyebilir. 12, 13, 18 ve 20 istek değil, hata. 14–17 alpha.2'de (gerçek
 posta ve hesap ekranları) eklendi; 18–20 alpha.1'in Galaxy S24'teki iki ekran kaydından (12 Kasım 2026),
-kare kare bakılarak yazıldı.
+kare kare bakılarak yazıldı; 21 ve 4. maddenin eki alpha.3'te, yazma ekranıyla.
 
 Satır ve dosya adları kitin 2.4.0 etiketine göredir.
 
@@ -81,7 +81,12 @@ Satır ve dosya adları kitin 2.4.0 etiketine göredir.
 - **İstek:** adresleri çip olarak gösteren bir alan: virgül, noktalı virgül ya da Enter çipi tamamlar,
   Backspace son çipi siler, yapıştırılan liste bölünür, geçersiz adres işaretlenir; yazarken alanın
   altında klavyeyle gezilen öneri listesi (↑/↓, Enter, Esc); TalkBack her çipi adıyla okur.
-- **Şimdilik:** virgülle ayrılmış düz `DeskTextField` ve altında `MenuPopup` ile öneriler.
+- **Ayrıca gereken (alpha.3'te görüldü):** `DeskTextField` yalnızca `String` alır; imlecin yerini ne
+  bildirir ne ayarlatır (`TextFieldValue` alan bir biçimi yok). Bu yüzden düz alanın altına öneri listesi
+  de eklenemiyor: öneri seçilince son parça değiştirilir, ama imleç eski yerinde, metnin ortasında kalır.
+  Aynı eksik, yanıtta imleci alıntının üstüne koymayı ve ileride biçimli yazmayı da engeller.
+- **Şimdilik:** virgülle ayrılmış düz `DeskTextField`; yazarken öneri yok. Öneri verisi hazır
+  (`MailComposer.suggest`: geçmiş iletilerin adresleri), arayüzü kitin alanını bekliyor.
 
 ## 5. Telefonda yüzen birincil eylem düğmesi
 
@@ -268,3 +273,14 @@ Koddan okundu, cihazda denenmedi.
   (`LayerLimits`) ve "İletinin üstünde cam" denemesi kapalıyken kabuğa `glass = false` verir
   (`shellGlass`); alpha.2 bunu her iletide yapıyordu. İstek yine geçerli: katman, iletinin boyu kadar
   bellek tutar ve uzun iletide çare değildir.
+
+## 21. Bildirimin süresi verilebilsin (küçük)
+
+- **Bugün:** `ToastState.show(duration = …)` üç değer alır: `Short` (4 sn), `Long` (10 sn), `Indefinite`
+  (`components/Feedback.kt`). Süre milisaniye olarak verilemiyor.
+- **İstek:** `show(…, durationMs: Long)` ya da `ToastDuration.For(ms)`; TalkBack için uzatma
+  (`calculateRecommendedTimeoutMillis`) bu süreye de uygulansın.
+- **Neden:** gönderiyi geri alma süresi ayarlanır (5, 10, 15 sn) ve bildirim tam o kadar durmalı:
+  bildirim giderse ileti gider.
+- **Şimdilik:** bildirim `Indefinite` gösterilir ve uygulama onu süre dolunca kendisi kapatır
+  (`withTimeoutOrNull`). TalkBack kullanan biri için süre uzamaz; 15 saniyeyi seçebilir.

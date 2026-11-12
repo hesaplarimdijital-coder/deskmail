@@ -6,8 +6,9 @@ ile çizilir. Play'de değildir; APK olarak kurulur.
 
 > **Durum:** 0.1.0'a giden ön sürümler. Hesap eklenir (Gmail uygulama şifresiyle; başka sağlayıcılar
 > şifreyle), klasörler ve iletiler eşitlenir, iletiler güvenli biçimde gösterilir; okundu ve yıldız
-> sunucuya yazılır, iletiler arşivlenir, taşınır, silinir (hepsi geri alınır), ekler açılır ve kaydedilir.
-> Yazma, arama ve bildirim henüz yok; Outlook hesapları Microsoft girişini bekliyor. Sıradaki adımlar
+> sunucuya yazılır, iletiler arşivlenir, taşınır, silinir (hepsi geri alınır), ekler açılır ve kaydedilir;
+> ileti yazılır, yanıtlanır, iletilir ve gönderilir (gönderi geri alınabilir, çevrimdışıyken sıraya girer).
+> Arama ve bildirim henüz yok; Outlook hesapları Microsoft girişini bekliyor. Sıradaki adımlar
 > `docs/PLAN.md`'de, yapılanlar `CHANGELOG.md`'de.
 
 ## Kurulum ve güncelleme
@@ -63,8 +64,8 @@ Her karar uygulamanın yılda bir güncellemeyle yaşayabilmesine göre verilir:
 
 | Modül | İçerik |
 | --- | --- |
-| `:core` | Saf Kotlin/JVM, Android'siz. Posta sunucularıyla konuşan ve yanıtlarına göre karar veren her şey burada durur ve JVM testleriyle sınanır: IMAP oturumu (Angus Mail'in arkasında), MIME parçaları, HTML temizleme, sağlayıcı tablosu ve sunucu bulma (ISPDB, MX, SRV), eşitleme kararları, günlük ve maskeleme, Türkçe harf katlama. |
-| `:app` | Android uygulaması: veritabanı (Room; hesaplar, klasörler, iletiler, arama dizini), kimlik kasası (Keystore), eşitlemeyi yürüten katman, arayüz (desktop-kit), ayarlar, günlük dosyası. |
+| `:core` | Saf Kotlin/JVM, Android'siz. Posta sunucularıyla konuşan ve yanıtlarına göre karar veren her şey burada durur ve JVM testleriyle sınanır: IMAP oturumu ve SMTP gönderimi (Angus Mail'in arkasında), MIME parçaları, gönderilen iletinin yazılması, yanıt ve iletme kuralları, HTML temizleme, sağlayıcı tablosu ve sunucu bulma (ISPDB, MX, SRV), eşitleme kararları, günlük ve maskeleme, Türkçe harf katlama. |
+| `:app` | Android uygulaması: veritabanı (Room; hesaplar, klasörler, iletiler, arama dizini, bekleyen işlemler, giden kutusu), kimlik kasası (Keystore), eşitlemeyi ve gönderimi yürüten katman (gönderim WorkManager ile), arayüz (desktop-kit), ayarlar, günlük dosyası. |
 
 | Belge | İçerik |
 | --- | --- |

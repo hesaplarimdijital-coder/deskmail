@@ -4,7 +4,25 @@ Sürümler [SemVer](https://semver.org/lang/tr/) kuralına uyar; 0.1.0'a kadar o
 
 ## 0.1.0-alpha.3 (13 Kasım 2026)
 
-Posta artık yalnızca okunmuyor: okundu ve yıldız sunucuya yazılır, iletiler arşivlenir, taşınır ve silinir, ekler açılır. Cam, açık iletinin üstünde de kalır. Yazma, arama ve bildirim henüz yok.
+Posta artık yalnızca okunmuyor: okundu ve yıldız sunucuya yazılır, iletiler arşivlenir, taşınır ve silinir, ekler açılır; ileti yazılır, yanıtlanır, iletilir ve gönderilir. Cam, açık iletinin üstünde de kalır. Arama ve bildirim henüz yok.
+
+### Yazma ve gönderme
+- **Yeni ileti, Yanıtla, Tümünü yanıtla, İlet.** Düz metin yazılır.
+  - Yeni ileti: telefonda listenin üst çubuğundaki kalem; klavyede Ctrl+N.
+  - Yanıtla, Tümünü yanıtla, İlet: iletinin altındaki üç düğme; telefonda gönderenin yanındaki ok (Yanıtla) ve üst çubuğun "⋮" menüsü; geniş pencerede okuma bölmesinin üstündeki simgeler; satıra uzun basınca ya da sağ tıklayınca açılan menü; klavyede R, A, F.
+  - Yanıt: alıcı gönderendir (ileti başka bir yanıt adresi veriyorsa o), konu "Re:" ile başlar, altında "… tarihinde … yazdı:" satırı ve alıntılanmış ileti durur. Tümünü yanıtla'da iletinin gittiği öteki kişiler Bilgi'ye yazılır; kendi adreslerin çıkarılır. Kendi yazdığın iletiye yanıt, o iletinin alıcılarına gider.
+  - İlet: konu "Fwd:" ile başlar; iletinin kimden, ne zaman, kime gittiği ve metni eklenir; ekleri birlikte gelir (cihazda yoksa o an sunucudan indirilir).
+  - Kimden: birden çok hesap varsa yazma ekranında seçilir. Bir klasörden başlatılan yeni ileti o klasörün hesabından, yanıt iletinin geldiği hesaptan başlar.
+  - Alıcılar virgülle ayrılır; "Ad Soyad <adres>" biçimi de olur. Bilgi (Cc) ve Gizli (Bcc) alanları bir düğmeyle açılır. Adres olmayan bir parça ya da boş alıcı varsa Gönder bunu alanın altında söyler; ileti gitmez.
+  - Dosya ekle: sistemin dosya seçicisi açılır, birden çok dosya seçilebilir; uygulama depolama izni istemez. Dosyanın kopyası eklendiği anda alınır, sonradan silinse de ileti onunla gider.
+- **Taslak kendiliğinden saklanır:** yazarken ve ekran kapanırken. Ekran kapatılınca "Taslak Giden kutusu'nda duruyor" der. Hiçbir şey yazılmadan kapatılan yeni ileti saklanmaz. Taslaklar bu sürümde yalnızca cihazdadır; sunucudaki Taslaklar klasörüne henüz yazılmaz.
+- **Gönder ve Geri al:** Gönder'e basınca ileti hemen gitmez; altta "Gönderiliyor… · Geri al" bildirimi çıkar. Geri al (ya da Ctrl+Z) iletiyi yeniden yazma ekranına getirir. Süre Ayarlar › Yazma'dan 5, 10 ya da 15 saniye seçilir (başlangıçta 10). Bildirim gidince ileti gönderilir. Ctrl+Enter, hangi alanda olursan ol Gönder'dir.
+- **Giden kutusu** (kenar çubuğunda; telefonda "⋯" altında): taslaklar, gönderilmeyi bekleyenler ve gönderilemeyenler; kenar çubuğunda sayısıyla. Taslağa dokununca yazmaya devam edilir. Bekleyen iletiye dokununca "Şimdi gönder" ya da "Geri al ve düzenle". Gönderilemeyen iletinin altında sunucunun kendi yanıtı ve "Yeniden dene" durur.
+- **Çevrimdışı:** ağ yokken gönderilen ileti Giden kutusu'nda bekler ve ağ gelince kendiliğinden gider; uygulama kapalı olsa da. Sunucuya ulaşılamazsa artan aralıklarla yeniden denenir. Sunucu iletiyi reddederse (alıcıyı ya da girişi kabul etmezse) ileti "Gönderilemedi" olarak durur; kendiliğinden yeniden denenmez.
+- **Gönderilmiş klasörü:** Gmail ve Outlook, gönderileni Gönderilmiş'e kendileri kaydeder; uygulama ikinci bir kopya yazmaz. Öteki sunucularda gönderilen ileti Gönderilmiş klasörüne eklenir (gizli alıcılarıyla birlikte).
+- Yanıtlanan ileti sunucuda "yanıtlandı", iletilen "iletildi" olarak işaretlenir; öteki posta programları bunu gösterir. ("İletildi" işaretini yalnızca etiket tutan sunucular saklar: Gmail saklar, Outlook.com saklamaz.)
+- **Ad ve imza:** Ayarlar › Hesaplar › hesabın sayfası › Yazarken. Ad, yazdığın kişilerin adresinin yanında gördüğü addır; boşsa yalnızca adres görünür. İmza yeni iletinin sonuna, yanıtta ve iletmede alıntının üstüne eklenir.
+- Gönderim yarıda kesilirse (ileti sunucuya verilirken uygulama kapanırsa) ileti kendiliğinden ikinci kez gönderilmez: "Gönderilemedi" olarak durur ve yeniden göndermeden önce Gönderilmiş'e bakmanı söyler.
 
 ### İleti işlemleri
 - **Okundu ve yıldız:** açılan ileti okundu sayılır; okundu/okunmadı ve yıldız değiştirilir ve sunucuya yazılır, öteki cihazda da öyle görünür. Yıldız, okuma ekranında gönderenin yanında.
@@ -30,13 +48,16 @@ Posta artık yalnızca okunmuyor: okundu ve yıldız sunucuya yazılır, iletile
 
 ### Bu sürümde bilerek olmayanlar
 - Çoklu seçim ve klasöre sürükle bırak (ileti işlemlerinin ikinci adımı).
-- Yazma ve gönderme, arama, bildirim ve arka planda eşitleme, Outlook girişi.
+- Yazmada: biçimli (HTML) yazma; taslakların sunucudaki Taslaklar klasörüne kaydı; yazarken alıcı önerisi ve rehberden alıcı seçme; `mailto:` bağlantısıyla ve paylaşılan dosyayla yeni ileti; DeX'te yazmanın ayrı pencerede açılması. Yazma ekranı şimdilik pencerenin içinde, başlatıldığı ekranın yerinde açılır; başka bir ekrana geçip geri dönünce yazılan yerinde durur.
+- Arama, bildirim ve arka planda eşitleme, Outlook girişi.
 - İletinin içine gömülü resimler (`cid:`) henüz görünmez.
 
 ### Altyapı
-- Veritabanı şeması 2: bekleyen işlemler tablosu (`pending_op`). 1 → 2 göçü ve testi var: alpha.2'nin üstüne kurulunca hesaplar ve posta yerinde kalır.
-- IMAP: bayrak yazma, MOVE (yoksa kopyala ve sil), yalnızca adı verilen iletileri silen UID EXPUNGE; ek parçaları okundukça sunucudan akar.
-- Yeni kısayollar: E, V, Delete, Ctrl+Z. Ctrl+Z yazı alanındayken alanın kendisine kalır.
+- Veritabanı şeması 3: bekleyen işlemler tablosu (`pending_op`, şema 2) ve giden kutusu (`outbox`, `outbox_file`, şema 3). 1 → 2 ve 2 → 3 göçleri testleriyle var: alpha.2'nin üstüne kurulunca hesaplar ve posta yerinde kalır.
+- IMAP: bayrak yazma, MOVE (yoksa kopyala ve sil), yalnızca adı verilen iletileri silen UID EXPUNGE, APPEND; ek parçaları okundukça sunucudan akar.
+- Gönderilen ileti uygulamanın kendi yazıcısıyla bayt bayt yazılır (başlıklar, quoted-printable metin, base64 ekler, Türkçe dosya adları) ve SMTP sunucusuna dosyadan akıtılır; posta kitaplığının Android'de eksik paketlenebilen içerik işleyicilerine dayanmaz. Başlığa satır sokuşturma (header injection) denemeleri testlidir.
+- Yeni bağımlılık: WorkManager (`androidx.work:work-runtime` 2.12.0). Gönderimi ağ gelince ve uygulama kapalıyken de yapmak için; brifin istediği yol. Uygulama açılışında değil, ilk gerektiğinde kurulur.
+- Yeni kısayollar: E, V, Delete, Ctrl+Z; R, A, F, Ctrl+Enter. Tek tuşlar ve Ctrl+Z yazı alanındayken alanın kendisine kalır; Ctrl+Enter yazı alanında da çalışır.
 
 ## 0.1.0-alpha.2 (12 Kasım 2026)
 
