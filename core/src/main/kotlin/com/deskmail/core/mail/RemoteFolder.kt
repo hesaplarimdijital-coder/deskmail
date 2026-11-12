@@ -15,6 +15,18 @@ data class RemoteFolder(
     val selectable: Boolean,
     val role: FolderRole = FolderRole.Other,
 ) {
+    /**
+     * A folder that is a view over the others, not a place of its own: Gmail's "Starred" and
+     * "Important" list messages that are filed elsewhere (RFC 6154 "\Flagged", RFC 8457 "\Important").
+     */
+    val isView: Boolean get() = attributes.any { it.equals("\\Flagged", ignoreCase = true) || it.equals("\\Important", ignoreCase = true) }
+
+    /**
+     * Whether the app lists the folder: it holds messages, and they are its own. "All Mail" is
+     * listed: what Gmail archives is nowhere else.
+     */
+    val isListed: Boolean get() = selectable && !isView
+
     /** The levels of [path], outermost first. */
     val segments: List<String>
         get() = if (delimiter == null) listOf(path) else path.split(delimiter).filter { it.isNotEmpty() }.ifEmpty { listOf(path) }

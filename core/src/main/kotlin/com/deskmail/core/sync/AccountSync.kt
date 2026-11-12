@@ -29,7 +29,8 @@ class AccountSync(private val store: SyncStore, private val log: AppLog? = null)
      * @param days how far back messages are kept; 0 for all.
      */
     suspend fun sync(account: RemoteAccount, accountId: Long, days: Int, now: Instant, also: Set<String> = emptySet()): Result {
-        val folders = store.saveFolders(accountId, account.folders())
+        // what holds no messages of its own is not kept: a folder of folders, a view over the others
+        val folders = store.saveFolders(accountId, account.folders().filter { it.isListed })
         val wanted = folders.filter { it.selectable && (it.role == FolderRole.Inbox || it.path in also) }
         val synced = LinkedHashMap<Long, FolderSync.Result>()
         for (folder in wanted) synced[folder.id] = folder(account, folder, days, now)

@@ -55,6 +55,25 @@ class AccountSyncTest {
     }
 
     @Test
+    fun aViewOverTheOtherFoldersIsNotKept() = runBlocking {
+        val inbox = FakeFolder("INBOX").apply { deliver("gelen", daysAgo(1)) }
+        val all = FakeFolder("[Gmail]/All Mail").apply { deliver("gelen", daysAgo(1)) }
+        val starred = FakeFolder("[Gmail]/Starred").apply { deliver("gelen", daysAgo(1)) }
+        val important = FakeFolder("[Gmail]/Important")
+        val account = FakeAccount(inbox, all, starred, important)
+        account.attributes["[Gmail]/All Mail"] = setOf("\\HasNoChildren", "\\All")
+        account.attributes["[Gmail]/Starred"] = setOf("\\HasNoChildren", "\\Flagged")
+        account.attributes["[Gmail]/Important"] = setOf("\\HasNoChildren", "\\Important")
+
+        val result = sync.sync(account, accountId = 1, days = 30, now = now, also = setOf("[Gmail]/Starred"))
+
+        // "All Mail" is a place (what is archived is nowhere else); "Starred" and "Important" only show what is elsewhere
+        assertEquals(listOf("INBOX", "[Gmail]/All Mail"), result.folders.map { it.path })
+        assertEquals(listOf(FolderRole.Inbox, FolderRole.All), result.folders.map { it.role })
+        assertEquals(1, account.opened)
+    }
+
+    @Test
     fun aFolderThatIsGoneOnTheServerLeavesTheDeviceWithItsMail() = runBlocking {
         val inbox = FakeFolder("INBOX")
         val old = FakeFolder("Eski").apply { deliver("bir", daysAgo(1)) }

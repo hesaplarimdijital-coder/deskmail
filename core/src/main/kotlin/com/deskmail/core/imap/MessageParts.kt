@@ -3,6 +3,7 @@ package com.deskmail.core.imap
 import com.deskmail.core.mail.RemoteAttachment
 import com.deskmail.core.mail.RemoteBody
 import jakarta.mail.Multipart
+import jakarta.mail.MultipartDataSource
 import jakarta.mail.Part
 import jakarta.mail.internet.ContentType
 import jakarta.mail.internet.MimePart
@@ -20,10 +21,7 @@ internal object MessageParts {
 
     /** How many files the message carries that are worth a paperclip: not its text, and not a picture its HTML shows. */
     fun attachmentCount(part: Part): Int {
-        if (isMultipart(part)) {
-            val multipart = part.content as? Multipart ?: return 0
-            return (0 until multipart.count).sumOf { attachmentCount(multipart.getBodyPart(it)) }
-        }
+        if (isMultipart(part)) return children(part).sumOf { attachmentCount(it) }
         if (isText(part)) return 0
         val disposition = disposition(part)
         if (disposition == "attachment") return 1
@@ -47,9 +45,8 @@ internal object MessageParts {
 
         fun walk(part: Part, path: String) {
             if (isMultipart(part)) {
-                val multipart = part.content as? Multipart ?: return
-                for (index in 0 until multipart.count) {
-                    walk(multipart.getBodyPart(index), if (path.isEmpty()) "${index + 1}" else "$path.${index + 1}")
+                children(part).forEachIndexed { index, child ->
+                    walk(child, if (path.isEmpty()) "${index + 1}" else "$path.${index + 1}")
                 }
                 return
             }
@@ -90,6 +87,19 @@ internal object MessageParts {
     }
 
     private fun isMultipart(part: Part): Boolean = baseType(part).startsWith("multipart/")
+
+    /**
+     * The parts of a multipart. Over IMAP they are known from the message's structure and handed
+     * out as they are: nothing is fetched, and nothing is looked up in the library's table of
+     * content handlers (a resource file that has to survive the packaging of an Android app).
+     * A message read from a stream goes the library's usual way.
+     */
+    private fun children(part: Part): List<Part> {
+        val source = runCatching { part.dataHandler.dataSource }.getOrNull()
+        if (source is MultipartDataSource) return (0 until source.count).map { source.getBodyPart(it) }
+        val multipart = runCatching { part.content }.getOrNull() as? Multipart ?: return emptyList()
+        return (0 until multipart.count).map { multipart.getBodyPart(it) }
+    }
 
     /** What the message says, as opposed to a file that happens to be text. */
     private fun isText(part: Part): Boolean {

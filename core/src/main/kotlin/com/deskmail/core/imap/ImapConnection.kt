@@ -123,7 +123,9 @@ class ImapConnection private constructor(
          */
         fun open(server: ServerAddress, credentials: Credentials, log: AppLog? = null): ImapConnection {
             val session = Session.getInstance(properties(server, credentials))
-            val store = session.getStore("imap") as IMAPStore
+            // made directly, not looked up by name: the library's list of providers is a resource
+            // file, and whether it survives the packaging of an Android app is nothing to depend on
+            val store = IMAPStore(session, null)
             val secret = when (credentials) {
                 is Credentials.Password -> credentials.password
                 is Credentials.OAuth -> credentials.accessToken
