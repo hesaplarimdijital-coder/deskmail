@@ -207,6 +207,58 @@ class FolderSyncTest {
     }
 
     @Test
+    fun whatASyncLeftIsFetchedLaterWithoutAskingForTheListAgain() {
+        val inbox = FakeFolder("INBOX")
+        repeat(5) { inbox.deliver("ileti ${it + 1}", daysAgo(5L - it)) }
+        run(inbox, bodyLimit = 1)
+        inbox.asked.clear()
+
+        val first = runBlocking { sync.bodies(inbox.open(), store.stored("INBOX"), limit = 3) }
+        assertEquals(FolderSync.Bodies(fetched = 3, more = true), first)
+        // newest first, and nothing but the texts
+        assertEquals(listOf("body 4", "body 3", "body 2"), inbox.asked)
+
+        val second = runBlocking { sync.bodies(inbox.open(), store.stored("INBOX"), limit = 3) }
+        assertEquals(FolderSync.Bodies(fetched = 1, more = false), second)
+        assertTrue(store.folder("INBOX").messages.values.all { it.bodyState == 1 })
+    }
+
+    @Test
+    fun aMessageTheUserOpenedGetsItsTextAheadOfItsTurn() {
+        val inbox = FakeFolder("INBOX")
+        val old = inbox.deliver("eski", daysAgo(9), text = "Eski ileti")
+        repeat(3) { inbox.deliver("ileti ${it + 1}", daysAgo(3L - it)) }
+        run(inbox, bodyLimit = 1)
+        assertEquals(0, store.folder("INBOX").messages.getValue(old).bodyState)
+
+        assertTrue(runBlocking { sync.body(inbox.open(), store.stored("INBOX"), old) })
+        assertEquals("Eski ileti", store.folder("INBOX").messages.getValue(old).body?.text)
+
+        // a text the server will not hand over is none, and is not asked for again
+        val refused = inbox.deliver("vermiyor", daysAgo(0))
+        run(inbox, bodyLimit = 0)
+        inbox.refused += refused
+        assertFalse(runBlocking { sync.body(inbox.open(), store.stored("INBOX"), refused) })
+        assertEquals(2, store.folder("INBOX").messages.getValue(refused).bodyState)
+    }
+
+    @Test
+    fun noTextIsFetchedByNumbersThatMeanSomethingElseNow() {
+        val inbox = FakeFolder("INBOX")
+        repeat(3) { inbox.deliver("ileti ${it + 1}", daysAgo(3L - it)) }
+        run(inbox, bodyLimit = 0)
+        val before = store.stored("INBOX")
+        inbox.renumber()
+        inbox.asked.clear()
+
+        assertEquals(FolderSync.Bodies(fetched = 0, more = false), runBlocking { sync.bodies(inbox.open(), before, limit = 10) })
+        assertFalse(runBlocking { sync.body(inbox.open(), before, 2) })
+        assertTrue(inbox.asked.isEmpty())
+        // and a folder that was never synced has no numbers to go by
+        assertEquals(0, runBlocking { sync.bodies(inbox.open(), before.copy(state = FolderState()), limit = 10) }.fetched)
+    }
+
+    @Test
     fun aTextTheServerKeepsBackIsNotAskedForAgain() {
         val inbox = FakeFolder("INBOX")
         val large = inbox.deliver("çok büyük", daysAgo(2))

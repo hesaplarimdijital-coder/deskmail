@@ -78,7 +78,7 @@ data class RemoteMessage(
  * A file inside a message.
  *
  * @param part where it is in the message, as IMAP numbers the parts ("2", "1.2").
- * @param size its size as it travels (encoded), in bytes; the file itself is some three quarters of that.
+ * @param size about how large the file is, in bytes: worked out from the part's size as it travels.
  * @param contentId the name the message's HTML refers to it by ("cid:…"), without the angle brackets; empty for none.
  * @param inline shown inside the message rather than offered as a file.
  */

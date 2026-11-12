@@ -27,13 +27,22 @@ class AccountSync(private val store: SyncStore, private val log: AppLog? = null)
     /**
      * @param also folders to sync besides the inbox, by their paths.
      * @param days how far back messages are kept; 0 for all.
+     * @param bodyLimit how many messages of each synced folder get their text in this run; the rest
+     *   is left for [FolderSync.bodies].
      */
-    suspend fun sync(account: RemoteAccount, accountId: Long, days: Int, now: Instant, also: Set<String> = emptySet()): Result {
+    suspend fun sync(
+        account: RemoteAccount,
+        accountId: Long,
+        days: Int,
+        now: Instant,
+        also: Set<String> = emptySet(),
+        bodyLimit: Int = FolderSync.BODIES_PER_RUN,
+    ): Result {
         // what holds no messages of its own is not kept: a folder of folders, a view over the others
         val folders = store.saveFolders(accountId, account.folders().filter { it.isListed })
         val wanted = folders.filter { it.selectable && (it.role == FolderRole.Inbox || it.path in also) }
         val synced = LinkedHashMap<Long, FolderSync.Result>()
-        for (folder in wanted) synced[folder.id] = folder(account, folder, days, now)
+        for (folder in wanted) synced[folder.id] = folder(account, folder, days, now, bodyLimit)
         // the others are only counted: what the badges show of them
         for (folder in folders) {
             if (!folder.selectable || folder.id in synced) continue

@@ -91,9 +91,47 @@ class FolderSync(private val store: SyncStore, private val log: AppLog? = null) 
             flagsChanged = if (changed == null) 0 else live.size
         }
 
-        var bodies = 0
         val waiting = store.uidsWithoutBody(folder.id, bodyLimit + 1)
-        for (uid in waiting.take(bodyLimit)) {
+        val bodies = fetch(mailbox, folder, waiting.take(bodyLimit))
+
+        store.saveCounts(folder.id, mailbox.total, mailbox.unread)
+        store.saveState(folder.id, FolderState(mailbox.uidValidity, mailbox.uidNext, mailbox.highestModSeq), syncedAt = now)
+        val result = Result(added, removed, flagsChanged, bodies, bodiesLeft = waiting.size > bodyLimit)
+        log?.info(TAG, "${folder.path}: +$added −$removed, $flagsChanged changed, $bodies fetched" + if (result.bodiesLeft) ", more to fetch" else "")
+        return result
+    }
+
+    /**
+     * @param fetched how many messages got their text; [more] when others are still waiting for theirs.
+     */
+    data class Bodies(val fetched: Int, val more: Boolean)
+
+    /**
+     * Fetches the text of up to [limit] messages of the folder that have none yet, newest first:
+     * what a sync left for later. [folder] is the folder as the last sync left it; when the server
+     * has given the folder's UIDs a new meaning since, nothing is fetched and the next sync starts over.
+     */
+    suspend fun bodies(mailbox: RemoteMailbox, folder: StoredFolder, limit: Int = BODIES_PER_RUN): Bodies {
+        if (!sameUids(mailbox, folder)) return Bodies(0, more = false)
+        val waiting = store.uidsWithoutBody(folder.id, limit + 1)
+        return Bodies(fetch(mailbox, folder, waiting.take(limit)), more = waiting.size > limit)
+    }
+
+    /**
+     * Fetches the text of one message now, ahead of its turn: the user opened it.
+     *
+     * @return whether there was text to keep.
+     */
+    suspend fun body(mailbox: RemoteMailbox, folder: StoredFolder, uid: Long): Boolean =
+        sameUids(mailbox, folder) && fetch(mailbox, folder, listOf(uid)) == 1
+
+    private fun sameUids(mailbox: RemoteMailbox, folder: StoredFolder): Boolean =
+        folder.state.uidValidity != 0L && folder.state.uidValidity == mailbox.uidValidity
+
+    /** Fetches, cleans and keeps the text of the messages [uids]; returns how many had text to keep. */
+    private suspend fun fetch(mailbox: RemoteMailbox, folder: StoredFolder, uids: List<Long>): Int {
+        var kept = 0
+        for (uid in uids) {
             val body = try {
                 mailbox.body(uid, MAX_TEXT_BYTES)
             } catch (e: MailException) {
@@ -105,14 +143,9 @@ class FolderSync(private val store: SyncStore, private val log: AppLog? = null) 
             }
             val content = body?.let { BodyProcessor.process(it) }
             store.saveBody(folder.id, uid, content)
-            if (content != null) bodies++
+            if (content != null) kept++
         }
-
-        store.saveCounts(folder.id, mailbox.total, mailbox.unread)
-        store.saveState(folder.id, FolderState(mailbox.uidValidity, mailbox.uidNext, mailbox.highestModSeq), syncedAt = now)
-        val result = Result(added, removed, flagsChanged, bodies, bodiesLeft = waiting.size > bodyLimit)
-        log?.info(TAG, "${folder.path}: +$added −$removed, $flagsChanged changed, $bodies fetched" + if (result.bodiesLeft) ", more to fetch" else "")
-        return result
+        return kept
     }
 
     companion object {

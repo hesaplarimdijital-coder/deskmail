@@ -70,7 +70,7 @@ internal object MessageParts {
                 part = place,
                 name = fileName(part),
                 mimeType = baseType(part),
-                size = runCatching { part.size.toLong() }.getOrDefault(0).coerceAtLeast(0),
+                size = fileSize(part),
                 contentId = contentId,
                 inline = disposition != "attachment" && (disposition == "inline" || contentId.isNotEmpty()),
             )
@@ -118,6 +118,16 @@ internal object MessageParts {
         // a name written as an encoded word where a parameter was expected
         val decoded = if (name.contains("=?")) runCatching { MimeUtility.decodeText(name) }.getOrDefault(name) else name
         return decoded.replace(Regex("[\\r\\n\\t]"), " ").trim()
+    }
+
+    /**
+     * About how large the file is. The server counts the part as it travels; in base64, as files
+     * do, 57 bytes are a line of 76 letters and a line break.
+     */
+    private fun fileSize(part: Part): Long {
+        val travelling = runCatching { part.size.toLong() }.getOrDefault(0).coerceAtLeast(0)
+        val encoding = runCatching { (part as? MimePart)?.encoding }.getOrNull().orEmpty()
+        return if (encoding.equals("base64", ignoreCase = true)) travelling * 57 / 78 else travelling
     }
 
     private fun contentId(part: Part): String {

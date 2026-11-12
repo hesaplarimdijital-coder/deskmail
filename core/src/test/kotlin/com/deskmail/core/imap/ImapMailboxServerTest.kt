@@ -128,7 +128,8 @@ class ImapMailboxServerTest {
         assertEquals("application/pdf", pdf.mimeType)
         assertEquals("", pdf.contentId)
         assertFalse(pdf.inline)
-        assertTrue(pdf.size > 400)
+        // the file is 440 bytes; the server counts some 600 of base64
+        assertTrue("${pdf.size}", pdf.size in 400..480)
     }
 
     /** An HTML message whose header names no charset: the page's own declaration counts. */
