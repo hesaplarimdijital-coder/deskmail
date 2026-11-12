@@ -123,6 +123,7 @@ class ImapConnection private constructor(
          *   not accepted or it has no TLS, [MailException.Kind.Network] when it could not be reached.
          */
         fun open(server: ServerAddress, credentials: Credentials, log: AppLog? = null): ImapConnection {
+            MailLibrary.prepare()
             val session = Session.getInstance(properties(server, credentials))
             // made directly, not looked up by name: the library's list of providers is a resource
             // file, and whether it survives the packaging of an Android app is nothing to depend on
