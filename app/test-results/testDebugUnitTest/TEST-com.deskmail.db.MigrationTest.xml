@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.db.MigrationTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-11-12T22:11:52.214Z" hostname="runnervmwuk1x" time="0.101">
+  <properties/>
+  <testcase name="version1BecomesTheCurrentVersionAndKeepsWhatItHeld" classname="com.deskmail.db.MigrationTest" time="0.055"/>
+  <testcase name="everyVersionHasItsSchemaAndItsMigration" classname="com.deskmail.db.MigrationTest" time="0.016"/>
+  <testcase name="anOldDatabaseDoesNotOpenWithoutItsMigrations" classname="com.deskmail.db.MigrationTest" time="0.022"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[System.logW: A resource failed to call SQLiteConnectionPool.close. 
+System.logW: A resource failed to call SQLiteConnection.close. 
+System.logW: A resource failed to call SQLiteConnection.close. 
+System.logW: A resource failed to call SQLiteConnection.close. 
+System.logW: A resource failed to call SQLiteConnectionPool.close. 
+]]></system-err>
+</testsuite>
