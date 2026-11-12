@@ -10,6 +10,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.deskmail.mail.MailMessage
 import com.deskmail.settings.AppSettings
+import com.deskmail.ui.compose.Writing
 import desktopkit.components.InspectorState
 import desktopkit.components.SplitState
 import desktopkit.components.TableSort
@@ -20,7 +21,8 @@ enum class MailFilter { Unread, Starred, Attachments }
 /**
  * What one window shows of the mail: per screen (route) the open message, the filters and the
  * list's scroll position; for every screen the table's sort order, the width of the list beside
- * the reader, and the messages whose remote images the user asked to see.
+ * the reader, the messages whose remote images the user asked to see, and the message that is
+ * being written.
  *
  * It lives outside the screens on purpose. The shell drops what its screens saved whenever the
  * list of folders changes (docs/KIT-ISTEKLERI.md, 3), and a screen is laid out anew when its window
@@ -105,6 +107,12 @@ class MailUiState(private val settings: AppSettings? = null) {
     fun closeMessages(ids: Collection<Long>) {
         opened.entries.filter { it.value in ids }.map { it.key }.forEach { opened.remove(it) }
     }
+
+    /** The message of the user's own that is being written in this window, and over which screen; null for none. */
+    var writing by mutableStateOf<Writing?>(null)
+
+    /** The message being written over [route], if that is where one is being written. */
+    fun writingOver(route: String): Writing? = writing?.takeIf { it.route == route }
 
     /** The message a folder is being chosen for ("Move…"), or null. */
     var moving by mutableStateOf<MailMessage?>(null)

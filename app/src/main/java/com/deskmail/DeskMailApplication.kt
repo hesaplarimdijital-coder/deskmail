@@ -14,7 +14,6 @@ import com.deskmail.data.LiveComposer
 import com.deskmail.data.LiveMail
 import com.deskmail.data.MailSend
 import com.deskmail.data.MailSync
-import com.deskmail.data.SendScheduler
 import com.deskmail.db.DeskMailDatabase
 import com.deskmail.log.LogFile
 import com.deskmail.mail.AccountActions
@@ -74,14 +73,23 @@ class DeskMailApplication : Application(), Configuration.Provider {
     /** Where the files attached to messages that have not left yet are kept. */
     private val outboxFiles: File get() = File(filesDir, OUTBOX_DIRECTORY)
 
-    private val sendScheduler: SendScheduler by lazy { SendWorker.scheduler(this) }
-
-    /** Sends what waits in the outbox; the background work that does so finds it here. */
-    val sender: MailSend by lazy { MailSend(database, accountStore, sync, log, File(cacheDir, OUTGOING_DIRECTORY), outboxFiles, sendScheduler) }
+    /** Sends what waits in the outbox; the background work that does so ([SendWorker]) finds it here. */
+    val sender: MailSend by lazy { MailSend(database, accountStore, sync, log, File(cacheDir, OUTGOING_DIRECTORY), outboxFiles) }
 
     /** Writing and sending, as the windows see it. */
     val composer: LiveComposer by lazy {
-        LiveComposer(database, sync, background, outboxFiles, sendScheduler, fetchFile = { mail.fetch(it) }, words = ::composeWords, log = log)
+        LiveComposer(
+            db = database,
+            sync = sync,
+            scope = background,
+            files = outboxFiles,
+            scheduler = SendWorker.scheduler(this),
+            fetchFile = { mail.fetch(it) },
+            words = ::composeWords,
+            recover = { sender.recover() },
+            log = log,
+            undoMs = { settings.undoSendSeconds * 1000L },
+        )
     }
 
     /** WorkManager is set up when it is first asked for (the manifest takes its own start-up out). */

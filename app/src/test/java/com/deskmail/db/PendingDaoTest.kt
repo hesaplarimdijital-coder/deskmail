@@ -55,6 +55,25 @@ class PendingDaoTest {
 
     private suspend fun counts(folder: Long): Pair<Int, Int> = db.folders().byId(folder)!!.let { it.unread to it.total }
 
+    /** A reply was sent, or the message was sent on: its mark shows at once, and the server is told once. */
+    @Test
+    fun aMessageThatWasAnsweredOrSentOnSaysSoAtOnce() = runBlocking {
+        val id = message(uid = 1)
+
+        assertEquals(account, pending.markAnswered(id, forwarded = false, now = 10))
+        assertTrue(stored(id)!!.answered)
+        assertFalse(stored(id)!!.forwarded)
+        assertEquals(listOf("Answered"), pending.due(account, now = 10).map { it.kind })
+        // answered already: there is nothing more to tell
+        assertNull(pending.markAnswered(id, forwarded = false, now = 11))
+
+        assertEquals(account, pending.markAnswered(id, forwarded = true, now = 12))
+        assertTrue(stored(id)!!.forwarded)
+        assertEquals(listOf("Answered", "Forwarded"), pending.due(account, now = 12).map { it.kind })
+        // a message that is gone has nothing to mark
+        assertNull(pending.markAnswered(404, forwarded = false, now = 13))
+    }
+
     @Test
     fun aMarkShowsAtOnceAndWaitsForTheServer() = runBlocking {
         val id = message(uid = 1)

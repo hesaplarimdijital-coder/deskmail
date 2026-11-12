@@ -39,12 +39,14 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.deskmail.R
 import com.deskmail.core.mail.MailException
+import com.deskmail.mail.DraftKind
 import com.deskmail.mail.MailAttachment
 import com.deskmail.mail.MailContent
 import com.deskmail.mail.MailMessage
 import com.deskmail.ui.MailIcons
 import desktopkit.components.ActionGroup
 import desktopkit.components.BannerTone
+import desktopkit.components.DeskButton
 import desktopkit.components.DeskChip
 import desktopkit.components.DeskIconButton
 import desktopkit.components.DeskIcons
@@ -74,7 +76,13 @@ import kotlinx.coroutines.delay
  * [trailingActions] at its end and a back arrow only where the reader covers the list ([onClose]
  * set). The star is beside the sender in every layout.
  *
+ * Answering is offered where the hand is when the message has been read: under its text, as
+ * "Reply", "Reply all" and "Forward". A phone has "Reply" beside the sender as well, and the
+ * rest behind the bar's "more"; a wider window has the three at the start of its row of actions.
+ *
  * @param showImages the reader asked for this message's remote images.
+ * @param onWrite begins a reply (to the sender, to everybody) or sends the message on; null
+ *   where nothing can be written.
  * @param onArchive null where the message has no archive to go to (it is in it, or its account has none).
  * @param onMove asks which folder to move it to; null where there is no other folder.
  * @param onAttachment what to do with a file of the message: open, save or share it.
@@ -87,6 +95,7 @@ fun MessageReader(
     showImages: Boolean,
     onToggleStar: () -> Unit,
     onToggleUnread: () -> Unit,
+    onWrite: ((DraftKind) -> Unit)?,
     onArchive: (() -> Unit)?,
     onDelete: () -> Unit,
     onMove: (() -> Unit)?,
@@ -109,6 +118,9 @@ fun MessageReader(
     val archiveLabel = stringResource(R.string.action_archive)
     val deleteLabel = stringResource(R.string.action_delete)
     val moveLabel = stringResource(R.string.action_move)
+    val replyLabel = stringResource(R.string.action_reply)
+    val replyAllLabel = stringResource(R.string.action_reply_all)
+    val forwardLabel = stringResource(R.string.action_forward)
     if (onClose != null) {
         // a phone: back and the actions in the top bar (nothing happens on wider windows)
         CompactTopBar(
@@ -116,6 +128,9 @@ fun MessageReader(
             actions = listOfNotNull(
                 onArchive?.let { TopBarAction(MailIcons.Archive, archiveLabel, it) },
                 TopBarAction(DeskIcons.Delete, deleteLabel, onDelete),
+                onWrite?.let { write -> TopBarAction(MailIcons.Reply, replyLabel, { write(DraftKind.Reply) }) },
+                onWrite?.let { write -> TopBarAction(MailIcons.ReplyAll, replyAllLabel, { write(DraftKind.ReplyAll) }) },
+                onWrite?.let { write -> TopBarAction(MailIcons.ForwardMail, forwardLabel, { write(DraftKind.Forward) }) },
                 TopBarAction(unreadIcon, unreadLabel, onToggleUnread),
                 onMove?.let { TopBarAction(MailIcons.MoveTo, moveLabel, it) },
             ),
@@ -140,6 +155,11 @@ fun MessageReader(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 if (onClose != null) DeskIconButton(DeskIcons.ArrowLeft, stringResource(desktopkit.R.string.dk_back), onClose)
+                if (onWrite != null) {
+                    DeskIconButton(MailIcons.Reply, replyLabel, { onWrite(DraftKind.Reply) })
+                    DeskIconButton(MailIcons.ReplyAll, replyAllLabel, { onWrite(DraftKind.ReplyAll) })
+                    DeskIconButton(MailIcons.ForwardMail, forwardLabel, { onWrite(DraftKind.Forward) })
+                }
                 Spacer(Modifier.weight(1f))
                 if (onArchive != null) DeskIconButton(MailIcons.Archive, archiveLabel, onArchive)
                 DeskIconButton(DeskIcons.Delete, deleteLabel, onDelete)
@@ -148,7 +168,8 @@ fun MessageReader(
                 trailingActions()
             }
         }
-        ReaderHeader(message, onToggleStar)
+        // a phone has no row of actions above the subject: "Reply" is beside the sender there
+        ReaderHeader(message, onToggleStar, onReply = if (compact && onWrite != null) ({ onWrite(DraftKind.Reply) }) else null)
         val strip = Modifier.padding(horizontal = dimens.pagePadding).padding(bottom = dimens.gapM)
         when (content) {
             is MailContent.Ready -> {
@@ -164,6 +185,7 @@ fun MessageReader(
                 }
                 // a view of its own for every message
                 key(message.id) { body(content, showImages, Modifier.fillMaxWidth()) }
+                if (onWrite != null) AnswerRow(onWrite)
             }
             MailContent.Loading -> ContentOnItsWay()
             is MailContent.Failed -> StatusBanner(
@@ -205,9 +227,27 @@ private fun ContentOnItsWay() {
 
 private const val SHOW_PLACEHOLDER_AFTER_MS = 300L
 
-/** The subject, then the sender's name and address with the star beside them, the recipients and the whole date. */
+/** "Reply", "Reply all" and "Forward" under a message's text, on one line that scrolls sideways where it has to. */
 @Composable
-private fun ReaderHeader(message: MailMessage, onToggleStar: () -> Unit) {
+private fun AnswerRow(onWrite: (DraftKind) -> Unit) {
+    val dimens = DeskTheme.dimens
+    Row(
+        Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = dimens.pagePadding).padding(top = dimens.gapL, bottom = dimens.gapXl),
+        horizontalArrangement = Arrangement.spacedBy(dimens.gapS),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        DeskButton(stringResource(R.string.action_reply), { onWrite(DraftKind.Reply) }, icon = MailIcons.Reply)
+        DeskButton(stringResource(R.string.action_reply_all), { onWrite(DraftKind.ReplyAll) }, icon = MailIcons.ReplyAll)
+        DeskButton(stringResource(R.string.action_forward), { onWrite(DraftKind.Forward) }, icon = MailIcons.ForwardMail)
+    }
+}
+
+/**
+ * The subject, then the sender's name and address with the star beside them (and "Reply", with
+ * [onReply]), the recipients and the whole date.
+ */
+@Composable
+private fun ReaderHeader(message: MailMessage, onToggleStar: () -> Unit, onReply: (() -> Unit)?) {
     val colors = DeskTheme.colors
     val dimens = DeskTheme.dimens
     val dates = rememberDateLabels()
@@ -251,6 +291,7 @@ private fun ReaderHeader(message: MailMessage, onToggleStar: () -> Unit) {
                 Text(dates.full(message.sentAt), style = DeskTheme.type.labelSmall, color = colors.textTertiary)
             }
         }
+        if (onReply != null) DeskIconButton(MailIcons.Reply, stringResource(R.string.action_reply), onReply)
         DeskIconButton(starIcon, starLabel, onToggleStar, tint = if (message.starred) colors.warning else colors.textSecondary)
     }
 }

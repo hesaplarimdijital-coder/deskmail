@@ -43,6 +43,7 @@ room-runtime = { module = "androidx.room3:room3-runtime", version.ref = "room" }
 room-compiler = { module = "androidx.room3:room3-compiler", version.ref = "room" }
 sqlite-framework = { module = "androidx.sqlite:sqlite-framework", version.ref = "sqlite" }
 work-runtime = { module = "androidx.work:work-runtime", version.ref = "work" }
+work-testing = { module = "androidx.work:work-testing", version.ref = "work" }
 junit = { module = "junit:junit", version.ref = "junit" }
 greenmail = { module = "com.icegreen:greenmail", version.ref = "greenmail" }
 robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }

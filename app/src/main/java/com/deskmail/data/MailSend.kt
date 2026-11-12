@@ -14,8 +14,10 @@ import com.deskmail.core.provider.ProviderTable
 import com.deskmail.core.smtp.SmtpSender
 import com.deskmail.db.AccountEntity
 import com.deskmail.db.DeskMailDatabase
+import com.deskmail.db.OutboxDao
 import com.deskmail.db.OutboxEntity
 import com.deskmail.mail.AccountState
+import com.deskmail.mail.Draft
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
@@ -27,10 +29,30 @@ import java.io.IOException
 import java.time.Instant
 import java.time.ZoneId
 
-/** Has the outbox looked at once [delayMs] have passed, as soon as there is a network then. */
+/**
+ * Has the outbox looked at ([MailSend.sendDue]) once [delayMs] have passed, as soon as there is a
+ * network then. There is one such appointment at a time: a new one takes the place of the one
+ * before it.
+ */
 fun interface SendScheduler {
     fun schedule(delayMs: Long)
 }
+
+/** Has the outbox looked at when the first of its waiting messages is to go; not at all when none waits. */
+internal suspend fun SendScheduler.scheduleNext(outbox: OutboxDao, now: Long) {
+    val first = outbox.earliest() ?: return
+    schedule((first - now).coerceAtLeast(0))
+}
+
+/**
+ * What a look at the outbox came to.
+ *
+ * @param unreachable a message is still waiting because its server could not be reached: worth
+ *   another try later.
+ * @param nextInMs how long until the next message has waited out its time to be taken back; null
+ *   when none is waiting for that.
+ */
+data class SendRound(val unreachable: Boolean, val nextInMs: Long?)
 
 /**
  * Sends what waits in the outbox ([OutboxEntity]): writes each message as it travels, hands it to
@@ -46,6 +68,9 @@ fun interface SendScheduler {
  * (a recipient it refuses, a sign-in it no longer accepts) is kept as failed, with the server's
  * words, for its writer to look at.
  *
+ * Nothing here decides when to look: [sendDue] is called by the background work that the
+ * [SendScheduler] has run ([com.deskmail.work.SendWorker] in the app).
+ *
  * @param work where a message is written out before it is handed over.
  * @param files where the files attached to waiting messages are kept, a directory for each message.
  * @param send hands a written message to an outgoing server; the tests look at what is handed over.
@@ -57,7 +82,6 @@ class MailSend(
     private val log: AppLog,
     private val work: File,
     private val files: File,
-    private val scheduler: SendScheduler,
     private val send: (ServerAddress, Credentials, String, List<String>, File) -> Unit =
         { server, credentials, from, recipients, message -> SmtpSender.send(server, credentials, from, recipients, message, log) },
     private val io: CoroutineDispatcher = Dispatchers.IO,
@@ -66,22 +90,45 @@ class MailSend(
 ) {
     private val lock = Mutex()
 
+    /** Whether this run of the app has looked at what the run before it left behind ([recover]). */
+    private var recovered = false
+
     /**
-     * Sends every message whose time has come, one after the other.
+     * A message an earlier run of the app was handing to its server when it ended is kept as
+     * failed: whether the server took it is not known, and it is not sent a second time unasked.
      *
-     * @return true when a message is still waiting because its server could not be reached:
-     *   worth another try later.
+     * Looked at once in a run, and before that run sends anything: whoever asks later finds it
+     * done, so a message this run is handing over right now is never taken for one that was cut
+     * short. Returns how many there were.
      */
-    suspend fun sendDue(): Boolean = lock.withLock {
+    suspend fun recover(): Int = lock.withLock { withContext(NonCancellable + io) { recoverOnce() } }
+
+    private suspend fun recoverOnce(): Int {
+        if (recovered) return 0
+        recovered = true
+        val interrupted = db.outbox().failInterrupted(Draft.INTERRUPTED, now())
+        if (interrupted > 0) log.warn(TAG, "$interrupted messages were being sent when the app ended; they are kept as failed")
+        return interrupted
+    }
+
+    /** Sends every message whose time has come, one after the other. */
+    suspend fun sendDue(): SendRound = lock.withLock {
         // Once a message is being handed over it is seen through: stopping half way would leave
         // nobody knowing whether the server took it.
         withContext(NonCancellable + io) {
+            recoverOnce()
             val outbox = db.outbox()
-            var again = false
+            var unreachable = false
             for (row in outbox.due(now())) {
                 // taken back in this very moment: then it is no longer waiting
                 if (outbox.claim(row.id, now()) == 0) continue
-                val failure = sendOne(row)
+                val failure = try {
+                    sendOne(row)
+                } catch (e: Exception) {
+                    // nothing here is expected to throw; if something does, the message does not stay "being sent" for ever
+                    log.error(TAG, "message ${row.id} could not be sent", e)
+                    MailException(MailException.Kind.Server, e.toString())
+                }
                 when {
                     failure == null -> {
                         outbox.delete(row.id)
@@ -89,14 +136,14 @@ class MailSend(
                     }
                     failure.kind == MailException.Kind.Network -> {
                         outbox.setState(row.id, OutboxEntity.QUEUED, row.sendAfter, failure.message.orEmpty(), now())
-                        again = true
+                        unreachable = true
                     }
                     else -> outbox.setState(row.id, OutboxEntity.FAILED, 0, failure.message.orEmpty(), now())
                 }
             }
             // what is still within its time to be taken back
-            outbox.nextDue(now())?.let { scheduler.schedule(it - now()) }
-            again
+            val time = now()
+            SendRound(unreachable, outbox.nextDue(time)?.let { it - time })
         }
     }
 

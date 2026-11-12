@@ -118,6 +118,8 @@ dependencies {
     testImplementation(libs.junit)
     // an IMAP server inside the tests: the sync is run against it, into the real database
     testImplementation(libs.greenmail)
+    // WorkManager run by the test itself: the outbox's background work, without waiting for a network
+    testImplementation(libs.work.testing)
     testImplementation(libs.robolectric)
     testImplementation(libs.test.core)
     testImplementation(libs.test.ext.junit)

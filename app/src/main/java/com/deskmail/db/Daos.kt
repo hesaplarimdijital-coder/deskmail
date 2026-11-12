@@ -41,6 +41,10 @@ abstract class AccountDao {
     @Query("UPDATE account SET state = :state, stateDetail = :detail WHERE id = :id AND (state != :state OR stateDetail != :detail)")
     abstract suspend fun setState(id: Long, state: String, detail: String)
 
+    /** What the account's mail is written with: the name it is sent under, and what it is signed with. */
+    @Query("UPDATE account SET senderName = :senderName, signature = :signature WHERE id = :id")
+    abstract suspend fun setWriting(id: Long, senderName: String, signature: String)
+
     /** Deletes the account and, with it, its credential, its folders and their messages. */
     @Query("DELETE FROM account WHERE id = :id")
     abstract suspend fun delete(id: Long)
@@ -603,8 +607,16 @@ abstract class OutboxDao {
     @Insert
     abstract suspend fun insert(message: OutboxEntity): Long
 
-    @Update
-    abstract suspend fun update(message: OutboxEntity)
+    /**
+     * Keeps what was typed. Only what is typed is written, and only while the message is being
+     * written on: a late keeping can neither bring a message back that was handed over meanwhile
+     * nor change one that is on its way. 0 when it was no longer to be written on.
+     */
+    @Query(
+        "UPDATE outbox SET accountId = :accountId, toText = :to, ccText = :cc, bccText = :bcc, subject = :subject, body = :body, " +
+            "messageId = :messageId, updatedAt = :now WHERE id = :id AND state IN ('Draft', 'Failed')",
+    )
+    abstract suspend fun write(id: Long, accountId: Long, to: String, cc: String, bcc: String, subject: String, body: String, messageId: String, now: Long): Int
 
     @Query("SELECT * FROM outbox WHERE id = :id")
     abstract suspend fun byId(id: Long): OutboxEntity?
@@ -616,8 +628,13 @@ abstract class OutboxDao {
     @Query("SELECT * FROM outbox ORDER BY updatedAt DESC, id DESC")
     abstract fun observeAll(): Flow<List<OutboxEntity>>
 
+    /** The message has left: it is no longer the outbox's. */
     @Query("DELETE FROM outbox WHERE id = :id")
     abstract suspend fun delete(id: Long)
+
+    /** Throws a message away unless it is being handed to its server this moment; 0 when it was not thrown away. */
+    @Query("DELETE FROM outbox WHERE id = :id AND state != 'Sending'")
+    abstract suspend fun discard(id: Long): Int
 
     @Query("UPDATE outbox SET state = :state, sendAfter = :sendAfter, error = :error, updatedAt = :now WHERE id = :id")
     abstract suspend fun setState(id: Long, state: String, sendAfter: Long, error: String, now: Long)
@@ -630,6 +647,7 @@ abstract class OutboxDao {
     @Query("UPDATE outbox SET state = 'Draft', sendAfter = 0, updatedAt = :now WHERE id = :id AND state = 'Queued'")
     abstract suspend fun unqueue(id: Long, now: Long): Int
 
+    /** A waiting message no longer waits out its time. */
     @Query("UPDATE outbox SET sendAfter = :time WHERE id = :id AND state = 'Queued' AND sendAfter > :time")
     abstract suspend fun bringForward(id: Long, time: Long)
 
@@ -644,8 +662,9 @@ abstract class OutboxDao {
     @Query("UPDATE outbox SET state = 'Failed', error = :error, updatedAt = :now WHERE state = 'Sending'")
     abstract suspend fun failInterrupted(error: String, now: Long): Int
 
-    @Query("SELECT COUNT(*) FROM outbox WHERE state = 'Queued'")
-    abstract suspend fun waiting(): Int
+    /** When the first of the waiting messages is to go (a moment that may have passed); null when none waits. */
+    @Query("SELECT MIN(sendAfter) FROM outbox WHERE state = 'Queued'")
+    abstract suspend fun earliest(): Long?
 
     /** What is to be sent now, the oldest first. */
     @Query("SELECT * FROM outbox WHERE state = 'Queued' AND sendAfter <= :now ORDER BY id")

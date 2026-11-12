@@ -97,6 +97,10 @@ class AccountSetup(
         SetupResult.Done(accountId)
     }
 
+    override suspend fun saveWriting(accountId: Long, senderName: String, signature: String) = withContext(io) {
+        accounts.saveWriting(accountId, senderName, signature)
+    }
+
     override suspend fun remove(accountId: Long) = withContext(io) {
         accounts.remove(accountId)
         // the index has no ties to the messages

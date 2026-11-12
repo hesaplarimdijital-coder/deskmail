@@ -41,7 +41,15 @@ data class Draft(
     val state: DraftState = DraftState.Writing,
     val error: String = "",
     val updatedAt: Instant = Instant.EPOCH,
-)
+) {
+    companion object {
+        /**
+         * What stands in [error] for a message that was being handed to its server when the app
+         * ended: whether the server took it is not known. The screens put it into words.
+         */
+        const val INTERRUPTED = "interrupted"
+    }
+}
 
 /** What a new message starts with when something outside asked for it: a mailto link, something shared. */
 data class DraftSeed(val to: String = "", val cc: String = "", val subject: String = "", val body: String = "")
@@ -64,7 +72,8 @@ sealed interface SendCheck {
 /**
  * Writing and sending: what the compose screen asks for. A message that is being written is kept
  * on the device as it is typed; handed over, it waits a few seconds (the time to take it back)
- * and is then sent in the background, now or when the server can next be reached.
+ * and is then sent in the background, now or when the server can next be reached. The window that
+ * shows "Undo" has it sent as soon as that offer is gone ([sendNow]).
  */
 interface MailComposer {
     /**
@@ -83,8 +92,11 @@ interface MailComposer {
     /** The message as it is kept; null once it is gone (sent, or thrown away). */
     fun observe(id: Long): Flow<Draft?>
 
-    /** Keeps what was typed. */
+    /** Keeps what was typed, and returns once it is kept. A message that was handed over meanwhile is left as it is. */
     suspend fun save(id: Long, accountId: Long, to: String, cc: String, bcc: String, subject: String, body: String)
+
+    /** Keeps what was typed without anybody waiting for it: for a screen that is on its way out, and a window that is closing. */
+    fun keep(id: Long, accountId: Long, to: String, cc: String, bcc: String, subject: String, body: String)
 
     /** Adds a file: its content is copied now, so it is still there when the message is sent. False when it could not be read. */
     suspend fun attach(id: Long, name: String, mimeType: String, open: () -> InputStream?): Boolean
@@ -100,8 +112,8 @@ interface MailComposer {
     /** Sends a waiting message now rather than when its time is up; a failed one is tried again. */
     fun sendNow(id: Long)
 
-    /** Throws the message away. */
-    suspend fun discard(id: Long)
+    /** Throws the message away. False when it could not be any more: it is being handed to its server this moment. */
+    suspend fun discard(id: Long): Boolean
 
     /** The addresses the user has had mail with that begin like [typed], the most recent first. */
     fun suggest(typed: String, limit: Int = 5): List<MailAddress>

@@ -61,7 +61,8 @@ class ComposeWords(
  * @param files where the files attached to messages are copied to, a directory for each message.
  * @param scheduler has the outbox sent; the app's goes through WorkManager.
  * @param fetchFile fetches a file of a received message: what a forwarded message takes along.
- * @param undoMs how long a message waits after "Send" before it leaves.
+ * @param recover sees to what an earlier run of the app left half sent ([MailSend.recover]), before the outbox is shown.
+ * @param undoMs how long a message waits after "Send" before it leaves: the time to take it back.
  */
 @Stable
 class LiveComposer(
@@ -72,6 +73,7 @@ class LiveComposer(
     private val scheduler: SendScheduler,
     private val fetchFile: suspend (MailAttachment) -> FetchedFile,
     private val words: () -> ComposeWords,
+    private val recover: suspend () -> Unit = {},
     private val log: AppLog? = null,
     private val now: () -> Long = System::currentTimeMillis,
     private val undoMs: () -> Long = { UNDO_SEND_MS },
@@ -98,10 +100,9 @@ class LiveComposer(
             }.collect { known = it }
         }
         scope.launch {
-            // what an earlier run left behind
-            val interrupted = db.outbox().failInterrupted(INTERRUPTED, now())
-            if (interrupted > 0) log?.warn(TAG, "$interrupted messages were being sent when the app ended; they are kept as failed")
-            if (db.outbox().waiting() > 0) scheduler.schedule(0)
+            // what an earlier run left behind: half sent, or waiting with nobody asked to send it
+            recover()
+            scheduler.scheduleNext(db.outbox(), now())
         }
     }
 
@@ -156,7 +157,7 @@ class LiveComposer(
             }
             return row.copy(
                 subject = Replies.forwardSubject(source.subject),
-                body = Replies.forward(text, words.forwarded, details) + signed(account),
+                body = signed(account) + Replies.forward(text, words.forwarded, details),
                 sourceId = source.id,
                 sourceKind = OutboxEntity.FORWARD,
             )
@@ -195,13 +196,21 @@ class LiveComposer(
 
     override suspend fun save(id: Long, accountId: Long, to: String, cc: String, bcc: String, subject: String, body: String) {
         val row = db.outbox().byId(id) ?: return
-        // what is waiting to be sent, or being sent, is no longer written on
-        if (row.state != OutboxEntity.DRAFT && row.state != OutboxEntity.FAILED) return
         val edited = row.copy(accountId = accountId, toText = to, ccText = cc, bccText = bcc, subject = subject, body = body)
         if (edited == row) return
         // another account sends under its own domain's name
-        val moved = if (accountId == row.accountId) edited else edited.copy(messageId = row.messageId.substringBefore('@') + "@" + (db.accounts().byId(accountId)?.address?.substringAfterLast('@') ?: return) + ">")
-        db.outbox().update(moved.copy(updatedAt = now()))
+        val messageId = if (accountId == row.accountId) {
+            row.messageId
+        } else {
+            val domain = db.accounts().byId(accountId)?.address?.substringAfterLast('@') ?: return
+            row.messageId.substringBefore('@') + "@" + domain + ">"
+        }
+        // only while it is being written on: what waits to be sent, or is on its way, stays as it was handed over
+        db.outbox().write(id, accountId, to, cc, bcc, subject, body, messageId, now())
+    }
+
+    override fun keep(id: Long, accountId: Long, to: String, cc: String, bcc: String, subject: String, body: String) {
+        scope.launch { save(id, accountId, to, cc, bcc, subject, body) }
     }
 
     override suspend fun attach(id: Long, name: String, mimeType: String, open: () -> InputStream?): Boolean = withContext(io) {
@@ -210,8 +219,8 @@ class LiveComposer(
         // a directory of its own for every file: two files of one name do not meet
         val target = File(File(directory, UUID.randomUUID().toString()), safeFileName(name))
         try {
-            target.parentFile?.mkdirs()
             val source = open() ?: return@withContext false
+            target.parentFile?.mkdirs()
             source.use { input -> target.outputStream().use { input.copyTo(it) } }
             db.outbox().addFile(OutboxFileEntity(outboxId = id, name = safeFileName(name), mimeType = mimeType.ifBlank { "application/octet-stream" }, size = target.length(), path = target.path))
             true
@@ -237,7 +246,7 @@ class LiveComposer(
         val wait = undoMs()
         val time = now()
         if (db.outbox().queue(id, sendAfter = time + wait, now = time) == 0) return SendCheck.Gone
-        scheduler.schedule(wait)
+        scheduler.scheduleNext(db.outbox(), time)
         return SendCheck.Queued(wait)
     }
 
@@ -249,13 +258,15 @@ class LiveComposer(
             val row = db.outbox().byId(id) ?: return@launch
             // a failed one is handed over again; a waiting one no longer waits
             if (row.state == OutboxEntity.FAILED) db.outbox().queue(id, sendAfter = time, now = time) else db.outbox().bringForward(id, time)
-            scheduler.schedule(0)
+            // asked for anew even when nothing changed: "now" also means not waiting for the next try of its own
+            scheduler.scheduleNext(db.outbox(), time)
         }
     }
 
-    override suspend fun discard(id: Long) {
-        db.outbox().delete(id)
+    override suspend fun discard(id: Long): Boolean {
+        if (db.outbox().discard(id) == 0 && db.outbox().byId(id) != null) return false
         withContext(io) { File(files, id.toString()).deleteRecursively() }
+        return true
     }
 
     override fun suggest(typed: String, limit: Int): List<MailAddress> {
@@ -270,11 +281,8 @@ class LiveComposer(
     companion object {
         private const val TAG = "compose"
 
-        /** How long a message waits after "Send": the time to take it back. */
+        /** How long a message waits after "Send" unless the settings say otherwise. */
         const val UNDO_SEND_MS = 10_000L
-
-        /** What a message that was being sent when the app ended is marked with; the screens put it into words. */
-        const val INTERRUPTED = "interrupted"
 
         /** How many of the newest messages the suggestions are drawn from, and how often at most they are drawn again. */
         private const val SUGGEST_FROM = 500

@@ -14,14 +14,13 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -30,6 +29,7 @@ import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -63,20 +63,39 @@ import desktopkit.components.DeskTextField
 import desktopkit.components.MenuEntry
 import desktopkit.components.MoreSheet
 import desktopkit.components.SegmentedChoice
+import desktopkit.components.SettingRow
 import desktopkit.screens.PageHeader
 import desktopkit.shell.CompactTopBar
 import desktopkit.shell.TopBarAction
 import desktopkit.shell.TopBarBackIcon
 import desktopkit.shell.WidthClass
 import desktopkit.shell.currentWidthClass
+import desktopkit.shell.keepsKeyboardOpen
+import desktopkit.shell.rememberShellContentPadding
 import desktopkit.theme.DeskTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /**
- * What is typed into the compose screen, held while the screen is up. It is read once from the
- * draft as it is kept, and written back as it changes.
+ * A message of the user's own that is being written in a window: which one (its id in the
+ * outbox), over which of the window's screens it was begun, and what is typed. The window keeps
+ * it, not the screen: what is typed is still there when the shell lays its screens out anew.
+ *
+ * Writing goes on over the screen it was begun on. Another screen of the window shows what it
+ * always shows; back on this one, the message is still being written.
+ *
+ * @param fresh the message was begun just now, for this: closed with nothing written into it, it
+ *   is not worth keeping.
+ */
+@Stable
+class Writing(val draftId: Long, val route: String, val fresh: Boolean = false) {
+    val fields = ComposeFields()
+}
+
+/**
+ * What is typed into the compose screen. It is read once from the draft as it is kept, and the
+ * draft follows it from then on.
  */
 @Stable
 class ComposeFields {
@@ -95,6 +114,13 @@ class ComposeFields {
     /** What "Send" found wrong with the recipients, to say under the field. */
     var recipientsError by mutableStateOf<String?>(null)
 
+    /** What the message held when it was read, and whether a file was added or taken out since. */
+    private var asRead: List<Any> = emptyList()
+    private var filesChanged = false
+
+    /** Whether anything was written, attached or taken out since the message was read. */
+    val touched: Boolean get() = loaded && (filesChanged || typed() != asRead)
+
     fun load(draft: Draft) {
         accountId = draft.accountId
         to = draft.to
@@ -103,11 +129,21 @@ class ComposeFields {
         subject = draft.subject
         body = draft.body
         moreRecipients = draft.cc.isNotBlank() || draft.bcc.isNotBlank()
+        asRead = typed()
         loaded = true
+    }
+
+    fun fileChanged() {
+        filesChanged = true
     }
 
     /** Everything that is kept, as one value: what changes when something was typed. */
     fun typed(): List<Any> = listOf(accountId, to, cc, bcc, subject, body)
+
+    /** The message was thrown away: there is nothing here to keep any more. */
+    fun discarded() {
+        loaded = false
+    }
 }
 
 /** What a window's compose screen can be asked from outside: Ctrl+Enter sends. */
@@ -131,24 +167,26 @@ object ComposeTags {
  * the screen loses nothing; "Send" hands the message over and closes it.
  *
  * On a phone the actions are in the top bar, with a cross that closes; wider windows have them in
- * the page's header.
+ * a row above the fields.
  *
- * @param scope where what outlasts the screen runs: the last keeping of what was typed.
- * @param barsPadding what the phone's bars cover (the shell's padding, which the app asks for).
+ * @param writing which message, and what is typed into it; the window keeps it.
+ * @param scope where the work the buttons start runs: the window's.
+ * @param host where the window finds this screen's "Send" (Ctrl+Enter).
  * @param onClose the screen goes; the draft stays in the outbox.
+ * @param onDiscard the message is to be thrown away, and the screen with it.
  * @param onSent the message was handed over and waits out its time to be taken back.
  * @param onNotify shows a short notice.
  */
 @Composable
 fun ComposeScreen(
-    draftId: Long,
+    writing: Writing,
     composer: MailComposer,
     mail: MailSource,
     scope: CoroutineScope,
     host: ComposeHost,
-    barsPadding: PaddingValues,
     onClose: () -> Unit,
-    onSent: (Long, SendCheck.Queued) -> Unit,
+    onDiscard: () -> Unit,
+    onSent: (SendCheck.Queued) -> Unit,
     onNotify: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -157,38 +195,41 @@ fun ComposeScreen(
     val resources = appResources()
     val context = LocalContext.current
     val compact = currentWidthClass() == WidthClass.Compact
-    val fields = remember(draftId) { ComposeFields() }
-    val watched = remember(composer, draftId) { Watched() }
+    val draftId = writing.draftId
+    val fields = writing.fields
+    // what the phone's bars cover: asked for here, so the page scrolls beneath them
+    val barsPadding = rememberShellContentPadding()
     val draft by remember(composer, draftId) { composer.observe(draftId) }.collectAsState(initial = null)
 
     // read once; after that the screen is what is typed, and the draft follows it
     LaunchedEffect(draft) {
         val kept = draft
-        if (kept != null) {
-            watched.seen = true
-            if (!fields.loaded) fields.load(kept)
-        } else if (watched.seen) {
+        when {
             // sent from another window, or thrown away: there is nothing left to write on
-            onClose()
+            kept == null -> if (fields.loaded) onClose()
+            !kept.canBeWrittenOn() -> onClose()
+            !fields.loaded -> fields.load(kept)
         }
     }
-    val keep: suspend () -> Unit = {
-        if (fields.loaded) composer.save(draftId, fields.accountId, fields.to, fields.cc, fields.bcc, fields.subject, fields.body)
-    }
-    // kept a moment after the typing pauses, and once more when the screen goes
+    // kept a moment after the typing pauses
     LaunchedEffect(fields.typed()) {
         delay(KEEP_AFTER_MS)
-        keep()
+        if (fields.loaded) composer.save(draftId, fields.accountId, fields.to, fields.cc, fields.bcc, fields.subject, fields.body)
     }
-    DisposableEffect(draftId) {
-        onDispose { scope.launch { keep() } }
+    // and once more when the screen goes, by the composer itself: the window may be going with it
+    DisposableEffect(composer, writing) {
+        onDispose {
+            if (fields.loaded) composer.keep(draftId, fields.accountId, fields.to, fields.cc, fields.bcc, fields.subject, fields.body)
+        }
     }
 
     val send: () -> Unit = {
         scope.launch {
-            keep()
+            if (!fields.loaded) return@launch
+            // what is typed first, and waited for: the message goes as it stands on the screen
+            composer.save(draftId, fields.accountId, fields.to, fields.cc, fields.bcc, fields.subject, fields.body)
             when (val check = composer.send(draftId)) {
-                is SendCheck.Queued -> onSent(draftId, check)
+                is SendCheck.Queued -> onSent(check)
                 SendCheck.NoRecipients -> fields.recipientsError = resources.getString(R.string.compose_no_recipients)
                 is SendCheck.BadAddresses -> fields.recipientsError = resources.getString(R.string.compose_bad_addresses, check.pieces.joinToString(", "))
                 SendCheck.Gone -> onClose()
@@ -198,13 +239,6 @@ fun ComposeScreen(
     SideEffect { host.send = send }
     DisposableEffect(host) {
         onDispose { host.send = null }
-    }
-    val discard: () -> Unit = {
-        scope.launch {
-            composer.discard(draftId)
-            onNotify(resources.getString(R.string.compose_discarded))
-        }
-        onClose()
     }
     val pick = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         val data = if (result.resultCode == Activity.RESULT_OK) result.data else null
@@ -218,7 +252,7 @@ fun ComposeScreen(
                 var failed = false
                 for (uri in chosen) {
                     val (name, type) = describe(context, uri)
-                    if (!composer.attach(draftId, name, type) { context.contentResolver.openInputStream(uri) }) failed = true
+                    if (composer.attach(draftId, name, type) { context.contentResolver.openInputStream(uri) }) fields.fileChanged() else failed = true
                 }
                 if (failed) onNotify(resources.getString(R.string.compose_attach_failed))
             }
@@ -249,7 +283,7 @@ fun ComposeScreen(
         actions = listOf(
             TopBarAction(MailIcons.Sent, sendLabel, send, primary = true),
             TopBarAction(MailIcons.Attachment, attachLabel, attach),
-            TopBarAction(DeskIcons.Delete, discardLabel, discard),
+            TopBarAction(DeskIcons.Delete, discardLabel, onDiscard),
         ),
         showSearch = false,
     )
@@ -263,25 +297,31 @@ fun ComposeScreen(
             .verticalScroll(rememberScrollState())
             .padding(barsPadding),
     ) {
-        if (!compact) {
-            PageHeader(title) {
-                DeskButton(sendLabel, send, icon = MailIcons.Sent, primary = true)
-                DeskIconButton(MailIcons.Attachment, attachLabel, attach)
-                DeskIconButton(DeskIcons.Delete, discardLabel, discard)
-                DeskIconButton(DeskIcons.Close, closeLabel, onClose)
-            }
-        }
+        // a large window names the screen here; its actions stand with the form, not at the far end of the window
+        if (!compact) PageHeader(title)
         Column(
             Modifier.fillMaxWidth().widthIn(max = MAX_WIDTH.dp).padding(horizontal = dimens.pagePadding).padding(top = dimens.gapS, bottom = dimens.gapXl),
             verticalArrangement = Arrangement.spacedBy(dimens.gapM),
         ) {
+            if (!compact) {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(dimens.gapS), verticalAlignment = Alignment.CenterVertically) {
+                    DeskButton(sendLabel, send, Modifier.keepsKeyboardOpen(), icon = MailIcons.Sent, primary = true)
+                    DeskButton(attachLabel, attach, icon = MailIcons.Attachment)
+                    Spacer(Modifier.weight(1f))
+                    DeskIconButton(DeskIcons.Delete, discardLabel, onDiscard)
+                    DeskIconButton(DeskIcons.Close, closeLabel, onClose)
+                }
+            }
+            // who it is from, where there is a choice
             val accounts = mail.accounts
             if (accounts.size > 1) {
-                SegmentedChoice(
-                    options = accounts.map { it.id to it.name },
-                    selected = fields.accountId,
-                    onSelect = { fields.accountId = it },
-                )
+                SettingRow(stringResource(R.string.compose_from), Modifier.keepsKeyboardOpen()) {
+                    SegmentedChoice(
+                        options = accounts.map { it.id to it.name },
+                        selected = fields.accountId,
+                        onSelect = { fields.accountId = it },
+                    )
+                }
             }
             val recipientsHint = stringResource(R.string.compose_recipients_hint)
             DeskTextField(
@@ -324,7 +364,7 @@ fun ComposeScreen(
                     imeAction = ImeAction.Next,
                 )
             } else {
-                DeskButton(stringResource(R.string.compose_more_recipients), { fields.moreRecipients = true }, icon = DeskIcons.Plus)
+                DeskButton(stringResource(R.string.compose_more_recipients), { fields.moreRecipients = true }, Modifier.keepsKeyboardOpen(), icon = DeskIcons.Plus)
             }
             DeskTextField(
                 value = fields.subject,
@@ -335,7 +375,10 @@ fun ComposeScreen(
             )
             val files = draft?.files.orEmpty()
             if (files.isNotEmpty()) {
-                DraftFiles(files, context) { file -> scope.launch { composer.detach(file.id) } }
+                DraftFiles(files, context) { file ->
+                    fields.fileChanged()
+                    scope.launch { composer.detach(file.id) }
+                }
             }
             DeskTextField(
                 value = fields.body,
@@ -351,39 +394,37 @@ fun ComposeScreen(
     }
 }
 
-/** Whether the draft was there at all: a draft that was never seen is still being read, one that was and is gone is gone. */
-private class Watched {
-    var seen = false
-}
-
 /** The files that go with the message, as chips on one line that scrolls sideways; a chip offers to take its file out. */
 @Composable
 private fun DraftFiles(files: List<DraftFile>, context: Context, onRemove: (DraftFile) -> Unit) {
     val dimens = DeskTheme.dimens
     Row(
-        Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+        Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).keepsKeyboardOpen(),
         horizontalArrangement = Arrangement.spacedBy(dimens.gapS),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         files.forEach { file ->
-            var open by remember(file.id) { mutableStateOf(false) }
-            var height by remember { mutableIntStateOf(0) }
-            val remove = MenuEntry.Item(stringResource(R.string.compose_file_remove), { onRemove(file) }, icon = DeskIcons.Delete, destructive = true)
-            Box(Modifier.onSizeChanged { height = it.height }) {
-                DeskChip(
-                    text = file.name,
-                    selected = false,
-                    onClick = { open = true },
-                    icon = MailIcons.Attachment,
-                    count = Formatter.formatShortFileSize(context, file.bytes),
-                )
-                MoreSheet(
-                    visible = open,
-                    onDismiss = { open = false },
-                    groups = if (open) listOf(ActionGroup(null, listOf(remove))) else emptyList(),
-                    title = file.name,
-                    menuOffset = IntOffset(0, height),
-                )
+            // a chip is its file's: taking one out leaves the others as they are
+            key(file.id) {
+                var open by remember { mutableStateOf(false) }
+                var height by remember { mutableIntStateOf(0) }
+                val remove = MenuEntry.Item(stringResource(R.string.compose_file_remove), { onRemove(file) }, icon = DeskIcons.Delete, destructive = true)
+                Box(Modifier.onSizeChanged { height = it.height }) {
+                    DeskChip(
+                        text = file.name,
+                        selected = false,
+                        onClick = { open = true },
+                        icon = MailIcons.Attachment,
+                        count = Formatter.formatShortFileSize(context, file.bytes),
+                    )
+                    MoreSheet(
+                        visible = open,
+                        onDismiss = { open = false },
+                        groups = if (open) listOf(ActionGroup(null, listOf(remove))) else emptyList(),
+                        title = file.name,
+                        menuOffset = IntOffset(0, height),
+                    )
+                }
             }
         }
     }

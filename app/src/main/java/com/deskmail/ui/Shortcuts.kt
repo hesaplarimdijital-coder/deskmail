@@ -18,6 +18,10 @@ object Commands {
     const val PREVIOUS = "message.previous"
     const val STAR = "message.star"
     const val TOGGLE_READ = "message.toggle_read"
+    const val REPLY = "message.reply"
+    const val REPLY_ALL = "message.reply_all"
+    const val FORWARD = "message.forward"
+    const val SEND = "message.send"
     const val ARCHIVE = "message.archive"
     const val DELETE = "message.delete"
     const val MOVE = "message.move"
@@ -45,17 +49,22 @@ val MailScope = ShortcutScope("mail")
  * kit's own name. F5 asks the servers for what is new.
  *
  * Ctrl+Z takes back what was last done to a message. It belongs to the mail's own scope: in a
- * text field Ctrl+Z is the field's.
+ * text field Ctrl+Z is the field's. Ctrl+Enter sends the message that is being written, from
+ * whichever of its fields has the focus.
  */
 val shortcuts = ShortcutRegistry(
     groups = listOf(FileGroup, EditGroup, MessageGroup, CommonShortcuts.ViewGroup, CommonShortcuts.HelpGroup),
     shortcuts = listOf(
         Shortcut(Commands.NEW_MESSAGE, FileGroup, R.string.action_new_message, KeyChord(Key.N, ctrl = true)),
+        Shortcut(Commands.SEND, FileGroup, R.string.action_send, KeyChord(Key.Enter, ctrl = true)),
         Shortcut(CommonShortcuts.NEW_WINDOW, FileGroup, desktopkit.R.string.dk_new_window, KeyChord(Key.N, ctrl = true, shift = true)),
         Shortcut(Commands.REFRESH, FileGroup, R.string.action_refresh, KeyChord(Key.F5)),
         Shortcut(Commands.UNDO, EditGroup, R.string.action_undo, KeyChord(Key.Z, ctrl = true), MailScope),
         Shortcut(Commands.NEXT, MessageGroup, R.string.action_next_message, KeyChord(Key.J), MailScope),
         Shortcut(Commands.PREVIOUS, MessageGroup, R.string.action_previous_message, KeyChord(Key.K), MailScope),
+        Shortcut(Commands.REPLY, MessageGroup, R.string.action_reply, KeyChord(Key.R), MailScope),
+        Shortcut(Commands.REPLY_ALL, MessageGroup, R.string.action_reply_all, KeyChord(Key.A), MailScope),
+        Shortcut(Commands.FORWARD, MessageGroup, R.string.action_forward, KeyChord(Key.F), MailScope),
         Shortcut(Commands.STAR, MessageGroup, R.string.action_toggle_star, KeyChord(Key.S), MailScope),
         Shortcut(Commands.TOGGLE_READ, MessageGroup, R.string.action_toggle_read, KeyChord(Key.U), MailScope),
         Shortcut(Commands.ARCHIVE, MessageGroup, R.string.action_archive, KeyChord(Key.E), MailScope),
@@ -78,7 +87,7 @@ class CommandHost {
  *
  * - while the command palette is open, nothing: its field and its list take the keys;
  * - a chord (Ctrl+N, Ctrl+K, …) or a function key runs its command wherever the focus is;
- * - a single key (J, K, S, U, E, V, Delete, Esc, /) and Ctrl+Z run their command only while
+ * - a single key (J, K, R, A, F, S, U, E, V, Delete, Esc, /) and Ctrl+Z run their command only while
  *   nothing is being typed ([typing]: the focus is in a text field). A key held down repeats J
  *   and K down the list, and nothing else;
  * - "/" also counts where it is typed with another key (Shift+7 on a Turkish keyboard), since a

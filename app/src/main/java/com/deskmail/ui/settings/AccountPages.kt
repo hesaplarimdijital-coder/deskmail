@@ -61,6 +61,8 @@ import kotlinx.coroutines.launch
 object AccountTags {
     const val ADDRESS = "account-address"
     const val PASSWORD = "account-password"
+    const val SENDER_NAME = "account-sender-name"
+    const val SIGNATURE = "account-signature"
 }
 
 /**
@@ -353,8 +355,8 @@ internal fun stateLabel(state: AccountState): String = stringResource(
 )
 
 /**
- * One account: how it is doing, syncing it now, signing in again with another password, and
- * taking it off the device.
+ * One account: how it is doing, syncing it now, the name and the signature its mail is written
+ * with, signing in again with another password, and taking it off the device.
  *
  * @param scope where the server is asked; as for [AccountSetupPage], it outlives the page.
  * @param onSync asks the servers for what is new.
@@ -376,6 +378,10 @@ fun AccountPage(
     var busy by remember(account.id) { mutableStateOf(false) }
     var failure by remember(account.id) { mutableStateOf<SetupResult.Failed?>(null) }
     var confirmRemove by remember(account.id) { mutableStateOf(false) }
+    // what is typed; the account's own until then
+    var senderName by remember(account.id) { mutableStateOf(account.senderName) }
+    var signature by remember(account.id) { mutableStateOf(account.signature) }
+    val saved = stringResource(R.string.account_writing_saved)
     val reconnected = stringResource(R.string.account_reconnected)
     val reconnect: () -> Unit = {
         if (!busy && password.isNotEmpty()) {
@@ -409,6 +415,36 @@ fun AccountPage(
                 Note(stringResource(R.string.setup_server_said, account.detail.take(DETAIL_LENGTH)))
             }
             DeskButton(stringResource(R.string.account_sync_now), onSync, Modifier.padding(top = dimens.gapM))
+        }
+        SettingsSection(stringResource(R.string.account_writing)) {
+            Note(stringResource(R.string.account_writing_note))
+            DeskTextField(
+                value = senderName,
+                onValueChange = { senderName = it },
+                modifier = Modifier.fillMaxWidth().padding(top = dimens.gapM).testTag(AccountTags.SENDER_NAME),
+                label = stringResource(R.string.account_sender_name),
+                imeAction = ImeAction.Next,
+            )
+            DeskTextField(
+                value = signature,
+                onValueChange = { signature = it },
+                modifier = Modifier.fillMaxWidth().padding(top = dimens.gapM).testTag(AccountTags.SIGNATURE),
+                label = stringResource(R.string.account_signature),
+                singleLine = false,
+                minLines = 3,
+                maxLines = 8,
+            )
+            DeskButton(
+                stringResource(R.string.account_writing_save),
+                {
+                    scope.launch {
+                        actions.saveWriting(account.id, senderName, signature)
+                        onNotify(saved)
+                    }
+                },
+                Modifier.padding(top = dimens.gapM),
+                enabled = senderName != account.senderName || signature != account.signature,
+            )
         }
         SettingsSection(stringResource(R.string.account_action_reconnect)) {
             Note(stringResource(R.string.account_reconnect_note))

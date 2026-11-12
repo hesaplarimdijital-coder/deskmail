@@ -6,6 +6,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -20,11 +21,16 @@ import com.deskmail.R
 import com.deskmail.core.log.AppLog
 import com.deskmail.core.mail.FolderRole
 import com.deskmail.mail.AccountActions
+import com.deskmail.mail.DraftKind
 import com.deskmail.mail.MailAccount
+import com.deskmail.mail.MailComposer
 import com.deskmail.mail.MailContent
 import com.deskmail.mail.MailSource
 import com.deskmail.mail.MailView
 import com.deskmail.settings.AppSettings
+import com.deskmail.ui.compose.ComposeActions
+import com.deskmail.ui.compose.ComposeScreen
+import com.deskmail.ui.compose.OutboxScreen
 import com.deskmail.ui.mail.FoldersScreen
 import com.deskmail.ui.mail.LocalMailClock
 import com.deskmail.ui.mail.MailActions
@@ -74,6 +80,7 @@ import kotlinx.coroutines.launch
  * palette and the commands behind the shortcut table.
  *
  * @param mail where the mail comes from: the accounts' in the app, made-up mail in the tests.
+ * @param composer writes and sends messages; null where nothing can be written.
  * @param accounts adds, reconnects and removes accounts (Settings); null where nothing can.
  * @param settings the app's own settings, shared by every window.
  * @param log the app's log; Settings shows it.
@@ -93,6 +100,7 @@ fun DeskMailApp(
     mail: MailSource,
     settings: AppSettings,
     log: AppLog,
+    composer: MailComposer? = null,
     accounts: AccountActions? = null,
     ui: MailUiState = remember { MailUiState() },
     settingsUi: SettingsUiState = remember { SettingsUiState() },
@@ -119,7 +127,8 @@ fun DeskMailApp(
     val named = mail.accounts.map { MailAccount(it.id, it.name, it.address) }
     val tree = folders.map { it.copy(unread = 0, total = 0) }
     val spec = remember(locales, named, tree, startRoute) { buildShellSpec(resources, named, tree, startRoute) }
-    val badges = remember(folders) { navBadges(folders) }
+    val waiting = composer?.outbox?.size ?: 0
+    val badges = remember(folders, waiting) { navBadges(folders, waiting) }
     val entry by navController.currentBackStackEntryAsState()
     val currentRoute = entry?.destination?.route ?: spec.startRoute
 
@@ -141,9 +150,6 @@ fun DeskMailApp(
     }
 
     val notify: (String) -> Unit = { text -> scope.launch { toasts.show(text) } }
-    // a command this pre-release has a place for, but not yet the work behind it
-    val notYet: (String) -> Unit = { name -> notify(resources.getString(R.string.not_in_this_version, name)) }
-    val newMessage = stringResource(R.string.action_new_message)
     // a tapped link is never followed inside a message: its real address is shown instead
     val showLink: (String) -> Unit = { url -> scope.launch { toasts.show(url.take(LINK_LENGTH), duration = ToastDuration.Long) } }
     val body: @Composable (MailContent.Ready, Boolean, Modifier) -> Unit = messageBody ?: { content, showImages, modifier ->
@@ -164,6 +170,9 @@ fun DeskMailApp(
     // archive, move and delete, with their notices and the way back; the files of messages
     val actions = remember(mail, ui, resources) { MailActions(mail, ui, scope, toasts, resources) }
     val files = rememberAttachmentHandler(mail, notify)
+    // writing: a new message, a reply, what the outbox holds, and "Send" with its way back
+    val compose = remember(composer, mail, ui, resources) { composer?.let { ComposeActions(it, mail, ui, scope, toasts, resources) } }
+    SideEffect { compose?.front = { navController.currentBackStackEntry?.destination?.route ?: spec.startRoute } }
     // "Add an account", from wherever it is asked for: the page in Settings, with nothing typed
     val addAccount: () -> Unit = {
         settingsUi.addAccount()
@@ -201,6 +210,8 @@ fun DeskMailApp(
     val perform: (String) -> Boolean = { id ->
         // read when the command runs: the screen in front then
         val route = navController.currentBackStackEntry?.destination?.route ?: spec.startRoute
+        // a message is being written there: the list and the open message behind it are out of reach
+        val writing = compose != null && ui.writingOver(route) != null
         when (id) {
             CommonShortcuts.SEARCH, Commands.FIND -> {
                 palette.open()
@@ -220,23 +231,39 @@ fun DeskMailApp(
                 true
             }
             Commands.NEW_MESSAGE -> {
-                notYet(newMessage)
-                true
+                compose?.begin(route)
+                compose != null
             }
             Commands.REFRESH -> {
                 mail.refresh(mailView(route))
                 true
             }
-            Commands.NEXT -> step(route, 1)
-            Commands.PREVIOUS -> step(route, -1)
-            Commands.STAR -> withOpen(route) { mail.toggleStarred(it) }
-            Commands.TOGGLE_READ -> withOpen(route) { mail.toggleUnread(it) }
-            Commands.ARCHIVE -> withOpen(route) { actions.archive(listOf(it)) }
-            Commands.DELETE -> withOpen(route) { actions.delete(listOf(it)) }
-            Commands.MOVE -> withOpen(route) { id -> mail.cachedMessage(id)?.let { ui.moving = it } }
-            Commands.UNDO -> actions.undoLast()
-            Commands.CLOSE -> withOpen(route) { ui.close(route) }
-            else -> false
+            // the latest thing first: a message that was just handed over, then what was done to one
+            Commands.UNDO -> compose?.undoSend() == true || (!writing && actions.undoLast())
+            Commands.SEND -> {
+                val send = if (writing) compose?.host?.send else null
+                send?.invoke()
+                send != null
+            }
+            Commands.CLOSE -> if (writing) {
+                compose?.close()
+                true
+            } else {
+                withOpen(route) { ui.close(route) }
+            }
+            else -> if (writing) false else when (id) {
+                Commands.NEXT -> step(route, 1)
+                Commands.PREVIOUS -> step(route, -1)
+                Commands.STAR -> withOpen(route) { mail.toggleStarred(it) }
+                Commands.TOGGLE_READ -> withOpen(route) { mail.toggleUnread(it) }
+                Commands.REPLY -> compose != null && withOpen(route) { compose.begin(route, DraftKind.Reply, it) }
+                Commands.REPLY_ALL -> compose != null && withOpen(route) { compose.begin(route, DraftKind.ReplyAll, it) }
+                Commands.FORWARD -> compose != null && withOpen(route) { compose.begin(route, DraftKind.Forward, it) }
+                Commands.ARCHIVE -> withOpen(route) { actions.archive(listOf(it)) }
+                Commands.DELETE -> withOpen(route) { actions.delete(listOf(it)) }
+                Commands.MOVE -> withOpen(route) { id -> mail.cachedMessage(id)?.let { ui.moving = it } }
+                else -> false
+            }
         }
     }
     SideEffect { commands?.perform = perform }
@@ -262,17 +289,23 @@ fun DeskMailApp(
         ),
     )
     // The menu bar, from the shortcut table. What acts on a message is greyed out while none is
-    // open, what steps through a list while the screen in front is not one.
-    val listInFront = mailView(currentRoute) != null
-    val messageOpen = ui.openedId(currentRoute) != null
+    // open, what steps through a list while the screen in front is not one; while a message is
+    // being written in front, the list and the open message behind it are out of reach.
+    val writingInFront = compose != null && ui.writingOver(currentRoute) != null
+    val listInFront = !writingInFront && mailView(currentRoute) != null
+    val messageOpen = !writingInFront && ui.openedId(currentRoute) != null
     val menus = shortcuts.menus(
         resources = resources,
         perform = { perform(it) },
         enabled = { id ->
             when (id) {
+                Commands.NEW_MESSAGE -> compose != null
+                Commands.SEND -> writingInFront
                 Commands.NEXT, Commands.PREVIOUS -> listInFront
-                Commands.STAR, Commands.TOGGLE_READ, Commands.ARCHIVE, Commands.DELETE, Commands.MOVE, Commands.CLOSE -> messageOpen
-                Commands.UNDO -> actions.canUndo
+                Commands.STAR, Commands.TOGGLE_READ, Commands.ARCHIVE, Commands.DELETE, Commands.MOVE -> messageOpen
+                Commands.REPLY, Commands.REPLY_ALL, Commands.FORWARD -> messageOpen && compose != null
+                Commands.CLOSE -> messageOpen || writingInFront
+                Commands.UNDO -> compose?.canUndo == true || (!writingInFront && actions.canUndo)
                 else -> true
             }
         },
@@ -332,6 +365,8 @@ fun DeskMailApp(
                                     group = messagesGroup,
                                     onSelect = {
                                         val route = Routes.folder(message.folderId)
+                                        // the message is asked for: it is not left hidden behind one that is being written there
+                                        if (ui.writingOver(route) != null) compose?.close()
                                         navigator.navigate(route)
                                         openMessage(mail, ui, route, message.id)
                                     },
@@ -352,7 +387,22 @@ fun DeskMailApp(
                 // a folder is no tab of the phone's bottom bar: it was opened from the Folders list, or from "⋯"
                 val backFromFolder: (() -> Unit)? =
                     if (widthClass == WidthClass.Compact && view is MailView.Folder) ({ navController.popBackStack() }) else null
+                val writing = ui.writingOver(route)
                 when {
+                    // a message is being written over this screen: it has the screen's place until it is sent or put away
+                    writing != null && composer != null && compose != null -> key(writing) {
+                        ComposeScreen(
+                            writing = writing,
+                            composer = composer,
+                            mail = mail,
+                            scope = scope,
+                            host = compose.host,
+                            onClose = { compose.close() },
+                            onDiscard = { compose.discard(writing) },
+                            onSent = { check -> compose.sent(writing, check) },
+                            onNotify = notify,
+                        )
+                    }
                     view != null -> MailScreen(
                         route = route,
                         view = view,
@@ -362,6 +412,7 @@ fun DeskMailApp(
                         prefs = prefs,
                         onBack = backFromFolder,
                         onCompose = { perform(Commands.NEW_MESSAGE) },
+                        onWrite = compose?.let { writer -> { kind, message -> writer.begin(route, kind, message.id) } },
                         actions = actions,
                         files = files,
                         onAddAccount = addAccount,
@@ -399,6 +450,11 @@ fun DeskMailApp(
                             at = Routes.INBOX
                             navigator.navigate(Routes.INBOX)
                         },
+                    )
+                    route == Routes.OUTBOX && composer != null && compose != null -> OutboxScreen(
+                        composer = composer,
+                        onOpen = { draft -> compose.takeUp(route, draft) },
+                        onDelete = { draft -> compose.discard(draft) },
                     )
                     else -> MessageScreen(
                         title = stringResource(R.string.search_coming_title),

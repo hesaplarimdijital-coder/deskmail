@@ -57,6 +57,35 @@ class ShortcutsTest {
         assertEquals(listOf(CommonShortcuts.SEARCH), performed)
     }
 
+    /** R, A and F answer the open message; in a text field they are letters. */
+    @Test
+    fun rAAndFAnswerWhileNothingIsBeingTyped() {
+        assertTrue(router.route(down(KeyEvent.KEYCODE_R)))
+        assertTrue(router.route(down(KeyEvent.KEYCODE_A)))
+        assertTrue(router.route(down(KeyEvent.KEYCODE_F)))
+        assertEquals(listOf(Commands.REPLY, Commands.REPLY_ALL, Commands.FORWARD), performed)
+
+        typing = true
+        performed.clear()
+        assertFalse(router.route(down(KeyEvent.KEYCODE_R)))
+        assertFalse(router.route(down(KeyEvent.KEYCODE_A)))
+        assertFalse(router.route(down(KeyEvent.KEYCODE_F)))
+        assertEquals(emptyList<String>(), performed)
+    }
+
+    /** Ctrl+Enter sends from whichever field of the message has the focus; Enter alone is a line break. */
+    @Test
+    fun ctrlEnterSendsFromInsideATextField() {
+        assertEquals(KeyChord(Key.Enter, ctrl = true), shortcuts[Commands.SEND].chord)
+        typing = true
+        assertTrue(router.route(down(KeyEvent.KEYCODE_ENTER, KeyEvent.META_CTRL_ON)))
+        assertEquals(listOf(Commands.SEND), performed)
+        assertFalse(router.route(down(KeyEvent.KEYCODE_ENTER)))
+        // with nothing being written the key is left to whatever has the focus
+        nothingToDo = true
+        assertFalse(router.route(down(KeyEvent.KEYCODE_ENTER, KeyEvent.META_CTRL_ON)))
+    }
+
     @Test
     fun f5SyncsWhereverTheFocusIs() {
         assertEquals(KeyChord(Key.F5), shortcuts[Commands.REFRESH].chord)

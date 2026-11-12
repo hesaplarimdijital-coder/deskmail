@@ -132,6 +132,7 @@
     <string name="outbox_edit">Düzenle</string>
     <string name="outbox_take_back">Geri al ve düzenle</string>
     <string name="outbox_delete">Sil</string>
+    <string name="outbox_unreachable">Sunucuya ulaşılamadı. Ulaşılınca ileti kendiliğinden gider.</string>
 
     <string name="menu_file">Dosya</string>
     <string name="menu_edit">Düzen</string>
@@ -147,7 +148,6 @@
     <string name="palette_group_screens">Ekranlar ve klasörler</string>
     <string name="palette_group_messages">İletiler</string>
 
-    <string name="not_in_this_version">Bu ön sürümde henüz yok: %1$s</string>
 
     <string name="search_coming_title">Arama henüz yok</string>
     <string name="search_coming_text">Sonraki ön sürümlerden biriyle gelecek.</string>
@@ -258,12 +258,23 @@
     <string name="account_sync_now">Şimdi eşitle</string>
     <string name="account_reconnect_note">Şifreyi yeniden gir (Gmail için uygulama şifresi). Hesabın geri kalanı olduğu gibi kalır.</string>
     <string name="account_reconnected">Yeniden giriş yapıldı.</string>
+    <string name="account_writing">Yazarken</string>
+    <string name="account_writing_note">Yazdığın kişilerin adresinin yanında göreceği ad ve iletilerinin sonuna eklenen imza.</string>
+    <string name="account_sender_name">Adın</string>
+    <string name="account_signature">İmza</string>
+    <string name="account_writing_save">Kaydet</string>
+    <string name="account_writing_saved">Kaydedildi.</string>
     <string name="account_remove">Hesabı kaldır</string>
     <string name="account_remove_note">Hesap ve postasından saklananlar bu cihazdan silinir. Posta sunucuda kalır.</string>
     <string name="account_remove_title">%1$s kaldırılsın mı?</string>
     <string name="account_removed">%1$s kaldırıldı.</string>
 
+    <string name="settings_writing">Yazma</string>
+    <string name="settings_undo_send">Gönderiyi geri alma süresi</string>
+    <string name="settings_undo_send_note">“Gönder”den sonra ileti bu kadar bekler; o sırada “Geri al” ile vazgeçebilirsin.</string>
+    <string name="settings_undo_send_seconds">%1$d sn</string>
+
     <string name="settings_about">Hakkında</string>
     <string name="settings_version">Sürüm</string>
-    <string name="settings_about_note">Postanı okuyan bir ön sürüm. İşaretleme, gönderme ve bildirimler sonraki ön sürümlerle gelir.</string>
+    <string name="settings_about_note">Postanı okuyan, düzenleyen ve gönderen bir ön sürüm. Arama ve bildirimler sonraki ön sürümlerle gelir.</string>
 </resources>

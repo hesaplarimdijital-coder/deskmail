@@ -28,8 +28,16 @@ class ImapEditor internal constructor(
     override val uidValidity: Long = connection.call("read UIDVALIDITY") { folder.uidValidity }
 
     override fun mark(uids: List<Long>, mark: Mark, value: Boolean) = connection.call("mark") {
+        // a keyword is kept only by a server that keeps keywords (Gmail does, Outlook.com does not): one that does not is not asked
+        if (mark == Mark.Forwarded && !keepsForwarded()) return@call
         val messages = present(uids)
         if (messages.isNotEmpty()) folder.setFlags(messages, flags(mark), value)
+    }
+
+    /** Whether the folder keeps the keyword for a forwarded message: any keyword at all, or this one by name. */
+    private fun keepsForwarded(): Boolean {
+        val kept = folder.permanentFlags ?: return false
+        return kept.contains(Flags.Flag.USER) || kept.contains(FORWARDED)
     }
 
     override fun move(uids: List<Long>, target: String): List<Moved> = connection.call("move to $target") {

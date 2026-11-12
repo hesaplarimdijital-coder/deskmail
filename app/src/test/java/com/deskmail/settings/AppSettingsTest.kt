@@ -22,6 +22,7 @@ class AppSettingsTest {
         assertTrue(settings.readerUnderBars)
         assertTrue(settings.darkenMessages)
         assertEquals(WebLayer.Default, settings.webLayer)
+        assertEquals(10, settings.undoSendSeconds)
         assertTrue(settings.inspectorCollapsed)
         assertEquals(0.45f, settings.listShare, 0f)
     }
@@ -34,6 +35,7 @@ class AppSettingsTest {
             updateReaderUnderBars(false)
             updateDarkenMessages(false)
             updateWebLayer(WebLayer.Software)
+            updateUndoSendSeconds(15)
             updateInspector(width = 380f, collapsed = false)
             updateListShare(0.6f)
         }
@@ -44,6 +46,7 @@ class AppSettingsTest {
         assertFalse(restarted.readerUnderBars)
         assertFalse(restarted.darkenMessages)
         assertEquals(WebLayer.Software, restarted.webLayer)
+        assertEquals(15, restarted.undoSendSeconds)
         assertFalse(restarted.inspectorCollapsed)
         assertEquals(380f, restarted.inspectorWidth, 0f)
         assertEquals(0.6f, restarted.listShare, 0f)
@@ -62,5 +65,17 @@ class AppSettingsTest {
     fun aValueFromANewerVersionFallsBackToTheDefault() {
         prefs.edit().putString("experiment_web_layer", "Vulkan").commit()
         assertEquals(WebLayer.Default, AppSettings(prefs).webLayer)
+    }
+
+    /** "Send" can be taken back for one of the times there are to choose from, whatever was stored or is asked for. */
+    @Test
+    fun theTimeToTakeAMessageBackIsOneOfTheChoices() {
+        prefs.edit().putInt("undo_send_seconds", 3600).commit()
+        val settings = AppSettings(prefs)
+        assertEquals(10, settings.undoSendSeconds)
+        settings.updateUndoSendSeconds(5)
+        assertEquals(5, AppSettings(prefs).undoSendSeconds)
+        settings.updateUndoSendSeconds(0)
+        assertEquals(10, AppSettings(prefs).undoSendSeconds)
     }
 }

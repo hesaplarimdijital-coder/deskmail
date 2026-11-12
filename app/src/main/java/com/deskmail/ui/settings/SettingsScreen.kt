@@ -50,8 +50,9 @@ import kotlinx.coroutines.withContext
 import java.io.File
 
 /**
- * Settings: the accounts, the kit's own sections (theme and accent, density, the shortcuts), then
- * the app's. The log and the account pages open over them, as a message opens over its list.
+ * Settings: the accounts, writing, the kit's own sections (theme and accent, density, the
+ * shortcuts), then the rest of the app's. The log and the account pages open over them, as a
+ * message opens over its list.
  *
  * @param mail where the accounts are listed from.
  * @param accounts adds, reconnects and removes accounts; null where there is nothing to do so with.
@@ -175,6 +176,7 @@ private fun SettingsList(
     LazyColumn(Modifier.fillMaxSize(), state = state, contentPadding = rememberShellContentPadding()) {
         item(key = "header") { PageHeader(stringResource(desktopkit.R.string.dk_settings)) }
         item(key = "accounts") { AccountsSection(accounts, canAdd, onOpenAccount, onAddAccount) }
+        item(key = "writing") { WritingSection(settings) }
         item(key = "appearance") { AppearanceSection(prefs) }
         item(key = "input") { InputSection(prefs) }
         // the list of shortcuts only where there is a keyboard to use them with
@@ -203,6 +205,20 @@ private fun AccountsSection(accounts: List<MailAccount>, canAdd: Boolean, onOpen
         }
         if (canAdd) {
             DeskButton(stringResource(R.string.account_add), onAdd, Modifier.padding(top = DeskTheme.dimens.gapS), icon = DeskIcons.Plus, primary = accounts.isEmpty())
+        }
+    }
+}
+
+/** Writing: how long a message waits after "Send", which is the time it can be taken back in. */
+@Composable
+private fun WritingSection(settings: AppSettings) {
+    SettingsSection(stringResource(R.string.settings_writing)) {
+        SettingRow(stringResource(R.string.settings_undo_send), subtitle = stringResource(R.string.settings_undo_send_note)) {
+            SegmentedChoice(
+                options = AppSettings.UNDO_SEND_CHOICES.map { seconds -> seconds to stringResource(R.string.settings_undo_send_seconds, seconds) },
+                selected = settings.undoSendSeconds,
+                onSelect = settings::updateUndoSendSeconds,
+            )
         }
     }
 }
