@@ -75,6 +75,22 @@ class MailStatesTest {
     }
 
     @Test
+    fun aListWhoseMailIsOnItsWayDoesNotSayItIsEmpty() {
+        // accounts that were just added: their folders are there, their mail is being fetched
+        mail.clearMessages()
+        mail.syncing = true
+        launch()
+        compose.onNodeWithContentDescription("Eşitleniyor").assertExists()
+        compose.onNodeWithText("Burada ileti yok").assertDoesNotExist()
+
+        // the sync is over, and there really is nothing
+        mail.syncing = false
+        compose.waitForIdle()
+        compose.onNodeWithContentDescription("Eşitleniyor").assertDoesNotExist()
+        compose.onNodeWithText("Burada ileti yok").assertIsDisplayed()
+    }
+
+    @Test
     fun aScreenThatComesToTheFrontAsksForItsMail() {
         launch()
         assertEquals(setOf<MailView>(MailView.Inbox), mail.shown.toSet())

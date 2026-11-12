@@ -367,9 +367,12 @@ fun DeskMailApp(
                         scope = scope,
                         onNotify = notify,
                         onAccountAdded = { address ->
-                            // to the inbox, where its mail is arriving
+                            // To the inbox, where its mail is arriving. Said to the route keeper as
+                            // well: the account's folders are about to change the set of routes, and
+                            // whichever happens first, the inbox is where the window is to be.
                             settingsUi.close()
                             notify(resources.getString(R.string.setup_added, address))
+                            at = Routes.INBOX
                             navigator.navigate(Routes.INBOX)
                         },
                     )

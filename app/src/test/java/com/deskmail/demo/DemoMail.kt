@@ -4,6 +4,8 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import com.deskmail.core.mail.FolderRole
 import com.deskmail.mail.AccountState
@@ -22,7 +24,8 @@ import java.time.Instant
  * Made-up accounts, folders and messages for the tests and the screenshots: the screens are
  * drawn and exercised with them, without a server and without a database. Reading and starring
  * change the copy in memory; a test can also say what a message's content is ([setContent]), how
- * an account is doing ([setAccountState]), and see what the screens asked for.
+ * an account is doing ([setAccountState]), that mail is being fetched ([syncing]), and see what the
+ * screens asked for.
  *
  * The addresses use the reserved ".example" domain: they belong to nobody. The messages are dated
  * back from [now], so the list always has mail of today, of this week and of last year.
@@ -82,7 +85,8 @@ class DemoMail(private val now: Instant = Instant.now(), empty: Boolean = false)
 
     override val recent: List<MailMessage> get() = stored
 
-    override val syncing: Boolean get() = false
+    /** Whether mail is being fetched: a test says so. */
+    override var syncing: Boolean by mutableStateOf(false)
 
     override val canMark: Boolean get() = true
 
@@ -92,6 +96,9 @@ class DemoMail(private val now: Instant = Instant.now(), empty: Boolean = false)
     val retried = ArrayList<Long>()
 
     fun message(id: Long): MailMessage? = stored.firstOrNull { it.id == id }
+
+    /** Takes every message away: accounts as they are just after they were added. */
+    fun clearMessages() = stored.clear()
 
     /** The made-up content of a message. */
     fun content(id: Long): MailContent.Ready = contents.getValue(id)

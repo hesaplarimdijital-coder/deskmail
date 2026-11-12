@@ -203,6 +203,9 @@ class LiveMail(
         }
     }
 
+    /** Has an account synced now: it was just added, or signed in again. */
+    fun sync(accountId: Long) = syncAccount(accountId, emptySet(), onlyIfStale = false)
+
     private fun syncAccount(accountId: Long, also: Set<String>, onlyIfStale: Boolean) =
         ask("a$accountId", onlyIfStale) { sync.account(accountId, also) }
 

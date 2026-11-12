@@ -129,6 +129,24 @@ class AccountSetupTest {
     }
 
     @Test
+    fun theFirstSyncIsStartedByWhoeverKeepsTrackOfTheSyncs() = runBlocking {
+        val started = ArrayList<Long>()
+        val tracked = AccountSetup(db, accounts, sync, Autoconfig(fetch = { null }), log, background, startSync = { started += it })
+
+        val id = (tracked.add(draft()) as SetupResult.Done).accountId
+        assertEquals(listOf(id), started)
+        // and by nobody else, behind its back
+        assertEquals(0, held.waiting)
+
+        // a sign-in that failed starts nothing; one that worked, the same as a new account
+        assertTrue(tracked.reconnect(id, "yanlis") is SetupResult.Failed)
+        assertEquals(listOf(id), started)
+        assertTrue(tracked.reconnect(id, TestImapServer.PASSWORD) is SetupResult.Done)
+        assertEquals(listOf(id, id), started)
+        assertEquals(0, held.waiting)
+    }
+
+    @Test
     fun anAppPasswordIsTakenWithTheSpacesItIsShownWith() = runBlocking {
         val result = setup.add(draft(password = " a-test -pass word ", auth = AuthKind.AppPassword))
         assertTrue(result is SetupResult.Done)

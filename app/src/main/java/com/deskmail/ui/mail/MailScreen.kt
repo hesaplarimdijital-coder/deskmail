@@ -167,7 +167,8 @@ fun MailScreen(
     }
     val empty: @Composable () -> Unit = {
         when {
-            reading -> SkeletonList()
+            // not known yet, or on its way from the server: neither is "no messages"
+            reading || (mail.syncing && all.isEmpty()) -> SkeletonList()
             noAccount -> MessageScreen(
                 title = stringResource(R.string.welcome_title),
                 icon = MailIcons.Mail,

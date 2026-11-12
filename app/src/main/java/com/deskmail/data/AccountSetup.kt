@@ -28,6 +28,9 @@ import kotlinx.coroutines.withContext
  *
  * Only the IMAP server is asked here. The SMTP server's settings are kept as they were found and
  * are first used when the app can send.
+ *
+ * @param startSync has an account's mail fetched once it was added or signed in again; the app
+ *   hands that to the one place that keeps track of the syncs under way ([LiveMail.sync]).
  */
 class AccountSetup(
     db: DeskMailDatabase,
@@ -38,6 +41,7 @@ class AccountSetup(
     private val scope: CoroutineScope,
     private val connect: (ServerAddress, Credentials) -> RemoteAccount = { server, credentials -> ImapConnection.open(server, credentials, log) },
     private val io: CoroutineDispatcher = Dispatchers.IO,
+    private val startSync: (accountId: Long) -> Unit = { accountId -> scope.launch { sync.account(accountId) } },
 ) : AccountActions {
     private val store = RoomSyncStore(db)
 
@@ -61,7 +65,7 @@ class AccountSetup(
         }
         val id = accounts.add(address, nameFor(address, draft), draft.provider?.id.orEmpty(), draft.settings, password)
         store.saveFolders(id, folders)
-        scope.launch { sync.account(id) }
+        startSync(id)
         SetupResult.Done(id)
     }
 
@@ -76,7 +80,7 @@ class AccountSetup(
         accounts.savePassword(accountId, secret)
         accounts.setState(accountId, AccountState.Ok)
         log.info(TAG, "account $accountId signed in again")
-        scope.launch { sync.account(accountId) }
+        startSync(accountId)
         SetupResult.Done(accountId)
     }
 

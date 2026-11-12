@@ -59,7 +59,7 @@ class DeskMailApplication : Application() {
     /** Adding, reconnecting and removing accounts. */
     val accounts: AccountActions by lazy {
         val autoconfig = Autoconfig(fetch = HttpsText::get, mailHosts = DnsLookup::mailHosts, services = DnsLookup::services, log = log)
-        AccountSetup(database, accountStore, sync, autoconfig, log, background)
+        AccountSetup(database, accountStore, sync, autoconfig, log, background, startSync = { mail.sync(it) })
     }
 
     override fun onCreate() {

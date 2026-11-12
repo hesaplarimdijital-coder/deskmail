@@ -171,6 +171,21 @@ class LiveMailTest {
     }
 
     @Test
+    fun anAccountThatWasJustAddedIsSyncedOnce() = runBlocking {
+        server.deliver("ilk", "Birinci ileti.", hoursAgo(2))
+        val id = account()
+        eventually("the account is read") { mail.accounts.size == 1 }
+
+        // what adding an account asks for, and then what the inbox asks for when it shows the new account
+        mail.sync(id)
+        mail.viewShown(MailView.Inbox)
+
+        eventually("its mail is here") { runBlocking { db.messages().count() } == 1 && !mail.syncing }
+        Thread.sleep(300)
+        assertEquals(1, connections.get())
+    }
+
+    @Test
     fun aViewThatComesToTheFrontIsSyncedUnlessItJustWas() = runBlocking {
         server.createFolder("Projeler")
         server.deliver("ilk", "Birinci ileti.", hoursAgo(2))
