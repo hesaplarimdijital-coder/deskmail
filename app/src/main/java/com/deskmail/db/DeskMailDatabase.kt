@@ -50,15 +50,15 @@ abstract class DeskMailDatabase : RoomDatabase() {
          */
         val MIGRATION_1_2: Migration = object : Migration(1, 2) {
             override suspend fun migrate(connection: SQLiteConnection) {
-                connection.run(
+                connection.runSql(
                     "CREATE TABLE IF NOT EXISTS `pending_op` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
                         "`accountId` INTEGER NOT NULL, `messageId` INTEGER NOT NULL, `kind` TEXT NOT NULL, `value` INTEGER NOT NULL, " +
                         "`targetFolderId` INTEGER NOT NULL, `notBefore` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL, " +
                         "FOREIGN KEY(`accountId`) REFERENCES `account`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE , " +
                         "FOREIGN KEY(`messageId`) REFERENCES `message`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
                 )
-                connection.run("CREATE INDEX IF NOT EXISTS `index_pending_op_accountId` ON `pending_op` (`accountId`)")
-                connection.run("CREATE INDEX IF NOT EXISTS `index_pending_op_messageId` ON `pending_op` (`messageId`)")
+                connection.runSql("CREATE INDEX IF NOT EXISTS `index_pending_op_accountId` ON `pending_op` (`accountId`)")
+                connection.runSql("CREATE INDEX IF NOT EXISTS `index_pending_op_messageId` ON `pending_op` (`messageId`)")
             }
         }
 
@@ -66,7 +66,7 @@ abstract class DeskMailDatabase : RoomDatabase() {
         val MIGRATIONS: Array<Migration> = arrayOf(MIGRATION_1_2)
 
         /** Runs one statement that answers nothing. */
-        private suspend fun SQLiteConnection.run(sql: String) {
+        private suspend fun SQLiteConnection.runSql(sql: String) {
             prepare(sql).use { it.step() }
         }
 

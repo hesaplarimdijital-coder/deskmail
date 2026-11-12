@@ -4,10 +4,11 @@ Kişisel kullanım için Android e-posta uygulaması: telefon, tablet ve Samsung
 e-posta yapan bir istemci. Arayüzün tamamı [desktop-kit](https://github.com/hesaplarimdijital-coder/desktop-kit)
 ile çizilir. Play'de değildir; APK olarak kurulur.
 
-> **Durum:** 0.1.0'a giden ön sürümler. Uygulama gerçek postayı **okur**: hesap eklenir (Gmail uygulama
-> şifresiyle; başka sağlayıcılar şifreyle), klasörler ve iletiler eşitlenir, iletiler güvenli biçimde
-> gösterilir. Okundu/yıldız, taşıma, silme, yazma, arama ve bildirim henüz yok; Outlook hesapları
-> Microsoft girişini bekliyor. Sıradaki adımlar `docs/PLAN.md`'de, yapılanlar `CHANGELOG.md`'de.
+> **Durum:** 0.1.0'a giden ön sürümler. Hesap eklenir (Gmail uygulama şifresiyle; başka sağlayıcılar
+> şifreyle), klasörler ve iletiler eşitlenir, iletiler güvenli biçimde gösterilir; okundu ve yıldız
+> sunucuya yazılır, iletiler arşivlenir, taşınır, silinir (hepsi geri alınır), ekler açılır ve kaydedilir.
+> Yazma, arama ve bildirim henüz yok; Outlook hesapları Microsoft girişini bekliyor. Sıradaki adımlar
+> `docs/PLAN.md`'de, yapılanlar `CHANGELOG.md`'de.
 
 ## Kurulum ve güncelleme
 

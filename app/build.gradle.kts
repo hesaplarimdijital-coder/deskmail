@@ -114,8 +114,6 @@ dependencies {
     implementation(libs.coroutines.android)
 
     testImplementation(libs.junit)
-    // runs the database's migrations against the schemas in app/schemas
-    testImplementation(libs.room.testing)
     // an IMAP server inside the tests: the sync is run against it, into the real database
     testImplementation(libs.greenmail)
     testImplementation(libs.robolectric)
