@@ -1,16 +1,21 @@
 package com.deskmail.core.sync
 
+import com.deskmail.core.mail.EditableMailbox
 import com.deskmail.core.mail.FolderCounts
 import com.deskmail.core.mail.FolderRole
 import com.deskmail.core.mail.MailAddress
 import com.deskmail.core.mail.MailException
+import com.deskmail.core.mail.Mark
 import com.deskmail.core.mail.MessageFlags
+import com.deskmail.core.mail.Moved
 import com.deskmail.core.mail.OpenMailbox
 import com.deskmail.core.mail.RemoteAccount
+import com.deskmail.core.mail.RemoteAttachment
 import com.deskmail.core.mail.RemoteBody
 import com.deskmail.core.mail.RemoteFlags
 import com.deskmail.core.mail.RemoteFolder
 import com.deskmail.core.mail.RemoteMessage
+import java.io.OutputStream
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
@@ -53,6 +58,69 @@ class FakeFolder(val path: String, var uidValidity: Long = 7, private val condst
         )
         entries[uid] = Entry(header, RemoteBody(text, html, emptyList()), ++modSeq)
         return uid
+    }
+
+    /** What the files of the messages hold, by UID and part. */
+    val files = HashMap<Pair<Long, String>, ByteArray>()
+
+    /** Gives a message a file, as its sender would have attached it. */
+    fun attach(uid: Long, name: String, content: ByteArray, part: String = "2") {
+        val entry = entries.getValue(uid)
+        val body = entry.body ?: RemoteBody(null, null, emptyList())
+        entry.body = body.copy(attachments = body.attachments + RemoteAttachment(part, name, "application/octet-stream", content.size.toLong(), "", inline = false))
+        entry.header = entry.header.copy(attachments = entry.header.attachments + 1)
+        files[uid to part] = content
+    }
+
+    fun flags(uid: Long): MessageFlags? = entries[uid]?.header?.flags
+
+    fun subjects(): List<String> = entries.values.map { it.header.subject }
+
+    /** A message arrives from another folder: it gets a UID of this one. */
+    private fun take(header: RemoteMessage, body: RemoteBody?): Long {
+        val uid = nextUid++
+        entries[uid] = Entry(header.copy(uid = uid), body, ++modSeq)
+        return uid
+    }
+
+    /** The folder opened for changes, as [FakeAccount.edit] hands it out. */
+    fun edit(account: FakeAccount): EditableMailbox = object : EditableMailbox {
+        override val uidValidity: Long = this@FakeFolder.uidValidity
+
+        override fun mark(uids: List<Long>, mark: Mark, value: Boolean) {
+            ask("mark $mark=$value $uids")
+            for (uid in uids) {
+                val flags = entries[uid]?.header?.flags ?: continue
+                setFlags(uid, if (mark == Mark.Seen) flags.copy(seen = value) else flags.copy(flagged = value))
+            }
+        }
+
+        override fun move(uids: List<Long>, target: String): List<Moved> {
+            ask("move $uids to $target")
+            val destination = account.folders.firstOrNull { it.path == target }
+                ?: throw MailException(MailException.Kind.Server, "NO [TRYCREATE] no such folder: $target")
+            return uids.mapNotNull { uid ->
+                val entry = entries.remove(uid) ?: return@mapNotNull null
+                modSeq++
+                val arrived = destination.take(entry.header, entry.body)
+                if (account.uidPlus) Moved(uid, arrived, destination.uidValidity) else Moved(uid)
+            }
+        }
+
+        override fun expunge(uids: List<Long>) {
+            ask("expunge $uids")
+            uids.forEach { if (entries.containsKey(it)) this@FakeFolder.expunge(it) }
+        }
+
+        override fun close() = Unit
+    }
+
+    private fun ask(what: String) {
+        failNext?.let { failure ->
+            failNext = null
+            throw failure
+        }
+        asked += what
     }
 
     fun setBody(uid: Long, body: RemoteBody?) {
@@ -118,15 +186,14 @@ class FakeFolder(val path: String, var uidValidity: Long = 7, private val condst
             return entries[uid]?.body
         }
 
-        override fun close() = Unit
-
-        private fun ask(what: String) {
-            failNext?.let { failure ->
-                failNext = null
-                throw failure
-            }
-            asked += what
+        override fun attachment(uid: Long, part: String, into: OutputStream): Boolean {
+            ask("attachment $uid/$part")
+            val content = files[uid to part] ?: return false
+            into.write(content)
+            return true
         }
+
+        override fun close() = Unit
     }
 }
 
@@ -137,6 +204,12 @@ class FakeAccount(vararg folders: FakeFolder) : RemoteAccount {
     var opened = 0
         private set
 
+    /** Whether the server tells where a moved message went (UIDPLUS). */
+    var uidPlus = true
+
+    /** Folders the server will not have changed. */
+    val readOnly = HashSet<String>()
+
     override fun folders(): List<RemoteFolder> =
         com.deskmail.core.mail.FolderRoles.assign(folders.map { RemoteFolder(it.path, '/', attributes[it.path].orEmpty(), selectable = true) })
 
@@ -145,6 +218,13 @@ class FakeAccount(vararg folders: FakeFolder) : RemoteAccount {
     override fun open(path: String): OpenMailbox {
         opened++
         return folders.first { it.path == path }.open()
+    }
+
+    override fun edit(path: String): EditableMailbox {
+        opened++
+        if (path in readOnly) throw MailException(MailException.Kind.Server, "NO [READ-ONLY] $path cannot be changed")
+        val folder = folders.firstOrNull { it.path == path } ?: throw MailException(MailException.Kind.Server, "NO no such folder: $path")
+        return folder.edit(this)
     }
 
     override fun close() = Unit

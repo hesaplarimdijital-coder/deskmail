@@ -11,6 +11,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 import org.junit.Rule
 import org.junit.Test
+import java.io.ByteArrayOutputStream
 import java.time.Instant
 import java.time.LocalDate
 
@@ -131,6 +132,21 @@ class ImapMailboxServerTest {
         // The file is 440 bytes and travels as some 600 of base64. This test's server counts the
         // part's own header lines as well (a real one does not), so no closer than this:
         assertTrue("${pdf.size}", pdf.size in 400..650)
+    }
+
+    @Test
+    fun aFileIsFetchedDecoded() {
+        val uid = server.deliver("plan", monday)
+        val pdf = ByteArrayOutputStream()
+        assertTrue(inbox { it.attachment(uid, "3", pdf) })
+        assertEquals(440, pdf.size())
+        assertTrue(pdf.toString(Charsets.US_ASCII).startsWith("%PDF-1.4\n% a made-up file for the tests"))
+
+        // a part the message does not have, and a message the folder does not have
+        assertFalse(inbox { it.attachment(uid, "9", ByteArrayOutputStream()) })
+        assertFalse(inbox { it.attachment(999, "3", ByteArrayOutputStream()) })
+        // fetching a file is not reading the message
+        assertEquals(MessageFlags(), inbox { it.flags(listOf(uid)) }.single().flags)
     }
 
     /** An HTML message whose header names no charset: the page's own declaration counts. */

@@ -17,6 +17,7 @@ import org.eclipse.angus.mail.imap.IMAPFolder
 import org.eclipse.angus.mail.imap.IMAPMessage
 import org.eclipse.angus.mail.imap.protocol.IMAPProtocol
 import org.eclipse.angus.mail.imap.protocol.IMAPResponse
+import java.io.OutputStream
 import java.time.Instant
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -89,6 +90,14 @@ class ImapMailbox internal constructor(
     override fun body(uid: Long, maxTextBytes: Int): RemoteBody? = connection.call("fetch body") {
         val message = folder.getMessageByUID(uid) as IMAPMessage? ?: return@call null
         MessageParts.read(message, maxTextBytes)
+    }
+
+    override fun attachment(uid: Long, part: String, into: OutputStream): Boolean = connection.call("fetch attachment") {
+        val message = folder.getMessageByUID(uid) as IMAPMessage? ?: return@call false
+        val content = MessageParts.stream(message, part) ?: return@call false
+        // fetched from the server a piece at a time as it is read
+        content.use { it.copyTo(into) }
+        true
     }
 
     override fun close() {

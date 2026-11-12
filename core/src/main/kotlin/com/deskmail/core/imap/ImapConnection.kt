@@ -69,6 +69,16 @@ class ImapConnection private constructor(
     }
 
     /**
+     * Opens the folder at [path] for changing it (SELECT): marks, moves and removals. Close it
+     * before opening another, as with [open].
+     */
+    override fun edit(path: String): ImapEditor = call("open $path for changes") {
+        val folder = store.getFolder(path) as IMAPFolder
+        folder.open(Folder.READ_WRITE)
+        ImapEditor(this, folder) { target -> store.getFolder(target) as IMAPFolder }
+    }
+
+    /**
      * How many messages the folder at [path] holds and how many of them are unread, without opening
      * it (STATUS); null where the server will not say.
      */
