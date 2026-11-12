@@ -61,6 +61,26 @@ android {
         // the release APK is what CI builds for every commit; lint is not part of that build
         checkReleaseBuilds = false
     }
+
+    testOptions {
+        unitTests {
+            // Robolectric draws the real screens: it needs the app's resources and manifest
+            isIncludeAndroidResources = true
+            all {
+                it.maxHeapSize = "2g"
+                // Robolectric 4.17 reads FileDescriptor internals on Java 17+
+                it.jvmArgs("--add-opens=java.base/jdk.internal.access=ALL-UNNAMED")
+                val screenshots = layout.buildDirectory.dir("outputs/screenshots")
+                it.systemProperty("deskmail.screenshotDir", screenshots.get().asFile.path)
+                // declared so a test result restored from the build cache brings the screenshots along
+                it.outputs.dir(screenshots).withPropertyName("screenshots")
+                it.testLogging {
+                    events("failed")
+                    exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+                }
+            }
+        }
+    }
 }
 
 dependencies {
@@ -68,4 +88,14 @@ dependencies {
     // Brings Compose (BOM 2026.09.00), Navigation and Haze at the versions it was built with.
     implementation(libs.desktop.kit)
     implementation(libs.activity.compose)
+
+    testImplementation(libs.junit)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.test.core)
+    testImplementation(libs.test.ext.junit)
+    testImplementation(platform(libs.compose.bom))
+    testImplementation(libs.compose.ui.test.junit4)
+    // the empty activity the Compose tests draw in; only in the debug variant the tests run on
+    debugImplementation(platform(libs.compose.bom))
+    debugImplementation(libs.compose.ui.test.manifest)
 }
