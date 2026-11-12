@@ -64,6 +64,8 @@ class MainActivity : ComponentActivity() {
                 commands = commands,
             )
         }
+        // the first message is to open like every other one
+        deskMail.webWarmUp.schedule(this)
     }
 
     /** Back in front: the screen that shows mail looks for what is new, unless it just did. */

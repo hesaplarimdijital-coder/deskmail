@@ -62,7 +62,11 @@ fun WebMessageBody(
     val web = remember(context, dark) {
         val themed = ContextThemeWrapper(context, if (dark) R.style.DeskMailWebDark else R.style.DeskMailWebLight)
         runCatching { createMessageWebView(themed) { url -> latestOnLink(url) } }
-            .onSuccess { logWebViewOnce(context) }
+            .onSuccess {
+                logWebViewOnce(context)
+                // the device's WebView is going now: nothing is left to warm up
+                context.deskMail.webWarmUp.made()
+            }
             .onFailure { context.deskMail.log.warn("reader", "no usable WebView: showing the plain text", it) }
             .getOrNull()
     }

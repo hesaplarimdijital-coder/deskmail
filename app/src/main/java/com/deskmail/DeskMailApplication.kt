@@ -16,6 +16,7 @@ import com.deskmail.mail.AccountActions
 import com.deskmail.net.DnsLookup
 import com.deskmail.net.HttpsText
 import com.deskmail.settings.AppSettings
+import com.deskmail.ui.mail.WebViewWarmUp
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -61,6 +62,9 @@ class DeskMailApplication : Application() {
         val autoconfig = Autoconfig(fetch = HttpsText::get, mailHosts = DnsLookup::mailHosts, services = DnsLookup::services, log = log)
         AccountSetup(database, accountStore, sync, autoconfig, log, background, startSync = { mail.sync(it) })
     }
+
+    /** Has the device's WebView ready before the first message is opened. */
+    val webWarmUp: WebViewWarmUp by lazy { WebViewWarmUp(log) }
 
     override fun onCreate() {
         super.onCreate()
