@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.ui.ShortcutsTest" tests="10" skipped="0" failures="0" errors="0" timestamp="2026-11-12T23:31:36.799Z" hostname="runnervmwuk1x" time="0.107">
+  <properties/>
+  <testcase name="singleKeysWorkOnlyWhileNothingIsBeingTyped" classname="com.deskmail.ui.ShortcutsTest" time="0.016"/>
+  <testcase name="aCommandWithNothingToDoLeavesTheKeyToTheFocusedView" classname="com.deskmail.ui.ShortcutsTest" time="0.009"/>
+  <testcase name="ctrlEnterSendsFromInsideATextField" classname="com.deskmail.ui.ShortcutsTest" time="0.009"/>
+  <testcase name="ctrlNWritesAMessageAndCtrlShiftNOpensAWindow" classname="com.deskmail.ui.ShortcutsTest" time="0.009"/>
+  <testcase name="modifiersMakeAnotherKey" classname="com.deskmail.ui.ShortcutsTest" time="0.012"/>
+  <testcase name="theOpenPaletteKeepsEveryKey" classname="com.deskmail.ui.ShortcutsTest" time="0.01"/>
+  <testcase name="noTwoShortcutsShareAKey" classname="com.deskmail.ui.ShortcutsTest" time="0.011"/>
+  <testcase name="rAAndFAnswerWhileNothingIsBeingTyped" classname="com.deskmail.ui.ShortcutsTest" time="0.009"/>
+  <testcase name="aHeldKeyWalksTheListButFlipsNothing" classname="com.deskmail.ui.ShortcutsTest" time="0.008"/>
+  <testcase name="f5SyncsWhereverTheFocusIs" classname="com.deskmail.ui.ShortcutsTest" time="0.01"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

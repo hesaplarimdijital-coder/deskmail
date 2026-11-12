@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.core.sync.ChangeSyncTest" tests="11" skipped="0" failures="0" errors="0" timestamp="2026-11-12T23:29:00.481Z" hostname="runnervmwuk1x" time="0.011">
+  <properties/>
+  <testcase name="aTargetThatIsNotThereIsTheServersNo" classname="com.deskmail.core.sync.ChangeSyncTest" time="0.007"/>
+  <testcase name="aServerThatDoesNotTellStillMoves" classname="com.deskmail.core.sync.ChangeSyncTest" time="0.0"/>
+  <testcase name="aFolderThatCannotBeChangedRefusesWhatWasMeantForIt" classname="com.deskmail.core.sync.ChangeSyncTest" time="0.001"/>
+  <testcase name="aChangeForUidsThatMeanSomethingElseNowIsNotCarriedOut" classname="com.deskmail.core.sync.ChangeSyncTest" time="0.0"/>
+  <testcase name="aConnectionThatBreaksLeavesTheRestForLater" classname="com.deskmail.core.sync.ChangeSyncTest" time="0.001"/>
+  <testcase name="aMessageThatWasAnsweredOrForwardedIsMarkedSo" classname="com.deskmail.core.sync.ChangeSyncTest" time="0.0"/>
+  <testcase name="messagesGoToTheirOwnTargetsAndTheRemovedAreGone" classname="com.deskmail.core.sync.ChangeSyncTest" time="0.001"/>
+  <testcase name="theSameMarkOnSeveralMessagesIsOneCommand" classname="com.deskmail.core.sync.ChangeSyncTest" time="0.001"/>
+  <testcase name="aMessageTakesItsMarksAlongWhenItMoves" classname="com.deskmail.core.sync.ChangeSyncTest" time="0.0"/>
+  <testcase name="aMessageThatIsNoLongerThereIsGone" classname="com.deskmail.core.sync.ChangeSyncTest" time="0.0"/>
+  <testcase name="aMoveSaysWhereTheMessageWent" classname="com.deskmail.core.sync.ChangeSyncTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
