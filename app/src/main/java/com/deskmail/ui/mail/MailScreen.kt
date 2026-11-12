@@ -12,6 +12,7 @@ import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.deskmail.R
@@ -39,6 +40,7 @@ import desktopkit.shell.LocalNavKind
 import desktopkit.shell.NavKind
 import desktopkit.shell.TopBarAction
 import desktopkit.shell.WidthClass
+import desktopkit.shell.rememberShellContentPadding
 import desktopkit.theme.DeskTheme
 
 /**
@@ -89,6 +91,10 @@ fun MailScreen(
     val composeLabel = stringResource(R.string.action_new_message)
     val showImages = stringResource(R.string.reader_remote_show)
     val openAttachment = stringResource(R.string.action_open_attachment)
+    // What the phone's bars cover. Asked for here, in the screen's own composition, and handed
+    // down: asked for from inside the BoxWithConstraints below, the shell does not notice and pads
+    // the screen as well, so everything stands a bar's height too low (docs/KIT-ISTEKLERI.md, 12).
+    val bars = rememberShellContentPadding()
 
     val chips: @Composable () -> Unit = {
         MailFilterChips(
@@ -113,8 +119,10 @@ fun MailScreen(
             onClose = onClose,
             onShowRemoteImages = { onNotYet(showImages) },
             onAttachment = { _: MailAttachment -> onNotYet(openAttachment) },
-            underBars = readerUnderBars,
+            barsPadding = bars,
             body = body,
+            modifier = Modifier.testTag(MailTags.READER),
+            underBars = readerUnderBars,
             trailingActions = { trailing() },
         )
     }
@@ -143,6 +151,7 @@ fun MailScreen(
                                         onSortChange = { ui.sort = it },
                                         onOpen = open,
                                         prefs = prefs,
+                                        modifier = Modifier.testTag(MailTags.LIST),
                                     )
                                 }
                             }
@@ -173,6 +182,8 @@ fun MailScreen(
                     openedId = opened?.id,
                     state = ui.listState(route),
                     onOpen = open,
+                    contentPadding = bars,
+                    modifier = Modifier.testTag(MailTags.LIST),
                     header = chips,
                     empty = empty,
                 )
@@ -212,6 +223,12 @@ fun openMessage(mail: DemoMail, ui: MailUiState, route: String, message: MailMes
 
 /** From this width of the content on, the list and the reader stand side by side. */
 private val TWO_PANES_FROM = 880.dp
+
+/** Names the tests find the screen's two parts by. */
+object MailTags {
+    const val LIST = "mail-list"
+    const val READER = "mail-reader"
+}
 
 /** The inspector of a large window: the open message's details, and its attachments. */
 @Composable

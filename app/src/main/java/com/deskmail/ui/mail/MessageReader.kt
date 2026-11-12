@@ -6,6 +6,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
@@ -42,13 +43,13 @@ import desktopkit.shell.CompactTopBar
 import desktopkit.shell.TopBarAction
 import desktopkit.shell.WidthClass
 import desktopkit.shell.currentWidthClass
-import desktopkit.shell.rememberShellContentPadding
 import desktopkit.theme.DeskTheme
 
 /**
  * One message: its actions, the subject, who it is from and to, when, its attachments, a strip
  * when images were kept from loading, and the body ([body], the WebView in the app). Everything
  * scrolls as one page: beneath the phone's bars with [underBars], between them without.
+ * [barsPadding] is what the bars cover (the shell's padding, which the screen asks for).
  *
  * On a phone the actions are in the top bar, with the back arrow ([onClose]); wider windows show
  * them in a row above the subject, with [trailingActions] at its end and a back arrow only where
@@ -62,6 +63,7 @@ fun MessageReader(
     onClose: (() -> Unit)?,
     onShowRemoteImages: () -> Unit,
     onAttachment: (MailAttachment) -> Unit,
+    barsPadding: PaddingValues,
     body: @Composable (MailMessage, Modifier) -> Unit,
     modifier: Modifier = Modifier,
     underBars: Boolean = true,
@@ -88,7 +90,7 @@ fun MessageReader(
     val scroll = remember(message.id) { ScrollState(0) }
     // The bars' padding inside the scrolling page lets the page pass beneath them and still rest
     // clear of them at its ends; around the page it keeps the page between the bars.
-    val bars = Modifier.padding(rememberShellContentPadding())
+    val bars = Modifier.padding(barsPadding)
     Column(
         modifier
             .fillMaxSize()

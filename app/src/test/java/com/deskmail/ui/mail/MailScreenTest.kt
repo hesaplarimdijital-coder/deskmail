@@ -2,9 +2,12 @@ package com.deskmail.ui.mail
 
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.deskmail.TestApp
@@ -12,6 +15,7 @@ import com.deskmail.testMail
 import com.deskmail.testPrefs
 import com.deskmail.testSettings
 import desktopkit.theme.DensityPreference
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -52,6 +56,32 @@ class MailScreenTest {
         compose.waitForIdle()
         compose.onNodeWithText(subject).assertDoesNotExist()
         compose.onNodeWithText(subject, substring = true).assertIsDisplayed()
+    }
+
+    /**
+     * On a phone the list and an open message lie under the bars: each fills the window, and its own
+     * padding keeps the chips and the subject clear of the top bar, by the bar's height and no more.
+     */
+    @Test
+    @Config(qualifiers = "tr-w411dp-h891dp-xxhdpi")
+    fun aPhonesListAndReaderLieUnderTheBars() {
+        val prefs = testPrefs()
+        val settings = testSettings()
+        compose.setContent { TestApp(mail, prefs, settings) }
+        val window = compose.onRoot().getUnclippedBoundsInRoot()
+        val list = compose.onNodeWithTag(MailTags.LIST).getUnclippedBoundsInRoot()
+        assertEquals(0f, list.top.value, 0.5f)
+        assertEquals(window.bottom.value, list.bottom.value, 0.5f)
+        val chip = compose.onNodeWithText("Tümü").getUnclippedBoundsInRoot()
+        assertTrue("the chips start at ${chip.top}", chip.top.value in 48f..100f)
+
+        compose.onNodeWithText(subject, substring = true).performClick()
+        compose.waitForIdle()
+        val reader = compose.onNodeWithTag(MailTags.READER).getUnclippedBoundsInRoot()
+        assertEquals(0f, reader.top.value, 0.5f)
+        assertEquals(window.bottom.value, reader.bottom.value, 0.5f)
+        val heading = compose.onNodeWithText(subject).getUnclippedBoundsInRoot()
+        assertTrue("the subject starts at ${heading.top}", heading.top.value in 48f..100f)
     }
 
     /** The chips narrow the list: "Unread" leaves the read messages out. */

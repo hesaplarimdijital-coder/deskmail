@@ -36,7 +36,6 @@ import desktopkit.components.TableSort
 import desktopkit.components.rememberTableColumnsState
 import desktopkit.pluralString
 import desktopkit.settings.DeskPreferences
-import desktopkit.shell.rememberShellContentPadding
 import desktopkit.theme.DeskTheme
 
 /** The chips over a list: All, Unread, Starred, With attachments. "All" is no filter at all. */
@@ -60,7 +59,8 @@ fun MailFilterChips(selected: Set<MailFilter>, onToggle: (MailFilter) -> Unit, o
 /**
  * The messages as rows, for a finger: who it is from (bold while unread, with a dot before it),
  * the subject and the first words under it, the date and the marks at the end. The list lies under
- * the phone's bars and pads its ends with the shell's padding; [header] scrolls away with the rows.
+ * the phone's bars and pads its ends with [contentPadding] (the shell's, which the screen asks
+ * for); [header] scrolls away with the rows.
  */
 @Composable
 fun MessageRows(
@@ -68,12 +68,13 @@ fun MessageRows(
     openedId: Long?,
     state: LazyListState,
     onOpen: (MailMessage) -> Unit,
+    contentPadding: PaddingValues,
     modifier: Modifier = Modifier,
     header: @Composable () -> Unit = {},
     empty: @Composable () -> Unit = {},
 ) {
     val dates = rememberDateLabels()
-    LazyColumn(modifier.fillMaxSize(), state = state, contentPadding = rememberShellContentPadding()) {
+    LazyColumn(modifier.fillMaxSize(), state = state, contentPadding = contentPadding) {
         item(key = "header", contentType = "header") { header() }
         if (messages.isEmpty()) item(key = "empty", contentType = "empty") { empty() }
         items(messages, key = { it.id }, contentType = { "message" }) { message ->
