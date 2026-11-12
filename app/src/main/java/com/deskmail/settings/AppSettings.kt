@@ -8,8 +8,14 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.deskmail.core.log.AppLog
 
-/** How the reader's WebView is drawn into the window; see [AppSettings.webLayer]. */
-enum class WebLayer { Default, Hardware, Software }
+/**
+ * What the reader's WebView draws into; see [AppSettings.webLayer].
+ * - [Default]: the app decides: a hardware layer of the view's own while the shell's glass blurs
+ *   what is under it, none otherwise.
+ * - [None]: straight into the window, whatever the glass does.
+ * - [Hardware], [Software]: always a layer of that kind.
+ */
+enum class WebLayer { Default, None, Hardware, Software }
 
 /**
  * The app's own settings, stored in shared preferences and observable from Compose. One instance
@@ -27,6 +33,14 @@ class AppSettings(private val prefs: SharedPreferences, private val log: AppLog?
     var glass by mutableStateOf(prefs.getBoolean(KEY_GLASS, true))
         private set
 
+    /**
+     * The glass stays while a message is open: the message's WebView draws into a layer of its
+     * own then, which the glass can blur. Off turns the glass off for as long as a message is on
+     * screen, as 0.1.0-alpha.2 did.
+     */
+    var glassOverMessages by mutableStateOf(prefs.getBoolean(KEY_GLASS_OVER_MESSAGES, true))
+        private set
+
     /** On a phone the open message scrolls beneath the bars; off keeps it between them. */
     var readerUnderBars by mutableStateOf(prefs.getBoolean(KEY_READER_UNDER_BARS, true))
         private set
@@ -36,8 +50,8 @@ class AppSettings(private val prefs: SharedPreferences, private val log: AppLog?
         private set
 
     /**
-     * The layer the reader's WebView draws into: the view's own choice, a hardware layer, or a
-     * software one. For finding out what the glass over a message needs in order to blur it.
+     * What the reader's WebView draws into ([WebLayer]): the app's choice unless an experiment says
+     * otherwise. For finding out on a device what the glass over a message needs.
      */
     var webLayer by mutableStateOf(prefs.getString(KEY_WEB_LAYER, null).let { stored -> WebLayer.entries.firstOrNull { it.name == stored } } ?: WebLayer.Default)
         private set
@@ -46,6 +60,12 @@ class AppSettings(private val prefs: SharedPreferences, private val log: AppLog?
         log?.info("settings", "glass = $value")
         glass = value
         prefs.edit().putBoolean(KEY_GLASS, value).apply()
+    }
+
+    fun updateGlassOverMessages(value: Boolean) {
+        log?.info("settings", "glassOverMessages = $value")
+        glassOverMessages = value
+        prefs.edit().putBoolean(KEY_GLASS_OVER_MESSAGES, value).apply()
     }
 
     fun updateReaderUnderBars(value: Boolean) {
@@ -106,6 +126,7 @@ class AppSettings(private val prefs: SharedPreferences, private val log: AppLog?
         const val MAX_LIST_SHARE = 0.85f
 
         private const val KEY_GLASS = "experiment_glass"
+        private const val KEY_GLASS_OVER_MESSAGES = "experiment_glass_over_messages"
         private const val KEY_READER_UNDER_BARS = "experiment_reader_under_bars"
         private const val KEY_DARKEN_MESSAGES = "experiment_darken_messages"
         private const val KEY_WEB_LAYER = "experiment_web_layer"

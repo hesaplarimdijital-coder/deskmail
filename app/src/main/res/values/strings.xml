@@ -92,14 +92,17 @@
     <string name="settings_experiments">Experiments</string>
     <string name="settings_experiments_note">Questions the first pre-releases are to answer on the devices. Open a message, then try each.</string>
     <string name="experiment_glass">Glass bars</string>
-    <string name="experiment_glass_note">Off: bars, sheets and menus are solid surfaces. With a message open they always are: glass made a message flicker while it was scrolled.</string>
+    <string name="experiment_glass_note">Off: bars, sheets and menus are solid surfaces.</string>
+    <string name="experiment_glass_over_messages">Glass over a message</string>
+    <string name="experiment_glass_over_messages_note">The bars stay glass with a message open; the message is drawn into a layer of its own for that. Over a very long message the glass turns itself off. Turn this off if a message flickers while it is scrolled.</string>
     <string name="experiment_under_bars">Message scrolls under the bars</string>
     <string name="experiment_under_bars_note">Phone. Off: the message stays between the top and the bottom bar.</string>
     <string name="experiment_darken">Darken messages on dark themes</string>
     <string name="experiment_darken_note">Off: a message is shown on white, as its sender made it.</string>
     <string name="experiment_web_layer">WebView layer</string>
-    <string name="experiment_web_layer_note">If a message flickers or is drawn in pieces while it is scrolled, try the others.</string>
-    <string name="web_layer_default">Default</string>
+    <string name="experiment_web_layer_note">Automatic: a hardware layer under glass, none without. Try the others if a message flickers or a part of it stays empty.</string>
+    <string name="web_layer_default">Automatic</string>
+    <string name="web_layer_none">None</string>
     <string name="web_layer_hardware">Hardware</string>
     <string name="web_layer_software">Software</string>
 

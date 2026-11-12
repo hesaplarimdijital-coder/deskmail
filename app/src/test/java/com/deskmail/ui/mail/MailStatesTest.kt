@@ -1,5 +1,6 @@
 package com.deskmail.ui.mail
 
+import android.view.View
 import androidx.activity.ComponentActivity
 import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.test.assertIsDisplayed
@@ -19,6 +20,8 @@ import com.deskmail.mail.MailContent
 import com.deskmail.mail.MailSource
 import com.deskmail.mail.MailView
 import com.deskmail.noMail
+import com.deskmail.settings.AppSettings
+import com.deskmail.settings.WebLayer
 import com.deskmail.testMail
 import com.deskmail.testPrefs
 import com.deskmail.testSettings
@@ -77,53 +80,123 @@ class MailStatesTest {
         compose.onNodeWithTag(AccountTags.ADDRESS).assertExists()
     }
 
-    @Test
-    fun theBarsAreNotBlurredWhileAMessageIsOnScreen() {
-        // the glass the shell hands to what is inside it, as the list's chips and a message's body see it
-        val seen = ArrayList<GlassMode?>()
+    /** The glass the shell hands to what is inside it, as a message's body sees it; [tall] is what the body says of itself. */
+    private fun launchSeeingTheGlass(seen: MutableList<GlassMode?>, settings: AppSettings, tall: Boolean = false) {
         val prefs = testPrefs()
-        val settings = testSettings()
-        assertTrue(settings.glass)
         compose.setContent {
             TestApp(mail, prefs, settings, ui, accounts = accounts, settingsUi = settingsUi, messageBody = { content, _, modifier ->
                 // what the app puts beside its WebView; the body itself is plain text here
-                WebBodyPresence(ui)
+                WebBodyPresence(ui, tall)
                 val mode = LocalGlassMode.current
                 SideEffect { seen += mode }
                 PlainMessageBody(content, modifier)
             })
         }
         compose.waitForIdle()
-        assertEquals(0, ui.webBodies)
+    }
+
+    @Test
+    fun theGlassStaysOverAMessage() {
+        val seen = ArrayList<GlassMode?>()
+        val settings = testSettings()
+        assertTrue(settings.glass && settings.glassOverMessages)
+        launchSeeingTheGlass(seen, settings)
 
         compose.runOnUiThread { openMessage(mail, ui, Routes.INBOX, message("Cumartesi kahvaltı?")) }
         compose.waitForIdle()
         assertEquals(1, ui.webBodies)
-        // solid from the first time the body was drawn: nothing of the screen is drawn a second time for a blur
-        assertEquals(listOf<GlassMode?>(GlassMode.Solid), seen.distinct())
-
-        // the message is closed and its body gone: the glass is the user's choice again
-        compose.runOnUiThread { ui.close(Routes.INBOX) }
-        compose.waitForIdle()
-        assertEquals(0, ui.webBodies)
+        assertEquals(0, ui.tallWebBodies)
+        // what the device allows (a test's device: translucent), not taken away by the message
+        assertEquals(listOf<GlassMode?>(GlassMode.Translucent), seen.distinct())
     }
 
     @Test
-    fun theGlassIsTheUsersChoiceWhereNoMessageIsShown() {
-        assertTrue(shellGlass(wanted = true, messageOpen = false, webBodies = 0))
-        // from the tap that opens a message
-        assertFalse(shellGlass(wanted = true, messageOpen = true, webBodies = 0))
-        assertFalse(shellGlass(wanted = true, messageOpen = true, webBodies = 1))
-        // until its WebView has left the screen, the page that slides out included
-        assertFalse(shellGlass(wanted = true, messageOpen = false, webBodies = 1))
+    fun aMessageTooTallForALayerTakesTheGlassAway() {
+        val seen = ArrayList<GlassMode?>()
+        launchSeeingTheGlass(seen, testSettings(), tall = true)
+
+        compose.runOnUiThread { openMessage(mail, ui, Routes.INBOX, message("Cumartesi kahvaltı?")) }
+        compose.waitForIdle()
+        assertEquals(1, ui.tallWebBodies)
+        // solid: nothing of the screen is drawn a second time for a blur
+        assertEquals(GlassMode.Solid, seen.last())
+
+        // the message is closed and its body gone: the glass is back
+        compose.runOnUiThread { ui.close(Routes.INBOX) }
+        compose.waitForIdle()
+        assertEquals(0, ui.webBodies)
+        assertEquals(0, ui.tallWebBodies)
+    }
+
+    @Test
+    fun withTheExperimentOffNoMessageIsUnderGlass() {
+        val seen = ArrayList<GlassMode?>()
+        val settings = testSettings().apply { updateGlassOverMessages(false) }
+        launchSeeingTheGlass(seen, settings)
+
+        compose.runOnUiThread { openMessage(mail, ui, Routes.INBOX, message("Cumartesi kahvaltı?")) }
+        compose.waitForIdle()
+        assertEquals(1, ui.webBodies)
+        // solid from the first time the body was drawn
+        assertEquals(listOf<GlassMode?>(GlassMode.Solid), seen.distinct())
+    }
+
+    @Test
+    fun whenTheShellsGlassIsOn() {
+        fun glass(wanted: Boolean = true, overMessages: Boolean = true, messageOpen: Boolean = false, webBodies: Int = 0, tallBodies: Int = 0) =
+            shellGlass(wanted, overMessages, messageOpen, webBodies, tallBodies)
+        assertTrue(glass())
+        // over a message too: its WebView draws into a layer of its own
+        assertTrue(glass(messageOpen = true, webBodies = 1))
+        // but not over one too tall for such a layer, for as long as it is on screen
+        assertFalse(glass(messageOpen = true, webBodies = 1, tallBodies = 1))
+        assertFalse(glass(webBodies = 1, tallBodies = 1))
+        // the experiment off: no glass from the tap that opens a message until its WebView has left
+        assertFalse(glass(overMessages = false, messageOpen = true))
+        assertFalse(glass(overMessages = false, webBodies = 1))
+        assertTrue(glass(overMessages = false))
         // glass the user turned off stays off
-        assertFalse(shellGlass(wanted = false, messageOpen = false, webBodies = 0))
+        assertFalse(glass(wanted = false))
+        assertFalse(glass(wanted = false, overMessages = false))
+    }
+
+    @Test
+    fun whatAMessagesWebViewDrawsInto() {
+        // the app's choice: a layer of its own under blurred glass, none where nothing blurs or the message is too tall
+        assertEquals(View.LAYER_TYPE_HARDWARE, webLayerFor(WebLayer.Default, blurred = true, tall = false))
+        assertEquals(View.LAYER_TYPE_NONE, webLayerFor(WebLayer.Default, blurred = false, tall = false))
+        assertEquals(View.LAYER_TYPE_NONE, webLayerFor(WebLayer.Default, blurred = true, tall = true))
+        // an experiment's choice holds whatever the glass does
+        for (blurred in listOf(true, false)) {
+            assertEquals(View.LAYER_TYPE_NONE, webLayerFor(WebLayer.None, blurred, tall = false))
+            assertEquals(View.LAYER_TYPE_HARDWARE, webLayerFor(WebLayer.Hardware, blurred, tall = true))
+            assertEquals(View.LAYER_TYPE_SOFTWARE, webLayerFor(WebLayer.Software, blurred, tall = false))
+        }
+    }
+
+    @Test
+    fun howTallAMessageMayBeForALayerOfItsOwn() {
+        // not laid out yet, a screen, a few screens
+        assertTrue(LayerLimits.fits(0, 0, maxSide = 16384))
+        assertTrue(LayerLimits.fits(1080, 2340, maxSide = 16384))
+        assertTrue(LayerLimits.fits(1080, 12_000, maxSide = 16384))
+        // more than the layer may take in memory (64 MB: 15 534 pixels at this width)
+        assertTrue(LayerLimits.fits(1080, 15_534, maxSide = 16384))
+        assertFalse(LayerLimits.fits(1080, 15_535, maxSide = 16384))
+        // a wider pane reaches that sooner
+        assertFalse(LayerLimits.fits(1500, 12_000, maxSide = 16384))
+        // longer than a texture can be on the device, whatever the memory
+        assertFalse(LayerLimits.fits(1080, 9_000, maxSide = 8192))
+        assertFalse(LayerLimits.fits(9_000, 100, maxSide = 8192))
+        // until a hardware canvas has said more, the limit is what every device can do
+        assertEquals(LayerLimits.SAFE_SIDE, LayerLimits.maxSide)
         // a body that goes is counted out once, and never below nothing
         val window = MailUiState()
-        window.webBodyShown()
-        window.webBodyGone()
-        window.webBodyGone()
+        window.webBodyShown(tall = true)
+        window.webBodyGone(tall = true)
+        window.webBodyGone(tall = true)
         assertEquals(0, window.webBodies)
+        assertEquals(0, window.tallWebBodies)
     }
 
     @Test
