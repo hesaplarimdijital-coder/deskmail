@@ -14,6 +14,7 @@ import com.deskmail.demo.DemoMail
 import com.deskmail.ui.CommandHost
 import com.deskmail.ui.DeskMailApp
 import com.deskmail.ui.KeyRouter
+import com.deskmail.ui.isTyping
 import com.deskmail.ui.mail.MailUiState
 import com.deskmail.ui.shortcuts
 import desktopkit.components.CommandPaletteState
@@ -36,8 +37,7 @@ class MainActivity : ComponentActivity() {
     private val keys = KeyRouter(
         registry = shortcuts,
         paletteOpen = { palette.isOpen },
-        // the focused view takes text: a text field of the app (Compose says so through its view)
-        typing = { currentFocus?.onCheckIsTextEditor() == true },
+        typing = { isTyping(window.decorView, currentFocus) },
         perform = { id -> commands.perform(id) },
     )
 
