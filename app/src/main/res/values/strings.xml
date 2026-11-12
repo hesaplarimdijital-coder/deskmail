@@ -2,4 +2,29 @@
 <resources>
     <string name="app_name" translatable="false">DeskMail</string>
     <string name="skeleton_description">The skeleton is in place. Mail comes with the next versions.</string>
+
+    <!-- Navigation: the views over every account, and the screens -->
+    <string name="nav_inbox">Inbox</string>
+    <string name="nav_unread">Unread</string>
+    <string name="nav_starred">Starred</string>
+    <string name="nav_folders">Folders</string>
+    <string name="nav_search">Search</string>
+
+    <!-- Folders by what they are for; the server's own names differ from provider to provider -->
+    <string name="folder_inbox">Inbox</string>
+    <string name="folder_drafts">Drafts</string>
+    <string name="folder_sent">Sent</string>
+    <string name="folder_archive">Archive</string>
+    <string name="folder_junk">Spam</string>
+    <string name="folder_trash">Trash</string>
+    <string name="folder_all">All mail</string>
+    <!-- An account above its folders: its name and its address -->
+    <string name="folders_account" translatable="false">%1$s · %2$s</string>
+
+    <string name="search_coming_title">Search is not here yet</string>
+    <string name="search_coming_text">It comes with one of the next pre-releases.</string>
+
+    <string name="settings_about">About</string>
+    <string name="settings_version">Version</string>
+    <string name="settings_about_note">A pre-release with made-up mail: the shell and the layouts, to be tried on the devices.</string>
 </resources>

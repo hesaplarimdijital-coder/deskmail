@@ -1,4 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="skeleton_description">İskelet hazır. Posta sonraki sürümlerle geliyor.</string>
+
+    <string name="nav_inbox">Gelen</string>
+    <string name="nav_unread">Okunmamış</string>
+    <string name="nav_starred">Yıldızlı</string>
+    <string name="nav_folders">Klasörler</string>
+    <string name="nav_search">Ara</string>
+
+    <string name="folder_inbox">Gelen Kutusu</string>
+    <string name="folder_drafts">Taslaklar</string>
+    <string name="folder_sent">Gönderilmiş</string>
+    <string name="folder_archive">Arşiv</string>
+    <string name="folder_junk">Spam</string>
+    <string name="folder_trash">Çöp</string>
+    <string name="folder_all">Tüm postalar</string>
+
+    <string name="search_coming_title">Arama henüz yok</string>
+    <string name="search_coming_text">Sonraki ön sürümlerden biriyle gelecek.</string>
+
+    <string name="settings_about">Hakkında</string>
+    <string name="settings_version">Sürüm</string>
+    <string name="settings_about_note">Uydurma postayla bir ön sürüm: kabuk ve düzenler cihazlarda denensin diye.</string>
 </resources>
