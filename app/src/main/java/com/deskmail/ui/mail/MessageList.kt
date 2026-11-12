@@ -167,10 +167,11 @@ fun MessageTable(
     val columns = listOf(
         TableColumn<MailMessage>(UNREAD_MARK, ColumnWidth.Fixed(36.dp), id = "unread") { if (it.unread) UNREAD_MARK else "" },
         TableColumn<MailMessage>(STAR_MARK, ColumnWidth.Fixed(36.dp), id = "star") { if (it.starred) STAR_MARK else "" },
-        TableColumn<MailMessage>(stringResource(R.string.column_from), ColumnWidth.Weight(0.3f), id = "from") {
+        // wide enough for a name whole, at any width of the table; the subject takes what is left
+        TableColumn<MailMessage>(stringResource(R.string.column_from), ColumnWidth.Fixed(128.dp), id = "from") {
             if (it.outgoing) toPrefix + it.to else it.fromName
         },
-        TableColumn<MailMessage>(stringResource(R.string.column_subject), ColumnWidth.Weight(0.7f), id = "subject") { previewLine(it) },
+        TableColumn<MailMessage>(stringResource(R.string.column_subject), ColumnWidth.Weight(1f), id = "subject") { previewLine(it) },
         TableColumn<MailMessage>(stringResource(R.string.column_attachments), ColumnWidth.Fixed(48.dp), alignEnd = true, mono = true, id = "attachments") {
             if (it.attachments.isEmpty()) "" else it.attachments.size.toString()
         },

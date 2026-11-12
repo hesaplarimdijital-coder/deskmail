@@ -10,6 +10,7 @@ import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -21,6 +22,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.viewinterop.AndroidView
 import com.deskmail.R
 import com.deskmail.deskMail
@@ -107,19 +109,29 @@ private fun logWebViewOnce(context: Context) {
 
 private var webViewLogged = false
 
-/** A message's plain text: where there is no WebView to draw the HTML (and in the screenshot tests). */
+/**
+ * A message's plain text: where there is no WebView to draw the HTML (and in the screenshot tests).
+ * Its lines end where a line still reads well ([PLAIN_TEXT_EMS]), however wide the reader is.
+ */
 @Composable
 fun PlainMessageBody(message: MailMessage, modifier: Modifier = Modifier) {
     val dimens = DeskTheme.dimens
+    val style = DeskTheme.type.body
+    val widest = with(LocalDensity.current) { (style.fontSize * PLAIN_TEXT_EMS).toDp() }
     SelectionContainer(modifier) {
         Text(
             message.text,
-            style = DeskTheme.type.body,
+            style = style,
             color = DeskTheme.colors.text,
-            modifier = Modifier.padding(start = dimens.pagePadding, end = dimens.pagePadding, bottom = dimens.gapXl),
+            modifier = Modifier
+                .padding(start = dimens.pagePadding, end = dimens.pagePadding, bottom = dimens.gapXl)
+                .widthIn(max = widest),
         )
     }
 }
+
+/** The longest line of a plain-text message, in ems: some eighty letters. The WebView's page has the same limit. */
+internal const val PLAIN_TEXT_EMS = 42
 
 /**
  * A WebView for mail: everything a message does not need is off. [context]'s theme decides whether

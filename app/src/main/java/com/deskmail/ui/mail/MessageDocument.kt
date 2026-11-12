@@ -3,7 +3,8 @@ package com.deskmail.ui.mail
 /**
  * The page the reader's WebView is given for a message: the message's HTML (or its plain text,
  * escaped) inside a document of the app's own, with a policy that lets nothing in from the network
- * and styles that keep wide content from pushing the page sideways.
+ * and styles that keep wide content from pushing the page sideways. Plain text gets lines of a
+ * readable length in a wide reader; an HTML message is laid out as its sender made it.
  *
  * The page is always written as a light one (dark text). On the dark themes the WebView darkens
  * it itself (algorithmic darkening), which also turns a sender's white boxes dark.
@@ -53,5 +54,5 @@ internal object MessageDocument {
             "pre{overflow-x:auto}" +
             "blockquote{margin:8px 0 8px 2px;padding-left:12px;border-left:3px solid #C9CED6;color:#57606A}" +
             "a{color:#1A5FD1}" +
-            ".plain{white-space:pre-wrap}"
+            ".plain{white-space:pre-wrap;max-width:${PLAIN_TEXT_EMS}em}"
 }
