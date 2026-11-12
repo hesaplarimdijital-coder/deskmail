@@ -27,7 +27,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.viewinterop.AndroidView
 import com.deskmail.R
 import com.deskmail.deskMail
-import com.deskmail.mail.MailMessage
+import com.deskmail.mail.MailContent
 import com.deskmail.settings.WebLayer
 import desktopkit.theme.DeskTheme
 import kotlin.math.roundToInt
@@ -37,18 +37,21 @@ import kotlin.math.roundToInt
  * header, under the phone's bars.
  *
  * The WebView runs no scripts, reads no files or content providers and loads nothing from the
- * network. A tapped link is handed to [onLink] and never followed inside the view. The page is
- * light or dark with the kit's theme, not the system's: the view is created with a context whose
- * theme says which, and created anew when the theme changes. With [darken] off, a dark theme shows
- * the message on white, as its sender made it. [layer] is an experiment: what the view draws into.
+ * network, until the reader asks to see the message's images ([showImages]): then pictures are
+ * fetched over https, and nothing else. A tapped link is handed to [onLink] and never followed
+ * inside the view. The page is light or dark with the kit's theme, not the system's: the view is
+ * created with a context whose theme says which, and created anew when the theme changes. With
+ * [darken] off, a dark theme shows the message on white, as its sender made it. [layer] is an
+ * experiment: what the view draws into.
  *
  * Where the device has no usable WebView (it is being updated, or disabled), the message's plain
  * text is shown instead.
  */
 @Composable
 fun WebMessageBody(
-    message: MailMessage,
+    content: MailContent.Ready,
     modifier: Modifier = Modifier,
+    showImages: Boolean = false,
     darken: Boolean = true,
     layer: WebLayer = WebLayer.Default,
     onLink: (String) -> Unit = {},
@@ -59,18 +62,22 @@ fun WebMessageBody(
     val web = remember(context, dark) {
         val themed = ContextThemeWrapper(context, if (dark) R.style.DeskMailWebDark else R.style.DeskMailWebLight)
         runCatching { createMessageWebView(themed) { url -> latestOnLink(url) } }
-            .onSuccess { logWebViewOnce(context) }
+            .onSuccess {
+                logWebViewOnce(context)
+                // the device's WebView is going now: nothing is left to warm up
+                context.deskMail.webWarmUp.made()
+            }
             .onFailure { context.deskMail.log.warn("reader", "no usable WebView: showing the plain text", it) }
             .getOrNull()
     }
     if (web == null) {
-        PlainMessageBody(message, modifier)
+        PlainMessageBody(content, modifier)
         return
     }
     DisposableEffect(web) {
         onDispose { web.destroy() }
     }
-    val document = remember(message.html, message.text) { MessageDocument.build(message.html, message.text) }
+    val document = remember(content.html, content.text, showImages) { MessageDocument.build(content.html, content.text, remoteImages = showImages) }
     // the system's font size setting reaches the page too
     val textZoom = (LocalConfiguration.current.fontScale * 100).roundToInt()
     // one node per view: a view made for another theme takes the old one's place
@@ -91,6 +98,10 @@ fun WebMessageBody(
                     WebLayer.Software -> View.LAYER_TYPE_SOFTWARE
                 }
                 if (view.layerType != layerType) view.setLayerType(layerType, null)
+                // The network stays shut until the reader asks for the pictures. Then the page's own
+                // policy lets pictures in over https and still nothing else (MessageDocument).
+                view.settings.blockNetworkLoads = !showImages
+                view.settings.blockNetworkImage = !showImages
                 if (view.tag != document) {
                     view.tag = document
                     view.loadDataWithBaseURL(null, document, "text/html", "utf-8", null)
@@ -99,6 +110,35 @@ fun WebMessageBody(
         )
     }
 }
+
+/**
+ * Says, for as long as it is composed, that this window draws a message with a WebView
+ * ([MailUiState.webBodies]). The app puts it beside every [WebMessageBody].
+ */
+@Composable
+fun WebBodyPresence(ui: MailUiState) {
+    DisposableEffect(ui) {
+        ui.webBodyShown()
+        onDispose { ui.webBodyGone() }
+    }
+}
+
+/**
+ * Whether the shell's bars, sheets and menus are the kit's blurred glass: where the user wants
+ * them so ([wanted]), and only while the window shows no message.
+ *
+ * The kit blurs what is under a bar by drawing the screen's content again, smaller, once for each
+ * bar, in every frame. A WebView cannot be drawn that way. While a message was scrolled under the
+ * bars its content came and went tile by tile, many times a second: in half of the frames a part
+ * of the message or all of it was missing (Galaxy S24, 0.1.0-alpha.1, seen frame by frame in a
+ * screen recording; docs/KIT-ISTEKLERI.md, 20). Without the blur nothing is drawn twice, so while
+ * a message is on screen the bars are the kit's solid surfaces. Everywhere else the glass stays.
+ *
+ * The glass goes with the tap that opens a message ([messageOpen]), not a frame into the slide
+ * that brings its page in, and comes back when the message's WebView has left the screen
+ * ([webBodies]), not while its page is still sliding out.
+ */
+fun shellGlass(wanted: Boolean, messageOpen: Boolean, webBodies: Int): Boolean = wanted && !messageOpen && webBodies == 0
 
 /** Notes in the log, once per run, which WebView draws the mail: the first thing to know when a message looks wrong. */
 private fun logWebViewOnce(context: Context) {
@@ -115,7 +155,7 @@ private var webViewLogged = false
  * Its lines end where a line still reads well ([PLAIN_TEXT_EMS]), however wide the reader is.
  */
 @Composable
-fun PlainMessageBody(message: MailMessage, modifier: Modifier = Modifier) {
+fun PlainMessageBody(content: MailContent.Ready, modifier: Modifier = Modifier) {
     val dimens = DeskTheme.dimens
     val style = DeskTheme.type.body
     val widest = with(LocalDensity.current) { (style.fontSize * PLAIN_TEXT_EMS).toDp() }
@@ -124,7 +164,7 @@ fun PlainMessageBody(message: MailMessage, modifier: Modifier = Modifier) {
     Box(modifier) {
         SelectionContainer {
             Text(
-                message.text,
+                content.text,
                 style = style,
                 color = DeskTheme.colors.text,
                 modifier = Modifier

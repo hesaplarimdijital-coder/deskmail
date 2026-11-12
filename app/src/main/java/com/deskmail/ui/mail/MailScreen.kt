@@ -4,32 +4,47 @@ import android.text.format.Formatter
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.deskmail.R
-import com.deskmail.demo.DemoMail
+import com.deskmail.mail.AccountState
+import com.deskmail.mail.MailAccount
 import com.deskmail.mail.MailAttachment
+import com.deskmail.mail.MailContent
 import com.deskmail.mail.MailMessage
+import com.deskmail.mail.MailSource
 import com.deskmail.mail.MailView
 import com.deskmail.ui.MailIcons
 import com.deskmail.ui.folderPathLabel
 import desktopkit.appResources
+import desktopkit.components.BannerTone
+import desktopkit.components.DeskIconButton
 import desktopkit.components.DeskListRow
+import desktopkit.components.DeskProgressBar
 import desktopkit.components.HorizontalSplitPane
 import desktopkit.components.InspectorPane
 import desktopkit.components.InspectorTab
 import desktopkit.components.InspectorToggleButton
 import desktopkit.components.KeyValueRow
+import desktopkit.components.SkeletonList
+import desktopkit.components.StatusBanner
 import desktopkit.components.WorkstationLayout
 import desktopkit.pluralString
 import desktopkit.screens.MessageScreen
@@ -41,6 +56,7 @@ import desktopkit.shell.LocalNavKind
 import desktopkit.shell.NavKind
 import desktopkit.shell.TopBarAction
 import desktopkit.shell.WidthClass
+import desktopkit.shell.currentWidthClass
 import desktopkit.shell.rememberShellContentPadding
 import desktopkit.theme.DeskTheme
 import desktopkit.theme.InputMode
@@ -57,68 +73,129 @@ import desktopkit.theme.InputMode
  * ([MailLayout.TABLE_FROM]); a finger, and a narrow list, get the two-line rows.
  *
  * Which message is open, the filters and the scroll position are kept by [ui], so resizing the
- * window from one layout into another keeps them.
+ * window from one layout into another keeps them. The messages come from [mail] and follow it;
+ * coming to the front, the screen has [mail] bring what it shows up to date.
  *
  * @param title the view's name, for the header of a large window.
  * @param onBack set on a phone for a folder opened from the Folders list: the top bar gets a back arrow.
  * @param onCompose "New message"; the phone shows it as the accent icon of the top bar.
  * @param onNotYet a command that this pre-release does not have yet, by its name.
+ * @param onAddAccount where "Add an account" leads while there is none.
+ * @param onOpenAccount an account's page, for one that has to sign in again.
  * @param readerUnderBars on a phone the open message scrolls beneath the bars (an experiment's switch).
+ * @param resumes how often the window came back to the front: each time is a reason to look for new mail.
  */
 @Composable
 fun MailScreen(
     route: String,
     view: MailView,
     title: String,
-    mail: DemoMail,
+    mail: MailSource,
     ui: MailUiState,
     prefs: DeskPreferences,
     onBack: (() -> Unit)?,
     onCompose: () -> Unit,
     onNotYet: (String) -> Unit,
+    onAddAccount: () -> Unit,
+    onOpenAccount: (Long) -> Unit,
     readerUnderBars: Boolean,
-    body: @Composable (MailMessage, Modifier) -> Unit,
+    body: @Composable (MailContent.Ready, Boolean, Modifier) -> Unit,
+    resumes: Int = 0,
 ) {
     val sidebar = LocalNavKind.current == NavKind.Sidebar
+    val compact = currentWidthClass() == WidthClass.Compact
     val pointer = DeskTheme.inputMode == InputMode.Pointer
     val filters = ui.filters(route)
-    val all = mail.messages(view)
-    // newest first, as the store hands them out
+    // newest first, as the store hands them out: what was last seen of the view at once, then what is
+    val listed by remember(mail, view) { mail.observe(view) }.collectAsState(initial = mail.cached(view))
+    val all = listed.orEmpty()
+    // nothing is known yet: neither "no account" nor "no messages" may be said
+    val reading = listed == null || !mail.loaded
+    val noAccount = !reading && mail.accounts.isEmpty()
     val filtered = remember(all, filters) { filterMessages(all, filters) }
+    val openedId = ui.openedId(route)
     // from the store, so a message stays open when a filter takes it off the list
-    val opened = ui.openedId(route)?.let { mail.message(it) }
-    val open: (MailMessage) -> Unit = { message -> openMessage(mail, ui, route, message) }
+    val opened = if (openedId == null) null else key(openedId) { watchedMessage(mail, openedId, all.firstOrNull { it.id == openedId }) }
+    val open: (MailMessage) -> Unit = { message -> openMessage(mail, ui, route, message.id) }
+    val refresh: () -> Unit = { mail.refresh(view) }
     val composeLabel = stringResource(R.string.action_new_message)
-    val showImages = stringResource(R.string.reader_remote_show)
+    val refreshLabel = stringResource(R.string.action_refresh)
+    val starLabel = stringResource(R.string.action_toggle_star)
+    val readLabel = stringResource(R.string.action_toggle_read)
     val openAttachment = stringResource(R.string.action_open_attachment)
     // What the phone's bars cover. Asked for here, in the screen's own composition, and handed
     // down: asked for from inside the BoxWithConstraints below, the shell does not notice and pads
     // the screen as well, so everything stands a bar's height too low (docs/KIT-ISTEKLERI.md, 12).
     val bars = rememberShellContentPadding()
 
+    // In front (again), or with other accounts than before: what the screen shows may be out of date.
+    val accountIds = mail.accounts.map { it.id }
+    LaunchedEffect(mail, view, accountIds, resumes) { mail.viewShown(view) }
+
+    // the accounts whose mail this view shows and that are in trouble
+    val troubled = when (view) {
+        is MailView.Folder -> listOfNotNull(mail.folder(view.id)?.let { mail.account(it.accountId) })
+        else -> mail.accounts
+    }.filter { it.state != AccountState.Ok }
+
     val chips: @Composable () -> Unit = {
-        MailFilterChips(
-            selected = filters,
-            onToggle = { ui.toggleFilter(route, it) },
-            onClear = { ui.clearFilters(route) },
-            modifier = Modifier.padding(vertical = DeskTheme.dimens.gapS),
-        )
+        Column {
+            if (mail.syncing) {
+                DeskProgressBar(
+                    fraction = null,
+                    modifier = Modifier.padding(horizontal = DeskTheme.dimens.pagePadding),
+                    height = 2.dp,
+                    contentDescription = stringResource(R.string.list_syncing),
+                )
+            }
+            AccountNotices(troubled, onRetry = refresh, onOpenAccount = onOpenAccount)
+            if (!noAccount) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    MailFilterChips(
+                        selected = filters,
+                        onToggle = { ui.toggleFilter(route, it) },
+                        onClear = { ui.clearFilters(route) },
+                        modifier = Modifier.weight(1f).padding(vertical = DeskTheme.dimens.gapS),
+                    )
+                    // a phone has it in its top bar, a large window in its header
+                    if (!compact && !sidebar) {
+                        DeskIconButton(MailIcons.Refresh, refreshLabel, refresh, Modifier.padding(end = DeskTheme.dimens.pagePadding - 8.dp))
+                    }
+                }
+            }
+        }
     }
     val empty: @Composable () -> Unit = {
-        MessageScreen(
-            title = stringResource(if (filters.isEmpty()) R.string.list_empty_title else R.string.list_empty_filtered),
-            icon = MailIcons.Mail,
-            modifier = Modifier.padding(top = 48.dp),
-        )
+        when {
+            // not known yet, or on its way from the server: neither is "no messages"
+            reading || (mail.syncing && all.isEmpty()) -> SkeletonList()
+            noAccount -> MessageScreen(
+                title = stringResource(R.string.welcome_title),
+                icon = MailIcons.Mail,
+                modifier = Modifier.padding(top = 48.dp),
+                description = stringResource(R.string.welcome_text),
+                actionLabel = stringResource(R.string.welcome_action),
+                onAction = onAddAccount,
+            )
+            else -> MessageScreen(
+                title = stringResource(if (filters.isEmpty()) R.string.list_empty_title else R.string.list_empty_filtered),
+                icon = MailIcons.Mail,
+                modifier = Modifier.padding(top = 48.dp),
+            )
+        }
     }
     val reader: @Composable (MailMessage, (() -> Unit)?, @Composable () -> Unit) -> Unit = { message, onClose, trailing ->
         MessageReader(
             message = message,
-            onToggleStar = { mail.setStarred(message.id, !message.starred) },
-            onToggleUnread = { mail.setUnread(message.id, !message.unread) },
+            // watched here, by the reader that shows it: a message that is being closed keeps its text while it leaves
+            content = watchedContent(mail, message.id),
+            showImages = ui.showsImages(message.id),
+            onToggleStar = { if (mail.canMark) mail.toggleStarred(message.id) else onNotYet(starLabel) },
+            onToggleUnread = { if (mail.canMark) mail.toggleUnread(message.id) else onNotYet(readLabel) },
             onClose = onClose,
-            onShowRemoteImages = { onNotYet(showImages) },
+            onShowRemoteImages = { ui.showImages(message.id) },
             onAttachment = { _: MailAttachment -> onNotYet(openAttachment) },
+            onRetry = { mail.retryContent(message.id) },
             barsPadding = bars,
             body = body,
             modifier = Modifier.testTag(MailTags.READER),
@@ -129,8 +206,14 @@ fun MailScreen(
     // The rows as a phone, a tablet held upright and a window beside a rail list them: under the
     // chips, which scroll away with them. They are what the keyboard steps through there (J, K).
     val rows: @Composable () -> Unit = {
-        // a phone's top bar: the view's name, back for a folder opened from the Folders list, "New message"
-        CompactTopBar(onBack = onBack, actions = listOf(TopBarAction(MailIcons.Compose, composeLabel, onCompose, primary = true)))
+        // a phone's top bar: the view's name, back for a folder opened from the Folders list, "New message", "Sync"
+        CompactTopBar(
+            onBack = onBack,
+            actions = listOf(
+                TopBarAction(MailIcons.Compose, composeLabel, onCompose, primary = true),
+                TopBarAction(MailIcons.Refresh, refreshLabel, refresh),
+            ),
+        )
         MessageRows(
             messages = filtered,
             openedId = opened?.id,
@@ -169,6 +252,7 @@ fun MailScreen(
                                     prefs = prefs,
                                     pointer = pointer,
                                     onOpen = open,
+                                    onRefresh = refresh,
                                     chips = chips,
                                     empty = empty,
                                 )
@@ -219,6 +303,46 @@ fun MailScreen(
 }
 
 /**
+ * One message as the store has it now, wherever it is filed: [listed] (the list's copy) until
+ * the store has answered. Null once the message is gone.
+ */
+@Composable
+private fun watchedMessage(mail: MailSource, id: Long, listed: MailMessage?): MailMessage? {
+    val message by remember(mail, id) { mail.observeMessage(id) }.collectAsState(initial = listed ?: mail.cachedMessage(id))
+    return message
+}
+
+/** What a message says, as far as the device has it; watching it has the text fetched when it is missing. */
+@Composable
+private fun watchedContent(mail: MailSource, id: Long): MailContent = key(id) {
+    val content by remember(mail, id) { mail.observeContent(id) }.collectAsState(initial = MailContent.Loading)
+    content
+}
+
+/** A strip for every account that is in trouble: what is wrong, and the way out. */
+@Composable
+private fun AccountNotices(accounts: List<MailAccount>, onRetry: () -> Unit, onOpenAccount: (Long) -> Unit) {
+    val dimens = DeskTheme.dimens
+    accounts.forEach { account ->
+        val login = account.state == AccountState.NeedsLogin
+        StatusBanner(
+            tone = if (login) BannerTone.Error else BannerTone.Warning,
+            text = stringResource(
+                when (account.state) {
+                    AccountState.NeedsLogin -> R.string.account_notice_login
+                    AccountState.Unreachable -> R.string.account_notice_unreachable
+                    else -> R.string.account_notice_error
+                },
+                account.name,
+            ),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = dimens.pagePadding).padding(top = dimens.gapS),
+            actionLabel = stringResource(if (login) R.string.account_action_reconnect else R.string.action_retry),
+            onAction = { if (login) onOpenAccount(account.id) else onRetry() },
+        )
+    }
+}
+
+/**
  * The list of a large window, under the view's name and the chips: a table when a mouse is in use
  * ([pointer]) and the pane is wide enough for columns, the rows otherwise. A table is sorted by its
  * header; the rows are always newest first.
@@ -234,6 +358,7 @@ private fun ListPane(
     prefs: DeskPreferences,
     pointer: Boolean,
     onOpen: (MailMessage) -> Unit,
+    onRefresh: () -> Unit,
     chips: @Composable () -> Unit,
     empty: @Composable () -> Unit,
 ) {
@@ -244,7 +369,9 @@ private fun ListPane(
         // what the keyboard steps through (J, K)
         SideEffect { ui.setShown(route, shown.map { it.id }, leadingItems = 0) }
         Column(Modifier.fillMaxSize()) {
-            PageHeader(title, subtitle = pluralString(R.plurals.message_count, count))
+            PageHeader(title, subtitle = pluralString(R.plurals.message_count, count)) {
+                DeskIconButton(MailIcons.Refresh, stringResource(R.string.action_refresh), onRefresh)
+            }
             chips()
             when {
                 shown.isEmpty() -> empty()
@@ -271,11 +398,13 @@ private fun ListPane(
     }
 }
 
-/** Opens [message] in [route]'s reader. A message that is opened is read. */
-fun openMessage(mail: DemoMail, ui: MailUiState, route: String, message: MailMessage) {
-    ui.open(route, message)
-    mail.setUnread(message.id, false)
+/** Opens the message [id] in [route]'s reader. A message that is opened is read. */
+fun openMessage(mail: MailSource, ui: MailUiState, route: String, id: Long) {
+    ui.open(route, id)
+    mail.markRead(id)
 }
+
+fun openMessage(mail: MailSource, ui: MailUiState, route: String, message: MailMessage) = openMessage(mail, ui, route, message.id)
 
 /** Names the tests find the screen's two parts by. */
 object MailTags {
@@ -285,7 +414,7 @@ object MailTags {
 
 /** The inspector of a large window: the open message's details, and its attachments. */
 @Composable
-private fun MessageInspector(message: MailMessage?, mail: DemoMail, selected: Int, onSelect: (Int) -> Unit, onCollapse: () -> Unit) {
+private fun MessageInspector(message: MailMessage?, mail: MailSource, selected: Int, onSelect: (Int) -> Unit, onCollapse: () -> Unit) {
     val resources = appResources()
     val context = LocalContext.current
     val dates = rememberDateLabels()
@@ -299,20 +428,28 @@ private fun MessageInspector(message: MailMessage?, mail: DemoMail, selected: In
             message == null -> NoMessageOpen()
             tab.id == "details" -> Column(Modifier.fillMaxSize().padding(horizontal = dimens.gapL, vertical = dimens.gapS)) {
                 val folder = mail.folder(message.folderId)
-                KeyValueRow(stringResource(R.string.detail_from), message.fromName + "\n" + message.fromAddress, selectable = true)
+                val from = if (message.fromAddress == message.fromName) message.fromName else message.fromName + "\n" + message.fromAddress
+                KeyValueRow(stringResource(R.string.detail_from), from, selectable = true)
                 KeyValueRow(stringResource(R.string.detail_to), message.to, selectable = true)
+                if (message.cc.isNotEmpty()) KeyValueRow(stringResource(R.string.detail_cc), message.cc, selectable = true)
                 KeyValueRow(stringResource(R.string.detail_date), dates.full(message.sentAt))
                 KeyValueRow(stringResource(R.string.detail_account), mail.account(message.accountId)?.name.orEmpty())
                 if (folder != null) KeyValueRow(stringResource(R.string.detail_folder), folderPathLabel(resources, folder))
             }
-            message.attachments.isEmpty() -> MessageScreen(title = stringResource(R.string.inspector_no_attachments), icon = MailIcons.Attachment)
-            else -> LazyColumn(Modifier.fillMaxSize()) {
-                items(message.attachments, key = { it.name }) { attachment ->
-                    DeskListRow(
-                        title = attachment.name,
-                        leading = MailIcons.Attachment,
-                        trailing = Formatter.formatShortFileSize(context, attachment.bytes),
-                    )
+            else -> {
+                val attachments = (watchedContent(mail, message.id) as? MailContent.Ready)?.attachments.orEmpty()
+                if (attachments.isEmpty()) {
+                    MessageScreen(title = stringResource(R.string.inspector_no_attachments), icon = MailIcons.Attachment)
+                } else {
+                    LazyColumn(Modifier.fillMaxSize()) {
+                        items(attachments) { attachment ->
+                            DeskListRow(
+                                title = attachment.name,
+                                leading = MailIcons.Attachment,
+                                trailing = Formatter.formatShortFileSize(context, attachment.bytes),
+                            )
+                        }
+                    }
                 }
             }
         }

@@ -60,7 +60,7 @@ class PaletteTest {
                 transitions = ShellTransitions.None,
                 palette = palette,
                 commands = commands,
-                messageBody = { message, modifier -> PlainMessageBody(message, modifier) },
+                messageBody = { content, _, modifier -> PlainMessageBody(content, modifier) },
             )
         }
         compose.waitForIdle()

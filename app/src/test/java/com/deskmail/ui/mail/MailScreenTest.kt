@@ -198,7 +198,7 @@ class MailScreenTest {
         val reader = compose.onNodeWithTag(MailTags.READER).getUnclippedBoundsInRoot()
         val readerWidth = (reader.right - reader.left).value
         assertTrue("the reader is $readerWidth dp wide", readerWidth > 800f)
-        val text = compose.onNode(hasText(newsletter.text) and hasAnyAncestor(hasTestTag(MailTags.READER))).getUnclippedBoundsInRoot()
+        val text = compose.onNode(hasText(mail.content(newsletter.id).text) and hasAnyAncestor(hasTestTag(MailTags.READER))).getUnclippedBoundsInRoot()
         // 42 em of the body's size (14 sp here: 588 dp) and the page's padding; far from the reader's width
         val textWidth = (text.right - text.left).value
         assertTrue("the text is $textWidth dp wide", textWidth in 480f..700f)

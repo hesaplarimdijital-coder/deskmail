@@ -14,12 +14,14 @@ import com.deskmail.R
 import com.deskmail.core.mail.FolderRole
 import com.deskmail.mail.MailAccount
 import com.deskmail.mail.MailFolder
+import com.deskmail.ui.MailIcons
 import com.deskmail.ui.folderIcon
 import com.deskmail.ui.folderName
 import desktopkit.appResources
 import desktopkit.components.CountBadge
 import desktopkit.components.DeskListRow
 import desktopkit.components.SectionCaption
+import desktopkit.screens.MessageScreen
 import desktopkit.screens.PageHeader
 import desktopkit.shell.rememberShellContentPadding
 import desktopkit.theme.DeskTheme
@@ -28,13 +30,27 @@ import desktopkit.theme.DeskTheme
  * Every account's folders with their unread counts: the phone's and the rail's way to a folder
  * (the sidebar of a large window lists the folders itself). A folder of the user's inside another
  * one is indented under it.
+ *
+ * @param onAddAccount set while there is no account: the screen says so and offers to add one.
  */
 @Composable
-fun FoldersScreen(accounts: List<MailAccount>, folders: List<MailFolder>, onOpen: (MailFolder) -> Unit) {
+fun FoldersScreen(accounts: List<MailAccount>, folders: List<MailFolder>, onOpen: (MailFolder) -> Unit, onAddAccount: (() -> Unit)? = null) {
     val resources = appResources()
     val dimens = DeskTheme.dimens
     LazyColumn(Modifier.fillMaxSize(), contentPadding = rememberShellContentPadding()) {
         item(key = "header") { PageHeader(stringResource(R.string.nav_folders)) }
+        if (onAddAccount != null) {
+            item(key = "welcome") {
+                MessageScreen(
+                    title = stringResource(R.string.welcome_title),
+                    icon = MailIcons.Mail,
+                    modifier = Modifier.padding(top = 48.dp),
+                    description = stringResource(R.string.welcome_text),
+                    actionLabel = stringResource(R.string.welcome_action),
+                    onAction = onAddAccount,
+                )
+            }
+        }
         accounts.forEach { account ->
             item(key = "account-${account.id}") {
                 SectionCaption(

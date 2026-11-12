@@ -3,32 +3,47 @@ package com.deskmail.demo
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import com.deskmail.core.mail.FolderRole
+import com.deskmail.mail.AccountState
 import com.deskmail.mail.MailAccount
 import com.deskmail.mail.MailAttachment
+import com.deskmail.mail.MailContent
 import com.deskmail.mail.MailFolder
 import com.deskmail.mail.MailMessage
+import com.deskmail.mail.MailSource
 import com.deskmail.mail.MailView
+import kotlinx.coroutines.flow.Flow
 import java.time.Duration
 import java.time.Instant
 
 /**
- * The made-up accounts, folders and messages the first pre-release shows instead of real mail, so
- * the shell, the lists and the reader can be tried on the devices before the app talks to a
- * server. Nothing here leaves the device and nothing is stored: reading and starring change the
- * copy in memory, and a restart brings the mail back as it was.
+ * Made-up accounts, folders and messages for the tests and the screenshots: the screens are
+ * drawn and exercised with them, without a server and without a database. Reading and starring
+ * change the copy in memory; a test can also say what a message's content is ([setContent]), how
+ * an account is doing ([setAccountState]), that mail is being fetched ([syncing]), and see what the
+ * screens asked for.
  *
  * The addresses use the reserved ".example" domain: they belong to nobody. The messages are dated
  * back from [now], so the list always has mail of today, of this week and of last year.
+ *
+ * @param empty no account at all: what the app shows before the first one is added.
  */
-class DemoMail(private val now: Instant = Instant.now()) {
+class DemoMail(private val now: Instant = Instant.now(), empty: Boolean = false) : MailSource {
 
-    val accounts: List<MailAccount> = listOf(
-        MailAccount(OUTLOOK, "Outlook", "deniz@outlook.example"),
-        MailAccount(GMAIL, "Gmail", "deniz@gmail.example"),
-    )
+    private val accountList = mutableStateListOf<MailAccount>().apply {
+        if (!empty) {
+            add(MailAccount(OUTLOOK, "Outlook", "deniz@outlook.example", server = "outlook.office365.com"))
+            add(MailAccount(GMAIL, "Gmail", "deniz@gmail.example", server = "imap.gmail.com"))
+        }
+    }
 
-    private val tree: List<MailFolder> = listOf(
+    override val accounts: List<MailAccount> get() = accountList
+
+    private val tree: List<MailFolder> = if (empty) emptyList() else listOf(
         MailFolder(11, OUTLOOK, listOf("Inbox"), FolderRole.Inbox),
         MailFolder(12, OUTLOOK, listOf("Drafts"), FolderRole.Drafts),
         MailFolder(13, OUTLOOK, listOf("Sent"), FolderRole.Sent),
@@ -47,24 +62,46 @@ class DemoMail(private val now: Instant = Instant.now()) {
         MailFolder(27, GMAIL, listOf("Seyahat"), FolderRole.Other),
     )
 
-    private val stored = mutableStateListOf<MailMessage>().apply { addAll(demoMessages()) }
+    /** What each message says. */
+    private val contents = HashMap<Long, MailContent.Ready>()
+
+    /** What a test says a message's content is, instead. */
+    private val overrides = mutableStateMapOf<Long, MailContent>()
+
+    private val stored = mutableStateListOf<MailMessage>().apply { if (!empty) addAll(demoMessages()) }
 
     /** Every message, newest first. */
     val messages: List<MailMessage> get() = stored
 
     /** The folders with their counts, which follow what is read. */
-    val folders: List<MailFolder> by derivedStateOf {
+    override val folders: List<MailFolder> by derivedStateOf {
         tree.map { folder ->
             val inFolder = stored.filter { it.folderId == folder.id }
             folder.copy(unread = inFolder.count { it.unread }, total = inFolder.size)
         }
     }
 
-    fun folder(id: Long): MailFolder? = folders.firstOrNull { it.id == id }
+    override val loaded: Boolean get() = true
 
-    fun account(id: Long): MailAccount? = accounts.firstOrNull { it.id == id }
+    override val recent: List<MailMessage> get() = stored
+
+    /** Whether mail is being fetched: a test says so. */
+    override var syncing: Boolean by mutableStateOf(false)
+
+    override val canMark: Boolean get() = true
+
+    /** What the screens asked for: the views that came to the front, the syncs, the texts asked for again. */
+    val shown = ArrayList<MailView>()
+    val refreshed = ArrayList<MailView?>()
+    val retried = ArrayList<Long>()
 
     fun message(id: Long): MailMessage? = stored.firstOrNull { it.id == id }
+
+    /** Takes every message away: accounts as they are just after they were added. */
+    fun clearMessages() = stored.clear()
+
+    /** The made-up content of a message. */
+    fun content(id: Long): MailContent.Ready = contents.getValue(id)
 
     /** The messages of [view], newest first. */
     fun messages(view: MailView): List<MailMessage> {
@@ -77,9 +114,52 @@ class DemoMail(private val now: Instant = Instant.now()) {
         }
     }
 
+    override fun observe(view: MailView): Flow<List<MailMessage>> = snapshotFlow { messages(view) }
+
+    override fun cached(view: MailView): List<MailMessage> = messages(view)
+
+    override fun observeMessage(id: Long): Flow<MailMessage?> = snapshotFlow { message(id) }
+
+    override fun cachedMessage(id: Long): MailMessage? = message(id)
+
+    override fun observeContent(id: Long): Flow<MailContent> = snapshotFlow { overrides[id] ?: contents[id] ?: MailContent.Unavailable }
+
+    override fun retryContent(id: Long) {
+        retried += id
+    }
+
+    override fun markRead(id: Long) = setUnread(id, false)
+
+    override fun toggleUnread(id: Long) {
+        message(id)?.let { setUnread(id, !it.unread) }
+    }
+
+    override fun toggleStarred(id: Long) {
+        message(id)?.let { setStarred(id, !it.starred) }
+    }
+
+    override fun viewShown(view: MailView) {
+        shown += view
+    }
+
+    override fun refresh(view: MailView?) {
+        refreshed += view
+    }
+
     fun setUnread(id: Long, unread: Boolean) = change(id) { it.copy(unread = unread) }
 
     fun setStarred(id: Long, starred: Boolean) = change(id) { it.copy(starred = starred) }
+
+    /** Says what a message's content is from now on (being fetched, failed, none); null gives it its own back. */
+    fun setContent(id: Long, content: MailContent?) {
+        if (content == null) overrides.remove(id) else overrides[id] = content
+    }
+
+    /** Says how an account is doing. */
+    fun setAccountState(id: Long, state: AccountState, detail: String = "") {
+        val index = accountList.indexOfFirst { it.id == id }
+        if (index >= 0) accountList[index] = accountList[index].copy(state = state, detail = detail)
+    }
 
     private fun change(id: Long, edit: (MailMessage) -> MailMessage) {
         val index = stored.indexOfFirst { it.id == id }
@@ -108,8 +188,9 @@ class DemoMail(private val now: Instant = Instant.now()) {
             remoteImages: Boolean = false,
             outgoing: Boolean = false,
         ) {
+            val id = nextId++
             list += MailMessage(
-                id = nextId++,
+                id = id,
                 accountId = tree.first { it.id == folder }.accountId,
                 folderId = folder,
                 fromName = from,
@@ -117,14 +198,13 @@ class DemoMail(private val now: Instant = Instant.now()) {
                 to = to,
                 subject = subject,
                 sentAt = now.minus(ago),
-                text = text,
-                html = html,
+                preview = text.trim().replace(WHITESPACE, " ").take(PREVIEW_LENGTH),
                 unread = unread,
                 starred = starred,
-                attachments = attachments,
-                remoteImages = remoteImages,
+                attachmentCount = attachments.size,
                 outgoing = outgoing,
             )
+            contents[id] = MailContent.Ready(text, html, remoteImages, attachments)
         }
 
         // Outlook · Inbox
@@ -275,7 +355,11 @@ class DemoMail(private val now: Instant = Instant.now()) {
         )
 
         // Gmail's "All Mail" holds every message of the account once more
-        list.filter { it.accountId == GMAIL }.forEach { list += it.copy(id = nextId++, folderId = 24) }
+        list.filter { it.accountId == GMAIL }.forEach { message ->
+            val copy = message.copy(id = nextId++, folderId = 24)
+            list += copy
+            contents[copy.id] = contents.getValue(message.id)
+        }
 
         return list.sortedByDescending { it.sentAt }
     }
@@ -288,8 +372,10 @@ class DemoMail(private val now: Instant = Instant.now()) {
         /** Mail in these is not counted as unread or starred in the views over every account. */
         private val OUTSIDE_THE_VIEWS = setOf(FolderRole.All, FolderRole.Junk, FolderRole.Trash)
 
-        /** One set of demo mail for every window of the app. */
-        val shared: DemoMail by lazy { DemoMail() }
+        private val WHITESPACE = Regex("\\s+")
+
+        /** How long a list's preview of a message is here. */
+        private const val PREVIEW_LENGTH = 140
 
         /** Long enough to scroll under the bars on every device. */
         private val TRAVEL_NOTES = """

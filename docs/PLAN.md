@@ -19,6 +19,10 @@ kitten istenenler `docs/KIT-ISTEKLERI.md`'de durur.
 | SDK | `minSdk` 34, `compileSdk` 37, `targetSdk` 36. |
 | Yedekleme | Kapalı (`allowBackup=false`). Posta sunucuda; kimlik bilgileri cihazdan çıkmaz. |
 | Senkron | Eklentisiz temel yol; CONDSTORE varsa hızlandırır; QRESYNC 0.1.0'da yok. |
+| Sunucu kimliği (TLS) | Sertifikanın bağlanılan sunucuya ait olduğunu uygulama kendisi denetler (`ServerIdentity`: RFC 6125, yalnızca SAN, joker tek etiket). Angus Mail bu denetimi platforma "LDAPS" adıyla bırakıyor; Java'nın TLS'i bu adı tanır, Android'inki tanımaz ve denetim sessizce yapılmazdı. Sertifika zincirinin güvenilir bir kökten gelmesi platformun denetimi olarak kalır. |
+| Angus Mail'in kaynak dosyaları | Kitaplığın sağlayıcı listesi, içerik işleyici tablosu ve kod çözücü bulucusu jar içindeki kaynak dosyalarıdır. Android paketlemesine güvenmemek için IMAP deposu doğrudan kurulur, çok parçalı iletinin parçaları ileti yapısından alınır, kod çözücülerin (base64, quoted-printable) sınıfı adıyla verilir (`MailLibrary`). CI, APK'ya giren bu dosyaların listesini günlük dalına yazar (`apk-resources.txt`). |
+| Okuma ve cam | İleti açıkken kabuğun camı kapalıdır: çubuklar, sayfalar ve menüler düz yüzey olur, başka her yerde cam kalır (`shellGlass`). Kit bulanıklık için içeriği her karede birkaç kez çizer; içindeki WebView buna dayanmaz ve kaydırılırken karoları gidip gelir (S24, alpha.1; `docs/KIT-ISTEKLERI.md`, 20). Kit bir görünümü cam kaynağının dışında tutmanın yolunu verince cam iletinin üstüne geri gelir. |
+| WebView'ın hazırlanması | Uygulamanın ilk ekranı çizildikten sonra bir WebView kurulup boş bir sayfa yüklenir ve bırakılır (`WebViewWarmUp`): ilk iletinin açılışı motorun yüklenmesini beklemez. Süre günlüğe yazılır. |
 | Kit eksikleri | Kite yazılır; uygulamada yamanmaz (`docs/KIT-ISTEKLERI.md`). |
 | GitHub | PR'ları CI yeşilken Claude birleştirir. Etiketi ve sürümü Barış açar (Releases'ta `main` üzerinde): Claude'un oturumu etiket ve sürüm açamıyor (12 Kasım 2026'da denendi, ikisi de reddedildi). Force-push ve geçmişi yeniden yazma yok. |
 
@@ -63,11 +67,26 @@ Room 3; şema dışa aktarılır, v1'den itibaren göç testi vardır.
 6. Gövdeler: penceredeki metin parçaları boyut sınırıyla iner, temizlenir, dizine yazılır. Ekler ve
    eski iletiler istenince gelir.
 
-- Tetikleyiciler: IDLE olayı, klasörü açma, elle yenileme, bekleyen işlem sonrası, periyodik iş.
+- **Nasıl yürür (alpha.2):** üç iş, her biri kendi bağlantısında, biri ötekini bekletmez (`MailSync`):
+  - listeler: klasör listesi ve sayıları, gelen kutusu, istenen klasör; her klasörün en yeni 20
+    iletisinin metni de bu sırada iner. Hesap başına aynı anda bir tane.
+  - kalan metinler: liste işi bitince arka planda, klasör klasör, 50'şer; liste yeniden sorulmaz.
+  - açılan iletinin metni: cihazda yoksa sırası beklenmeden.
+  - Klasörün UID'leri anlam değiştirdiyse (UIDVALIDITY) son iki iş hiçbir şey almaz; sıradaki liste işi
+    baştan başlar.
+- Hesabın durumu her işin sonunda yazılır: çalışıyor, yeniden giriş gerekiyor (kimlik hatası ya da
+  saklanan şifre açılamıyor), sunucuya ulaşılamadı, hata (sunucunun yanıtıyla).
+- alpha.2'deki tetikleyiciler: ekranın öne gelmesi ve klasörü açma (son iki dakikada eşitlenmediyse),
+  elle yenileme (F5, Eşitle düğmeleri), hesap ekleme ve yeniden bağlanma.
+- Tetikleyiciler (hedef): IDLE olayı, klasörü açma, elle yenileme, bekleyen işlem sonrası, periyodik iş.
 - İki cihaz: yerel işlem hemen görünür, `pending_op` sırasıyla sunucuya gider; doğrunun kaynağı sunucudur.
 - Gmail: `\All` birleşik görünüme girmez; arşiv Gelen'den çıkarmadır; gönderilen eklenmez.
 - Outlook: gönderilen ve arşiv davranışı ilk gerçek bağlantıda günlükten doğrulanıp tabloya yazılır.
 - Ayar bulma sırası: uygulamadaki sağlayıcı tablosu → ISPDB → MX kaydıyla ISPDB → SRV (RFC 6186) → elle.
+  Dışarıya yalnızca alan adı gider. MX ve SRV yanıtlarını cihazın çözümleyicisi getirir
+  (`DnsResolver.rawQuery`), `:core` okur (`DnsAnswer`).
+- Gmail'in "Yıldızlı" ve "Önemli" klasörleri (`\Flagged`, `\Important`) görünümdür; cihazda tutulmaz.
+  İleti tutmayan kap klasörler de (`[Gmail]`) listelenmez.
 
 ## Bildirim
 
@@ -150,9 +169,10 @@ notlarını ekler.
    kabuğu · sahte veriyle liste ve okuma · WebView deneme ekranı · kısayollar, menü çubuğu, palet ·
    günlük · ekran görüntüsü testleri ve kenar çubuğu testi.
 2. **Hesaplar ve senkron (alpha.2):** IMAP oturumu ve klasör listesi · sağlayıcı tablosu, ISPDB, MX/SRV ·
-   MIME ve HTML temizleme · senkron planlayıcı · Room şeması v1, FTS, göç testi · kimlik kasası ·
+   MIME ve HTML temizleme · senkron planlayıcı · Room şeması v1, FTS · kimlik kasası ·
    hesap ekleme ve "Yeniden bağlan" · gerçek veriyle liste, klasörler, birleşik gelen, rozetler ·
-   güvenli okuma ve uzak görsel şeridi.
+   güvenli okuma ve uzak görsel şeridi. Yalnızca okur: okundu ve yıldız alpha.4'te (bekleyen işlem
+   kuyruğu). Göç testi şemanın ilk değişikliğiyle gelir; o zamana kadar CI şemanın değişmediğini denetler.
 3. **Outlook OAuth2 (alpha.3):** PKCE ve jeton istemcisi · XOAUTH2 ile IMAP/SMTP girişi · tarayıcı
    akışı ve jeton saklama · hesap eklemede Microsoft yolu · Outlook farkları ve hata yönlendirmeleri.
 4. **İleti işlemleri ve ekler (alpha.4):** bekleyen işlem kuyruğu · okundu ve yıldız · arşivle, sil,
@@ -175,8 +195,14 @@ taşıma, bildirimden hızlı yanıt, satırı kaydırma.
 
 ## Riskler ve erken denenecekler
 
-- **WebView ile cam:** kitin bulanıklığı WebView içeriğini kaynak olarak alamayabilir. alpha.1'deki
-  deneme ekranında bakılır; olmazsa okuma ekranında içerik çubukların altına girmez.
+- **WebView ile cam (alpha.1'de görüldü):** beklenen "bulanıklaşmaz" değil, daha kötüsü çıktı: cam açıkken
+  kaydırılan iletinin içeriği saniyede onlarca kez parça parça kaybolup geri geliyor (S24, ekran kaydı,
+  kare kare). alpha.2'den beri ileti açıkken cam kapalı (yukarıdaki karar). **Cihazda doğrulanacak:**
+  titreme bununla bitiyor mu? Bitmezse okuma bölmesinde kaydırmayı WebView'ın kendisine bırakmak gerekir
+  (bugün WebView iletinin boyundadır, sayfayı Compose kaydırır); Ayarlar › Denemeler'deki "WebView
+  katmanı" o durumda ilk bakılacak yer.
+- **Geniş iletiler:** sabit genişlikli bültenler (600 piksellik tablolar) telefonda ekrana sığdırılmıyor,
+  sağı kesik kalıyor. Sığdırma (küçültme ya da tabloyu daraltma) okuma bölmesinin sonraki işi.
 - **IDLE'ın uykuda kalması (S24):** günlük her yenilemeyi, kopmayı ve yeniden bağlanmayı zaman
   damgasıyla yazar; bir gecelik deneme (şarjsız, ekran kapalı) yapılır.
 - **Microsoft:** yeni kişisel hesaplarda SMTP kapalı başlayabiliyor ve kullanıcı ayarı yok; IMAP
@@ -184,13 +210,39 @@ taşıma, bildirimden hızlı yanıt, satırı kaydırma.
   engellenebiliyor: istemci kimliği gelişmiş ayardan değiştirilebilir olacak.
 - **Kenar çubuğunun sıfırlanması:** klasör listesi değişince gezinme grafiği yeniden kurulur ve kabuk
   başlangıç ekranına döner (testle doğrulandı; `docs/KIT-ISTEKLERI.md`, madde 3). Pencerenin gösterdiği
-  her şey bu yüzden ekranların dışında tutulur (`MailUiState`); alpha.2'de klasör listesi değişince
-  açık klasöre uygulama kendisi dönecek.
+  her şey bu yüzden ekranların dışında tutulur (`MailUiState`, `SettingsUiState`); alpha.2'den beri
+  klasör listesi değişince pencere kaldığı ekrana kendisi dönüyor (arada başlangıç ekranı bir an görünür).
 - **Liste → ileti geçişinde listenin durumu:** telefonda ayrıntı açıkken liste bileşimden çıkar;
   kendi hatırladıkları kaybolur (`docs/KIT-ISTEKLERI.md`, madde 9). Aynı çözüm: durum dışarıda.
-- **Room 3, KSP ve AGP 9.4.1 uyumu:** alpha.2'de görülür; yedek Room 2.8.5.
+- **Room 3, KSP ve AGP 9.4.1 uyumu:** alpha.2'de doğrulandı (Room 3.0.3, KSP 2.3.13; FTS4 ve
+  işlemler dâhil). Yedek plana gerek kalmadı.
+- **Jakarta Mail Android'de:** kitaplık ilk kez cihazda alpha.2 ile çalışıyor; testler JVM'de koşuyor.
+  Bilinen iki tuzak (kaynak dosyaları, sunucu kimliği denetimi) kodda kapatıldı; ilk bağlantının
+  günlüğü (Ayarlar › Günlük: "signed in as …" ve sunucunun yetenekleri) bakılacak ilk yer. Bilinmeyenler
+  için: her hata günlüğe neden zinciriyle yazılır, kitaplığın cihazda çalışmayan bir parçası
+  (`LinkageError`) uygulamayı kapatmaz. Cihazda ilk kez çalışan öteki parça anahtar deposudur
+  (`DeviceSecretBox`); şifreyi saklayamazsa hesap eklenmez ve ekran nedenini söyler.
 - **Android 17:** uygulama bellek sınırı (aşan süreç öldürülür); ACTION_SEND'de otomatik URI izni
   Android 18'de kalkıyor, izinler baştan açıkça verilir.
+
+## Bakım notları
+
+Yıllık güncellemede bakılacaklar; 0.1.0'la birlikte ayrı bir belgeye taşınacak.
+
+- **`DnsResolver.getInstance()`** Android 17'de (API 37) eskidi; yerine gelen `DnsResolver(Context, Looper)`
+  yalnızca API 37'den beri var. `minSdk` 37 olunca değiştirilir (`net/DnsLookup.kt`). MX ve SRV sorguları
+  `rawQuery`'ye tür numarasıyla (15, 33) verilir; platform yalnızca A, AAAA ve HTTPS için sabit tanımlar.
+- **Angus Mail yükseltilirken** `SocketFetcher.configureSSLSocket` yeniden okunmalı: sunucu kimliği
+  denetimini uygulama `mail.imap.ssl.hostnameverifier` ile kendisi veriyor ve kitaplığınkini kapatıyor
+  (`ImapConnection.properties`). SMTP eklenince aynı iki ayar `mail.smtp.` önekiyle verilecek.
+- **Compose test kuralı:** `createAndroidComposeRule` (v1) eskidi; v2'ye geçiş testlerde açık eşzamanlama
+  isteyebilir. Kit yükseltilirken birlikte yapılır.
+- **GreenMail** bir parçanın boyutuna parçanın kendi başlık satırlarını da katıyor (gerçek sunucular
+  katmaz); ek boyutu kestirimi bu yüzden ayrı bir testte gerçek sayılarla sınanıyor.
+- **Veritabanı şeması** (`app/schemas`): CI, derlemenin yazdığı şema depodakinden farklıysa durur. Şema
+  değişikliği yeni sürüm numarası, göç ve göç testi demektir.
+- **Microsoft 365 (iş/okul) hesapları:** posta sunucusu Microsoft olan alan adları Outlook satırına
+  eşleniyor; kişisel hesaplardan farkları (SMTP sunucusu, kiracı) denenmedi.
 
 ## Azure kaydı (Outlook için)
 

@@ -53,6 +53,9 @@ fun MailFilterChips(selected: Set<MailFilter>, onToggle: (MailFilter) -> Unit, o
         selected = shown,
         onToggle = { filter -> if (filter == null) onClear() else onToggle(filter) },
         modifier = modifier,
+        // one line in every layout, scrolling sideways where it is short: a second line of chips
+        // would take a row of messages off a narrow list
+        wrap = false,
     )
 }
 
@@ -88,7 +91,7 @@ private fun MessageRow(message: MailMessage, selected: Boolean, date: String, on
     val colors = DeskTheme.colors
     DeskListRow(
         title = counterpartLabel(message),
-        subtitle = previewLine(message),
+        subtitle = previewLine(message, stringResource(R.string.message_no_subject)),
         subtitleColor = if (message.unread) colors.textSecondary else colors.textTertiary,
         leadingContent = { UnreadDot(message.unread) },
         trailingContent = { MessageMarks(message, date) },
@@ -103,10 +106,11 @@ private fun MessageRow(message: MailMessage, selected: Boolean, date: String, on
 private fun counterpartLabel(message: MailMessage): String =
     if (message.outgoing) stringResource(R.string.message_to, message.to) else message.fromName
 
-/** The subject and the first words of the message on one line. */
-private fun previewLine(message: MailMessage): String {
+/** The subject and the first words of the message on one line; [noSubject] stands in for a subject the mail does not have. */
+private fun previewLine(message: MailMessage, noSubject: String): String {
+    val subject = message.subject.ifBlank { noSubject }
     val preview = message.preview
-    return if (preview.isEmpty()) message.subject else message.subject + " — " + preview
+    return if (preview.isEmpty()) subject else "$subject — $preview"
 }
 
 /** The accent dot before an unread message; a read one keeps the space, so the names line up. */
@@ -124,10 +128,10 @@ private fun MessageMarks(message: MailMessage, date: String) {
     Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Text(date, style = DeskTheme.type.caption, color = if (message.unread) colors.accentText else colors.textTertiary, maxLines = 1)
         Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-            if (message.attachments.isNotEmpty()) {
+            if (message.attachmentCount > 0) {
                 Icon(
                     MailIcons.Attachment,
-                    contentDescription = pluralString(R.plurals.message_attachments, message.attachments.size),
+                    contentDescription = pluralString(R.plurals.message_attachments, message.attachmentCount),
                     tint = colors.textTertiary,
                     modifier = Modifier.size(MARK),
                 )
@@ -163,6 +167,7 @@ fun MessageTable(
 ) {
     val dates = rememberDateLabels()
     val toPrefix = stringResource(R.string.message_to, "")
+    val noSubject = stringResource(R.string.message_no_subject)
     // in the order of MessageColumns
     val columns = listOf(
         TableColumn<MailMessage>(UNREAD_MARK, ColumnWidth.Fixed(36.dp), id = "unread") { if (it.unread) UNREAD_MARK else "" },
@@ -171,9 +176,9 @@ fun MessageTable(
         TableColumn<MailMessage>(stringResource(R.string.column_from), ColumnWidth.Fixed(128.dp), id = "from") {
             if (it.outgoing) toPrefix + it.to else it.fromName
         },
-        TableColumn<MailMessage>(stringResource(R.string.column_subject), ColumnWidth.Weight(1f), id = "subject") { previewLine(it) },
+        TableColumn<MailMessage>(stringResource(R.string.column_subject), ColumnWidth.Weight(1f), id = "subject") { previewLine(it, noSubject) },
         TableColumn<MailMessage>(stringResource(R.string.column_attachments), ColumnWidth.Fixed(48.dp), alignEnd = true, mono = true, id = "attachments") {
-            if (it.attachments.isEmpty()) "" else it.attachments.size.toString()
+            if (it.attachmentCount == 0) "" else it.attachmentCount.toString()
         },
         TableColumn<MailMessage>(stringResource(R.string.column_date), ColumnWidth.Fixed(104.dp), alignEnd = true, mono = true, id = "date") {
             dates.short(it.sentAt)

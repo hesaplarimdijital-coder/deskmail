@@ -4,15 +4,31 @@ import android.app.Application
 import android.content.Context
 import android.os.Build
 import com.deskmail.core.log.AppLog
+import com.deskmail.core.provider.Autoconfig
+import com.deskmail.data.AccountSetup
+import com.deskmail.data.AccountStore
+import com.deskmail.data.DeviceSecretBox
+import com.deskmail.data.LiveMail
+import com.deskmail.data.MailSync
+import com.deskmail.db.DeskMailDatabase
 import com.deskmail.log.LogFile
+import com.deskmail.mail.AccountActions
+import com.deskmail.net.DnsLookup
+import com.deskmail.net.HttpsText
 import com.deskmail.settings.AppSettings
+import com.deskmail.ui.mail.WebViewWarmUp
+import kotlinx.coroutines.CoroutineExceptionHandler
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import java.io.File
 import java.time.ZoneId
 import java.util.Locale
 
 /**
  * The process: what every window of the app shares. The log starts with the process, so that
- * whatever goes wrong afterwards is written down; the rest is created when it is first asked for.
+ * whatever goes wrong afterwards is written down; the rest (the database, the mail, the sync) is
+ * created when it is first asked for.
  */
 class DeskMailApplication : Application() {
 
@@ -22,6 +38,33 @@ class DeskMailApplication : Application() {
     private val logFile: LogFile by lazy { LogFile(File(filesDir, "log")) }
 
     val settings: AppSettings by lazy { AppSettings(getSharedPreferences(AppSettings.FILE, Context.MODE_PRIVATE), log) }
+
+    /**
+     * Where what outlives the windows runs: the sync, and the watching of the database. A failure
+     * in it is written to the log and ends that piece of work, not the app.
+     */
+    val background = CoroutineScope(
+        SupervisorJob() + Dispatchers.Main.immediate + CoroutineExceptionHandler { _, error -> log.error("app", "background work failed", error) },
+    )
+
+    /** The accounts and what is kept of their mail. */
+    val database: DeskMailDatabase by lazy { DeskMailDatabase.open(this) }
+
+    private val accountStore: AccountStore by lazy { AccountStore(database, DeviceSecretBox(), log) }
+
+    private val sync: MailSync by lazy { MailSync(database, accountStore, log, background) }
+
+    /** The mail as the windows show it. */
+    val mail: LiveMail by lazy { LiveMail(database, sync, background) }
+
+    /** Adding, reconnecting and removing accounts. */
+    val accounts: AccountActions by lazy {
+        val autoconfig = Autoconfig(fetch = HttpsText::get, mailHosts = DnsLookup::mailHosts, services = DnsLookup::services, log = log)
+        AccountSetup(database, accountStore, sync, autoconfig, log, background, startSync = { mail.sync(it) })
+    }
+
+    /** Has the device's WebView ready before the first message is opened. */
+    val webWarmUp: WebViewWarmUp by lazy { WebViewWarmUp(log) }
 
     override fun onCreate() {
         super.onCreate()

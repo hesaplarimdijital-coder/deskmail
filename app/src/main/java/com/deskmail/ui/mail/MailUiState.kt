@@ -4,6 +4,7 @@ import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -18,8 +19,8 @@ enum class MailFilter { Unread, Starred, Attachments }
 
 /**
  * What one window shows of the mail: per screen (route) the open message, the filters and the
- * list's scroll position; for every screen the table's sort order and the width of the list beside
- * the reader.
+ * list's scroll position; for every screen the table's sort order, the width of the list beside
+ * the reader, and the messages whose remote images the user asked to see.
  *
  * It lives outside the screens on purpose. The shell drops what its screens saved whenever the
  * list of folders changes (docs/KIT-ISTEKLERI.md, 3), and a screen is laid out anew when its window
@@ -29,6 +30,7 @@ enum class MailFilter { Unread, Starred, Attachments }
 class MailUiState(private val settings: AppSettings? = null) {
     private val opened = mutableStateMapOf<String, Long>()
     private val filters = mutableStateMapOf<String, Set<MailFilter>>()
+    private val images = mutableStateMapOf<Long, Boolean>()
     private val lists = HashMap<String, LazyListState>()
     private val shown = HashMap<String, Shown>()
 
@@ -91,12 +93,34 @@ class MailUiState(private val settings: AppSettings? = null) {
 
     fun openedId(route: String): Long? = opened[route]
 
-    fun open(route: String, message: MailMessage) {
-        opened[route] = message.id
+    fun open(route: String, id: Long) {
+        opened[route] = id
     }
 
     fun close(route: String) {
         opened.remove(route)
+    }
+
+    /**
+     * How many message bodies this window is drawing with a WebView right now. Until the last of
+     * them has left the screen the shell's bars are not blurred glass ([shellGlass]).
+     */
+    var webBodies by mutableIntStateOf(0)
+        private set
+
+    fun webBodyShown() {
+        webBodies++
+    }
+
+    fun webBodyGone() {
+        if (webBodies > 0) webBodies--
+    }
+
+    /** Whether the images a message asks for from the network are loaded: only after the reader said so, and until the window closes. */
+    fun showsImages(id: Long): Boolean = images[id] == true
+
+    fun showImages(id: Long) {
+        images[id] = true
     }
 
     fun filters(route: String): Set<MailFilter> = filters[route] ?: emptySet()
@@ -169,7 +193,7 @@ fun filterMessages(messages: List<MailMessage>, filters: Set<MailFilter>): List<
             when (filter) {
                 MailFilter.Unread -> message.unread
                 MailFilter.Starred -> message.starred
-                MailFilter.Attachments -> message.attachments.isNotEmpty()
+                MailFilter.Attachments -> message.attachmentCount > 0
             }
         }
     }
@@ -181,7 +205,7 @@ fun sortMessages(messages: List<MailMessage>, sort: TableSort): List<MailMessage
         MessageColumns.STAR -> messages.sortedBy { !it.starred }
         MessageColumns.FROM -> messages.sortedBy { counterpart(it).lowercase() }
         MessageColumns.SUBJECT -> messages.sortedBy { it.subject.lowercase() }
-        MessageColumns.ATTACHMENTS -> messages.sortedBy { -it.attachments.size }
+        MessageColumns.ATTACHMENTS -> messages.sortedBy { -it.attachmentCount }
         else -> messages.sortedBy { it.sentAt }
     }
     return if (sort.ascending) sorted else sorted.reversed()

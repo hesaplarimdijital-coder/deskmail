@@ -22,7 +22,13 @@ kotlin {
 }
 
 dependencies {
+    // Kept out of :core's own API: the app sees mail through the types of this module.
+    implementation(libs.angus.mail)
+    implementation(libs.jsoup)
+    implementation(libs.coroutines.core)
+
     testImplementation(libs.junit)
+    testImplementation(libs.greenmail)
 }
 
 tasks.test {

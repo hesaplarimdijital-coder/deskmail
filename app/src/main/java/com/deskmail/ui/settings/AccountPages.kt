@@ -1,0 +1,474 @@
+package com.deskmail.ui.settings
+
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.dp
+import com.deskmail.R
+import com.deskmail.core.mail.MailException
+import com.deskmail.core.net.Security
+import com.deskmail.core.net.ServerAddress
+import com.deskmail.core.provider.AuthKind
+import com.deskmail.core.provider.Provider
+import com.deskmail.mail.AccountActions
+import com.deskmail.mail.AccountState
+import com.deskmail.mail.MailAccount
+import com.deskmail.mail.SetupPlan
+import com.deskmail.mail.SetupResult
+import desktopkit.components.BannerTone
+import desktopkit.components.DeskButton
+import desktopkit.components.DeskDialog
+import desktopkit.components.DeskIcons
+import desktopkit.components.DeskProgressBar
+import desktopkit.components.DeskTextField
+import desktopkit.components.KeyValueRow
+import desktopkit.components.SegmentedChoice
+import desktopkit.components.SettingRow
+import desktopkit.components.StatusBanner
+import desktopkit.screens.PageHeader
+import desktopkit.settings.SettingsSection
+import desktopkit.shell.CompactTopBar
+import desktopkit.shell.WidthClass
+import desktopkit.shell.currentWidthClass
+import desktopkit.shell.rememberShellContentPadding
+import desktopkit.theme.DeskTheme
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
+
+/** Names the tests find the fields of the account pages by. */
+object AccountTags {
+    const val ADDRESS = "account-address"
+    const val PASSWORD = "account-password"
+}
+
+/**
+ * The frame of a page that opens over the settings: its title and Back in the phone's top bar, a
+ * header with Back on wider windows, and the content scrolling beneath the bars.
+ */
+@Composable
+internal fun SettingsPageFrame(title: String, onClose: () -> Unit, content: @Composable ColumnScope.() -> Unit) {
+    val compact = currentWidthClass() == WidthClass.Compact
+    CompactTopBar(title = title, onBack = onClose, showSearch = false)
+    val shell = rememberShellContentPadding()
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(shell)) {
+        PageHeader(title) {
+            if (!compact) DeskButton(stringResource(desktopkit.R.string.dk_back), onClose, icon = DeskIcons.ArrowLeft)
+        }
+        content()
+        Spacer(Modifier.height(DeskTheme.dimens.gapXl))
+    }
+}
+
+/**
+ * "Add an account": the address, then what the search for its servers calls for, then the
+ * sign-in ([form] holds where the user stands and what was typed).
+ *
+ * @param scope where the servers are asked; it must outlive this page, which the shell takes
+ *   away the moment the new account's folders arrive.
+ * @param onAdded the account was added, by its address.
+ */
+@Composable
+fun AccountSetupPage(form: AccountSetupForm, actions: AccountActions, scope: CoroutineScope, onClose: () -> Unit, onAdded: (String) -> Unit) {
+    val lookUp: () -> Unit = { scope.launch { form.lookUp(actions) } }
+    val add: () -> Unit = {
+        scope.launch {
+            if (form.add(actions) != null) onAdded(form.address.trim())
+        }
+    }
+    SettingsPageFrame(stringResource(R.string.account_add), onClose) {
+        when (val step = form.step) {
+            AccountSetupForm.Step.Address -> AddressStep(form, lookUp)
+            is AccountSetupForm.Step.Password -> PasswordStep(form, step.plan, add)
+            is AccountSetupForm.Step.NotYet -> NotYetStep(form, step.provider)
+            AccountSetupForm.Step.Manual -> ManualStep(form, add)
+        }
+    }
+}
+
+@Composable
+private fun AddressStep(form: AccountSetupForm, onContinue: () -> Unit) {
+    val dimens = DeskTheme.dimens
+    SettingsSection(stringResource(R.string.setup_address)) {
+        Note(stringResource(R.string.setup_address_note))
+        DeskTextField(
+            value = form.address,
+            onValueChange = {
+                form.address = it
+                form.edited()
+            },
+            modifier = Modifier.fillMaxWidth().padding(top = dimens.gapM).testTag(AccountTags.ADDRESS),
+            hint = stringResource(R.string.setup_address_hint),
+            error = form.problem != null,
+            enabled = !form.busy,
+            keyboardType = KeyboardType.Email,
+            imeAction = ImeAction.Go,
+            onImeAction = onContinue,
+        )
+        Problem(form)
+        Waiting(form.busy)
+        DeskButton(
+            stringResource(R.string.setup_continue),
+            onContinue,
+            Modifier.padding(top = dimens.gapM),
+            primary = true,
+            enabled = !form.busy && form.address.isNotBlank(),
+        )
+    }
+}
+
+@Composable
+private fun PasswordStep(form: AccountSetupForm, plan: SetupPlan.Found, onAdd: () -> Unit) {
+    val dimens = DeskTheme.dimens
+    val provider = plan.provider
+    val appPassword = plan.settings.auth == AuthKind.AppPassword
+    SettingsSection(provider?.name ?: stringResource(R.string.setup_found)) {
+        KeyValueRow(stringResource(R.string.account_address), form.address.trim(), selectable = true)
+        KeyValueRow(stringResource(R.string.setup_receiving), serverLabel(plan.settings.imap), mono = true)
+        KeyValueRow(stringResource(R.string.setup_sending), serverLabel(plan.settings.smtp), mono = true)
+        Note(stringResource(if (appPassword) R.string.setup_gmail_note else R.string.setup_password_note), Modifier.padding(top = dimens.gapS))
+        // the page where such a password is made, one tap away: made there, copied, pasted here
+        val page = provider?.appPasswordPage
+        if (page != null) {
+            val browser = LocalUriHandler.current
+            DeskButton(
+                stringResource(R.string.setup_open_app_passwords),
+                { runCatching { browser.openUri(page) } },
+                Modifier.padding(top = dimens.gapS),
+                icon = DeskIcons.OpenWindow,
+            )
+        }
+        PasswordField(form, stringResource(if (appPassword) R.string.setup_app_password else R.string.setup_password), onAdd)
+        Problem(form, appPassword)
+        Waiting(form.busy)
+        Row(Modifier.padding(top = dimens.gapM), horizontalArrangement = Arrangement.spacedBy(dimens.gapS)) {
+            DeskButton(stringResource(R.string.setup_add), onAdd, primary = true, enabled = !form.busy && form.password.isNotEmpty())
+            DeskButton(stringResource(R.string.setup_other_address), form::startOver, enabled = !form.busy)
+        }
+        // a provider the app knows by heart has no other servers to offer
+        if (provider == null) {
+            DeskButton(
+                stringResource(R.string.setup_manual_switch),
+                { form.byHand(plan.settings) },
+                Modifier.padding(top = dimens.gapS),
+                enabled = !form.busy,
+            )
+        }
+    }
+}
+
+@Composable
+private fun NotYetStep(form: AccountSetupForm, provider: Provider) {
+    SettingsSection(provider.name) {
+        StatusBanner(tone = BannerTone.Info, text = stringResource(R.string.setup_outlook_note))
+        DeskButton(stringResource(R.string.setup_other_address), form::startOver, Modifier.padding(top = DeskTheme.dimens.gapM))
+    }
+}
+
+@Composable
+private fun ManualStep(form: AccountSetupForm, onAdd: () -> Unit) {
+    val dimens = DeskTheme.dimens
+    val servers = form.servers
+    val security = listOf(Security.Tls to stringResource(R.string.security_tls), Security.StartTls to stringResource(R.string.security_starttls))
+    SettingsSection(stringResource(R.string.setup_manual_title)) {
+        KeyValueRow(stringResource(R.string.account_address), form.address.trim(), selectable = true)
+        Note(stringResource(R.string.setup_manual_note), Modifier.padding(top = dimens.gapS))
+
+        ServerFields(
+            hostLabel = stringResource(R.string.setup_imap_host),
+            host = servers.imapHost,
+            onHost = {
+                servers.imapHost = it
+                form.edited()
+            },
+            port = servers.imapPort,
+            onPort = {
+                servers.imapPort = it
+                form.edited()
+            },
+            enabled = !form.busy,
+        )
+        SettingRow(stringResource(R.string.setup_security)) {
+            SegmentedChoice(options = security, selected = servers.imapSecurity, onSelect = servers::chooseImapSecurity)
+        }
+        ServerFields(
+            hostLabel = stringResource(R.string.setup_smtp_host),
+            host = servers.smtpHost,
+            onHost = {
+                servers.smtpHost = it
+                form.edited()
+            },
+            port = servers.smtpPort,
+            onPort = {
+                servers.smtpPort = it
+                form.edited()
+            },
+            enabled = !form.busy,
+        )
+        SettingRow(stringResource(R.string.setup_security)) {
+            SegmentedChoice(options = security, selected = servers.smtpSecurity, onSelect = servers::chooseSmtpSecurity)
+        }
+        DeskTextField(
+            value = servers.username,
+            onValueChange = {
+                servers.username = it
+                form.edited()
+            },
+            modifier = Modifier.fillMaxWidth().padding(top = dimens.gapM),
+            label = stringResource(R.string.setup_username),
+            enabled = !form.busy,
+            keyboardType = KeyboardType.Email,
+            imeAction = ImeAction.Next,
+        )
+        PasswordField(form, stringResource(R.string.setup_password), onAdd)
+        Problem(form)
+        Waiting(form.busy)
+        Row(Modifier.padding(top = dimens.gapM), horizontalArrangement = Arrangement.spacedBy(dimens.gapS)) {
+            DeskButton(stringResource(R.string.setup_add), onAdd, primary = true, enabled = !form.busy && form.password.isNotEmpty())
+            DeskButton(stringResource(R.string.setup_other_address), form::startOver, enabled = !form.busy)
+        }
+    }
+}
+
+/** A server's name with its port beside it. */
+@Composable
+private fun ServerFields(hostLabel: String, host: String, onHost: (String) -> Unit, port: String, onPort: (String) -> Unit, enabled: Boolean) {
+    val dimens = DeskTheme.dimens
+    Row(Modifier.fillMaxWidth().padding(top = dimens.gapM), horizontalArrangement = Arrangement.spacedBy(dimens.gapS), verticalAlignment = Alignment.Bottom) {
+        DeskTextField(
+            value = host,
+            onValueChange = onHost,
+            modifier = Modifier.weight(1f),
+            label = hostLabel,
+            enabled = enabled,
+            mono = true,
+            keyboardType = KeyboardType.Uri,
+            imeAction = ImeAction.Next,
+        )
+        DeskTextField(
+            value = port,
+            onValueChange = { typed -> onPort(typed.filter { it.isDigit() }.take(5)) },
+            modifier = Modifier.width(96.dp),
+            label = stringResource(R.string.setup_port),
+            enabled = enabled,
+            mono = true,
+            keyboardType = KeyboardType.Number,
+            imeAction = ImeAction.Next,
+        )
+    }
+}
+
+@Composable
+private fun PasswordField(form: AccountSetupForm, label: String, onDone: () -> Unit) {
+    DeskTextField(
+        value = form.password,
+        onValueChange = {
+            form.password = it
+            form.edited()
+        },
+        modifier = Modifier.fillMaxWidth().padding(top = DeskTheme.dimens.gapM).testTag(AccountTags.PASSWORD),
+        label = label,
+        password = true,
+        error = form.problem is AccountSetupForm.Problem.Failed,
+        enabled = !form.busy,
+        keyboardType = KeyboardType.Password,
+        imeAction = ImeAction.Done,
+        onImeAction = onDone,
+    )
+}
+
+/** What stood in the way at the last try, in words that say what to do about it. */
+@Composable
+private fun Problem(form: AccountSetupForm, appPassword: Boolean = false) {
+    val problem = form.problem ?: return
+    val text = when (problem) {
+        AccountSetupForm.Problem.NotAnAddress -> stringResource(R.string.setup_not_address)
+        AccountSetupForm.Problem.Duplicate -> stringResource(R.string.setup_duplicate)
+        AccountSetupForm.Problem.Servers -> stringResource(R.string.setup_servers_incomplete)
+        is AccountSetupForm.Problem.Failed -> failureText(problem.kind, problem.detail, appPassword)
+    }
+    StatusBanner(tone = BannerTone.Error, text = text, modifier = Modifier.padding(top = DeskTheme.dimens.gapM))
+}
+
+/** Why a sign-in did not work, and under it what the server itself said. */
+@Composable
+internal fun failureText(kind: MailException.Kind, detail: String, appPassword: Boolean): String {
+    val summary = stringResource(
+        when (kind) {
+            MailException.Kind.Authentication -> if (appPassword) R.string.setup_failed_login_app_password else R.string.setup_failed_login
+            MailException.Kind.Network -> R.string.setup_failed_network
+            MailException.Kind.Security -> R.string.setup_failed_security
+            MailException.Kind.Server -> R.string.setup_failed_server
+        },
+    )
+    return if (detail.isBlank()) summary else summary + "\n" + stringResource(R.string.setup_server_said, detail.take(DETAIL_LENGTH))
+}
+
+/** A server's own words are shown up to this length. */
+private const val DETAIL_LENGTH = 300
+
+@Composable
+private fun Waiting(busy: Boolean) {
+    if (busy) DeskProgressBar(fraction = null, modifier = Modifier.padding(top = DeskTheme.dimens.gapM))
+}
+
+@Composable
+private fun Note(text: String, modifier: Modifier = Modifier) {
+    Text(text, style = DeskTheme.type.labelSmall, color = DeskTheme.colors.textTertiary, modifier = modifier)
+}
+
+@Composable
+private fun serverLabel(server: ServerAddress): String = stringResource(R.string.setup_server, server.host, server.port)
+
+/** How an account is doing, in a few words. */
+@Composable
+internal fun stateLabel(state: AccountState): String = stringResource(
+    when (state) {
+        AccountState.Ok -> R.string.account_state_ok
+        AccountState.NeedsLogin -> R.string.account_state_login
+        AccountState.Unreachable -> R.string.account_state_unreachable
+        AccountState.Error -> R.string.account_state_error
+    },
+)
+
+/**
+ * One account: how it is doing, syncing it now, signing in again with another password, and
+ * taking it off the device.
+ *
+ * @param scope where the server is asked; as for [AccountSetupPage], it outlives the page.
+ * @param onSync asks the servers for what is new.
+ * @param onRemoved the account is gone, by its name.
+ */
+@Composable
+fun AccountPage(
+    account: MailAccount,
+    actions: AccountActions,
+    scope: CoroutineScope,
+    onClose: () -> Unit,
+    onSync: () -> Unit,
+    onNotify: (String) -> Unit,
+    onRemoved: (String) -> Unit,
+) {
+    val dimens = DeskTheme.dimens
+    val colors = DeskTheme.colors
+    var password by remember(account.id) { mutableStateOf("") }
+    var busy by remember(account.id) { mutableStateOf(false) }
+    var failure by remember(account.id) { mutableStateOf<SetupResult.Failed?>(null) }
+    var confirmRemove by remember(account.id) { mutableStateOf(false) }
+    val reconnected = stringResource(R.string.account_reconnected)
+    val reconnect: () -> Unit = {
+        if (!busy && password.isNotEmpty()) {
+            busy = true
+            failure = null
+            scope.launch {
+                try {
+                    when (val result = actions.reconnect(account.id, password)) {
+                        is SetupResult.Failed -> failure = result
+                        else -> {
+                            password = ""
+                            onNotify(reconnected)
+                        }
+                    }
+                } finally {
+                    busy = false
+                }
+            }
+        }
+    }
+    SettingsPageFrame(account.name, onClose) {
+        SettingsSection(stringResource(R.string.detail_account)) {
+            KeyValueRow(stringResource(R.string.account_address), account.address, selectable = true)
+            KeyValueRow(stringResource(R.string.account_server), account.server, mono = true)
+            KeyValueRow(
+                stringResource(R.string.account_state),
+                stateLabel(account.state),
+                valueColor = if (account.state == AccountState.Ok) colors.text else colors.warning,
+            )
+            if (account.detail.isNotBlank()) {
+                Note(stringResource(R.string.setup_server_said, account.detail.take(DETAIL_LENGTH)))
+            }
+            DeskButton(stringResource(R.string.account_sync_now), onSync, Modifier.padding(top = dimens.gapM))
+        }
+        SettingsSection(stringResource(R.string.account_action_reconnect)) {
+            Note(stringResource(R.string.account_reconnect_note))
+            DeskTextField(
+                value = password,
+                onValueChange = {
+                    password = it
+                    failure = null
+                },
+                modifier = Modifier.fillMaxWidth().padding(top = dimens.gapM).testTag(AccountTags.PASSWORD),
+                label = stringResource(R.string.setup_password),
+                password = true,
+                error = failure != null,
+                enabled = !busy,
+                keyboardType = KeyboardType.Password,
+                imeAction = ImeAction.Done,
+                onImeAction = reconnect,
+            )
+            failure?.let { failed ->
+                StatusBanner(
+                    tone = BannerTone.Error,
+                    text = failureText(failed.kind, failed.detail, appPassword = false),
+                    modifier = Modifier.padding(top = dimens.gapM),
+                )
+            }
+            Waiting(busy)
+            DeskButton(
+                stringResource(R.string.account_action_reconnect),
+                reconnect,
+                Modifier.padding(top = dimens.gapM),
+                primary = true,
+                enabled = !busy && password.isNotEmpty(),
+            )
+        }
+        SettingsSection(stringResource(R.string.account_remove)) {
+            Note(stringResource(R.string.account_remove_note))
+            DeskButton(stringResource(R.string.account_remove), { confirmRemove = true }, Modifier.padding(top = dimens.gapM), icon = DeskIcons.Delete)
+        }
+    }
+    if (confirmRemove) {
+        DeskDialog(
+            onDismiss = { confirmRemove = false },
+            title = stringResource(R.string.account_remove_title, account.name),
+            actions = {
+                DeskButton(stringResource(R.string.action_cancel), { confirmRemove = false })
+                DeskButton(
+                    stringResource(R.string.account_remove),
+                    {
+                        confirmRemove = false
+                        val name = account.name
+                        scope.launch {
+                            actions.remove(account.id)
+                            onRemoved(name)
+                        }
+                    },
+                    primary = true,
+                )
+            },
+        ) {
+            Text(stringResource(R.string.account_remove_note), style = DeskTheme.type.body, color = colors.text)
+        }
+    }
+}

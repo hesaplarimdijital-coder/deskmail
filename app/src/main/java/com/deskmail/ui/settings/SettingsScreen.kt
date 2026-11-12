@@ -8,15 +8,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -24,6 +18,9 @@ import androidx.core.content.FileProvider
 import com.deskmail.R
 import com.deskmail.core.log.AppLog
 import com.deskmail.deskMail
+import com.deskmail.mail.AccountActions
+import com.deskmail.mail.MailAccount
+import com.deskmail.mail.MailSource
 import com.deskmail.settings.AppSettings
 import com.deskmail.settings.WebLayer
 import com.deskmail.ui.MailIcons
@@ -31,6 +28,7 @@ import com.deskmail.ui.MailScope
 import com.deskmail.ui.shortcuts
 import desktopkit.appResources
 import desktopkit.components.DeskButton
+import desktopkit.components.DeskIcons
 import desktopkit.components.KeyValueRow
 import desktopkit.components.SegmentedChoice
 import desktopkit.components.SettingRow
@@ -45,63 +43,106 @@ import desktopkit.settings.ShortcutListSection
 import desktopkit.shell.DetailTransition
 import desktopkit.shell.rememberShellContentPadding
 import desktopkit.theme.DeskTheme
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 
 /**
- * Settings: the kit's own sections (theme and accent, density, the shortcuts), then the app's.
- * The log opens over them, as a message opens over its list.
+ * Settings: the accounts, the kit's own sections (theme and accent, density, the shortcuts), then
+ * the app's. The log and the account pages open over them, as a message opens over its list.
  *
+ * @param mail where the accounts are listed from.
+ * @param accounts adds, reconnects and removes accounts; null where there is nothing to do so with.
+ * @param ui which page is open and what was typed; the window keeps it.
+ * @param scope where the servers are asked; it outlives this screen.
  * @param onNotify shows a short notice (what was copied, what could not be shared).
+ * @param onAccountAdded an account was added, by its address: its mail is about to arrive.
  */
 @Composable
-fun SettingsScreen(prefs: DeskPreferences, settings: AppSettings, log: AppLog, onNotify: (String) -> Unit) {
-    var logOpen by rememberSaveable { mutableStateOf(false) }
+fun SettingsScreen(
+    prefs: DeskPreferences,
+    settings: AppSettings,
+    log: AppLog,
+    mail: MailSource,
+    accounts: AccountActions?,
+    ui: SettingsUiState,
+    scope: CoroutineScope,
+    onNotify: (String) -> Unit,
+    onAccountAdded: (String) -> Unit,
+) {
     val context = LocalContext.current
     val resources = appResources()
-    val scope = rememberCoroutineScope()
-    // Kept here, outside the transition: the list leaves the composition while the log covers it,
-    // and what it remembered itself would be gone on the way back (docs/KIT-ISTEKLERI.md, 9).
-    val list = rememberLazyListState()
+    // an account's page only while the account is there: removed (here or in another window), its page closes
+    val page = ui.page?.takeIf { it !is SettingsPage.Account || mail.account(it.id) != null }
     DetailTransition(
-        detail = if (logOpen) LogPage else null,
-        onBack = { logOpen = false },
-        list = { SettingsList(prefs, settings, list, onOpenLog = { logOpen = true }) },
+        detail = page,
+        onBack = ui::close,
+        list = {
+            SettingsList(
+                prefs = prefs,
+                settings = settings,
+                accounts = mail.accounts,
+                canAdd = accounts != null,
+                state = ui.list,
+                onOpenLog = { ui.page = SettingsPage.Log },
+                onOpenAccount = { ui.page = SettingsPage.Account(it.id) },
+                onAddAccount = ui::addAccount,
+            )
+        },
         sharedElements = false,
-    ) {
-        LogScreen(
-            log = log,
-            onClose = { logOpen = false },
-            onCopy = { lines ->
-                // the end of the log: what fits a message in a chat
-                val latest = lines.takeLast(COPIED_LINES)
-                val clipboard = context.getSystemService(ClipboardManager::class.java)
-                clipboard.setPrimaryClip(ClipData.newPlainText(resources.getString(R.string.log_share_title), latest.joinToString("\n")))
-                onNotify(resources.getQuantityString(R.plurals.log_copied, latest.size, latest.size))
-            },
-            onShare = {
-                scope.launch {
-                    try {
-                        val file = withContext(Dispatchers.IO) { context.deskMail.exportLog() }
-                        shareLog(context, file, resources.getString(R.string.log_share_title))
-                    } catch (e: Exception) {
-                        log.warn("log", "the log could not be shared", e)
-                        onNotify(resources.getString(R.string.log_share_failed))
+    ) { open ->
+        when (open) {
+            SettingsPage.Log -> LogScreen(
+                log = log,
+                onClose = ui::close,
+                onCopy = { lines ->
+                    // the end of the log: what fits a message in a chat
+                    val latest = lines.takeLast(COPIED_LINES)
+                    val clipboard = context.getSystemService(ClipboardManager::class.java)
+                    clipboard.setPrimaryClip(ClipData.newPlainText(resources.getString(R.string.log_share_title), latest.joinToString("\n")))
+                    onNotify(resources.getQuantityString(R.plurals.log_copied, latest.size, latest.size))
+                },
+                onShare = {
+                    scope.launch {
+                        try {
+                            val file = withContext(Dispatchers.IO) { context.deskMail.exportLog() }
+                            shareLog(context, file, resources.getString(R.string.log_share_title))
+                        } catch (e: Exception) {
+                            log.warn("log", "the log could not be shared", e)
+                            onNotify(resources.getString(R.string.log_share_failed))
+                        }
                     }
+                },
+                onClear = {
+                    context.deskMail.clearLog()
+                    onNotify(resources.getString(R.string.log_cleared))
+                },
+            )
+            SettingsPage.AddAccount -> if (accounts != null) {
+                AccountSetupPage(ui.setup, accounts, scope, onClose = ui::close, onAdded = onAccountAdded)
+            }
+            is SettingsPage.Account -> {
+                val account = mail.account(open.id)
+                if (account != null && accounts != null) {
+                    AccountPage(
+                        account = account,
+                        actions = accounts,
+                        scope = scope,
+                        onClose = ui::close,
+                        onSync = { mail.refresh() },
+                        onNotify = onNotify,
+                        onRemoved = { name ->
+                            ui.close()
+                            onNotify(resources.getString(R.string.account_removed, name))
+                        },
+                    )
                 }
-            },
-            onClear = {
-                context.deskMail.clearLog()
-                onNotify(resources.getString(R.string.log_cleared))
-            },
-        )
+            }
+        }
     }
 }
-
-/** The log as the settings' detail page. */
-private object LogPage
 
 /** How many lines "Copy" takes from the end of the log. */
 private const val COPIED_LINES = 400
@@ -120,10 +161,20 @@ private fun shareLog(context: Context, file: File, title: String) {
 }
 
 @Composable
-private fun SettingsList(prefs: DeskPreferences, settings: AppSettings, state: LazyListState, onOpenLog: () -> Unit) {
+private fun SettingsList(
+    prefs: DeskPreferences,
+    settings: AppSettings,
+    accounts: List<MailAccount>,
+    canAdd: Boolean,
+    state: LazyListState,
+    onOpenLog: () -> Unit,
+    onOpenAccount: (MailAccount) -> Unit,
+    onAddAccount: () -> Unit,
+) {
     val keyboard = showShortcutHints()
     LazyColumn(Modifier.fillMaxSize(), state = state, contentPadding = rememberShellContentPadding()) {
         item(key = "header") { PageHeader(stringResource(desktopkit.R.string.dk_settings)) }
+        item(key = "accounts") { AccountsSection(accounts, canAdd, onOpenAccount, onAddAccount) }
         item(key = "appearance") { AppearanceSection(prefs) }
         item(key = "input") { InputSection(prefs) }
         // the list of shortcuts only where there is a keyboard to use them with
@@ -135,6 +186,24 @@ private fun SettingsList(prefs: DeskPreferences, settings: AppSettings, state: L
         item(key = "experiments") { ExperimentsSection(settings) }
         item(key = "log") { LogSection(onOpenLog) }
         item(key = "about") { AboutSection() }
+    }
+}
+
+/** The accounts with how each is doing, the way to each one's page, and "Add an account". */
+@Composable
+private fun AccountsSection(accounts: List<MailAccount>, canAdd: Boolean, onOpen: (MailAccount) -> Unit, onAdd: () -> Unit) {
+    SettingsSection(stringResource(R.string.settings_accounts)) {
+        if (accounts.isEmpty()) {
+            Text(stringResource(R.string.settings_accounts_empty), style = DeskTheme.type.labelSmall, color = DeskTheme.colors.textTertiary)
+        }
+        accounts.forEach { account ->
+            SettingRow(account.name, subtitle = stringResource(R.string.account_summary, account.address, stateLabel(account.state))) {
+                DeskButton(stringResource(R.string.account_manage), { onOpen(account) })
+            }
+        }
+        if (canAdd) {
+            DeskButton(stringResource(R.string.account_add), onAdd, Modifier.padding(top = DeskTheme.dimens.gapS), icon = DeskIcons.Plus, primary = accounts.isEmpty())
+        }
     }
 }
 

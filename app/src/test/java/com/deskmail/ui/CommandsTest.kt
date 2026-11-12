@@ -51,7 +51,7 @@ class CommandsTest {
                 transitions = ShellTransitions.None,
                 palette = CommandPaletteState(),
                 commands = commands,
-                messageBody = { message, modifier -> PlainMessageBody(message, modifier) },
+                messageBody = { content, _, modifier -> PlainMessageBody(content, modifier) },
             )
         }
         compose.waitForIdle()
@@ -106,6 +106,13 @@ class CommandsTest {
 
         assertTrue(perform(Commands.CLOSE))
         assertNull(ui.openedId(Routes.INBOX))
+    }
+
+    @Test
+    fun syncAsksTheServersWithTheScreenInFront() {
+        launch()
+        assertTrue(perform(Commands.REFRESH))
+        assertEquals(listOf<MailView?>(MailView.Inbox), mail.refreshed)
     }
 
     @Test
