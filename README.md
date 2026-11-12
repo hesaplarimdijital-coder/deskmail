@@ -4,21 +4,47 @@ Kişisel kullanım için Android e-posta uygulaması: telefon, tablet ve Samsung
 e-posta yapan bir istemci. Arayüzün tamamı [desktop-kit](https://github.com/hesaplarimdijital-coder/desktop-kit)
 ile çizilir. Play'de değildir; APK olarak kurulur.
 
-> **Durum:** 0.1.0'a giden ön sürümler. `0.1.0-alpha.1` iskelettir: kabuk, düzenler, okuma bölmesi,
-> kısayollar ve günlük **uydurma postayla** çalışır. Henüz hesap eklenmiyor, posta alınmıyor ve
-> gönderilmiyor. Sıradaki adımlar `docs/PLAN.md`'de, yapılanlar `CHANGELOG.md`'de.
+> **Durum:** 0.1.0'a giden ön sürümler. `0.1.0-alpha.2` gerçek postayı **okur**: hesap eklenir (Gmail
+> uygulama şifresiyle; başka sağlayıcılar şifreyle), klasörler ve iletiler eşitlenir, iletiler güvenli
+> biçimde gösterilir. Okundu/yıldız, taşıma, silme, yazma, arama ve bildirim henüz yok; Outlook hesapları
+> bir sonraki ön sürümde. Sıradaki adımlar `docs/PLAN.md`'de, yapılanlar `CHANGELOG.md`'de.
 
 ## Kurulum ve güncelleme
 
 Her sürümün imzalı APK'sı [Releases](https://github.com/hesaplarimdijital-coder/deskmail/releases)
-sayfasındadır (`DeskMail-<sürüm>.apk`). Güncellemeleri izlemek için
-[Obtainium](https://github.com/ImranR98/Obtainium):
+sayfasındadır (`DeskMail-<sürüm>.apk`).
 
-1. Obtainium'da **Uygulama ekle** › kaynak adresi: `https://github.com/hesaplarimdijital-coder/deskmail`
-2. **Ön sürümleri dahil et** açık olsun (0.1.0'a kadar bütün sürümler ön sürümdür).
-3. Ekle, sonra kur. Yeni sürüm çıkınca Obtainium haber verir; güncelleme eskisinin üstüne kurulur.
+**Elle:** telefonda ya da tablette sürüm sayfasını aç, APK'ya dokunup indir, indirileni aç. Android "bu
+kaynaktan yüklemeye izin ver" diye sorarsa tarayıcıya izin ver. Yeni sürüm eskisinin üstüne kurulur.
 
-Elle kurmak için APK'yı indirip açmak yeter. Bütün sürümler aynı anahtarla imzalıdır (aşağıda).
+**Obtainium ile (isteğe bağlı):** [Obtainium](https://github.com/ImranR98/Obtainium), uygulamaları Play
+Store yerine doğrudan sürüm sayfasından kuran ve yeni sürüm çıkınca haber veren açık kaynaklı bir Android
+uygulamasıdır; APK'yı her seferinde elle indirmeyi gereksiz kılar.
+
+1. Obtainium'u kendi Releases sayfasından kur.
+2. **Add App** › adres: `https://github.com/hesaplarimdijital-coder/deskmail`
+3. **Include Pre-releases** açık olsun (0.1.0'a kadar bütün sürümler ön sürümdür), sonra **Add** ve **Install**.
+
+Bütün sürümler aynı anahtarla imzalıdır (aşağıda); hangi yolla kurulursa kurulsun güncelleme eskisinin
+üstüne gelir, hesaplar ve ayarlar kalır.
+
+## Hesap ekleme
+
+Ayarlar › Hesaplar › **Hesap ekle**. Adresi yazınca uygulama sunucuları kendisi bulur; bulamazsa elle girilir.
+
+- **Gmail:** hesap şifresi kabul edilmez, **uygulama şifresi** gerekir. Google hesabında iki adımlı
+  doğrulama açıkken <https://myaccount.google.com/apppasswords> adresinde üretilir (16 harf); ekrandaki
+  düğme o sayfayı açar. Gmail'de IMAP her zaman açıktır, ayrıca bir ayar gerekmez. Uygulama şifresi
+  seçeneği iş ve okul hesaplarında, Gelişmiş Koruma'da ve yalnızca güvenlik anahtarıyla doğrulanan
+  hesaplarda görünmeyebilir. Google bir gün uygulama şifrelerini kapatırsa yedek yol Google OAuth'tur;
+  planı 0.1.0 belgeleriyle yazılacak.
+- **Outlook, Hotmail, Live:** Microsoft'ta tarayıcıdan giriş ister (OAuth2); `0.1.0-alpha.3` ile gelir.
+- **Diğerleri:** sağlayıcının verdiği şifre ya da uygulama şifresi. Sunucular Thunderbird'ün sağlayıcı
+  veritabanından ya da alan adının DNS kayıtlarından bulunur; dışarıya yalnızca adresin @ işaretinden
+  sonraki bölümü gider.
+
+Şifre, cihazın anahtar deposunda üretilen ve oradan çıkmayan bir anahtarla şifrelenerek saklanır;
+günlüğe ve yedeğe girmez. Hesap kaldırılınca cihazdaki kopya silinir, posta sunucuda kalır.
 
 ## Hedef: yılda bir güncelleme
 
@@ -36,8 +62,8 @@ Her karar uygulamanın yılda bir güncellemeyle yaşayabilmesine göre verilir:
 
 | Modül | İçerik |
 | --- | --- |
-| `:core` | Saf Kotlin/JVM, Android'siz. Posta sunucularıyla konuşan ve yanıtlarına göre karar veren her şey burada durur ve JVM testleriyle sınanır. Bugün: günlük ve maskeleme, tarih yazımı, Türkçe harf katlama, klasör rolleri. |
-| `:app` | Android uygulaması: arayüz (desktop-kit), ayarlar, günlük dosyası; ileride depolama ve arka plan işleri. |
+| `:core` | Saf Kotlin/JVM, Android'siz. Posta sunucularıyla konuşan ve yanıtlarına göre karar veren her şey burada durur ve JVM testleriyle sınanır: IMAP oturumu (Angus Mail'in arkasında), MIME parçaları, HTML temizleme, sağlayıcı tablosu ve sunucu bulma (ISPDB, MX, SRV), eşitleme kararları, günlük ve maskeleme, Türkçe harf katlama. |
+| `:app` | Android uygulaması: veritabanı (Room; hesaplar, klasörler, iletiler, arama dizini), kimlik kasası (Keystore), eşitlemeyi yürüten katman, arayüz (desktop-kit), ayarlar, günlük dosyası. |
 
 | Belge | İçerik |
 | --- | --- |
@@ -55,7 +81,9 @@ Araçlar desktop-kit 2.4.0 ile aynıdır: Android Gradle eklentisi 9.4.1, Gradle
 ```
 
 - Bağımlılıklar Google Maven, Maven Central ve (yalnızca desktop-kit için) JitPack'ten iner.
-- `:core` testleri saf JVM'de, `:app` testleri Robolectric'te koşar. Ekran görüntüsü testleri
+- `:core` testleri saf JVM'de, `:app` testleri Robolectric'te koşar. IMAP ve eşitleme, test içinde
+  çalışan bir posta sunucusuna (GreenMail) karşı sınanır; `:app` aynı sunucuyla gerçek veritabanına
+  uçtan uca eşitler. Arayüz testleri ve ekran görüntüleri uydurma postayla çalışır. Ekran görüntüsü testleri
   uygulamayı telefon, tablet ve DeX boyutlarında, açık, koyu ve OLED temada çizer
   (`app/build/outputs/screenshots`; başvuru görüntüleri `app/src/test/screenshots`). Robolectric WebView
   çizmediği için bu görüntülerde iletinin gövdesi düz metnidir.

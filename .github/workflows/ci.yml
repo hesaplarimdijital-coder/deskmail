@@ -76,11 +76,25 @@ jobs:
         if: success()
         run: |
           # Room writes the schema of the database's current version to app/schemas. What is in the
-          # repository must be what the build writes: a release is made from the repository.
+          # repository must be what the build writes: a schema that changed without a new version
+          # would not open the database an installed version left behind.
           changed=$(git status --porcelain -- app/schemas)
           if [ -n "$changed" ]; then
-            echo "::warning title=Database::app/schemas is not what this build wrote; commit the schema before a release. $(echo "$changed" | tr '\n' ' ')"
+            echo "::error title=Database::The database's schema is not the one in app/schemas. A change of schema needs a new version number, a migration with its test, and the schema file Room wrote. $(echo "$changed" | tr '\n' ' ')"
+            git diff --stat -- app/schemas || true
+            exit 1
           fi
+
+      - name: List what the APK holds of the mail library's files
+        if: success()
+        run: |
+          # Jakarta Mail finds parts of itself through files under META-INF of its jars. The app's
+          # own code is written not to depend on them, but which of them a build packaged is the
+          # first thing to know when something of mail breaks on a device and not in the tests.
+          apk=$(ls app/build/outputs/apk/release/*.apk | head -1)
+          unzip -l "$apk" | awk '{print $4}' | grep -E '^META-INF/(services/|.*mailcap|.*providers|.*\.map$|.*mimetypes)' | sort > apk-resources.txt || true
+          echo "$(wc -l < apk-resources.txt) such files in $apk:"
+          cat apk-resources.txt
 
       - name: Check the APK's signature
         if: success() && steps.signing.outputs.fixed == 'true'
@@ -107,6 +121,7 @@ jobs:
           out="$RUNNER_TEMP/logs"
           rm -rf "$out" && mkdir -p "$out"
           [ -f build.log ] && cp build.log "$out/"
+          [ -f apk-resources.txt ] && cp apk-resources.txt "$out/"
           for module in core app; do
             [ -d "$module/build/test-results" ] && mkdir -p "$out/$module" && cp -r "$module/build/test-results" "$out/$module/"
           done

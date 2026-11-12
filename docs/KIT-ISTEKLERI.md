@@ -5,8 +5,11 @@ uygulamada yamanmaz, **kite yazılır** (kitin kendi sohbetinde). Kit yeni bir e
 DeskMail her maddede "Şimdilik" satırındaki yolla ilerler; etiket gelince sürüm yükseltilir ve geçici yol
 kaldırılır.
 
-Önerilen sıra: 12 (dolgu hatası), 3 (kenar çubuğu), 2 (tablo), 9 (liste durumu), 1 (rozetler),
-10 (klavye düzeni), 13 (bölücü); kalanlar ilgili PR'a kadar bekleyebilir. 12 ve 13 istek değil, hata.
+Önerilen sıra: 20 (cam ve WebView), 12 (dolgu hatası), 18 (üst çubuğun yanıp sönmesi), 3 (kenar çubuğu),
+2 (tablo), 9 (liste durumu), 1 (rozetler), 10 (klavye düzeni), 13 (bölücü), 14 (çekerek yenileme);
+kalanlar ilgili PR'a kadar bekleyebilir. 12, 13, 18 ve 20 istek değil, hata. 14–17 alpha.2'de (gerçek
+posta ve hesap ekranları) eklendi; 18–20 alpha.1'in Galaxy S24'teki iki ekran kaydından (12 Kasım 2026),
+kare kare bakılarak yazıldı.
 
 Satır ve dosya adları kitin 2.4.0 etiketine göredir.
 
@@ -55,9 +58,15 @@ Satır ve dosya adları kitin 2.4.0 etiketine göredir.
     hesabın "Gelen Kutusu"su alt alta) listeliyor; kenar çubuğunda da "Klasörler" ve "Ara" fazladan
     duruyor;
   - alt rota açıkken üst sekmenin seçili kalması: telefonda Klasörler › bir klasör açılınca alt çubukta
-    "Klasörler" yerine "⋯" seçili görünüyor.
+    "Klasörler" yerine "⋯" seçili görünüyor (S24'te ekran kaydında da böyle: Klasörler'den açılan her
+    klasörde "Daha fazla" işaretli).
 - **Neden:** e-postada kenar çubuğu hesaplara ve klasörlere göre değişir: hesap eklenir, sunucuda
   klasör açılır.
+- **alpha.2'de görülen:** gerçek hesapla bu her hesap eklemede, kaldırmada ve sunucuda yeni klasör
+  görülünce oluyor. Uygulama pencereyi kaldığı ekrana geri götürüyor (`DeskMailApp`: rota kümesi
+  değişince `ShellNavigator.navigate`), ama arada başlangıç ekranı bir an görünüyor (iki sekme geçişi) ve
+  o ekranın geri yığını (telefonda Klasörler › klasör) gidiyor. Hesap eklenirken başlangıç ekranına
+  dönüş bilerek bırakıldı: posta oraya gelir.
 - **Şimdilik:** klasörler `NavItem` olarak verilir, her pencere boyunda aynı `ShellSpec` ile; pencerenin
   gösterdiği (açık ileti, süzgeçler, kaydırma) ekranların dışında tutulur (`MailUiState`), klasör listesi
   değişince açık klasöre uygulama kendisi döner (alpha.2'de, gerçek klasörlerle); alt klasörler yolu
@@ -161,3 +170,98 @@ Koddan okundu, cihazda denenmedi.
 - **İstek:** sürüklemede ve ok tuşlarında değer, son ölçümdeki sınırlara kıstırılsın.
 - **Şimdilik:** DeskMail bölücüden yalnızca payı alır (genişlik / alan), payı gösterilen genişlikten
   hesaplar (`MailLayout.listShare`) ve pencere yeniden yerleşince genişliği sınırların içine geri yazar.
+
+## 14. Çekerek yenileme
+
+- **Bugün:** kitte liste için "aşağı çek, yenile" hareketi ve göstergesi yok.
+- **İstek:** `LazyColumn`/`DenseTable` ile çalışan, kitin hareket ve dokunuş diline uyan bir çekerek
+  yenileme sarmalayıcısı (`refreshing: Boolean`, `onRefresh`); kabuk çubuklarının altından geçen listede
+  gösterge üst çubuğun altında dursun. Fare ve klavyede etkisiz.
+- **Neden:** telefonda e-posta listesini yenilemenin alışılmış yolu.
+- **Şimdilik:** telefonda üst çubukta, rayın yanında süzgeçlerin sonunda, büyük pencerede başlıkta bir
+  "Eşitle" düğmesi; klavyede F5. Eşitleme sürerken listenin üstünde ince bir `DeskProgressBar`.
+
+## 15. Alt sayfanın başlığı rayda görünmüyor (küçük)
+
+- **Bugün:** `PageHeader` başlığı yalnızca kenar çubuğu düzeninde yazar; `CompactTopBar` yalnızca telefonda
+  etkilidir. Rayda (tablet) üst çubuk rotanın etiketini gösterir: Ayarlar'ın üstüne açılan bir sayfanın
+  ("Hesap ekle", "Günlük", bir hesabın sayfası) kendi başlığını yazacağı yer yok; yalnızca "Geri" düğmesi
+  görünür.
+- **İstek:** `CompactTopBar`'ın başlık ve geri düğmesi rayda da geçerli olsun, ya da `PageHeader`'a
+  "başlığı her düzende göster" seçeneği.
+- **Şimdilik:** alt sayfaların ilk bölüm başlığı sayfayı anlatıyor.
+
+## 16. `MessageScreen`'in düğmesi vurgulu olamıyor (küçük)
+
+- **Bugün:** `MessageScreen(actionLabel, onAction)` düz bir `DeskButton` çizer.
+- **İstek:** `actionPrimary: Boolean = false`.
+- **Neden:** "Henüz hesap yok · Hesap ekle" ekranında tek ve asıl eylem bu düğme.
+- **Şimdilik:** düz düğme.
+
+## 17. Ayar kartında satırın tamamına dokunma, ve sakıncalı eylem düğmesi (küçük)
+
+- **Bugün:** `SettingRow(title, subtitle, control)` satırı tıklanamaz; `DeskListRow` kartın içinde kendi
+  yatay dolgusuyla girintili durur. `DeskButton`'ın yalnızca düz ve vurgulu hâli var.
+- **İstek:** `SettingRow(onClick = …)` (satırın tamamı, sonunda ok), ve `DeskButton(danger = true)`
+  (ya da `tone`) geri alınamayan eylemler için.
+- **Neden:** Ayarlar › Hesaplar'da hesap satırı; "Hesabı kaldır".
+- **Şimdilik:** satırın sonunda "Yönet" düğmesi; "Hesabı kaldır" düz düğme, önce onay penceresi soruyor.
+
+## 18. Telefonun üst çubuğu ekran değişirken yanıp sönüyor (hata)
+
+- **Bugün:** `CompactTopBar` çağrıları bir yığında durur, "son bileşen kazanır", bileşimden çıkan
+  geri alınır (`shell/CompactTopBar.kt`). Başlık (rotanın etiketi) rota değişir değişmez değişir; geri
+  düğmesi ve eylemler ise eski ekran bileşimden çıkana, yani çıkış geçişi bitene kadar kalır. Çubuk bu
+  yüzden bir geçişte iki kez değişir ve başlık her seferinde solup yeniden gelir.
+- **Kayıtta** (S24, 120 Hz; süreler kaydın kendi zamanı):
+  - Klasör › geri (Arşiv'den Klasörler'e): 36,09–36,30 sn arası çubukta **"← Klasörler" ve kalem**
+    (yeni başlık, eski ekranın geri düğmesi ve "Yeni ileti"si); 36,36'da çubuk **boş**; 36,40–36,53'te
+    "Klasörler" yeniden beliriyor. Aynısı her klasörden dönüşte (Gönderilmiş, Spam, Projeler / 2026).
+  - İleti açılırken (Gelen › ileti): başlık aynı sözcük olduğu hâlde ("Gelen" › "← Gelen") 10,66–10,72'de
+    soluyor, 10,74'te yok, 10,76–10,87'de geri geliyor; eylemler aynı anda değişiyor.
+- **İstek:**
+  - çıkmakta olan ekranın `CompactTopBar` kaydı, çıkış geçişi başlar başlamaz geçersiz sayılsın (ya da
+    çubuğun içeriği rota ile birlikte tek adımda değişsin);
+  - başlık metni değişmiyorsa solmasın: geri düğmesi gelince yalnızca yana kaysın.
+- **Şimdilik:** uygulama bir şey yapmıyor.
+
+## 19. `open()` yayı tam sayfa geçişinde yerine otururken taşıyor (küçük)
+
+- **Bugün:** `DetailTransition` telefonda `DeskMotion.open()` yayını kullanır (0,9 / 700); belgesi
+  "taşması görülmeyecek kadar küçük" der.
+- **Kayıtta:** ileti sayfası sağdan gelip yerine oturduktan sonra **2 piksel sola taşıyor ve geri
+  geliyor** (38,902–38,987 sn: −1, −2, −1, 0 piksel; 85 ms). Sayfanın tamamı (başlık ve gövde birlikte)
+  kayıyor. Metinle dolu bir sayfada bu, yerine otururken kısa bir titreme gibi okunuyor.
+- **İstek:** tam ekran sayfa geçişlerinde taşmayan bir yay (sönüm 1,0) ya da son pikselde kırpma;
+  küçük öğelerdeki hafif sekme kalabilir.
+- **Şimdilik:** uygulama bir şey yapmıyor.
+
+## 20. Cam kaynağının içinde WebView varken kaydırınca içerik yanıp sönüyor (hata)
+
+- **Bugün:** kabuk, içeriğinin tamamını cam kaynağı yapar (`shell/DesktopShell.kt`:
+  `Modifier.glassSource(glassSource, glassMode)`, yani Haze'in `hazeSource`'u); her cam yüzey
+  (`Modifier.glass` › `hazeBlur`) o katmanı bir kez daha, küçültüp bulanıklaştırarak çizer. Telefonda
+  alt çubuk hep camdır, üst çubuk içerik altına girince cam olur. İçerikte bir `AndroidView` ile
+  `WebView` varsa onun çizimi de her karede, her cam yüzey için bir kez daha, başka boyut ve kırpmayla
+  çalıştırılır.
+- **Kayıtta** (S24, alpha.1, bülten iletisi, varsayılan ayarlar):
+  - ileti dururken (0–4,4 sn; 432 kare) içerik hep tam;
+  - kaydırma başlayınca (üst çubuk cam olur) içerik **tam / eksik / boş** arasında gidip geliyor:
+    4,70–6,55 sn arasındaki 177 karenin %46'sı tam, %31'i eksik, %23'ü boş; 1,84 saniyede 108 değişim
+    (saniyede yaklaşık 59). Kaydırma durunca yine tam;
+  - eksik parçalar WebView'ın karoları: ekranın yarısı genişliğinde (540 piksel) sütunlar, yaklaşık 490
+    piksellik şeritler. Eksilen yalnızca WebView'ın içeriği: çubuklar ve kaydırma çubuğu hep yerinde.
+- **Yorum (cihazda iki denemeyle kesinleşecek: "Cam çubuklar" kapalı; "WebView katmanı: Donanım"):**
+  WebView kendi çizimini karede bir kez, tek bir görünüm alanı için yapılacak diye kurar; ikinci ve
+  üçüncü çizim başka alan ve ölçek bildirince karolarını atıp yeniden üretir.
+- **İstek:** biri yeter:
+  - ekranın bir görünümü cam kaynağının dışında tutabilmesi (ör. `Modifier.outsideGlass()` ya da kaynağa
+    girmeyen ikinci bir içerik katmanı): çubuk o görünümün üstünde bulanık zemini gösterir, görünüm iki
+    kez çizilmez;
+  - kabuğun, kaynağında yeniden çizilemeyen bir görünüm varken (WebView, SurfaceView, TextureView)
+    bulanıklığı kendiliğinden bırakması;
+  - en azından belgede uyarı ve ekran başına cam modu (`LocalGlassMode` bugün kabuğun üstünden
+    verilebiliyor ama statik: değişince kabuğun tamamı yeniden bileşir).
+- **Şimdilik:** DeskMail, penceresinde bir iletinin WebView'ı varken kabuğa `glass = false` verir
+  (`ui/mail/MessageBody.kt`: `shellGlass`): çubuklar, sayfalar ve menüler o sırada düz yüzeydir, başka
+  her yerde cam kalır. Tablette ve DeX'te okuma bölmesi açıkken de böyle.

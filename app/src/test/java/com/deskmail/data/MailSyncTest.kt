@@ -103,7 +103,7 @@ class MailSyncTest {
         assertEquals("Bu ay raflara 140 kitap girdi.", newsletter.text)
         // cleaned before it was kept, and known to ask for a picture from the network
         assertFalse(newsletter.html!!.contains("script"))
-        assertTrue(newsletter.html!!.contains("<b>140</b>"))
+        assertTrue(newsletter.html.contains("<b>140</b>"))
         assertTrue(newsletter.remoteImages)
         // found by its sender, folded
         assertEquals(listOf(messages[1].id), db.messages().search("sahaf"))

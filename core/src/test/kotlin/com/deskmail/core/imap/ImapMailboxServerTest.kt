@@ -115,7 +115,7 @@ class ImapMailboxServerTest {
         assertEquals("Deniz selam,\n\nPlanın üçüncü sürümü ekte.", body.text!!.trim())
         // as the sender wrote it: cleaning comes after
         assertTrue(body.html!!.contains("<b>üçüncü</b>"))
-        assertTrue(body.html!!.contains("<script>"))
+        assertTrue(body.html.contains("<script>"))
 
         assertEquals(2, body.attachments.size)
         val (logo, pdf) = body.attachments
@@ -141,7 +141,7 @@ class ImapMailboxServerTest {
 
         assertNull(body.text)
         assertTrue(body.html!!.contains("<h1>Kasım bülteni</h1>"))
-        assertTrue(body.html!!.contains("şiir, öykü, çağdaş roman"))
+        assertTrue(body.html.contains("şiir, öykü, çağdaş roman"))
     }
 
     @Test
