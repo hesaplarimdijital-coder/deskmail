@@ -21,8 +21,8 @@ android {
         minSdk = 34
         targetSdk = 36
         // grows by one with every release, pre-releases included; the name is the release's tag
-        versionCode = 2
-        versionName = "0.1.0-alpha.2"
+        versionCode = 3
+        versionName = "0.1.0-alpha.3"
     }
 
     signingConfigs {

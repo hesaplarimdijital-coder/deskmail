@@ -136,14 +136,14 @@ class AccountPagesTest {
     }
 
     @Test
-    fun outlookSaysItComesWithTheNextPreRelease() {
+    fun outlookSaysItIsNotReadyYet() {
         val accounts = FakeAccounts(plan = SetupPlan.NotYet(ProviderTable.Outlook))
         launch(accounts)
         press("Hesap ekle")
         compose.onNodeWithTag(AccountTags.ADDRESS).performTextInput("deniz@outlook.com")
         compose.waitForIdle()
         press("Devam")
-        compose.onNodeWithText("bir sonraki ön sürümle geliyor", substring = true).assertExists()
+        compose.onNodeWithText("Bu henüz hazır değil", substring = true).assertExists()
         assertTrue(accounts.added.isEmpty())
     }
 

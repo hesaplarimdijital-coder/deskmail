@@ -18,6 +18,7 @@ class AppSettingsTest {
     fun aFreshInstallStartsWithGlassAndAClosedInspector() {
         val settings = AppSettings(prefs)
         assertTrue(settings.glass)
+        assertTrue(settings.glassOverMessages)
         assertTrue(settings.readerUnderBars)
         assertTrue(settings.darkenMessages)
         assertEquals(WebLayer.Default, settings.webLayer)
@@ -29,6 +30,7 @@ class AppSettingsTest {
     fun whatIsChangedIsThereAfterARestart() {
         AppSettings(prefs).apply {
             updateGlass(false)
+            updateGlassOverMessages(false)
             updateReaderUnderBars(false)
             updateDarkenMessages(false)
             updateWebLayer(WebLayer.Software)
@@ -38,6 +40,7 @@ class AppSettingsTest {
         // the process starts again: a new object over the same file
         val restarted = AppSettings(prefs)
         assertFalse(restarted.glass)
+        assertFalse(restarted.glassOverMessages)
         assertFalse(restarted.readerUnderBars)
         assertFalse(restarted.darkenMessages)
         assertEquals(WebLayer.Software, restarted.webLayer)

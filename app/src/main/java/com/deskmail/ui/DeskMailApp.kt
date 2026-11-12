@@ -145,9 +145,19 @@ fun DeskMailApp(
     // a tapped link is never followed inside a message: its real address is shown instead
     val showLink: (String) -> Unit = { url -> scope.launch { toasts.show(url.take(LINK_LENGTH), duration = ToastDuration.Long) } }
     val body: @Composable (MailContent.Ready, Boolean, Modifier) -> Unit = messageBody ?: { content, showImages, modifier ->
-        // counted while it is on screen: the bars are not blurred over a message (shellGlass)
-        WebBodyPresence(ui)
-        WebMessageBody(content, modifier, showImages = showImages, darken = settings.darkenMessages, layer = settings.webLayer, onLink = showLink)
+        // Counted while it is on screen, and whether it is too tall for a layer of its own: what
+        // the shell's glass goes by (shellGlass).
+        var tall by remember { mutableStateOf(false) }
+        WebBodyPresence(ui, tall)
+        WebMessageBody(
+            content,
+            modifier,
+            showImages = showImages,
+            darken = settings.darkenMessages,
+            layer = settings.webLayer,
+            onLink = showLink,
+            onTall = { tall = it },
+        )
     }
     val starLabel = stringResource(R.string.action_toggle_star)
     val readLabel = stringResource(R.string.action_toggle_read)
@@ -233,6 +243,11 @@ fun DeskMailApp(
     val experiments = listOf(
         MenuEntry.Item(stringResource(R.string.experiment_glass), { settings.updateGlass(!settings.glass) }, checked = settings.glass),
         MenuEntry.Item(
+            stringResource(R.string.experiment_glass_over_messages),
+            { settings.updateGlassOverMessages(!settings.glassOverMessages) },
+            checked = settings.glassOverMessages,
+        ),
+        MenuEntry.Item(
             stringResource(R.string.experiment_under_bars),
             { settings.updateReaderUnderBars(!settings.readerUnderBars) },
             checked = settings.readerUnderBars,
@@ -283,7 +298,7 @@ fun DeskMailApp(
                 searchHint = stringResource(R.string.palette_hint),
                 transitions = transitions,
                 moreActions = listOf(ActionGroup(stringResource(R.string.settings_experiments), experiments)),
-                glass = shellGlass(settings.glass, messageOpen, ui.webBodies),
+                glass = shellGlass(settings.glass, settings.glassOverMessages, messageOpen, ui.webBodies, ui.tallWebBodies),
                 toasts = toasts,
                 overlays = {
                     // Ctrl+K: screens and folders, the messages, and every command of the shortcut table

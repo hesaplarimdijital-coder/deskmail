@@ -217,8 +217,8 @@ private fun LogSection(onOpen: () -> Unit) {
 }
 
 /**
- * What the first pre-releases are to find out on the devices: does the glass blur a message
- * beneath it, does a message read well under the bars, does the darkening suit the mail.
+ * What the first pre-releases are to find out on the devices: does the glass over a message leave
+ * the message alone, does a message read well under the bars, does the darkening suit the mail.
  */
 @Composable
 private fun ExperimentsSection(settings: AppSettings) {
@@ -229,6 +229,12 @@ private fun ExperimentsSection(settings: AppSettings) {
             checked = settings.glass,
             onCheckedChange = settings::updateGlass,
             subtitle = stringResource(R.string.experiment_glass_note),
+        )
+        SwitchRow(
+            title = stringResource(R.string.experiment_glass_over_messages),
+            checked = settings.glassOverMessages,
+            onCheckedChange = settings::updateGlassOverMessages,
+            subtitle = stringResource(R.string.experiment_glass_over_messages_note),
         )
         SwitchRow(
             title = stringResource(R.string.experiment_under_bars),
@@ -246,6 +252,7 @@ private fun ExperimentsSection(settings: AppSettings) {
             SegmentedChoice(
                 options = listOf(
                     WebLayer.Default to stringResource(R.string.web_layer_default),
+                    WebLayer.None to stringResource(R.string.web_layer_none),
                     WebLayer.Hardware to stringResource(R.string.web_layer_hardware),
                     WebLayer.Software to stringResource(R.string.web_layer_software),
                 ),
