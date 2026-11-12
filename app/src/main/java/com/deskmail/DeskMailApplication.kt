@@ -55,7 +55,7 @@ class DeskMailApplication : Application() {
     private val sync: MailSync by lazy { MailSync(database, accountStore, log, background) }
 
     /** The mail as the windows show it. */
-    val mail: LiveMail by lazy { LiveMail(database, sync, background) }
+    val mail: LiveMail by lazy { LiveMail(database, sync, background, File(cacheDir, FILES_DIRECTORY)) }
 
     /** Adding, reconnecting and removing accounts. */
     val accounts: AccountActions by lazy {
@@ -113,6 +113,9 @@ class DeskMailApplication : Application() {
     companion object {
         /** Under the cache directory; what FileProvider may hand to other apps (res/xml/file_paths.xml). */
         const val SHARE_DIRECTORY = "share"
+
+        /** Under the cache directory: the files of messages that were fetched to be opened, saved or shared. */
+        const val FILES_DIRECTORY = "files"
 
         /** How much of earlier runs the log screen shows. */
         private const val EARLIER_LINES = 1000

@@ -15,6 +15,9 @@ interface RemoteAccount : Closeable {
 
     /** Opens a folder for reading. One at a time: close it before opening the next. */
     fun open(path: String): OpenMailbox
+
+    /** Opens a folder for changing what is in it. One at a time, as with [open]. */
+    fun edit(path: String): EditableMailbox
 }
 
 /** A [RemoteMailbox] that is closed when its reader is done. */

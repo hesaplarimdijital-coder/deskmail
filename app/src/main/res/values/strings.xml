@@ -52,7 +52,41 @@
     <string name="action_unstar">Remove the star</string>
     <string name="action_mark_read">Mark as read</string>
     <string name="action_mark_unread">Mark as unread</string>
-    <string name="action_open_attachment">Open the attachment</string>
+    <string name="action_archive">Archive</string>
+    <string name="action_delete">Delete</string>
+    <string name="action_move">Move…</string>
+    <string name="action_undo">Undo</string>
+    <string name="action_open_message">Open</string>
+    <string name="move_title">Move to a folder</string>
+    <string name="archive_nowhere">This message\'s account has no folder to archive to.</string>
+    <string name="action_nothing_done">There was nothing to do.</string>
+    <string name="undo_failed">Could not be undone: the message is no longer there.</string>
+    <plurals name="done_archived">
+        <item quantity="one">Archived</item>
+        <item quantity="other">%1$d messages archived</item>
+    </plurals>
+    <plurals name="done_deleted">
+        <item quantity="one">Moved to the trash</item>
+        <item quantity="other">%1$d messages moved to the trash</item>
+    </plurals>
+    <plurals name="done_removed">
+        <item quantity="one">Deleted for good</item>
+        <item quantity="other">%1$d messages deleted for good</item>
+    </plurals>
+    <plurals name="done_moved">
+        <item quantity="one">Moved to %2$s</item>
+        <item quantity="other">%1$d messages moved to %2$s</item>
+    </plurals>
+    <string name="attachment_open">Open</string>
+    <string name="attachment_save">Save…</string>
+    <string name="attachment_share">Share</string>
+    <string name="attachment_fetching">Downloading the file</string>
+    <string name="attachment_failed_network">The file could not be downloaded: the server cannot be reached.</string>
+    <string name="attachment_failed">The file could not be downloaded.</string>
+    <string name="attachment_gone">This file is no longer on the server.</string>
+    <string name="attachment_no_app">No app can open this file. Try saving it.</string>
+    <string name="attachment_saved">Saved: %1$s</string>
+    <string name="attachment_save_failed">Could not be saved.</string>
     <string name="reader_empty_title">No message open</string>
     <string name="reader_empty_text">Pick a message from the list to read it here.</string>
     <string name="reader_remote_blocked">Remote images were not loaded.</string>
@@ -68,6 +102,7 @@
 
     <!-- The menu bar and the shortcut table -->
     <string name="menu_file">File</string>
+    <string name="menu_edit">Edit</string>
     <string name="menu_message">Message</string>
     <string name="action_next_message">Next message</string>
     <string name="action_previous_message">Previous message</string>

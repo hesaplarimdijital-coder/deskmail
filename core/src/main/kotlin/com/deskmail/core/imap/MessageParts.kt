@@ -2,12 +2,16 @@ package com.deskmail.core.imap
 
 import com.deskmail.core.mail.RemoteAttachment
 import com.deskmail.core.mail.RemoteBody
+import jakarta.mail.MessagingException
 import jakarta.mail.Multipart
 import jakarta.mail.MultipartDataSource
 import jakarta.mail.Part
 import jakarta.mail.internet.ContentType
+import jakarta.mail.internet.MimeBodyPart
+import jakarta.mail.internet.MimeMessage
 import jakarta.mail.internet.MimePart
 import jakarta.mail.internet.MimeUtility
+import java.io.InputStream
 import java.nio.charset.Charset
 
 /**
@@ -35,6 +39,40 @@ internal object MessageParts {
         val collector = Collector(maxTextBytes)
         collector.walk(message, "")
         return RemoteBody(collector.text, collector.html, collector.attachments, collector.tooLarge)
+    }
+
+    /**
+     * The content of the part at [place] ("2", "1.2": as [read] names the parts), decoded; null
+     * when the message has no such part. Over IMAP the content is fetched as the stream is read.
+     */
+    fun stream(message: Part, place: String): InputStream? {
+        var part = message
+        if (isMultipart(message)) {
+            for (level in place.split('.')) {
+                val number = level.toIntOrNull() ?: return null
+                if (!isMultipart(part)) return null
+                part = children(part).getOrNull(number - 1) ?: return null
+            }
+        } else if (place != "1") {
+            return null
+        }
+        if (isMultipart(part)) return null
+        // The content as it travelled, decoded here: asking the part for its decoded content would
+        // send a message inside a message through the library's table of content handlers, a
+        // resource file that has to survive the packaging of an Android app.
+        val raw = when (part) {
+            is MimeBodyPart -> part.rawInputStream
+            is MimeMessage -> part.rawInputStream
+            else -> return part.inputStream
+        }
+        val encoding = runCatching { (part as MimePart).encoding }.getOrNull()
+        if (encoding.isNullOrBlank()) return raw
+        // an encoding nobody knows: the bytes as they are
+        return try {
+            MimeUtility.decode(raw, encoding)
+        } catch (e: MessagingException) {
+            raw
+        }
     }
 
     private class Collector(private val maxTextBytes: Int) {

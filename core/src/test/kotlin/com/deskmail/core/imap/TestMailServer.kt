@@ -71,6 +71,15 @@ class TestMailServer : ExternalResource() {
         folder(folder).setFlags(Flags(flag), value, uid, null, false)
     }
 
+    /** The UIDs of the messages a folder holds, ascending. */
+    fun uids(folder: String = "INBOX"): List<Long> = folder(folder).messageUids.sorted()
+
+    /** A message's marks as the server has them; null when the folder does not hold it. */
+    fun flags(uid: Long, folder: String = "INBOX"): Flags? = folder(folder).getMessage(uid)?.flags
+
+    /** The subject of a message in a folder. */
+    fun subject(uid: Long, folder: String = "INBOX"): String? = folder(folder).getMessage(uid)?.mimeMessage?.subject
+
     /** Deletes a message for good, as another mail program would. */
     fun expunge(uid: Long, folder: String = "INBOX") {
         setFlag(uid, Flags.Flag.DELETED, true, folder)

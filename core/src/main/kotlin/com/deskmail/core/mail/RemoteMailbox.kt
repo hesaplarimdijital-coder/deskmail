@@ -1,5 +1,6 @@
 package com.deskmail.core.mail
 
+import java.io.OutputStream
 import java.time.LocalDate
 
 /**
@@ -40,4 +41,11 @@ interface RemoteMailbox {
      * Null when the folder no longer has the message.
      */
     fun body(uid: Long, maxTextBytes: Int): RemoteBody?
+
+    /**
+     * Writes a file the message carries into [into], decoded: the part at [part], as
+     * [RemoteAttachment.part] names it. False when the folder no longer has the message, or the
+     * message no such part.
+     */
+    fun attachment(uid: Long, part: String, into: OutputStream): Boolean
 }

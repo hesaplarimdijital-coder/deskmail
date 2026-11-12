@@ -7,10 +7,15 @@ import com.deskmail.core.mail.RemoteAccount
 import com.deskmail.core.net.Credentials
 import com.deskmail.core.net.ServerAddress
 import com.deskmail.core.sync.AccountSync
+import com.deskmail.core.sync.ChangeOutcome
+import com.deskmail.core.sync.ChangeSync
 import com.deskmail.core.sync.FolderSync
+import com.deskmail.core.sync.PendingChange
 import com.deskmail.db.AccountEntity
 import com.deskmail.db.DeskMailDatabase
+import com.deskmail.db.DueChange
 import com.deskmail.db.MessageEntity
+import com.deskmail.db.PendingOpEntity
 import com.deskmail.mail.AccountState
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
@@ -25,6 +30,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import java.io.File
 import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
 
@@ -32,11 +38,14 @@ import java.util.concurrent.ConcurrentHashMap
  * Runs the sync ([AccountSync]) for the app's accounts: signs in, brings the device's copy up to
  * what the server has, and writes down on the account how that went.
  *
- * Three kinds of work, each on a connection of its own, so that none waits for another:
+ * Four kinds of work, each on a connection of its own, so that none waits for another:
+ * - what was done on the device ([changes]): marks, moves and removals, told to the server;
  * - the lists ([account], [folder]): which messages there are and their marks, and the text of
- *   the newest few. One at a time per account.
+ *   the newest few. One at a time per account, and never before the server was told what the
+ *   device changed: the lists then read back what the user did, not what was there before.
  * - the texts the lists left for later ([backlog]), in the background until none is missing;
- * - the text of the one message the user has just opened ([body]), ahead of its turn.
+ * - what the user is waiting for: the text of the message just opened ([body]), a file of it
+ *   ([attachment]).
  *
  * @param scope where the background work runs; it outlives the screens.
  * @param connect signs in to an account's IMAP server; the tests hand in a server of their own.
@@ -64,7 +73,9 @@ class MailSync(
     private val store = RoomSyncStore(db)
     private val accountSync = AccountSync(store, log)
     private val folderSync = FolderSync(store, log)
+    private val changeSync = ChangeSync(log)
     private val listLocks = ConcurrentHashMap<Long, Mutex>()
+    private val changeLocks = ConcurrentHashMap<Long, Mutex>()
     private val readLocks = ConcurrentHashMap<Long, Mutex>()
     private val backlogs = ConcurrentHashMap<Long, Boolean>()
     private val listing = MutableStateFlow<Set<Long>>(emptySet())
@@ -95,13 +106,64 @@ class MailSync(
         val outcome = listLocks.getOrPut(accountId) { Mutex() }.withLock {
             listing.update { it + accountId }
             try {
-                connected(accountId, work)
+                connected(accountId) { account, remote ->
+                    // first what the device changed, then what the server has
+                    changeLock(accountId).withLock { push(accountId, remote) }
+                    work(account, remote)
+                }
             } finally {
                 listing.update { it - accountId }
             }
         }
         if (outcome == Outcome.Done) startBacklog(accountId)
         return outcome
+    }
+
+    // ------------------------------------------------------------------ what was done on the device
+
+    /**
+     * Tells the account's server what was done on the device and is due: marks, moves and
+     * removals. Without anything due no connection is made.
+     */
+    suspend fun changes(accountId: Long): Outcome = changeLock(accountId).withLock {
+        if (db.pending().due(accountId, clock().toEpochMilli()).isEmpty()) return@withLock Outcome.Done
+        connected(accountId) { _, remote -> push(accountId, remote) }
+    }
+
+    /**
+     * Runs [block] while nothing of the account is being told to its server: a change is then
+     * either still waiting or settled, never half way.
+     */
+    suspend fun <T> betweenChanges(accountId: Long, block: suspend () -> T): T = changeLock(accountId).withLock { block() }
+
+    private fun changeLock(accountId: Long): Mutex = changeLocks.getOrPut(accountId) { Mutex() }
+
+    /** Sends what is due, and what becomes due meanwhile; then asks for the counts of the folders it touched. */
+    private suspend fun push(accountId: Long, remote: RemoteAccount) {
+        val pending = db.pending()
+        val touched = LinkedHashSet<Long>()
+        for (round in 1..PUSH_ROUNDS) {
+            val due = pending.due(accountId, clock().toEpochMilli())
+            if (due.isEmpty()) break
+            val rows = due.associateBy { it.id }
+            val sendable = ArrayList<PendingChange>(due.size)
+            for (row in due) {
+                val change = row.toChange()
+                // moved to a folder that is gone since: there is nothing to tell the server
+                if (change == null) pending.settle(row.id, ChangeOutcome.Refused("nowhere to move it to")) else sendable += change
+            }
+            changeSync.push(remote, sendable) { change, outcome ->
+                val row = rows.getValue(change.id)
+                pending.settle(change.id, outcome)
+                touched += row.folderId
+                if (row.targetFolderId != 0L) touched += row.targetFolderId
+            }
+        }
+        // the device moved its counts by what it did; here is what the server makes of it
+        for (folderId in touched) {
+            val folder = db.folders().byId(folderId) ?: continue
+            remote.counts(folder.path)?.let { db.folders().setCounts(folderId, it.total, it.unread) }
+        }
     }
 
     private fun startBacklog(accountId: Long) {
@@ -168,6 +230,36 @@ class MailSync(
     }
 
     /**
+     * Fetches a file a message carries into [target], which exists only once all of it is there.
+     *
+     * @return [Outcome.Gone] when the message or the file in it is no longer on the server.
+     */
+    suspend fun attachment(attachmentId: Long, target: File): Outcome {
+        val file = db.messages().attachment(attachmentId) ?: return Outcome.Gone
+        val message = db.messages().byId(file.messageId) ?: return Outcome.Gone
+        val folder = db.folders().byId(message.folderId) ?: return Outcome.Gone
+        var found = false
+        val outcome = connected(message.accountId) { _, remote ->
+            remote.open(folder.path).use { mailbox ->
+                // the folder's UIDs mean something else now: its list has to be read again first
+                if (mailbox.uidValidity != folder.uidValidity) return@use
+                target.parentFile?.mkdirs()
+                val partial = File(target.path + ".part")
+                try {
+                    found = partial.outputStream().buffered().use { out -> mailbox.attachment(message.uid, file.part, out) }
+                    if (found) {
+                        target.delete()
+                        found = partial.renameTo(target)
+                    }
+                } finally {
+                    partial.delete()
+                }
+            }
+        }
+        return if (outcome == Outcome.Done && !found) Outcome.Gone else outcome
+    }
+
+    /**
      * Signs in to the account's server and runs [work] there. How it went is written on the
      * account: all well, sign in again, or what failed.
      */
@@ -212,10 +304,27 @@ class MailSync(
         /** How many texts the backlog fetches before it looks again at what is waiting. */
         const val BACKLOG_BODIES = 50
 
+        /** How often one connection looks again for changes that became due while it was sending. */
+        private const val PUSH_ROUNDS = 5
+
         fun stateFor(kind: MailException.Kind): AccountState = when (kind) {
             MailException.Kind.Authentication -> AccountState.NeedsLogin
             MailException.Kind.Network -> AccountState.Unreachable
             MailException.Kind.Security, MailException.Kind.Server -> AccountState.Error
         }
     }
+}
+
+/** The change as the server is told of it; null for a move whose target folder is gone. */
+internal fun DueChange.toChange(): PendingChange? {
+    val what = when (kind) {
+        PendingOpEntity.SEEN -> PendingChange.Kind.Seen
+        PendingOpEntity.FLAGGED -> PendingChange.Kind.Flagged
+        PendingOpEntity.MOVE -> PendingChange.Kind.Move
+        PendingOpEntity.EXPUNGE -> PendingChange.Kind.Expunge
+        // written by a newer version: nothing this one knows how to say
+        else -> return null
+    }
+    if (what == PendingChange.Kind.Move && targetPath == null) return null
+    return PendingChange(id, folderPath, uidValidity, uid, what, value, targetPath.orEmpty())
 }

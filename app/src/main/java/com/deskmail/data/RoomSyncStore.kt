@@ -17,6 +17,7 @@ import com.deskmail.db.FlagRow
 import com.deskmail.db.FolderEntity
 import com.deskmail.db.MessageEntity
 import com.deskmail.db.MessageFts
+import com.deskmail.db.PendingOpEntity
 import java.time.Instant
 
 /**
@@ -27,6 +28,7 @@ import java.time.Instant
 class RoomSyncStore(db: DeskMailDatabase) : SyncStore {
     private val folders = db.folders()
     private val messages = db.messages()
+    private val pending = db.pending()
 
     override suspend fun saveFolders(accountId: Long, folders: List<RemoteFolder>): List<StoredFolder> {
         val listed = folders.mapIndexed { index, folder ->
@@ -68,7 +70,17 @@ class RoomSyncStore(db: DeskMailDatabase) : SyncStore {
     override suspend fun delete(folderId: Long, uids: Collection<Long>) = messages.delete(folderId, uids)
 
     override suspend fun updateFlags(folderId: Long, flags: List<RemoteFlags>) {
-        val rows = flags.map { FlagRow(it.uid, it.flags.seen, it.flags.flagged, it.flags.answered, it.flags.forwarded, it.flags.draft) }
+        // A mark the user set and the server has not been told of yet stands: the server's word
+        // on it is older than the user's.
+        val waiting = pending.marksOf(folderId).groupBy { it.uid }
+        val rows = flags.map { remote ->
+            var seen = remote.flags.seen
+            var flagged = remote.flags.flagged
+            for (mark in waiting[remote.uid].orEmpty()) {
+                if (mark.kind == PendingOpEntity.SEEN) seen = mark.value else flagged = mark.value
+            }
+            FlagRow(remote.uid, seen, flagged, remote.flags.answered, remote.flags.forwarded, remote.flags.draft)
+        }
         messages.updateFlags(folderId, rows)
     }
 

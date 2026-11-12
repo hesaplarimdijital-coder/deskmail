@@ -4,11 +4,39 @@ Sürümler [SemVer](https://semver.org/lang/tr/) kuralına uyar; 0.1.0'a kadar o
 
 ## 0.1.0-alpha.3 (13 Kasım 2026)
 
+Posta artık yalnızca okunmuyor: okundu ve yıldız sunucuya yazılır, iletiler arşivlenir, taşınır ve silinir, ekler açılır. Cam, açık iletinin üstünde de kalır. Yazma, arama ve bildirim henüz yok.
+
+### İleti işlemleri
+- **Okundu ve yıldız:** açılan ileti okundu sayılır; okundu/okunmadı ve yıldız değiştirilir ve sunucuya yazılır, öteki cihazda da öyle görünür. Yıldız, okuma ekranında gönderenin yanında.
+- **Arşivle, sil, taşı:** okuma ekranının düğmeleri (telefonda üst çubukta Arşivle ve Sil, kalanı "⋮" altında); satıra uzun basınca ya da sağ tıklayınca açılan menü; klavyede E (arşivle), Delete (sil), V (taşı).
+  - Arşivle: hesabın Arşiv klasörüne; Gmail'de "Tüm postalar"a (Gmail'de arşivlemek, iletiyi Gelen'den çıkarmaktır). Gelen kutusundaki ve kendi klasörlerindeki iletilerde görünür.
+  - Sil: çöpe taşır. Çöpteki ileti silinirse kalıcı olarak silinir.
+  - Taşı: iletinin hesabındaki klasörlerden biri seçilir (telefonda alttan açılan sayfa, geniş pencerede iletişim kutusu).
+- **Geri al:** her işlemden sonra altta bildirim çıkar ("Arşivlendi · Geri al"). Bildirim dururken sunucuya henüz bir şey söylenmemiştir; geri almak anında olur. Bildirim gidince sunucuya bildirilir (bildirim hiç görülmese de en geç 15 saniye sonra). Ctrl+Z son işlemi geri alır; sunucuya bildirilmişse ileti geldiği klasöre geri taşınır. Bunun için sunucunun iletinin yeni yerini söylemesi gerekir (UIDPLUS; Gmail ve Outlook söyler); söylemeyen sunucuda bildirimden sonra geri alınamaz, ekran bunu söyler.
+- **Çevrimdışı:** yapılanlar cihazda hemen görünür ve sıraya girer; sunucuya ulaşılınca, bir sonraki eşitleme sunucuyu okumadan önce bildirilir. Sıra, uygulama kapansa da durur.
+- Taşınan ileti yeni klasöründe metniyle birlikte görünür; yeniden indirilmez.
+- İşlem yapılan ileti açıksa okuma ekranı kapanır.
+
+### Ekler
+- Ek çipine dokununca: Aç, Kaydet…, Paylaş. Dosya ilk istendiğinde sunucudan iner (çiplerin altında ince bir çizgi görünür) ve bir hafta cihazda kalır; ikinci kez istenince inmez.
+- Aç: dosya, türünü açan uygulamaya yalnızca o dosyayı okuma izniyle verilir. Kaydet: nereye kaydedileceğini sistem sorar; uygulama depolama izni istemez.
+- Büyük pencerede ayrıntı panelinin Ekler sekmesi: tıklamak açar, sağ tık kaydeder ya da paylaşır.
+
 ### Okuma: cam iletinin üstünde de kalır
 - alpha.2'de ileti açıkken çubuklar düz yüzeye dönüyordu. Artık cam kalır: çubuklar camken iletinin WebView'ı kendi donanım katmanına çizilir. İleti bir kez çizilir; pencere de çubukların bulanıklığı da hazır resmi o katmandan alır. (Titreme, camın altındaki içeriği her karede birkaç kez yeniden çizdirmesinden çıkıyordu.) **Cihazda doğrulanacak:** bu yol yalnızca testlerde denendi.
 - Bir katmana sığmayacak kadar uzun iletide (cihazın en büyük dokusu ya da 64 MB; telefonda yaklaşık altı ekran boyu) katman kullanılmaz ve o ileti ekrandayken cam kendiliğinden kapanır.
 - Ayarlar › Denemeler: "İletinin üstünde cam" (kapalıyken alpha.2'deki gibi: ileti açıkken düz çubuklar); "WebView katmanı" artık Otomatik, Yok, Donanım, Yazılım.
 - Günlük, her iletide WebView'ın neye çizildiğini yazar (`WebView 1080 x 5400 px: hardware layer, glass blurred`): titreme ya da boş kalan bir bölüm olursa ilk bakılacak satır.
+
+### Bu sürümde bilerek olmayanlar
+- Çoklu seçim ve klasöre sürükle bırak (ileti işlemlerinin ikinci adımı).
+- Yazma ve gönderme, arama, bildirim ve arka planda eşitleme, Outlook girişi.
+- İletinin içine gömülü resimler (`cid:`) henüz görünmez.
+
+### Altyapı
+- Veritabanı şeması 2: bekleyen işlemler tablosu (`pending_op`). 1 → 2 göçü ve testi var: alpha.2'nin üstüne kurulunca hesaplar ve posta yerinde kalır.
+- IMAP: bayrak yazma, MOVE (yoksa kopyala ve sil), yalnızca adı verilen iletileri silen UID EXPUNGE; ek parçaları okundukça sunucudan akar.
+- Yeni kısayollar: E, V, Delete, Ctrl+Z. Ctrl+Z yazı alanındayken alanın kendisine kalır.
 
 ## 0.1.0-alpha.2 (12 Kasım 2026)
 

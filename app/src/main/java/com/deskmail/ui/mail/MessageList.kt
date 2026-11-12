@@ -31,6 +31,7 @@ import desktopkit.components.ColumnWidth
 import desktopkit.components.DenseTable
 import desktopkit.components.DeskListRow
 import desktopkit.components.FilterChips
+import desktopkit.components.MenuEntry
 import desktopkit.components.TableColumn
 import desktopkit.components.TableSort
 import desktopkit.components.rememberTableColumnsState
@@ -64,6 +65,8 @@ fun MailFilterChips(selected: Set<MailFilter>, onToggle: (MailFilter) -> Unit, o
  * the subject and the first words under it, the date and the marks at the end. The list lies under
  * the phone's bars and pads its ends with [contentPadding] (the shell's, which the screen asks
  * for); [header], when there is one, scrolls away with the rows as the list's first item.
+ *
+ * @param menu what can be done with a row's message: opened by a long press, a right click or the Menu key.
  */
 @Composable
 fun MessageRows(
@@ -75,19 +78,20 @@ fun MessageRows(
     modifier: Modifier = Modifier,
     header: (@Composable () -> Unit)? = null,
     empty: @Composable () -> Unit = {},
+    menu: ((MailMessage) -> List<MenuEntry>)? = null,
 ) {
     val dates = rememberDateLabels()
     LazyColumn(modifier.fillMaxSize(), state = state, contentPadding = contentPadding) {
         if (header != null) item(key = "header", contentType = "header") { header() }
         if (messages.isEmpty()) item(key = "empty", contentType = "empty") { empty() }
         items(messages, key = { it.id }, contentType = { "message" }) { message ->
-            MessageRow(message, selected = message.id == openedId, date = dates.short(message.sentAt), onOpen = onOpen)
+            MessageRow(message, selected = message.id == openedId, date = dates.short(message.sentAt), onOpen = onOpen, menu = menu)
         }
     }
 }
 
 @Composable
-private fun MessageRow(message: MailMessage, selected: Boolean, date: String, onOpen: (MailMessage) -> Unit) {
+private fun MessageRow(message: MailMessage, selected: Boolean, date: String, onOpen: (MailMessage) -> Unit, menu: ((MailMessage) -> List<MenuEntry>)?) {
     val colors = DeskTheme.colors
     DeskListRow(
         title = counterpartLabel(message),
@@ -98,6 +102,7 @@ private fun MessageRow(message: MailMessage, selected: Boolean, date: String, on
         strong = message.unread,
         selected = selected,
         onClick = { onOpen(message) },
+        menu = if (menu == null) null else ({ menu(message) }),
     )
 }
 
@@ -164,6 +169,7 @@ fun MessageTable(
     prefs: DeskPreferences?,
     modifier: Modifier = Modifier,
     bottomPadding: Dp = 0.dp,
+    menu: ((MailMessage) -> List<MenuEntry>)? = null,
 ) {
     val dates = rememberDateLabels()
     val toPrefix = stringResource(R.string.message_to, "")
@@ -194,6 +200,7 @@ fun MessageTable(
         selectedKey = openedId,
         sort = sort,
         onSortChange = onSortChange,
+        rowMenu = if (menu == null) null else ({ message, _ -> menu(message) }),
         contentPadding = PaddingValues(bottom = 8.dp + bottomPadding),
         columnsState = if (prefs == null) null else rememberTableColumnsState("messages", prefs),
     )

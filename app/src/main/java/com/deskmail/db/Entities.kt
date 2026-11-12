@@ -195,6 +195,43 @@ data class AttachmentEntity(
 )
 
 /**
+ * Something done to a message on the device that its server has not been told of yet. The
+ * message shows the change at once; the row is gone as soon as the server has answered for it.
+ *
+ * @param kind what was done: a mark set or cleared ([SEEN], [FLAGGED]; [value] says which), the
+ *   message moved to another folder ([MOVE], to [targetFolderId]) or removed for good ([EXPUNGE]).
+ *   A message with a move or a removal waiting is on none of the lists.
+ * @param targetFolderId where a moved message goes; 0 for anything else.
+ * @param notBefore the server is not told before this time (milliseconds): for as long, what was
+ *   done is simply taken back.
+ */
+@Entity(
+    tableName = "pending_op",
+    foreignKeys = [
+        ForeignKey(entity = AccountEntity::class, parentColumns = ["id"], childColumns = ["accountId"], onDelete = ForeignKey.CASCADE),
+        ForeignKey(entity = MessageEntity::class, parentColumns = ["id"], childColumns = ["messageId"], onDelete = ForeignKey.CASCADE),
+    ],
+    indices = [Index(value = ["accountId"]), Index(value = ["messageId"])],
+)
+data class PendingOpEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val accountId: Long,
+    val messageId: Long,
+    val kind: String,
+    val value: Boolean,
+    val targetFolderId: Long,
+    val notBefore: Long,
+    val createdAt: Long,
+) {
+    companion object {
+        const val SEEN = "Seen"
+        const val FLAGGED = "Flagged"
+        const val MOVE = "Move"
+        const val EXPUNGE = "Expunge"
+    }
+}
+
+/**
  * The search index: a message's subject, the people on it and its text, folded
  * ([com.deskmail.core.text.TurkishFold]) so that "sarki" finds "Şarkı". The row's id is the message's.
  */
