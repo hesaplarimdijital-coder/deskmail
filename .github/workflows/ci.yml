@@ -1,0 +1,165 @@
+# Builds the app, runs the unit tests (:core on the JVM, :app with Robolectric, the screenshot
+# tests among them) and assembles the APK that is installed on the devices. Laid out as
+# desktop-kit's CI: build errors and failed tests are reported as annotations on the commit; for
+# a pull request from this repository the whole build output and the test results are pushed to
+# ci/logs-pr-<number> and the screenshots to ci/screenshots-pr-<number>, readable with git.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Not a secret: the SHA-256 fingerprint of the certificate every installable APK is signed with.
+  SIGNING_CERT_SHA256: ce7ad2788a97dfe2c33acc7ac0da934da35dac22504b3d8e13ca979252482dba
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          # Robolectric needs Java 21 to run the tests on Android 16 (API 36); the code targets Java 17
+          java-version: '21'
+          # Gradle's downloads, keyed on the build files
+          cache: gradle
+
+      - name: Signing key
+        id: signing
+        env:
+          KEYSTORE_BASE64: ${{ secrets.SIGNING_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.SIGNING_KEYSTORE_PASSWORD }}
+        run: |
+          if [ -z "$KEYSTORE_BASE64" ] || [ -z "$KEYSTORE_PASSWORD" ]; then
+            echo "::warning title=Signing::The signing secrets are not set. This APK is signed with a throw-away debug key and cannot be installed over a properly signed one."
+            echo "fixed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          file="$RUNNER_TEMP/deskmail.p12"
+          printf '%s' "$KEYSTORE_BASE64" | base64 --decode --ignore-garbage > "$file"
+          actual=$(keytool -list -v -keystore "$file" -storetype PKCS12 -storepass:env KEYSTORE_PASSWORD -alias deskmail 2>/dev/null \
+            | sed -n 's/^[[:space:]]*SHA256: //p' | tr -d ':' | tr 'A-F' 'a-f')
+          if [ "$actual" != "$SIGNING_CERT_SHA256" ]; then
+            echo "::error title=Signing::The signing secrets do not hold the expected key (a wrong or partial paste?)."
+            exit 1
+          fi
+          echo "DESKMAIL_KEYSTORE_FILE=$file" >> "$GITHUB_ENV"
+          echo "fixed=true" >> "$GITHUB_OUTPUT"
+
+      - name: Build and test
+        env:
+          DESKMAIL_KEYSTORE_PASSWORD: ${{ secrets.SIGNING_KEYSTORE_PASSWORD }}
+        run: |
+          ./gradlew :core:test :app:testDebugUnitTest :app:assembleRelease \
+            --continue --stacktrace --console=plain 2>&1 | tee build.log
+          exit ${PIPESTATUS[0]}
+
+      - name: Annotate errors
+        if: failure()
+        run: |
+          python3 tools/annotate_gradle_errors.py build.log
+          python3 tools/annotate_test_failures.py core/build/test-results app/build/test-results
+
+      - name: Check the APK's signature
+        if: success() && steps.signing.outputs.fixed == 'true'
+        run: |
+          apksigner=$(ls -d "$ANDROID_HOME"/build-tools/*/ | sort -V | tail -1)apksigner
+          apk=$(ls app/build/outputs/apk/release/*.apk | head -1)
+          # the certificate's name and digests are public (they are in every APK): print them
+          certs=$("$apksigner" verify --print-certs "$apk" 2>&1) || true
+          printf '%s\n' "$apk" "$certs"
+          if ! printf '%s\n' "$certs" | grep -qiE "certificate SHA-256 digest: ${SIGNING_CERT_SHA256}\$"; then
+            echo "::error title=Signing::The APK is not signed with the fixed key."
+            exit 1
+          fi
+          echo "::notice title=Signing::The APK is signed with the fixed key."
+
+      - name: Push logs to ci/logs-pr-<number>
+        if: always() && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+        env:
+          TOKEN: ${{ github.token }}
+          TARGET: ci/logs-pr-${{ github.event.pull_request.number }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          KEYSTORE_PASSWORD: ${{ secrets.SIGNING_KEYSTORE_PASSWORD }}
+        run: |
+          out="$RUNNER_TEMP/logs"
+          rm -rf "$out" && mkdir -p "$out"
+          [ -f build.log ] && cp build.log "$out/"
+          for module in core app; do
+            [ -d "$module/build/test-results" ] && mkdir -p "$out/$module" && cp -r "$module/build/test-results" "$out/$module/"
+          done
+          echo "${HEAD_SHA}" > "$out/HEAD_SHA"
+          # The branch is public and nothing masks it as the job log is masked: make sure the
+          # signing password is in none of the files, whatever a tool may have printed.
+          if [ -n "$KEYSTORE_PASSWORD" ] && grep -rlF -- "$KEYSTORE_PASSWORD" "$out" > /dev/null; then
+            echo "::error title=Logs::The signing password appears in the build output; the logs are not pushed."
+            exit 1
+          fi
+          cd "$out"
+          git init -q && git checkout -q --orphan "$TARGET"
+          git -c user.name=ci -c user.email=ci@users.noreply.github.com add -A
+          git -c user.name=ci -c user.email=ci@users.noreply.github.com commit -q -m "Logs for ${HEAD_SHA::7}"
+          git push -q --force "https://x-access-token:${TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "HEAD:refs/heads/$TARGET"
+
+      - name: Compare screenshots
+        if: always()
+        run: |
+          pip install --quiet pillow
+          python3 tools/screenshot_report.py app/build/outputs/screenshots app/src/test/screenshots app/build/outputs/screenshots/diff
+
+      - name: Push screenshots to ci/screenshots
+        # main: ci/screenshots; a pull request from this repository: ci/screenshots-pr-<number>, for review
+        if: always() && ((github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository))
+        env:
+          TOKEN: ${{ github.token }}
+          TARGET: ${{ github.event_name == 'pull_request' && format('ci/screenshots-pr-{0}', github.event.pull_request.number) || 'ci/screenshots' }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          src=app/build/outputs/screenshots
+          # nothing to show until there are screenshot tests
+          ls "$src"/*.png > /dev/null 2>&1 || exit 0
+          out="$RUNNER_TEMP/screenshots"
+          rm -rf "$out" && cp -r "$src" "$out"
+          cd "$out"
+          git init -q && git checkout -q --orphan "$TARGET"
+          git -c user.name=ci -c user.email=ci@users.noreply.github.com add -A
+          git -c user.name=ci -c user.email=ci@users.noreply.github.com commit -q -m "Screenshots for ${HEAD_SHA::7}"
+          git push -q --force "https://x-access-token:${TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "HEAD:refs/heads/$TARGET"
+
+      - name: Screenshots
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: screenshots
+          path: app/build/outputs/screenshots
+          if-no-files-found: ignore
+
+      - name: Test APK
+        if: success()
+        uses: actions/upload-artifact@v7
+        with:
+          name: deskmail-apk
+          path: app/build/outputs/apk/release/*.apk
+          if-no-files-found: error
+
+      - name: Test reports
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: test-reports
+          path: |
+            core/build/reports/tests
+            app/build/reports/tests
+          if-no-files-found: ignore

@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="nav_inbox">Gelen</string>
+    <string name="nav_unread">Okunmamış</string>
+    <string name="nav_starred">Yıldızlı</string>
+    <string name="nav_folders">Klasörler</string>
+    <string name="nav_search">Ara</string>
+
+    <string name="folder_inbox">Gelen Kutusu</string>
+    <string name="folder_drafts">Taslaklar</string>
+    <string name="folder_sent">Gönderilmiş</string>
+    <string name="folder_archive">Arşiv</string>
+    <string name="folder_junk">Spam</string>
+    <string name="folder_trash">Çöp</string>
+    <string name="folder_all">Tüm postalar</string>
+
+    <string name="filter_all">Tümü</string>
+    <string name="filter_unread">Okunmamış</string>
+    <string name="filter_starred">Yıldızlı</string>
+    <string name="filter_attachments">Ekli</string>
+    <string name="column_from">Kimden</string>
+    <string name="column_subject">Konu</string>
+    <string name="column_attachments">Ek</string>
+    <string name="column_date">Tarih</string>
+    <string name="list_empty_title">Burada ileti yok</string>
+    <string name="list_empty_filtered">Süzgeçlere uyan ileti yok</string>
+    <string name="list_resize">İleti listesini boyutlandır</string>
+    <plurals name="message_count">
+        <item quantity="one">%d ileti</item>
+        <item quantity="other">%d ileti</item>
+    </plurals>
+    <string name="message_unread">Okunmamış</string>
+    <string name="message_starred">Yıldızlı</string>
+    <plurals name="message_attachments">
+        <item quantity="one">%d ek</item>
+        <item quantity="other">%d ek</item>
+    </plurals>
+    <string name="message_to">Kime: %1$s</string>
+
+    <string name="action_new_message">Yeni ileti</string>
+    <string name="action_star">Yıldızla</string>
+    <string name="action_unstar">Yıldızı kaldır</string>
+    <string name="action_mark_read">Okundu say</string>
+    <string name="action_mark_unread">Okunmadı say</string>
+    <string name="action_open_attachment">Eki aç</string>
+    <string name="reader_empty_title">Açık ileti yok</string>
+    <string name="reader_empty_text">Okumak için listeden bir ileti seç.</string>
+    <string name="reader_remote_blocked">Uzak görseller yüklenmedi.</string>
+    <string name="reader_remote_show">Göster</string>
+    <string name="inspector_details">Ayrıntılar</string>
+    <string name="inspector_attachments">Ekler</string>
+    <string name="inspector_no_attachments">Ek yok</string>
+    <string name="detail_from">Kimden</string>
+    <string name="detail_to">Kime</string>
+    <string name="detail_date">Tarih</string>
+    <string name="detail_account">Hesap</string>
+    <string name="detail_folder">Klasör</string>
+
+    <string name="menu_file">Dosya</string>
+    <string name="menu_message">İleti</string>
+    <string name="action_next_message">Sonraki ileti</string>
+    <string name="action_previous_message">Önceki ileti</string>
+    <string name="action_toggle_star">Yıldızla ya da yıldızı kaldır</string>
+    <string name="action_toggle_read">Okundu ya da okunmadı say</string>
+    <string name="action_close_message">İletiyi kapat</string>
+    <string name="action_find">İletilerde ara</string>
+    <string name="shortcut_scope_mail">Listede ve iletide</string>
+    <string name="palette_hint">İleti, klasör ya da komut ara</string>
+    <string name="palette_group_screens">Ekranlar ve klasörler</string>
+    <string name="palette_group_messages">İletiler</string>
+
+    <string name="not_in_this_version">Bu ön sürümde henüz yok: %1$s</string>
+
+    <string name="search_coming_title">Arama henüz yok</string>
+    <string name="search_coming_text">Sonraki ön sürümlerden biriyle gelecek.</string>
+
+    <string name="settings_experiments">Denemeler</string>
+    <string name="settings_experiments_note">İlk ön sürümlerin cihazlarda yanıtlaması gereken sorular. Bir ileti aç, sonra her birini dene.</string>
+    <string name="experiment_glass">Cam çubuklar</string>
+    <string name="experiment_glass_note">Kapalıyken çubuklar, sayfalar ve menüler düz yüzey olur.</string>
+    <string name="experiment_under_bars">İleti çubukların altından geçsin</string>
+    <string name="experiment_under_bars_note">Telefon. Kapalıyken ileti üst ve alt çubuğun arasında kalır.</string>
+    <string name="experiment_darken">Koyu temada iletiyi karart</string>
+    <string name="experiment_darken_note">Kapalıyken ileti, gönderenin yaptığı gibi beyaz zeminde görünür.</string>
+    <string name="experiment_web_layer">WebView katmanı</string>
+    <string name="experiment_web_layer_note">Cam, altındaki iletiyi bulanıklaştırmıyorsa ötekileri dene.</string>
+    <string name="web_layer_default">Varsayılan</string>
+    <string name="web_layer_hardware">Donanım</string>
+    <string name="web_layer_software">Yazılım</string>
+
+    <string name="settings_log">Günlük</string>
+    <string name="settings_log_note">Uygulamanın yaptıkları ve ters giden şeyler. Şifreler ve jetonlar satır saklanmadan önce maskelenir. Bir şey bozulunca paylaş.</string>
+    <string name="settings_log_open">Günlüğü aç</string>
+    <string name="log_copy">Kopyala</string>
+    <string name="log_share">Dosya olarak paylaş</string>
+    <string name="log_clear">Günlüğü temizle</string>
+    <string name="log_empty">Günlük boş</string>
+    <string name="log_cleared">Günlük temizlendi</string>
+    <string name="log_share_title">DeskMail günlüğü</string>
+    <string name="log_share_failed">Günlük paylaşılamadı</string>
+    <plurals name="log_lines">
+        <item quantity="one">%d satır</item>
+        <item quantity="other">%d satır</item>
+    </plurals>
+    <plurals name="log_copied">
+        <item quantity="one">Son satır kopyalandı</item>
+        <item quantity="other">Son %d satır kopyalandı</item>
+    </plurals>
+
+    <string name="settings_about">Hakkında</string>
+    <string name="settings_version">Sürüm</string>
+    <string name="settings_about_note">Uydurma postayla bir ön sürüm: kabuk ve düzenler cihazlarda denensin diye.</string>
+</resources>

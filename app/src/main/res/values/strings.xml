@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name" translatable="false">DeskMail</string>
+
+    <!-- Navigation: the views over every account, and the screens -->
+    <string name="nav_inbox">Inbox</string>
+    <string name="nav_unread">Unread</string>
+    <string name="nav_starred">Starred</string>
+    <string name="nav_folders">Folders</string>
+    <string name="nav_search">Search</string>
+
+    <!-- Folders by what they are for; the server's own names differ from provider to provider -->
+    <string name="folder_inbox">Inbox</string>
+    <string name="folder_drafts">Drafts</string>
+    <string name="folder_sent">Sent</string>
+    <string name="folder_archive">Archive</string>
+    <string name="folder_junk">Spam</string>
+    <string name="folder_trash">Trash</string>
+    <string name="folder_all">All mail</string>
+    <!-- An account above its folders: its name and its address -->
+    <string name="folders_account" translatable="false">%1$s · %2$s</string>
+
+    <!-- The list of messages -->
+    <string name="filter_all">All</string>
+    <string name="filter_unread">Unread</string>
+    <string name="filter_starred">Starred</string>
+    <string name="filter_attachments">With attachments</string>
+    <string name="column_from">From</string>
+    <string name="column_subject">Subject</string>
+    <string name="column_attachments">Att.</string>
+    <string name="column_date">Date</string>
+    <string name="list_empty_title">No messages here</string>
+    <string name="list_empty_filtered">No message matches the filters</string>
+    <string name="list_resize">Resize the message list</string>
+    <plurals name="message_count">
+        <item quantity="one">%d message</item>
+        <item quantity="other">%d messages</item>
+    </plurals>
+    <!-- What a row says of its message, for TalkBack -->
+    <string name="message_unread">Unread</string>
+    <string name="message_starred">Starred</string>
+    <plurals name="message_attachments">
+        <item quantity="one">%d attachment</item>
+        <item quantity="other">%d attachments</item>
+    </plurals>
+    <!-- The recipients of a message: "To: Ayşe Yılmaz" -->
+    <string name="message_to">To: %1$s</string>
+
+    <!-- The reader -->
+    <string name="action_new_message">New message</string>
+    <string name="action_star">Star</string>
+    <string name="action_unstar">Remove the star</string>
+    <string name="action_mark_read">Mark as read</string>
+    <string name="action_mark_unread">Mark as unread</string>
+    <string name="action_open_attachment">Open the attachment</string>
+    <string name="reader_empty_title">No message open</string>
+    <string name="reader_empty_text">Pick a message from the list to read it here.</string>
+    <string name="reader_remote_blocked">Remote images were not loaded.</string>
+    <string name="reader_remote_show">Show them</string>
+    <string name="inspector_details">Details</string>
+    <string name="inspector_attachments">Attachments</string>
+    <string name="inspector_no_attachments">No attachments</string>
+    <string name="detail_from">From</string>
+    <string name="detail_to">To</string>
+    <string name="detail_date">Date</string>
+    <string name="detail_account">Account</string>
+    <string name="detail_folder">Folder</string>
+
+    <!-- The menu bar and the shortcut table -->
+    <string name="menu_file">File</string>
+    <string name="menu_message">Message</string>
+    <string name="action_next_message">Next message</string>
+    <string name="action_previous_message">Previous message</string>
+    <string name="action_toggle_star">Star, or remove the star</string>
+    <string name="action_toggle_read">Mark as read or unread</string>
+    <string name="action_close_message">Close the message</string>
+    <string name="action_find">Search the mail</string>
+    <!-- Beside a shortcut that only works there -->
+    <string name="shortcut_scope_mail">In a list or a message</string>
+    <!-- The command palette (Ctrl+K) -->
+    <string name="palette_hint">Search messages, folders and commands</string>
+    <string name="palette_group_screens">Screens and folders</string>
+    <string name="palette_group_messages">Messages</string>
+
+    <!-- A command the pre-release shows the place of, by its name -->
+    <string name="not_in_this_version">Not in this pre-release yet: %1$s</string>
+
+    <string name="search_coming_title">Search is not here yet</string>
+    <string name="search_coming_text">It comes with one of the next pre-releases.</string>
+
+    <!-- Settings › Experiments: what the first pre-releases are to find out on the devices -->
+    <string name="settings_experiments">Experiments</string>
+    <string name="settings_experiments_note">Questions the first pre-releases are to answer on the devices. Open a message, then try each.</string>
+    <string name="experiment_glass">Glass bars</string>
+    <string name="experiment_glass_note">Off: bars, sheets and menus are solid surfaces.</string>
+    <string name="experiment_under_bars">Message scrolls under the bars</string>
+    <string name="experiment_under_bars_note">Phone. Off: the message stays between the top and the bottom bar.</string>
+    <string name="experiment_darken">Darken messages on dark themes</string>
+    <string name="experiment_darken_note">Off: a message is shown on white, as its sender made it.</string>
+    <string name="experiment_web_layer">WebView layer</string>
+    <string name="experiment_web_layer_note">Try the others if the glass does not blur the message beneath it.</string>
+    <string name="web_layer_default">Default</string>
+    <string name="web_layer_hardware">Hardware</string>
+    <string name="web_layer_software">Software</string>
+
+    <!-- Settings › Log -->
+    <string name="settings_log">Log</string>
+    <string name="settings_log_note">What the app did and what went wrong. Passwords and tokens are masked before a line is kept. Share it when something breaks.</string>
+    <string name="settings_log_open">Open the log</string>
+    <string name="log_copy">Copy</string>
+    <string name="log_share">Share as a file</string>
+    <string name="log_clear">Clear the log</string>
+    <string name="log_empty">The log is empty</string>
+    <string name="log_cleared">The log was cleared</string>
+    <string name="log_share_title">DeskMail log</string>
+    <string name="log_share_failed">The log could not be shared</string>
+    <plurals name="log_lines">
+        <item quantity="one">%d line</item>
+        <item quantity="other">%d lines</item>
+    </plurals>
+    <plurals name="log_copied">
+        <item quantity="one">Copied the last line</item>
+        <item quantity="other">Copied the last %d lines</item>
+    </plurals>
+
+    <string name="settings_about">About</string>
+    <string name="settings_version">Version</string>
+    <string name="settings_about_note">A pre-release with made-up mail: the shell and the layouts, to be tried on the devices.</string>
+</resources>

@@ -1,0 +1,122 @@
+# Attaches the signed APK to a release. A tag on main (pushed with git, or created by publishing
+# a release on GitHub) builds the app at that tag with the fixed key and uploads
+# DeskMail-<version>.apk to the tag's release, creating the release from the tag's CHANGELOG
+# section when there is none yet. Obtainium installs the update from there.
+name: Release
+
+on:
+  push:
+    tags: ['*']
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: The tag to build and attach the APK to
+        required: true
+
+concurrency:
+  # a tag created by publishing a release may arrive as both events: one after the other
+  group: release-${{ github.event.release.tag_name || inputs.tag || github.ref_name }}
+  cancel-in-progress: false
+
+env:
+  TAG: ${{ github.event.release.tag_name || inputs.tag || github.ref_name }}
+  # Not a secret: the SHA-256 fingerprint of the certificate every installable APK is signed with.
+  SIGNING_CERT_SHA256: ce7ad2788a97dfe2c33acc7ac0da934da35dac22504b3d8e13ca979252482dba
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: refs/tags/${{ env.TAG }}
+          fetch-depth: 0
+
+      - name: Check the tag
+        id: tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version=$(sed -n 's/^[[:space:]]*versionName = "\(.*\)"$/\1/p' app/build.gradle.kts)
+          if [ "$version" != "$TAG" ]; then
+            echo "::error title=Release::The tag is $TAG but app/build.gradle.kts says versionName $version."
+            exit 1
+          fi
+          git fetch -q origin main
+          if ! git merge-base --is-ancestor HEAD origin/main; then
+            echo "::error title=Release::The tag $TAG is not on main. Merge first, then tag main."
+            exit 1
+          fi
+          apk="DeskMail-$version.apk"
+          echo "apk=$apk" >> "$GITHUB_OUTPUT"
+          # the second of two events for one tag finds the work done
+          if [ "${{ github.event_name }}" != "workflow_dispatch" ] && gh release view "$TAG" --json assets --jq '.assets[].name' 2>/dev/null | grep -qxF "$apk"; then
+            echo "::notice title=Release::$apk is already attached to $TAG."
+            echo "done=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/setup-java@v5
+        if: steps.tag.outputs.done != 'true'
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: gradle
+
+      - name: Signing key
+        if: steps.tag.outputs.done != 'true'
+        env:
+          KEYSTORE_BASE64: ${{ secrets.SIGNING_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.SIGNING_KEYSTORE_PASSWORD }}
+        run: |
+          if [ -z "$KEYSTORE_BASE64" ] || [ -z "$KEYSTORE_PASSWORD" ]; then
+            echo "::error title=Signing::The signing secrets are not set. A release is only built with the fixed key."
+            exit 1
+          fi
+          file="$RUNNER_TEMP/deskmail.p12"
+          printf '%s' "$KEYSTORE_BASE64" | base64 --decode --ignore-garbage > "$file"
+          actual=$(keytool -list -v -keystore "$file" -storetype PKCS12 -storepass:env KEYSTORE_PASSWORD -alias deskmail 2>/dev/null \
+            | sed -n 's/^[[:space:]]*SHA256: //p' | tr -d ':' | tr 'A-F' 'a-f')
+          if [ "$actual" != "$SIGNING_CERT_SHA256" ]; then
+            echo "::error title=Signing::The signing secrets do not hold the expected key (a wrong or partial paste?)."
+            exit 1
+          fi
+          echo "DESKMAIL_KEYSTORE_FILE=$file" >> "$GITHUB_ENV"
+
+      - name: Build
+        if: steps.tag.outputs.done != 'true'
+        env:
+          DESKMAIL_KEYSTORE_PASSWORD: ${{ secrets.SIGNING_KEYSTORE_PASSWORD }}
+        run: ./gradlew :app:assembleRelease --stacktrace --console=plain
+
+      - name: Check the APK's signature
+        if: steps.tag.outputs.done != 'true'
+        run: |
+          apksigner=$(ls -d "$ANDROID_HOME"/build-tools/*/ | sort -V | tail -1)apksigner
+          certs=$("$apksigner" verify --print-certs app/build/outputs/apk/release/app-release.apk 2>&1) || true
+          printf '%s\n' "$certs"
+          if ! printf '%s\n' "$certs" | grep -qiE "certificate SHA-256 digest: ${SIGNING_CERT_SHA256}\$"; then
+            echo "::error title=Signing::The APK is not signed with the fixed key."
+            exit 1
+          fi
+
+      - name: Attach the APK to the release
+        if: steps.tag.outputs.done != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          APK: ${{ steps.tag.outputs.apk }}
+        run: |
+          cp app/build/outputs/apk/release/app-release.apk "$APK"
+          if ! gh release view "$TAG" > /dev/null 2>&1; then
+            # the tag's section of the CHANGELOG is the release's text
+            awk -v v="$TAG" 'index($0, "## " v " ") == 1 || $0 == "## " v { on = 1; next } /^## / { on = 0 } on' CHANGELOG.md > "$RUNNER_TEMP/notes.md"
+            flags=""
+            case "$TAG" in *-*) flags="--prerelease" ;; esac
+            gh release create "$TAG" --verify-tag --title "$TAG" --notes-file "$RUNNER_TEMP/notes.md" $flags
+          fi
+          gh release upload "$TAG" "$APK" --clobber
+          echo "::notice title=Release::$APK is attached to $TAG."
