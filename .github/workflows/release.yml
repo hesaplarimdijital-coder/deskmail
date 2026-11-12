@@ -1,7 +1,9 @@
-# Attaches the signed APK to a release. A tag on main (pushed with git, or created by publishing
-# a release on GitHub) builds the app at that tag with the fixed key and uploads
-# DeskMail-<version>.apk to the tag's release, creating the release from the tag's CHANGELOG
-# section when there is none yet. Obtainium installs the update from there.
+# Attaches the signed APK to a release. A tag on main (created by publishing a release on GitHub,
+# or pushed with git) builds the app at that tag with the fixed key and uploads
+# DeskMail-<version>.apk to the tag's release. The release's text is the tag's CHANGELOG section:
+# a release published with nothing written in it is given that text, a tag pushed without a release
+# gets a release made from it. A tag with a "-" in it is a pre-release, whoever made it.
+# Obtainium installs the update from there.
 name: Release
 
 on:
@@ -111,12 +113,19 @@ jobs:
           APK: ${{ steps.tag.outputs.apk }}
         run: |
           cp app/build/outputs/apk/release/app-release.apk "$APK"
+          # the tag's section of the CHANGELOG is the release's text
+          awk -v v="$TAG" 'index($0, "## " v " ") == 1 || $0 == "## " v { on = 1; next } /^## / { on = 0 } on' CHANGELOG.md > "$RUNNER_TEMP/notes.md"
+          flags=""
+          case "$TAG" in *-*) flags="--prerelease" ;; esac
           if ! gh release view "$TAG" > /dev/null 2>&1; then
-            # the tag's section of the CHANGELOG is the release's text
-            awk -v v="$TAG" 'index($0, "## " v " ") == 1 || $0 == "## " v { on = 1; next } /^## / { on = 0 } on' CHANGELOG.md > "$RUNNER_TEMP/notes.md"
-            flags=""
-            case "$TAG" in *-*) flags="--prerelease" ;; esac
             gh release create "$TAG" --verify-tag --title "$TAG" --notes-file "$RUNNER_TEMP/notes.md" $flags
+          else
+            # published by hand: what was written there stays; an empty one gets the CHANGELOG's text
+            written=$(gh release view "$TAG" --json body --jq '.body // ""' | tr -d '[:space:]')
+            if [ -z "$written" ] && [ -s "$RUNNER_TEMP/notes.md" ]; then
+              gh release edit "$TAG" --notes-file "$RUNNER_TEMP/notes.md"
+            fi
+            if [ -n "$flags" ]; then gh release edit "$TAG" $flags; fi
           fi
           gh release upload "$TAG" "$APK" --clobber
           echo "::notice title=Release::$APK is attached to $TAG."

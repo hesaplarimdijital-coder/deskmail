@@ -66,11 +66,21 @@ Araçlar desktop-kit 2.4.0 ile aynıdır: Android Gradle eklentisi 9.4.1, Gradle
 ## Sürüm çıkarma
 
 Sürümler [SemVer](https://semver.org/lang/tr/) kuralına uyar; `versionCode` her sürümde bir artar.
-`main` üzerinde sürüm adıyla bir etiket açılınca (`app/build.gradle.kts`'teki `versionName` ile aynı,
-"v" yok) `.github/workflows/release.yml` uygulamayı o etiketten sabit anahtarla derler, APK'nın
-imzasını denetler ve `DeskMail-<sürüm>.apk` dosyasını sürüme ekler; sürüm yoksa `CHANGELOG.md`'deki
-bölümden oluşturur (adında "-" olan sürüm ön sürüm olur). `CHANGELOG.md`'de her madde tek satırdır:
-sürüm notlarında satır sonları olduğu gibi görünür.
+
+Bir sürüm şöyle çıkar:
+
+1. Sürümü taşıyan PR `main`'e birleşir (`app/build.gradle.kts`'teki `versionName` ve `CHANGELOG.md`'deki
+   bölüm o PR'ın son commit'idir).
+2. GitHub'da **Releases › Draft a new release**: etiket `versionName` ile aynı ("v" yok), hedef `main`,
+   başka hiçbir şey yazmadan **Publish release**. Hazır bağlantı:
+   `https://github.com/hesaplarimdijital-coder/deskmail/releases/new?tag=<sürüm>&target=main&title=<sürüm>`
+3. `.github/workflows/release.yml` uygulamayı o etiketten sabit anahtarla derler, APK'nın imzasını
+   denetler, `DeskMail-<sürüm>.apk` dosyasını sürüme ekler, sürümün metnini `CHANGELOG.md`'deki bölümden
+   doldurur ve adında "-" olan sürümü ön sürüm olarak işaretler. Birkaç dakika sürer.
+
+Etiketi ve sürümü bir insan açar: Claude'un çalıştığı oturum PR birleştirebilir ama etiket ve sürüm
+açamaz. Etiket `main` üzerinde değilse ya da `versionName` ile uyuşmuyorsa iş akışı durur ve nedenini
+söyler. `CHANGELOG.md`'de her madde tek satırdır: sürüm notlarında satır sonları olduğu gibi görünür.
 
 ## İmza
 
