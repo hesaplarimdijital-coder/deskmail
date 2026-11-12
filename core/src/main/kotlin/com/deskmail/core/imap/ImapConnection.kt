@@ -9,6 +9,7 @@ import com.deskmail.core.mail.RemoteFolder
 import com.deskmail.core.net.Credentials
 import com.deskmail.core.net.Security
 import com.deskmail.core.net.ServerAddress
+import com.deskmail.core.net.ServerIdentity
 import jakarta.mail.Folder
 import jakarta.mail.Session
 import org.eclipse.angus.mail.imap.IMAPFolder
@@ -160,8 +161,12 @@ class ImapConnection private constructor(
                 }
                 Security.None -> Unit
             }
-            // the certificate must be the named host's
-            put("mail.imap.ssl.checkserveridentity", "true")
+            // The certificate must be the named host's. The library would leave that to the platform
+            // under a name ("LDAPS") that Java's TLS knows and Android's does not, where the check
+            // would silently not happen. So it is the app's own, the same everywhere, right after
+            // the handshake; that the certificate is signed by a trusted authority stays the platform's.
+            put("mail.imap.ssl.checkserveridentity", "false")
+            put("mail.imap.ssl.hostnameverifier", ServerIdentity)
             when (credentials) {
                 is Credentials.Password -> put("mail.imap.auth.mechanisms", "PLAIN LOGIN")
                 is Credentials.OAuth -> put("mail.imap.auth.mechanisms", "XOAUTH2")
