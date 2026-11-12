@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.db.PendingDaoTest" tests="16" skipped="0" failures="0" errors="0" timestamp="2026-11-12T21:59:55.515Z" hostname="runnervmwuk1x" time="0.358">
+  <properties/>
+  <testcase name="aMarkOnAMessageThatIsLeavingDoesNotCountTwice" classname="com.deskmail.db.PendingDaoTest" time="0.023"/>
+  <testcase name="aMarkShowsAtOnceAndWaitsForTheServer" classname="com.deskmail.db.PendingDaoTest" time="0.023"/>
+  <testcase name="aMarkThatWasReplacedWhileItWasSentLeavesTheNewOneWaiting" classname="com.deskmail.db.PendingDaoTest" time="0.022"/>
+  <testcase name="aMessageThatGoesTakesWhatWaitedForItAlong" classname="com.deskmail.db.PendingDaoTest" time="0.021"/>
+  <testcase name="aMoveTheServerSaysNothingMoreOfTakesTheMessageOffTheDevice" classname="com.deskmail.db.PendingDaoTest" time="0.022"/>
+  <testcase name="aMoveThatIsTakenBackLeavesNothingBehind" classname="com.deskmail.db.PendingDaoTest" time="0.024"/>
+  <testcase name="whatCannotBeMovedIsPassedOver" classname="com.deskmail.db.PendingDaoTest" time="0.024"/>
+  <testcase name="whatIsAlreadySoIsNoChange" classname="com.deskmail.db.PendingDaoTest" time="0.022"/>
+  <testcase name="theLastWordOnAMarkCounts" classname="com.deskmail.db.PendingDaoTest" time="0.025"/>
+  <testcase name="aMessageDoesNotArriveInAFolderWhoseUidsMeanSomethingElse" classname="com.deskmail.db.PendingDaoTest" time="0.019"/>
+  <testcase name="aRefusedMoveBringsTheMessageBack" classname="com.deskmail.db.PendingDaoTest" time="0.022"/>
+  <testcase name="aMessageASyncAlreadyBroughtIsNotThereTwice" classname="com.deskmail.db.PendingDaoTest" time="0.023"/>
+  <testcase name="aRemovalWaitsAndThenTakesTheMessageAway" classname="com.deskmail.db.PendingDaoTest" time="0.027"/>
+  <testcase name="theMarksThatWaitAreKnownByUid" classname="com.deskmail.db.PendingDaoTest" time="0.021"/>
+  <testcase name="aMessageThatIsMovedIsOffEveryListAtOnce" classname="com.deskmail.db.PendingDaoTest" time="0.018"/>
+  <testcase name="aMovedMessageArrivesWhereTheServerSaysItIs" classname="com.deskmail.db.PendingDaoTest" time="0.016"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

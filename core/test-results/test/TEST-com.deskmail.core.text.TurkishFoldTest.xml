@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.core.text.TurkishFoldTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-11-12T21:58:59.887Z" hostname="runnervmwuk1x" time="0.001">
+  <properties/>
+  <testcase name="other accents are dropped and plain text only loses its case" classname="com.deskmail.core.text.TurkishFoldTest" time="0.0"/>
+  <testcase name="both capital I's become i" classname="com.deskmail.core.text.TurkishFoldTest" time="0.0"/>
+  <testcase name="Turkish letters fold to their plain neighbours" classname="com.deskmail.core.text.TurkishFoldTest" time="0.0"/>
+  <testcase name="a folded query matches folded text" classname="com.deskmail.core.text.TurkishFoldTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
