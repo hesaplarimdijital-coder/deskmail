@@ -54,7 +54,7 @@ data class RemoteFlags(val uid: Long, val flags: MessageFlags)
  * @param sentAt the Date header, when the mail has a usable one.
  * @param receivedAt when the server received it (INTERNALDATE): what lists are ordered by.
  * @param size the whole message in bytes, as the server counts it.
- * @param hasAttachments whether the message's structure holds a part that is a file.
+ * @param attachments how many files the message carries: parts that are neither its text nor a picture its HTML shows.
  */
 data class RemoteMessage(
     val uid: Long,
@@ -71,7 +71,7 @@ data class RemoteMessage(
     val receivedAt: Instant,
     val size: Long,
     val flags: MessageFlags,
-    val hasAttachments: Boolean,
+    val attachments: Int,
 )
 
 /**

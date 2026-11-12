@@ -18,18 +18,18 @@ import java.nio.charset.Charset
  */
 internal object MessageParts {
 
-    /** Whether the message carries a file worth a paperclip: not its text, and not a picture its HTML shows. */
-    fun hasAttachment(part: Part): Boolean {
+    /** How many files the message carries that are worth a paperclip: not its text, and not a picture its HTML shows. */
+    fun attachmentCount(part: Part): Int {
         if (isMultipart(part)) {
-            val multipart = part.content as? Multipart ?: return false
-            return (0 until multipart.count).any { hasAttachment(multipart.getBodyPart(it)) }
+            val multipart = part.content as? Multipart ?: return 0
+            return (0 until multipart.count).sumOf { attachmentCount(multipart.getBodyPart(it)) }
         }
-        if (isText(part)) return false
+        if (isText(part)) return 0
         val disposition = disposition(part)
-        if (disposition == "attachment") return true
+        if (disposition == "attachment") return 1
         // a picture the HTML shows has a content id; what else is not text is a file
-        if (contentId(part).isNotEmpty()) return false
-        return disposition != "inline" || fileName(part).isNotEmpty()
+        if (contentId(part).isNotEmpty()) return 0
+        return if (disposition != "inline" || fileName(part).isNotEmpty()) 1 else 0
     }
 
     /** The message's text and its files. Text parts larger than [maxTextBytes] are not fetched. */

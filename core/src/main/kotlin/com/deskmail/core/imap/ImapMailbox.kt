@@ -112,7 +112,7 @@ class ImapMailbox internal constructor(
             receivedAt = received?.toInstant() ?: Instant.EPOCH,
             size = message.sizeLong.coerceAtLeast(0),
             flags = flags(message.flags),
-            hasAttachments = runCatching { MessageParts.hasAttachment(message) }.getOrDefault(false),
+            attachments = runCatching { MessageParts.attachmentCount(message) }.getOrDefault(0),
         )
     }
 

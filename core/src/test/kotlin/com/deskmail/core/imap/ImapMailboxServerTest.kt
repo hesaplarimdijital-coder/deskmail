@@ -65,7 +65,7 @@ class ImapMailboxServerTest {
         assertEquals(thursday, header.receivedAt)
         assertTrue(header.size > 0)
         assertEquals(MessageFlags(), header.flags)
-        assertFalse(header.hasAttachments)
+        assertEquals(0, header.attachments)
     }
 
     @Test
@@ -78,7 +78,7 @@ class ImapMailboxServerTest {
         assertEquals("Re: Proje planı (v3)", headers.getValue(plan).subject)
         assertTrue(headers.getValue(plan).flags.flagged)
         // a PDF is a file; the picture the HTML shows is not
-        assertTrue(headers.getValue(plan).hasAttachments)
+        assertEquals(1, headers.getValue(plan).attachments)
     }
 
     @Test
