@@ -33,7 +33,41 @@ data class MailFolder(
     val depth: Int get() = path.size - 1
 }
 
-data class MailAttachment(val name: String, val bytes: Long)
+/**
+ * A file a message carries.
+ *
+ * @param id the app's own name for it, for fetching it; 0 for one that cannot be fetched (made-up mail).
+ * @param mimeType what kind of file its sender says it is ("application/pdf").
+ */
+data class MailAttachment(val name: String, val bytes: Long, val id: Long = 0, val mimeType: String = "application/octet-stream")
+
+/** What became of fetching a file a message carries. */
+sealed interface FetchedFile {
+    /** It is on the device, at [file]. */
+    data class Ready(val file: java.io.File) : FetchedFile
+
+    /** It could not be fetched; [kind] says why, as far as that is known. */
+    data class Failed(val kind: MailException.Kind) : FetchedFile
+
+    /** The message, or the file in it, is no longer there. */
+    data object Gone : FetchedFile
+}
+
+/**
+ * Something that was just done to messages and can still be taken back ([MailSource.undo]).
+ *
+ * @param messages the messages it was done to.
+ * @param folder for [Action.Moved]: where they went.
+ * @param changes what the source needs to take it back; nothing a screen reads.
+ */
+class MailUndo(val action: Action, val messages: List<Long>, val folder: Long = 0, val changes: List<Change> = emptyList()) {
+    enum class Action { Archived, Deleted, DeletedForGood, Moved }
+
+    /** A message on its way: the change that is waiting, where the message came [from] and where it goes [to] (0: nowhere, it is removed). */
+    class Change(val id: Long, val accountId: Long, val messageId: Long, val from: Long, val to: Long)
+
+    val count: Int get() = messages.size
+}
 
 /** A message as the lists and the reader's header show it. What it says is its [MailContent]. */
 data class MailMessage(

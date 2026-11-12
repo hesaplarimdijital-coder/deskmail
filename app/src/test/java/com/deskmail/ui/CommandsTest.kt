@@ -109,6 +109,60 @@ class CommandsTest {
     }
 
     @Test
+    fun archiveAndDeleteActOnTheOpenMessageAndUndoBringsItBack() {
+        launch()
+        // nothing is open, and nothing was done yet
+        assertFalse(perform(Commands.ARCHIVE))
+        assertFalse(perform(Commands.DELETE))
+        assertFalse(perform(Commands.MOVE))
+        assertFalse(perform(Commands.UNDO))
+
+        perform(Commands.NEXT)
+        val id = ui.openedId(Routes.INBOX)!!
+        val inbox = mail.message(id)!!.folderId
+        assertTrue(perform(Commands.ARCHIVE))
+        // in the archive, and no reader shows it any more
+        assertTrue(mail.message(id)!!.folderId != inbox)
+        assertNull(ui.openedId(Routes.INBOX))
+        compose.onNodeWithText("Arşivlendi").assertExists()
+
+        // Ctrl+Z, while the notice is up: the same as its "Undo"
+        assertTrue(perform(Commands.UNDO))
+        assertEquals(inbox, mail.message(id)!!.folderId)
+        assertTrue(mail.committed.isEmpty())
+        // once is enough
+        assertFalse(perform(Commands.UNDO))
+    }
+
+    @Test
+    fun undoStillWorksWhenTheNoticeIsGone() {
+        launch()
+        perform(Commands.NEXT)
+        val id = ui.openedId(Routes.INBOX)!!
+        val inbox = mail.message(id)!!.folderId
+        assertTrue(perform(Commands.DELETE))
+        compose.mainClock.advanceTimeBy(30_000)
+        compose.waitForIdle()
+        // the notice is gone and what was done stands
+        assertEquals(1, mail.committed.size)
+        assertTrue(mail.message(id)!!.folderId != inbox)
+
+        assertTrue(perform(Commands.UNDO))
+        // this made-up mail lets nothing be brought back that stands: the screen says so
+        compose.onNodeWithText("Geri alınamadı", substring = true).assertExists()
+    }
+
+    @Test
+    fun moveAsksForAFolder() {
+        launch()
+        perform(Commands.NEXT)
+        val id = ui.openedId(Routes.INBOX)!!
+        assertTrue(perform(Commands.MOVE))
+        assertEquals(id, ui.moving?.id)
+        compose.onNodeWithText("Klasöre taşı").assertExists()
+    }
+
+    @Test
     fun syncAsksTheServersWithTheScreenInFront() {
         launch()
         assertTrue(perform(Commands.REFRESH))

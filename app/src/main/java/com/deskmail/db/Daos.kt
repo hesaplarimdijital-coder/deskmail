@@ -7,6 +7,7 @@ import androidx.room3.Query
 import androidx.room3.Transaction
 import androidx.room3.Update
 import androidx.room3.Upsert
+import com.deskmail.core.sync.ChangeOutcome
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -129,6 +130,12 @@ abstract class FolderDao {
     }
 }
 
+/**
+ * Holds for a message that is not on its way out of its folder: no move and no removal of it is
+ * waiting to be told to the server ([PendingOpEntity]).
+ */
+private const val STAYING = "NOT EXISTS (SELECT 1 FROM pending_op WHERE pending_op.messageId = message.id AND pending_op.kind IN ('Move', 'Expunge'))"
+
 /** A message's UID and marks, for comparing with the server's. */
 data class FlagRow(
     val uid: Long,
@@ -144,34 +151,37 @@ abstract class MessageDao {
 
     // ------------------------------------------------------------------ what the screens watch
 
+    // A message that was archived, moved or deleted is off every list at once, while the server
+    // is still to be told ([STAYING]).
+
     /** A folder's messages, newest first. */
-    @Query("SELECT * FROM message WHERE folderId = :folderId ORDER BY date DESC, uid DESC")
+    @Query("SELECT * FROM message WHERE folderId = :folderId AND $STAYING ORDER BY date DESC, uid DESC")
     abstract fun observeFolder(folderId: Long): Flow<List<MessageEntity>>
 
     /** The inboxes of every account as one list. */
     @Query(
         "SELECT message.* FROM message JOIN folder ON folder.id = message.folderId " +
-            "WHERE folder.role = 'Inbox' ORDER BY message.date DESC, message.id DESC",
+            "WHERE folder.role = 'Inbox' AND $STAYING ORDER BY message.date DESC, message.id DESC",
     )
     abstract fun observeInboxes(): Flow<List<MessageEntity>>
 
     /** Everything unread, wherever it is filed: not Spam, not Trash, and not once more from "All Mail". */
     @Query(
         "SELECT message.* FROM message JOIN folder ON folder.id = message.folderId " +
-            "WHERE message.seen = 0 AND folder.role NOT IN ('Junk', 'Trash', 'All') ORDER BY message.date DESC, message.id DESC",
+            "WHERE message.seen = 0 AND folder.role NOT IN ('Junk', 'Trash', 'All') AND $STAYING ORDER BY message.date DESC, message.id DESC",
     )
     abstract fun observeUnread(): Flow<List<MessageEntity>>
 
     @Query(
         "SELECT message.* FROM message JOIN folder ON folder.id = message.folderId " +
-            "WHERE message.flagged = 1 AND folder.role NOT IN ('Trash', 'All') ORDER BY message.date DESC, message.id DESC",
+            "WHERE message.flagged = 1 AND folder.role NOT IN ('Trash', 'All') AND $STAYING ORDER BY message.date DESC, message.id DESC",
     )
     abstract fun observeStarred(): Flow<List<MessageEntity>>
 
     /** The newest messages of every account, each once: "All Mail" holds the same messages once more. */
     @Query(
         "SELECT message.* FROM message JOIN folder ON folder.id = message.folderId " +
-            "WHERE folder.role != 'All' ORDER BY message.date DESC, message.id DESC LIMIT :limit",
+            "WHERE folder.role != 'All' AND $STAYING ORDER BY message.date DESC, message.id DESC LIMIT :limit",
     )
     abstract fun observeNewest(limit: Int): Flow<List<MessageEntity>>
 
@@ -183,6 +193,9 @@ abstract class MessageDao {
 
     @Query("SELECT * FROM attachment WHERE messageId = :messageId ORDER BY id")
     abstract fun observeAttachments(messageId: Long): Flow<List<AttachmentEntity>>
+
+    @Query("SELECT * FROM attachment WHERE id = :id")
+    abstract suspend fun attachment(id: Long): AttachmentEntity?
 
     // ------------------------------------------------------------------ what the sync reads and writes
 
@@ -301,5 +314,258 @@ abstract class MessageDao {
         if (attachments.isNotEmpty()) insertAttachments(attachments)
         setBody(body.messageId, MessageEntity.BODY_KEPT, preview)
         saveFts(listOf(index))
+    }
+}
+
+/** A mark that is waiting to be told to the server, by its message's UID: what a sync must not overwrite. */
+data class PendingMark(val uid: Long, val kind: String, val value: Boolean)
+
+/**
+ * A change that is due, with what the server knows its message by.
+ *
+ * @param uidValidity the stamp of the message's folder as the last sync knew it.
+ * @param targetPath where a moved message goes; null when that folder is gone.
+ */
+data class DueChange(
+    val id: Long,
+    val kind: String,
+    val value: Boolean,
+    val messageId: Long,
+    val uid: Long,
+    val folderId: Long,
+    val folderPath: String,
+    val uidValidity: Long,
+    val targetFolderId: Long,
+    val targetPath: String?,
+)
+
+/**
+ * What was done on the device and is still to be told to the server ([PendingOpEntity]), and the
+ * device's half of every such change: the message shows it at once.
+ */
+@Dao
+abstract class PendingDao {
+
+    @Insert
+    abstract suspend fun insert(op: PendingOpEntity): Long
+
+    @Query("SELECT * FROM pending_op WHERE id = :id")
+    abstract suspend fun byId(id: Long): PendingOpEntity?
+
+    @Query("SELECT * FROM pending_op ORDER BY id")
+    abstract suspend fun all(): List<PendingOpEntity>
+
+    @Query("DELETE FROM pending_op WHERE id = :id")
+    abstract suspend fun delete(id: Long)
+
+    @Query("DELETE FROM pending_op WHERE messageId = :messageId AND kind = :kind")
+    abstract suspend fun deleteOf(messageId: Long, kind: String)
+
+    /** Whether the message is on its way out of its folder: 1 or more when a move or a removal of it is waiting. */
+    @Query("SELECT COUNT(*) FROM pending_op WHERE messageId = :messageId AND kind IN ('Move', 'Expunge')")
+    abstract suspend fun leaving(messageId: Long): Int
+
+    @Query("UPDATE pending_op SET notBefore = :time WHERE id IN (:ids) AND notBefore > :time")
+    abstract suspend fun bringForward(ids: List<Long>, time: Long)
+
+    /** The accounts that have something to tell their server. */
+    @Query("SELECT DISTINCT accountId FROM pending_op")
+    abstract suspend fun accounts(): List<Long>
+
+    /** When the account's next change that is not due yet will be; null for none. */
+    @Query("SELECT MIN(notBefore) FROM pending_op WHERE accountId = :accountId AND notBefore > :now")
+    abstract suspend fun nextDue(accountId: Long, now: Long): Long?
+
+    /** The account's changes that are due, oldest first. */
+    @Query(
+        "SELECT pending_op.id AS id, pending_op.kind AS kind, pending_op.value AS value, message.id AS messageId, message.uid AS uid, " +
+            "folder.id AS folderId, folder.path AS folderPath, folder.uidValidity AS uidValidity, " +
+            "pending_op.targetFolderId AS targetFolderId, target.path AS targetPath " +
+            "FROM pending_op JOIN message ON message.id = pending_op.messageId JOIN folder ON folder.id = message.folderId " +
+            "LEFT JOIN folder AS target ON target.id = pending_op.targetFolderId " +
+            "WHERE pending_op.accountId = :accountId AND pending_op.notBefore <= :now ORDER BY pending_op.id",
+    )
+    abstract suspend fun due(accountId: Long, now: Long): List<DueChange>
+
+    /** The marks of a folder's messages that are waiting to be sent. */
+    @Query(
+        "SELECT message.uid AS uid, pending_op.kind AS kind, pending_op.value AS value FROM pending_op " +
+            "JOIN message ON message.id = pending_op.messageId " +
+            "WHERE message.folderId = :folderId AND pending_op.kind IN ('Seen', 'Flagged')",
+    )
+    abstract suspend fun marksOf(folderId: Long): List<PendingMark>
+
+    // ------------------------------------------------------------------ what a change touches of the mail
+
+    @Query("SELECT * FROM message WHERE id = :id")
+    abstract suspend fun message(id: Long): MessageEntity?
+
+    @Query("SELECT * FROM folder WHERE id = :id")
+    abstract suspend fun folder(id: Long): FolderEntity?
+
+    @Query("SELECT id FROM message WHERE folderId = :folderId AND uid = :uid")
+    abstract suspend fun idAt(folderId: Long, uid: Long): Long?
+
+    @Query("UPDATE message SET seen = :seen WHERE id = :id")
+    abstract suspend fun setSeen(id: Long, seen: Boolean)
+
+    @Query("UPDATE message SET flagged = :flagged WHERE id = :id")
+    abstract suspend fun setFlagged(id: Long, flagged: Boolean)
+
+    @Query("UPDATE message SET folderId = :folderId, uid = :uid WHERE id = :id")
+    abstract suspend fun place(id: Long, folderId: Long, uid: Long)
+
+    @Query("DELETE FROM message WHERE id = :id")
+    abstract suspend fun deleteMessage(id: Long)
+
+    @Query("DELETE FROM message_fts WHERE rowid = :id")
+    abstract suspend fun deleteIndexed(id: Long)
+
+    /** Moves a folder's counts by so much; never below nothing. The server's own counts replace them with the next sync. */
+    @Query("UPDATE folder SET unread = MAX(unread + :unread, 0), total = MAX(total + :total, 0) WHERE id = :id")
+    abstract suspend fun count(id: Long, unread: Int, total: Int)
+
+    @Query("UPDATE folder SET uidValidity = :uidValidity WHERE id = :id AND uidValidity = 0")
+    abstract suspend fun learnUidValidity(id: Long, uidValidity: Long)
+
+    // ------------------------------------------------------------------ the device's half of a change
+
+    /**
+     * Sets or clears marks on a message: on the device at once, and queued for its server. Null
+     * leaves a mark as it is.
+     *
+     * @return the account whose server is to be told, or null when nothing changed (the message
+     *   is gone, or already so marked).
+     */
+    @Transaction
+    open suspend fun mark(messageId: Long, seen: Boolean?, flagged: Boolean?, now: Long): Long? {
+        val message = message(messageId) ?: return null
+        var changed = false
+        if (seen != null && seen != message.seen) {
+            setSeen(messageId, seen)
+            // a message on its way out of the folder was taken off the folder's count already
+            if (leaving(messageId) == 0) count(message.folderId, unread = if (seen) -1 else 1, total = 0)
+            queueMark(message, PendingOpEntity.SEEN, seen, now)
+            changed = true
+        }
+        if (flagged != null && flagged != message.flagged) {
+            setFlagged(messageId, flagged)
+            queueMark(message, PendingOpEntity.FLAGGED, flagged, now)
+            changed = true
+        }
+        return if (changed) message.accountId else null
+    }
+
+    /** Read becomes unread and back ([seen]), or starred becomes unstarred and back. */
+    @Transaction
+    open suspend fun toggle(messageId: Long, seen: Boolean, now: Long): Long? {
+        val message = message(messageId) ?: return null
+        return if (seen) mark(messageId, seen = !message.seen, flagged = null, now = now) else mark(messageId, seen = null, flagged = !message.flagged, now = now)
+    }
+
+    /** The last word on a mark counts: an earlier one that was not sent yet is void. */
+    private suspend fun queueMark(message: MessageEntity, kind: String, value: Boolean, now: Long) {
+        deleteOf(message.id, kind)
+        insert(PendingOpEntity(accountId = message.accountId, messageId = message.id, kind = kind, value = value, targetFolderId = 0, notBefore = now, createdAt = now))
+    }
+
+    /**
+     * Takes messages off their lists and queues them for the folder [targetFolderId], or, with 0,
+     * for removal. The server is told at [notBefore]; until then [takeBack] undoes it.
+     *
+     * A message that is already on its way somewhere, that is in the target already, or that
+     * belongs to another account than the target is passed over.
+     *
+     * @return what was queued.
+     */
+    @Transaction
+    open suspend fun leave(messageIds: List<Long>, targetFolderId: Long, notBefore: Long, now: Long): List<PendingOpEntity> {
+        val target = if (targetFolderId == 0L) null else (folder(targetFolderId) ?: return emptyList())
+        val queued = ArrayList<PendingOpEntity>()
+        for (id in messageIds) {
+            val message = message(id) ?: continue
+            if (target != null && (message.folderId == target.id || message.accountId != target.accountId)) continue
+            if (leaving(id) > 0) continue
+            val op = PendingOpEntity(
+                accountId = message.accountId,
+                messageId = id,
+                kind = if (target == null) PendingOpEntity.EXPUNGE else PendingOpEntity.MOVE,
+                value = false,
+                targetFolderId = targetFolderId,
+                notBefore = notBefore,
+                createdAt = now,
+            )
+            queued += op.copy(id = insert(op))
+            val unread = if (message.seen) 0 else 1
+            count(message.folderId, unread = -unread, total = -1)
+            if (target != null) count(target.id, unread = unread, total = 1)
+        }
+        return queued
+    }
+
+    /**
+     * Takes back a move or a removal the server has not been told of: the message is on its list
+     * again. False when the change is no longer waiting.
+     */
+    @Transaction
+    open suspend fun takeBack(opId: Long): Boolean {
+        val op = byId(opId) ?: return false
+        delete(opId)
+        restoreCounts(op)
+        return true
+    }
+
+    private suspend fun restoreCounts(op: PendingOpEntity) {
+        val message = message(op.messageId) ?: return
+        val unread = if (message.seen) 0 else 1
+        count(message.folderId, unread = unread, total = 1)
+        if (op.kind == PendingOpEntity.MOVE) count(op.targetFolderId, unread = -unread, total = -1)
+    }
+
+    /**
+     * The server has answered for a change: it is no longer waiting, and the device's copy
+     * follows what became of the message.
+     *
+     * - moved, and the server said where to: the message is in its new folder, with its text;
+     * - moved without a word on where to, removed, or no longer there to be moved: the message
+     *   is off the device, and the next sync of the folder it went to brings it from there;
+     * - refused: the message is on its list again. A refused mark stays as the user set it until
+     *   the next sync brings the server's.
+     */
+    @Transaction
+    open suspend fun settle(opId: Long, outcome: ChangeOutcome) {
+        // a later word on the same mark took this one's place while it was being sent: that one still waits
+        val op = byId(opId) ?: return
+        delete(opId)
+        val leaves = op.kind == PendingOpEntity.MOVE || op.kind == PendingOpEntity.EXPUNGE
+        when {
+            !leaves -> Unit
+            outcome is ChangeOutcome.Refused -> restoreCounts(op)
+            op.kind == PendingOpEntity.MOVE && outcome is ChangeOutcome.Done && outcome.newUid > 0 -> arrive(op.messageId, op.targetFolderId, outcome.newUid, outcome.newUidValidity)
+            else -> forget(op.messageId)
+        }
+    }
+
+    /** The message is now in [folderId] under [uid], which belongs to the folder's stamp [uidValidity]. */
+    private suspend fun arrive(messageId: Long, folderId: Long, uid: Long, uidValidity: Long) {
+        val folder = folder(folderId)
+        val there = idAt(folderId, uid)
+        when {
+            // The folder's UIDs mean something else than the device thinks: its next sync starts
+            // over, and a message filed under the new numbers would only be in its way.
+            folder == null || (folder.uidValidity != 0L && folder.uidValidity != uidValidity) -> forget(messageId)
+            // a sync of that folder got there first and has the message already
+            there != null && there != messageId -> forget(messageId)
+            else -> {
+                // a folder that was never synced learns its stamp here: what is done to the message next names it by it
+                learnUidValidity(folderId, uidValidity)
+                place(messageId, folderId, uid)
+            }
+        }
+    }
+
+    private suspend fun forget(messageId: Long) {
+        deleteIndexed(messageId)
+        deleteMessage(messageId)
     }
 }

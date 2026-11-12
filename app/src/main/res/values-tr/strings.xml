@@ -42,7 +42,41 @@
     <string name="action_unstar">Yıldızı kaldır</string>
     <string name="action_mark_read">Okundu say</string>
     <string name="action_mark_unread">Okunmadı say</string>
-    <string name="action_open_attachment">Eki aç</string>
+    <string name="action_archive">Arşivle</string>
+    <string name="action_delete">Sil</string>
+    <string name="action_move">Taşı…</string>
+    <string name="action_undo">Geri al</string>
+    <string name="action_open_message">Aç</string>
+    <string name="move_title">Klasöre taşı</string>
+    <string name="archive_nowhere">Bu iletinin hesabında arşivlenecek bir klasör yok.</string>
+    <string name="action_nothing_done">Yapılacak bir şey yoktu.</string>
+    <string name="undo_failed">Geri alınamadı: ileti artık orada değil.</string>
+    <plurals name="done_archived">
+        <item quantity="one">Arşivlendi</item>
+        <item quantity="other">%1$d ileti arşivlendi</item>
+    </plurals>
+    <plurals name="done_deleted">
+        <item quantity="one">Çöpe taşındı</item>
+        <item quantity="other">%1$d ileti çöpe taşındı</item>
+    </plurals>
+    <plurals name="done_removed">
+        <item quantity="one">Kalıcı olarak silindi</item>
+        <item quantity="other">%1$d ileti kalıcı olarak silindi</item>
+    </plurals>
+    <plurals name="done_moved">
+        <item quantity="one">Taşındı: %2$s</item>
+        <item quantity="other">%1$d ileti taşındı: %2$s</item>
+    </plurals>
+    <string name="attachment_open">Aç</string>
+    <string name="attachment_save">Kaydet…</string>
+    <string name="attachment_share">Paylaş</string>
+    <string name="attachment_fetching">Dosya indiriliyor</string>
+    <string name="attachment_failed_network">Dosya indirilemedi: sunucuya ulaşılamadı.</string>
+    <string name="attachment_failed">Dosya indirilemedi.</string>
+    <string name="attachment_gone">Bu dosya artık sunucuda yok.</string>
+    <string name="attachment_no_app">Bu dosyayı açacak bir uygulama yok. Kaydetmeyi dene.</string>
+    <string name="attachment_saved">Kaydedildi: %1$s</string>
+    <string name="attachment_save_failed">Kaydedilemedi.</string>
     <string name="reader_empty_title">Açık ileti yok</string>
     <string name="reader_empty_text">Okumak için listeden bir ileti seç.</string>
     <string name="reader_remote_blocked">Uzak görseller yüklenmedi.</string>
@@ -57,6 +91,7 @@
     <string name="detail_folder">Klasör</string>
 
     <string name="menu_file">Dosya</string>
+    <string name="menu_edit">Düzen</string>
     <string name="menu_message">İleti</string>
     <string name="action_next_message">Sonraki ileti</string>
     <string name="action_previous_message">Önceki ileti</string>

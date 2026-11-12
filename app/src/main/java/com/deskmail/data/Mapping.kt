@@ -79,4 +79,4 @@ internal fun MessageEntity.toMessage(outgoing: Boolean): MailMessage {
 
 /** The files a message offers: not the pictures its HTML shows in its own place. */
 internal fun List<AttachmentEntity>.toFiles(): List<MailAttachment> =
-    filter { !it.inline || it.contentId.isEmpty() }.map { MailAttachment(it.name.ifEmpty { it.mimeType }, it.size) }
+    filter { !it.inline || it.contentId.isEmpty() }.map { MailAttachment(it.name.ifEmpty { it.mimeType }, it.size, it.id, it.mimeType) }

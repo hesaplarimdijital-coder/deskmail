@@ -9,12 +9,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import com.deskmail.core.mail.FolderRole
 import com.deskmail.mail.AccountState
+import com.deskmail.mail.FetchedFile
 import com.deskmail.mail.MailAccount
 import com.deskmail.mail.MailAttachment
 import com.deskmail.mail.MailContent
 import com.deskmail.mail.MailFolder
 import com.deskmail.mail.MailMessage
 import com.deskmail.mail.MailSource
+import com.deskmail.mail.MailUndo
 import com.deskmail.mail.MailView
 import kotlinx.coroutines.flow.Flow
 import java.time.Duration
@@ -88,7 +90,17 @@ class DemoMail(private val now: Instant = Instant.now(), empty: Boolean = false)
     /** Whether mail is being fetched: a test says so. */
     override var syncing: Boolean by mutableStateOf(false)
 
-    override val canMark: Boolean get() = true
+    /** What was taken off its place, by what would bring it back. */
+    private val taken = HashMap<MailUndo, List<MailMessage>>()
+
+    /** What the screens let stand ([commit]). */
+    val committed = ArrayList<MailUndo>()
+
+    /** What fetching a file comes to; a test says so. Gone unless it does. */
+    var fetched: (MailAttachment) -> FetchedFile = { FetchedFile.Gone }
+
+    /** The files that were asked for. */
+    val fetches = ArrayList<MailAttachment>()
 
     /** What the screens asked for: the views that came to the front, the syncs, the texts asked for again. */
     val shown = ArrayList<MailView>()
@@ -136,6 +148,71 @@ class DemoMail(private val now: Instant = Instant.now(), empty: Boolean = false)
 
     override fun toggleStarred(id: Long) {
         message(id)?.let { setStarred(id, !it.starred) }
+    }
+
+    override suspend fun archive(ids: List<Long>): MailUndo? = relocate(ids, MailUndo.Action.Archived) { message ->
+        folderOf(message.accountId, FolderRole.Archive) ?: folderOf(message.accountId, FolderRole.All)
+    }
+
+    override suspend fun delete(ids: List<Long>): MailUndo? {
+        val before = ArrayList<MailMessage>()
+        var forGood = true
+        for (id in ids) {
+            val message = message(id) ?: continue
+            val trash = folderOf(message.accountId, FolderRole.Trash)
+            before += message
+            if (trash == null || trash.id == message.folderId) {
+                stored.remove(message)
+            } else {
+                forGood = false
+                change(id) { it.copy(folderId = trash.id) }
+            }
+        }
+        if (before.isEmpty()) return null
+        return MailUndo(if (forGood) MailUndo.Action.DeletedForGood else MailUndo.Action.Deleted, before.map { it.id }).also { taken[it] = before }
+    }
+
+    override suspend fun move(ids: List<Long>, folderId: Long): MailUndo? =
+        relocate(ids, MailUndo.Action.Moved, folderId) { tree.firstOrNull { it.id == folderId } }
+
+    private fun folderOf(accountId: Long, role: FolderRole): MailFolder? = tree.firstOrNull { it.accountId == accountId && it.role == role }
+
+    private fun relocate(ids: List<Long>, action: MailUndo.Action, folder: Long = 0, target: (MailMessage) -> MailFolder?): MailUndo? {
+        val before = ArrayList<MailMessage>()
+        for (id in ids) {
+            val message = message(id) ?: continue
+            val to = target(message) ?: continue
+            if (to.id == message.folderId || to.accountId != message.accountId) continue
+            before += message
+            change(id) { it.copy(folderId = to.id) }
+        }
+        if (before.isEmpty()) return null
+        return MailUndo(action, before.map { it.id }, folder).also { taken[it] = before }
+    }
+
+    override suspend fun undo(undo: MailUndo): Int {
+        val before = taken.remove(undo) ?: return 0
+        for (message in before) {
+            val index = stored.indexOfFirst { it.id == message.id }
+            if (index >= 0) {
+                stored[index] = message
+            } else {
+                // removed for good, and back: at its place among the others, newest first
+                val at = stored.indexOfFirst { it.sentAt < message.sentAt }
+                if (at < 0) stored.add(message) else stored.add(at, message)
+            }
+        }
+        return before.size
+    }
+
+    override fun commit(undo: MailUndo) {
+        taken.remove(undo)
+        committed += undo
+    }
+
+    override suspend fun fetch(attachment: MailAttachment): FetchedFile {
+        fetches += attachment
+        return fetched(attachment)
     }
 
     override fun viewShown(view: MailView) {
@@ -225,7 +302,7 @@ class DemoMail(private val now: Instant = Instant.now(), empty: Boolean = false)
             "Deniz selam,\n\nPlanın üçüncü sürümü ekte. İki değişiklik var: senkron işi iki haftaya çıktı, bildirimler bir hafta öne geldi. " +
                 "Perşembe günü üstünden geçelim mi?\n\nMehmet",
             html = DemoBodies.replyChain, starred = true, to = "$ME, Elif Şahin",
-            attachments = listOf(MailAttachment("Proje planı v3.pdf", 284_000)),
+            attachments = listOf(MailAttachment("Proje planı v3.pdf", 284_000, mimeType = "application/pdf")),
         )
         add(
             11, "Derleme Sunucusu", "ci@ci.example", "[deskmail] feature/skeleton: 3 iş başarılı", Duration.ofHours(21),

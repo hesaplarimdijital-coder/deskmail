@@ -34,6 +34,16 @@ object MailIcons {
         )
     }
 
+    /** A folder with an arrow into it: move to a folder. */
+    val MoveTo: ImageVector by lazy {
+        DeskIcons.build(
+            "MoveTo",
+            DeskIcons.stroke("M2 4.5a1 1 0 0 1 1-1h3L7.5 5H13a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1z"),
+            DeskIcons.stroke("M5.8 9.2h4.2"),
+            DeskIcons.stroke("M8.5 7.6 10.1 9.2 8.5 10.8"),
+        )
+    }
+
     val Star: ImageVector by lazy { DeskIcons.build("Star", DeskIcons.stroke(STAR)) }
 
     val StarFilled: ImageVector by lazy { DeskIcons.build("StarFilled", DeskIcons.fill(STAR), DeskIcons.stroke(STAR)) }

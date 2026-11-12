@@ -27,6 +27,7 @@ import com.deskmail.mail.MailView
 import com.deskmail.settings.AppSettings
 import com.deskmail.ui.mail.FoldersScreen
 import com.deskmail.ui.mail.LocalMailClock
+import com.deskmail.ui.mail.MailActions
 import com.deskmail.ui.mail.MailClock
 import com.deskmail.ui.mail.MailScreen
 import com.deskmail.ui.mail.MailUiState
@@ -34,6 +35,7 @@ import com.deskmail.ui.mail.WebBodyPresence
 import com.deskmail.ui.mail.WebMessageBody
 import com.deskmail.ui.mail.counterpart
 import com.deskmail.ui.mail.openMessage
+import com.deskmail.ui.mail.rememberAttachmentHandler
 import com.deskmail.ui.mail.rememberDateLabels
 import com.deskmail.ui.mail.shellGlass
 import com.deskmail.ui.settings.SettingsPage
@@ -159,8 +161,9 @@ fun DeskMailApp(
             onTall = { tall = it },
         )
     }
-    val starLabel = stringResource(R.string.action_toggle_star)
-    val readLabel = stringResource(R.string.action_toggle_read)
+    // archive, move and delete, with their notices and the way back; the files of messages
+    val actions = remember(mail, ui, resources) { MailActions(mail, ui, scope, toasts, resources) }
+    val files = rememberAttachmentHandler(mail, notify)
     // "Add an account", from wherever it is asked for: the page in Settings, with nothing typed
     val addAccount: () -> Unit = {
         settingsUi.addAccount()
@@ -186,10 +189,6 @@ fun DeskMailApp(
         val id = ui.openedId(route)
         if (id != null) action(id)
         id != null
-    }
-    // read/unread and the star: where the mail lets them be changed; otherwise a word that they are to come
-    val mark: (String, String, (Long) -> Unit) -> Boolean = { route, name, change ->
-        withOpen(route) { id -> if (mail.canMark) change(id) else notYet(name) }
     }
     val step: (String, Int) -> Boolean = { route, by ->
         val id = ui.neighbour(route, by)
@@ -230,8 +229,12 @@ fun DeskMailApp(
             }
             Commands.NEXT -> step(route, 1)
             Commands.PREVIOUS -> step(route, -1)
-            Commands.STAR -> mark(route, starLabel) { mail.toggleStarred(it) }
-            Commands.TOGGLE_READ -> mark(route, readLabel) { mail.toggleUnread(it) }
+            Commands.STAR -> withOpen(route) { mail.toggleStarred(it) }
+            Commands.TOGGLE_READ -> withOpen(route) { mail.toggleUnread(it) }
+            Commands.ARCHIVE -> withOpen(route) { actions.archive(listOf(it)) }
+            Commands.DELETE -> withOpen(route) { actions.delete(listOf(it)) }
+            Commands.MOVE -> withOpen(route) { id -> mail.cachedMessage(id)?.let { ui.moving = it } }
+            Commands.UNDO -> actions.undoLast()
             Commands.CLOSE -> withOpen(route) { ui.close(route) }
             else -> false
         }
@@ -268,7 +271,8 @@ fun DeskMailApp(
         enabled = { id ->
             when (id) {
                 Commands.NEXT, Commands.PREVIOUS -> listInFront
-                Commands.STAR, Commands.TOGGLE_READ, Commands.CLOSE -> messageOpen
+                Commands.STAR, Commands.TOGGLE_READ, Commands.ARCHIVE, Commands.DELETE, Commands.MOVE, Commands.CLOSE -> messageOpen
+                Commands.UNDO -> actions.canUndo
                 else -> true
             }
         },
@@ -358,7 +362,8 @@ fun DeskMailApp(
                         prefs = prefs,
                         onBack = backFromFolder,
                         onCompose = { perform(Commands.NEW_MESSAGE) },
-                        onNotYet = notYet,
+                        actions = actions,
+                        files = files,
                         onAddAccount = addAccount,
                         onOpenAccount = openAccount,
                         readerUnderBars = settings.readerUnderBars,

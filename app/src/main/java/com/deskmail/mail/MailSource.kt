@@ -47,11 +47,8 @@ interface MailSource {
     /** Asks once more for a message's text after it could not be fetched. */
     fun retryContent(id: Long)
 
-    /**
-     * Whether read/unread and the star can be changed. This pre-release only reads the mail of
-     * real accounts: the marks are the server's, and changing them there comes with the next one.
-     */
-    val canMark: Boolean
+    // What is done to a message shows at once and is told to its server in the background; while
+    // the server cannot be reached it waits, and is told when it can.
 
     /** A message that is opened is read. */
     fun markRead(id: Long)
@@ -59,6 +56,34 @@ interface MailSource {
     fun toggleUnread(id: Long)
 
     fun toggleStarred(id: Long)
+
+    /**
+     * Moves the messages to their account's archive: its Archive folder or, where it has none
+     * (Gmail), "All Mail". Null when none of them could be: no such folder, or they are in it.
+     */
+    suspend fun archive(ids: List<Long>): MailUndo?
+
+    /**
+     * Moves the messages to their account's trash. One that is in the trash already (or whose
+     * account has none) is removed for good, once the time to take it back has passed.
+     */
+    suspend fun delete(ids: List<Long>): MailUndo?
+
+    /** Moves the messages to a folder of their own account. Null when none of them could be. */
+    suspend fun move(ids: List<Long>, folderId: Long): MailUndo?
+
+    /** Takes back what was done: the messages are where they were. Returns how many of them are. */
+    suspend fun undo(undo: MailUndo): Int
+
+    /** Lets what was done stand: the server is told now, not when the time to take it back has passed. */
+    fun commit(undo: MailUndo)
+
+    /** The folders the message can be moved to: its account's, without the one it is in. */
+    fun moveTargets(message: MailMessage): List<MailFolder> =
+        folders.filter { it.accountId == message.accountId && it.id != message.folderId }
+
+    /** Fetches a file a message carries onto the device, to be opened or saved from there. */
+    suspend fun fetch(attachment: MailAttachment): FetchedFile
 
     /** Told that a screen showing [view] came to the front: what it shows is brought up to date if it has not been lately. */
     fun viewShown(view: MailView)
