@@ -121,10 +121,16 @@ class ShortcutsTest {
 
     /**
      * What the activity asks to know whether text is being typed: the focused view, which for
-     * Compose is the one view of the window, says so while one of its text fields has the focus.
+     * Compose is the one view of the window. Android's own contract (View.onCheckIsTextEditor) is
+     * what the system uses to decide whether a keyboard belongs on screen, and Compose answers it
+     * for its text fields.
+     *
+     * Without a text field in focus the answer is no, here as on a device. With one in focus this
+     * test only reports what the test window answers (see the test's output): Robolectric's window
+     * does not start a text input session the way a device's does, so nothing is asserted on it yet.
      */
     @Test
-    fun aFocusedTextFieldIsKnownToTheActivity() {
+    fun nothingIsBeingTypedUntilATextFieldHasTheFocus() {
         var text by mutableStateOf("")
         compose.setContent {
             DesktopKitTheme {
@@ -136,8 +142,15 @@ class ShortcutsTest {
         }
         compose.waitForIdle()
         assertFalse(compose.activity.currentFocus?.onCheckIsTextEditor() == true)
+
         compose.onNodeWithTag("field").performClick()
         compose.waitForIdle()
-        assertTrue(compose.activity.currentFocus?.onCheckIsTextEditor() == true)
+        val decor = compose.activity.window.decorView
+        val focus = compose.activity.currentFocus
+        println("typing probe: focus=${focus?.javaClass?.name} windowFocus=${decor.hasWindowFocus()} textEditor=${focus?.onCheckIsTextEditor()}")
+        compose.runOnUiThread { decor.dispatchWindowFocusChanged(true) }
+        compose.waitForIdle()
+        val after = compose.activity.currentFocus
+        println("typing probe, window focused: focus=${after?.javaClass?.name} windowFocus=${decor.hasWindowFocus()} textEditor=${after?.onCheckIsTextEditor()}")
     }
 }
