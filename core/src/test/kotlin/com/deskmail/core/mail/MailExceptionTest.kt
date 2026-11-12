@@ -5,6 +5,7 @@ import jakarta.mail.FolderNotFoundException
 import jakarta.mail.MessagingException
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertSame
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.EOFException
 import java.net.ConnectException
@@ -58,5 +59,38 @@ class MailExceptionTest {
         assertEquals("FolderNotFoundException", MailException.from(FolderNotFoundException()).message)
         // an exception of the app's own passes through
         assertSame(refused, MailException.from(refused))
+    }
+
+    @Test
+    fun aFaultThatIsNobodysAnswerIsSaidWithItsName() {
+        // a part of the library the device cannot run, a slip of the app's own: not the server's words, not the network's
+        val missing = MailException.from(NoClassDefFoundError("javax/security/sasl/SaslClient"))
+        assertEquals(MailException.Kind.Server, missing.kind)
+        assertEquals("NoClassDefFoundError: javax/security/sasl/SaslClient", missing.message)
+        assertEquals("IllegalStateException: Not connected", MailException.from(IllegalStateException("Not connected")).message)
+        // named once where the name is all there is
+        assertEquals("NullPointerException", MailException.from(NullPointerException()).message)
+        // what the library says stays as the library said it
+        assertEquals("A3 NO Unknown Mailbox", MailException.from(MessagingException("A3 NO Unknown Mailbox")).message)
+        assertEquals("Read timed out", MailException.from(SocketTimeoutException("Read timed out")).message)
+    }
+
+    @Test
+    fun theLogIsToldEverythingThatLedToAFailure() {
+        val handshake = SSLHandshakeException("Chain validation failed").apply { initCause(CertificateException("Trust anchor for certification path not found.")) }
+        val failed = MessagingException("Unable to check\n  server identity for: imap.example.org", handshake)
+        assertEquals(
+            "MessagingException: Unable to check server identity for: imap.example.org" +
+                " <- SSLHandshakeException: Chain validation failed" +
+                " <- CertificateException: Trust anchor for certification path not found.",
+            MailException.trail(failed),
+        )
+        // an exception without words is its name
+        assertEquals("MessagingException: Connection dropped by server? <- EOFException", MailException.trail(MessagingException("Connection dropped by server?", EOFException())))
+        // a long chain is cut, and so is a long answer
+        var deep: Exception = IllegalStateException("0")
+        repeat(20) { deep = RuntimeException("${it + 1}", deep) }
+        assertEquals(6, MailException.trail(deep).split(" <- ").size)
+        assertTrue(MailException.trail(MessagingException("x".repeat(5_000))).length < 300)
     }
 }

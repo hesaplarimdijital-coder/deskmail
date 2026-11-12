@@ -68,7 +68,11 @@ class ImapConnectionServerTest {
     @Test
     fun aPortNobodyListensOnIsANetworkFailure() {
         val free = ServerSocket(0).use { it.localPort }
-        assertEquals(MailException.Kind.Network, failure(ServerAddress(TestMailServer.LOCALHOST, free, Security.None)).kind)
+        val log = AppLog()
+        assertEquals(MailException.Kind.Network, failure(ServerAddress(TestMailServer.LOCALHOST, free, Security.None), log = log).kind)
+        // the log is told what led to it, down to the first cause
+        val line = log.lines().single { it.contains("sign-in as deniz failed (Network)") }
+        assertTrue(line, line.contains(": MailConnectException: ") && line.contains(" <- ConnectException: "))
     }
 
     /** The test server's certificate is signed by nobody: the connection is refused, not made anyway. */

@@ -11,10 +11,12 @@ import com.deskmail.core.net.Security
 import com.deskmail.core.net.ServerAddress
 import com.deskmail.core.net.ServerIdentity
 import jakarta.mail.Folder
+import jakarta.mail.MessagingException
 import jakarta.mail.Session
 import org.eclipse.angus.mail.imap.IMAPFolder
 import org.eclipse.angus.mail.imap.IMAPStore
 import org.eclipse.angus.mail.imap.ResyncData
+import java.io.IOException
 import java.util.Properties
 
 /**
@@ -85,17 +87,7 @@ class ImapConnection private constructor(
     }
 
     /** Runs [block] against the server; whatever it throws comes out as a [MailException], noted in the log. */
-    internal fun <T> call(what: String, block: () -> T): T =
-        try {
-            block()
-        } catch (e: MailException) {
-            // noted where it was first caught
-            throw e
-        } catch (e: Exception) {
-            val failure = MailException.from(e)
-            log?.warn(TAG, "${server.host}: $what failed (${failure.kind}): ${failure.message}")
-            throw failure
-        }
+    internal fun <T> call(what: String, block: () -> T): T = guarded(server, log, what, block = block)
 
     /** Something worth knowing later that is no failure. */
     internal fun note(text: String) {
@@ -123,26 +115,52 @@ class ImapConnection private constructor(
          *   not accepted or it has no TLS, [MailException.Kind.Network] when it could not be reached.
          */
         fun open(server: ServerAddress, credentials: Credentials, log: AppLog? = null): ImapConnection {
-            MailLibrary.prepare()
-            val session = Session.getInstance(properties(server, credentials))
-            // made directly, not looked up by name: the library's list of providers is a resource
-            // file, and whether it survives the packaging of an Android app is nothing to depend on
-            val store = IMAPStore(session, null)
+            val signIn = "sign-in as ${credentials.username}"
+            val store = guarded(server, log, signIn) {
+                MailLibrary.prepare()
+                val session = Session.getInstance(properties(server, credentials))
+                // made directly, not looked up by name: the library's list of providers is a resource
+                // file, and whether it survives the packaging of an Android app is nothing to depend on
+                IMAPStore(session, null)
+            }
             val secret = when (credentials) {
                 is Credentials.Password -> credentials.password
                 is Credentials.OAuth -> credentials.accessToken
             }
-            try {
+            guarded(server, log, signIn, onFailure = { runCatching { store.close() } }) {
                 store.connect(server.host, server.port, credentials.username, secret)
-            } catch (e: Exception) {
-                runCatching { store.close() }
-                val failure = MailException.from(e)
-                log?.warn(TAG, "${server.host}: sign-in as ${credentials.username} failed (${failure.kind}): ${failure.message}")
-                throw failure
             }
             val connection = ImapConnection(store, server, log)
             log?.info(TAG, "${server.host}: signed in as ${credentials.username}; " + connection.capabilities.joinToString(" ").ifEmpty { "no extensions" })
             return connection
+        }
+
+        /**
+         * Runs [block]; whatever it throws comes out as a [MailException], noted in the log with
+         * everything that led to it. That includes a part of the mail library this device cannot
+         * run (a [LinkageError]): the user is told, and the app goes on.
+         */
+        private inline fun <T> guarded(server: ServerAddress, log: AppLog?, what: String, onFailure: () -> Unit = {}, block: () -> T): T =
+            try {
+                block()
+            } catch (e: MailException) {
+                // noted where it was first caught
+                throw e
+            } catch (e: Exception) {
+                onFailure()
+                throw failed(server, log, what, e)
+            } catch (e: LinkageError) {
+                onFailure()
+                throw failed(server, log, what, e)
+            }
+
+        private fun failed(server: ServerAddress, log: AppLog?, what: String, error: Throwable): MailException {
+            val failure = MailException.from(error)
+            val text = "${server.host}: $what failed (${failure.kind}): ${MailException.trail(error)}"
+            // The library and the network fail now and then, and say why. Anything else is a fault:
+            // that goes into the log with the place it happened.
+            if (error is MessagingException || error is IOException) log?.warn(TAG, text) else log?.error(TAG, text, error)
+            return failure
         }
 
         /** The library's settings for one connection. */

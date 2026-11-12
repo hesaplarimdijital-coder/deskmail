@@ -1,6 +1,7 @@
 package com.deskmail.data
 
 import com.deskmail.core.log.AppLog
+import com.deskmail.core.mail.MailException
 import com.deskmail.core.net.Credentials
 import com.deskmail.core.net.Security
 import com.deskmail.core.net.ServerAddress
@@ -73,7 +74,7 @@ class AccountStore(db: DeskMailDatabase, private val box: SecretBox, private val
             val password = String(box.open(Sealed(stored.iv, stored.secret), purpose(account.id)), Charsets.UTF_8)
             Credentials.Password(account.username, password)
         } catch (e: Exception) {
-            log?.warn(TAG, "account ${account.id}: the stored sign-in could not be opened (${e.javaClass.simpleName})")
+            log?.warn(TAG, "account ${account.id}: the stored sign-in could not be opened (${MailException.trail(e)})")
             null
         }
     }

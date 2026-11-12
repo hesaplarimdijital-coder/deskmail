@@ -16,6 +16,7 @@ import com.deskmail.mail.AccountDraft
 import com.deskmail.mail.AccountState
 import com.deskmail.mail.SetupPlan
 import com.deskmail.mail.SetupResult
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -63,7 +64,13 @@ class AccountSetup(
         } catch (e: MailException) {
             return@withContext SetupResult.Failed(e.kind, e.message.orEmpty())
         }
-        val id = accounts.add(address, nameFor(address, draft), draft.provider?.id.orEmpty(), draft.settings, password)
+        val id = try {
+            accounts.add(address, nameFor(address, draft), draft.provider?.id.orEmpty(), draft.settings, password)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            return@withContext notKept(e)
+        }
         store.saveFolders(id, folders)
         startSync(id)
         SetupResult.Done(id)
@@ -77,7 +84,13 @@ class AccountSetup(
         } catch (e: MailException) {
             return@withContext SetupResult.Failed(e.kind, e.message.orEmpty())
         }
-        accounts.savePassword(accountId, secret)
+        try {
+            accounts.savePassword(accountId, secret)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            return@withContext notKept(e)
+        }
         accounts.setState(accountId, AccountState.Ok)
         log.info(TAG, "account $accountId signed in again")
         startSync(accountId)
@@ -88,6 +101,16 @@ class AccountSetup(
         accounts.remove(accountId)
         // the index has no ties to the messages
         store.forget()
+    }
+
+    /**
+     * The server took the sign-in and the device could not keep it: its keystore would not seal the
+     * password, or its database would not take the row. Said to the user, with the place it happened
+     * in the log; nothing of the account is left behind.
+     */
+    private fun notKept(error: Exception): SetupResult {
+        log.error(TAG, "the sign-in could not be kept on this device", error)
+        return SetupResult.Failed(MailException.Kind.Server, error.toString())
     }
 
     /** Signs in and reads the list of folders: proof that the address, the password and the server belong together. */

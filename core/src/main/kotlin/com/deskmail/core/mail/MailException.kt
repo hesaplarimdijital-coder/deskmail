@@ -53,8 +53,29 @@ class MailException(val kind: Kind, message: String, cause: Throwable? = null) :
             val root = generateSequence(error) { e -> e.cause?.takeIf { it !== e } }.take(8).last()
             // STARTTLS asked for and not offered: the library says so in words only
             if (error is MessagingException && text.contains("STARTTLS", ignoreCase = true)) return MailException(Kind.Security, text, error)
-            return MailException(if (root is IOException) Kind.Network else Kind.Server, text, error)
+            if (root is IOException) return MailException(Kind.Network, text, error)
+            // Neither the server's words nor the network's: a fault in the app or in the library on
+            // this device. Its name is the best there is to go by, so it is said with it.
+            val name = error.javaClass.simpleName
+            val named = if (error is MessagingException || text.startsWith(name)) text else "$name: $text"
+            return MailException(Kind.Server, named, error)
         }
+
+        /**
+         * Everything that led to [error], on one line for the log: each exception's name and words,
+         * from the one that was caught down to the first cause. The kind and a sentence tell the user
+         * what to do; this tells whoever reads the log what happened.
+         */
+        fun trail(error: Throwable): String =
+            generateSequence(error) { e -> e.cause?.takeIf { it !== e } }
+                .take(TRAIL_DEPTH)
+                .joinToString(" <- ") { e ->
+                    val words = e.message?.replace(Regex("\\s+"), " ")?.trim()?.take(TRAIL_WORDS).orEmpty()
+                    if (words.isEmpty()) e.javaClass.simpleName else "${e.javaClass.simpleName}: $words"
+                }
+
+        private const val TRAIL_DEPTH = 6
+        private const val TRAIL_WORDS = 240
 
         /** The exception's own words, and those of its cause where they say more. */
         private fun describe(error: Throwable): String {

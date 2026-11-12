@@ -189,10 +189,18 @@ class MailSync(
             accounts.setState(accountId, stateFor(e.kind), e.message.orEmpty())
             Outcome.Failed(e.kind, e.message.orEmpty())
         } catch (e: Exception) {
-            log.error(TAG, "account $accountId: the sync broke off", e)
-            accounts.setState(accountId, AccountState.Error, e.toString())
-            Outcome.Failed(MailException.Kind.Server, e.toString())
+            brokeOff(accountId, e)
+        } catch (e: LinkageError) {
+            // a part of a library this device cannot run: said on the account, not died of
+            brokeOff(accountId, e)
         }
+    }
+
+    /** A fault that is neither the server's nor the network's: into the log with where it happened, and onto the account. */
+    private suspend fun brokeOff(accountId: Long, error: Throwable): Outcome {
+        log.error(TAG, "account $accountId: the sync broke off", error)
+        accounts.setState(accountId, AccountState.Error, error.toString())
+        return Outcome.Failed(MailException.Kind.Server, error.toString())
     }
 
     companion object {

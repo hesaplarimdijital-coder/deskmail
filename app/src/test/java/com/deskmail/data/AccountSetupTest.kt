@@ -5,6 +5,7 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.deskmail.core.log.AppLog
 import com.deskmail.core.mail.MailException
+import com.deskmail.core.net.Credentials
 import com.deskmail.core.net.Security
 import com.deskmail.core.net.ServerAddress
 import com.deskmail.core.provider.AuthKind
@@ -27,6 +28,7 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.security.ProviderException
 import java.time.Instant
 
 /** Adding an account: where its servers are, whether the server takes the sign-in, and what is kept then. */
@@ -144,6 +146,31 @@ class AccountSetupTest {
         assertTrue(tracked.reconnect(id, TestImapServer.PASSWORD) is SetupResult.Done)
         assertEquals(listOf(id, id), started)
         assertEquals(0, held.waiting)
+    }
+
+    @Test
+    fun aSignInTheDeviceCannotKeepIsSaidAndLeavesNothingBehind() = runBlocking {
+        // the server says yes, and the device's keystore will not seal the password
+        val refusing = object : SecretBox {
+            override fun seal(plain: ByteArray, purpose: String): Sealed = throw ProviderException("Keystore operation failed")
+
+            override fun open(sealed: Sealed, purpose: String): ByteArray = throw ProviderException("Keystore operation failed")
+        }
+        val unkept = AccountStore(db, refusing, log)
+        val unlucky = AccountSetup(db, unkept, sync, Autoconfig(fetch = { null }), log, background)
+
+        val result = unlucky.add(draft()) as SetupResult.Failed
+        assertEquals(MailException.Kind.Server, result.kind)
+        assertTrue(result.detail, result.detail.contains("ProviderException: Keystore operation failed"))
+        assertTrue(unkept.all().isEmpty())
+        assertEquals(0, held.waiting)
+        assertTrue(log.lines().any { it.contains("the sign-in could not be kept on this device") })
+        assertTrue(log.lines().none { it.contains(TestImapServer.PASSWORD) })
+
+        // an account that is there keeps the password it had
+        val id = (setup.add(draft()) as SetupResult.Done).accountId
+        assertTrue(unlucky.reconnect(id, TestImapServer.PASSWORD) is SetupResult.Failed)
+        assertEquals(TestImapServer.PASSWORD, (accounts.credentials(accounts.byId(id)!!) as Credentials.Password).password)
     }
 
     @Test
