@@ -38,6 +38,8 @@ class AccountSetupFormTest {
 
         override suspend fun reconnect(accountId: Long, password: String): SetupResult = result
 
+        override suspend fun saveWriting(accountId: Long, senderName: String, signature: String) = Unit
+
         override suspend fun remove(accountId: Long) = Unit
     }
 

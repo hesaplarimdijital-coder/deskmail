@@ -110,12 +110,16 @@ dependencies {
     implementation(libs.room.runtime)
     implementation(libs.sqlite.framework)
     ksp(libs.room.compiler)
+    // Background work that outlives the app's windows: sending what waits in the outbox
+    implementation(libs.work.runtime)
     // Coroutines with Android's main thread; the same version :core is built with
     implementation(libs.coroutines.android)
 
     testImplementation(libs.junit)
     // an IMAP server inside the tests: the sync is run against it, into the real database
     testImplementation(libs.greenmail)
+    // WorkManager run by the test itself: the outbox's background work, without waiting for a network
+    testImplementation(libs.work.testing)
     testImplementation(libs.robolectric)
     testImplementation(libs.test.core)
     testImplementation(libs.test.ext.junit)

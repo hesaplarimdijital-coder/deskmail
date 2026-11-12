@@ -22,17 +22,22 @@ import com.deskmail.core.provider.ProviderTable
 import com.deskmail.demo.DemoMail
 import com.deskmail.mail.AccountActions
 import com.deskmail.mail.AccountState
+import com.deskmail.mail.Draft
+import com.deskmail.mail.DraftKind
+import com.deskmail.mail.DraftState
 import com.deskmail.mail.MailContent
 import com.deskmail.mail.MailMessage
 import com.deskmail.mail.MailSource
 import com.deskmail.mail.SetupPlan
 import com.deskmail.noMail
 import com.deskmail.settings.AppSettings
+import com.deskmail.testComposer
 import com.deskmail.testMail
 import com.deskmail.testPrefs
 import com.deskmail.testSettings
 import com.deskmail.ui.DeskMailApp
 import com.deskmail.ui.Routes
+import com.deskmail.ui.compose.Writing
 import com.deskmail.ui.mail.MailUiState
 import com.deskmail.ui.mail.PlainMessageBody
 import com.deskmail.ui.mail.openMessage
@@ -83,6 +88,7 @@ class AppScreenshotTest {
     val compose = createAndroidComposeRule<ComponentActivity>()
 
     private val mail: DemoMail = testMail()
+    private val composer = testComposer(mail)
     private val ui = MailUiState()
     private val settingsUi = SettingsUiState()
     private val palette = CommandPaletteState()
@@ -110,6 +116,7 @@ class AppScreenshotTest {
                 mail = source,
                 settings = settings,
                 log = log,
+                composer = composer,
                 accounts = accounts,
                 ui = ui,
                 settingsUi = settingsUi,
@@ -252,6 +259,49 @@ class AppScreenshotTest {
         capture("phone-reader-failed-light")
     }
 
+    /** A reply as it is begun on a phone: who it goes to, the subject, and the message quoted under where the answer goes. */
+    @Test @Config(qualifiers = PHONE)
+    fun phoneComposeDark() {
+        val id = runBlocking { composer.start(DraftKind.Reply, sourceId = message("Cumartesi kahvaltı?").id) }!!
+        ui.writing = Writing(id, Routes.INBOX)
+        launch(ThemeMode.Dark)
+        capture("phone-compose-dark")
+    }
+
+    /** The outbox: a message that waits to be sent, one the server would not take, and a draft. */
+    @Test @Config(qualifiers = PHONE)
+    fun phoneOutboxLight() {
+        composer.put(
+            Draft(
+                0, DemoMail.OUTLOOK,
+                to = "Zeynep Kaya <zeynep.kaya@posta.example>",
+                subject = "Kapadokya fotoğrafları",
+                body = "Zeynep selam,\n\nFotoğrafların hepsini bir klasöre koydum, akşam bağlantısını gönderirim.",
+            ),
+        )
+        composer.put(
+            Draft(
+                0, DemoMail.GMAIL,
+                to = "Elif Şahin <elif.sahin@isyeri.example>",
+                subject = "Toplantı kaydı",
+                body = "Elif merhaba, kayıt ekte.",
+                state = DraftState.Failed,
+                error = "552 5.3.4 Message size exceeds fixed limit",
+            ),
+        )
+        composer.put(
+            Draft(
+                0, DemoMail.OUTLOOK,
+                to = "Ayşe Yılmaz <ayse.yilmaz@posta.example>",
+                subject = "Re: Cumartesi kahvaltı?",
+                body = "Olur, geliyorum. Saat 10 iyi.",
+                state = DraftState.Waiting,
+            ),
+        )
+        launch(ThemeMode.Light, startRoute = Routes.OUTBOX)
+        capture("phone-outbox-light")
+    }
+
     // ------------------------------------------------------------------ tablet
 
     /** Upright: the rail, and the list alone (a message would slide over it). */
@@ -346,6 +396,28 @@ class AppScreenshotTest {
     fun dexSettingsDark() {
         launch(ThemeMode.Dark, DensityPreference.Pointer, startRoute = Routes.SETTINGS)
         capture("dex-settings-dark")
+    }
+
+    /** A new message in a DeX window: two accounts to send from, a copy to somebody, and a file. */
+    @Test @Config(qualifiers = DEX)
+    fun dexComposeLight() {
+        val id = runBlocking {
+            val id = composer.start(accountId = DemoMail.OUTLOOK)!!
+            composer.save(
+                id, DemoMail.OUTLOOK,
+                to = "Mehmet Demir <mehmet.demir@isyeri.example>",
+                cc = "Elif Şahin <elif.sahin@isyeri.example>",
+                bcc = "",
+                subject = "Proje planı (v4)",
+                body = "Mehmet selam,\n\nPlanın dördüncü sürümü ekte. Senkron işini iki haftada bıraktım, bildirimleri bir hafta daha öne aldım.\n\n" +
+                    "Perşembe 14.00 uygunsa üstünden geçelim.\n\nDeniz",
+            )
+            composer.attach(id, "Proje planı v4.pdf", "application/pdf") { ByteArray(312_000).inputStream() }
+            id
+        }
+        ui.writing = Writing(id, Routes.INBOX)
+        launch(ThemeMode.Light, DensityPreference.Pointer)
+        capture("dex-compose-light")
     }
 
     /** An account's page, for one the server no longer lets in. */

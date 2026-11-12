@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <!-- The mail servers of the user's accounts, and the provider database when an account is added.
          Nothing else: no analytics, no server of the app's own. -->
@@ -34,6 +35,19 @@
                 android:name="android.window.PROPERTY_SUPPORTS_MULTI_INSTANCE_SYSTEM_UI"
                 android:value="true" />
         </activity>
+
+        <!-- WorkManager (which sends what waits in the outbox) is set up when it is first asked
+             for, by the application class, not at every start of the process. -->
+        <provider
+            android:name="androidx.startup.InitializationProvider"
+            android:authorities="${applicationId}.androidx-startup"
+            android:exported="false"
+            tools:node="merge">
+            <meta-data
+                android:name="androidx.work.WorkManagerInitializer"
+                android:value="androidx.startup"
+                tools:node="remove" />
+        </provider>
 
         <!-- Hands a file of the app's to another app for one read: the log, when it is shared. -->
         <provider

@@ -35,6 +35,7 @@ fun buildShellSpec(
             NavItem(Routes.STARRED, resources.getString(R.string.nav_starred), MailIcons.Star),
             NavItem(Routes.FOLDERS, resources.getString(R.string.nav_folders), DeskIcons.Folder),
             NavItem(Routes.SEARCH, resources.getString(R.string.nav_search), DeskIcons.Search),
+            NavItem(Routes.OUTBOX, resources.getString(R.string.nav_outbox), MailIcons.Sent),
         ),
     )
     val perAccount = accounts.map { account ->
@@ -57,10 +58,13 @@ fun buildShellSpec(
 }
 
 /**
- * The unread counts beside the sidebar's entries. The unified inbox counts the inboxes; "All Mail"
- * holds the same messages once more and is left out of "Unread".
+ * The counts beside the sidebar's entries: unread messages, and what is in the outbox. The
+ * unified inbox counts the inboxes; "All Mail" holds the same messages once more and is left out
+ * of "Unread".
  */
-fun navBadges(folders: List<MailFolder>): Map<String, String> = buildMap {
+fun navBadges(folders: List<MailFolder>, outbox: Int = 0): Map<String, String> = buildMap {
+    // what has not left yet: drafts, and what waits or failed
+    if (outbox > 0) put(Routes.OUTBOX, outbox.toString())
     val inbox = folders.filter { it.role == FolderRole.Inbox }.sumOf { it.unread }
     if (inbox > 0) put(Routes.INBOX, inbox.toString())
     val unread = folders.filter { it.role != FolderRole.All && it.role != FolderRole.Junk && it.role != FolderRole.Trash }.sumOf { it.unread }

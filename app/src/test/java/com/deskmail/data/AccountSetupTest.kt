@@ -193,6 +193,18 @@ class AccountSetupTest {
     }
 
     @Test
+    fun theNameAndTheSignatureAnAccountWritesWithAreKeptTidy() = runBlocking {
+        val id = (setup.add(draft()) as SetupResult.Done).accountId
+
+        setup.saveWriting(id, "  Deniz\r\nAksoy ", "\nDeniz Aksoy\r\nİstanbul\n\n")
+
+        val kept = accounts.byId(id)!!
+        // a name is one line of a header; a signature has no space around it, and lines as the app writes them
+        assertEquals("Deniz Aksoy", kept.senderName)
+        assertEquals("Deniz Aksoy\nİstanbul", kept.signature)
+    }
+
+    @Test
     fun aRemovedAccountLeavesNothingBehind() = runBlocking {
         server.deliver("ilk", "Aranacak sözcük.", Instant.parse("2026-11-12T08:00:00Z"))
         val id = (setup.add(draft()) as SetupResult.Done).accountId

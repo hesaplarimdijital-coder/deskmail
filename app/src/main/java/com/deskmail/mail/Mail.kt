@@ -15,6 +15,10 @@ data class MailAccount(
     val detail: String = "",
     /** Where its mail is fetched from, for the account's page: "imap.gmail.com". */
     val server: String = "",
+    /** The name its mail is sent under; empty for the bare address. */
+    val senderName: String = "",
+    /** What its messages are signed with; empty for nothing. */
+    val signature: String = "",
 )
 
 /** A folder of an account as the screens show it. */

@@ -41,6 +41,10 @@ abstract class AccountDao {
     @Query("UPDATE account SET state = :state, stateDetail = :detail WHERE id = :id AND (state != :state OR stateDetail != :detail)")
     abstract suspend fun setState(id: Long, state: String, detail: String)
 
+    /** What the account's mail is written with: the name it is sent under, and what it is signed with. */
+    @Query("UPDATE account SET senderName = :senderName, signature = :signature WHERE id = :id")
+    abstract suspend fun setWriting(id: Long, senderName: String, signature: String)
+
     /** Deletes the account and, with it, its credential, its folders and their messages. */
     @Query("DELETE FROM account WHERE id = :id")
     abstract suspend fun delete(id: Long)
@@ -196,6 +200,12 @@ abstract class MessageDao {
 
     @Query("SELECT * FROM attachment WHERE id = :id")
     abstract suspend fun attachment(id: Long): AttachmentEntity?
+
+    @Query("SELECT * FROM attachment WHERE messageId = :messageId ORDER BY id")
+    abstract suspend fun attachmentsOf(messageId: Long): List<AttachmentEntity>
+
+    @Query("SELECT * FROM body WHERE messageId = :messageId")
+    abstract suspend fun bodyOf(messageId: Long): BodyEntity?
 
     // ------------------------------------------------------------------ what the sync reads and writes
 
@@ -391,7 +401,7 @@ abstract class PendingDao {
     @Query(
         "SELECT message.uid AS uid, pending_op.kind AS kind, pending_op.value AS value FROM pending_op " +
             "JOIN message ON message.id = pending_op.messageId " +
-            "WHERE message.folderId = :folderId AND pending_op.kind IN ('Seen', 'Flagged')",
+            "WHERE message.folderId = :folderId AND pending_op.kind IN ('Seen', 'Flagged', 'Answered', 'Forwarded')",
     )
     abstract suspend fun marksOf(folderId: Long): List<PendingMark>
 
@@ -411,6 +421,12 @@ abstract class PendingDao {
 
     @Query("UPDATE message SET flagged = :flagged WHERE id = :id")
     abstract suspend fun setFlagged(id: Long, flagged: Boolean)
+
+    @Query("UPDATE message SET answered = 1 WHERE id = :id")
+    abstract suspend fun setAnswered(id: Long)
+
+    @Query("UPDATE message SET forwarded = 1 WHERE id = :id")
+    abstract suspend fun setForwarded(id: Long)
 
     @Query("UPDATE message SET folderId = :folderId, uid = :uid WHERE id = :id")
     abstract suspend fun place(id: Long, folderId: Long, uid: Long)
@@ -461,6 +477,20 @@ abstract class PendingDao {
     open suspend fun toggle(messageId: Long, seen: Boolean, now: Long): Long? {
         val message = message(messageId) ?: return null
         return if (seen) mark(messageId, seen = !message.seen, flagged = null, now = now) else mark(messageId, seen = null, flagged = !message.flagged, now = now)
+    }
+
+    /**
+     * Marks a message as answered, or with [forwarded] as sent on: on the device at once, and
+     * queued for its server. Returns the account to tell, or null when the message is gone or
+     * marked so already.
+     */
+    @Transaction
+    open suspend fun markAnswered(messageId: Long, forwarded: Boolean, now: Long): Long? {
+        val message = message(messageId) ?: return null
+        if (if (forwarded) message.forwarded else message.answered) return null
+        if (forwarded) setForwarded(messageId) else setAnswered(messageId)
+        queueMark(message, if (forwarded) PendingOpEntity.FORWARDED else PendingOpEntity.ANSWERED, true, now)
+        return message.accountId
     }
 
     /** The last word on a mark counts: an earlier one that was not sent yet is void. */
@@ -568,4 +598,94 @@ abstract class PendingDao {
         deleteIndexed(messageId)
         deleteMessage(messageId)
     }
+}
+
+/** The messages that are being written and those waiting to be sent ([OutboxEntity]), with their files. */
+@Dao
+abstract class OutboxDao {
+
+    @Insert
+    abstract suspend fun insert(message: OutboxEntity): Long
+
+    /**
+     * Keeps what was typed. Only what is typed is written, and only while the message is being
+     * written on: a late keeping can neither bring a message back that was handed over meanwhile
+     * nor change one that is on its way. 0 when it was no longer to be written on.
+     */
+    @Query(
+        "UPDATE outbox SET accountId = :accountId, toText = :to, ccText = :cc, bccText = :bcc, subject = :subject, body = :body, " +
+            "messageId = :messageId, updatedAt = :now WHERE id = :id AND state IN ('Draft', 'Failed')",
+    )
+    abstract suspend fun write(id: Long, accountId: Long, to: String, cc: String, bcc: String, subject: String, body: String, messageId: String, now: Long): Int
+
+    @Query("SELECT * FROM outbox WHERE id = :id")
+    abstract suspend fun byId(id: Long): OutboxEntity?
+
+    @Query("SELECT * FROM outbox WHERE id = :id")
+    abstract fun observe(id: Long): Flow<OutboxEntity?>
+
+    /** Everything that is being written, waiting or failed, the latest touched first. */
+    @Query("SELECT * FROM outbox ORDER BY updatedAt DESC, id DESC")
+    abstract fun observeAll(): Flow<List<OutboxEntity>>
+
+    /** The message has left: it is no longer the outbox's. */
+    @Query("DELETE FROM outbox WHERE id = :id")
+    abstract suspend fun delete(id: Long)
+
+    /** Throws a message away unless it is being handed to its server this moment; 0 when it was not thrown away. */
+    @Query("DELETE FROM outbox WHERE id = :id AND state != 'Sending'")
+    abstract suspend fun discard(id: Long): Int
+
+    @Query("UPDATE outbox SET state = :state, sendAfter = :sendAfter, error = :error, updatedAt = :now WHERE id = :id")
+    abstract suspend fun setState(id: Long, state: String, sendAfter: Long, error: String, now: Long)
+
+    /** Hands a draft over for sending; false when it is no draft any more (sent from another window). */
+    @Query("UPDATE outbox SET state = 'Queued', sendAfter = :sendAfter, error = '', updatedAt = :now WHERE id = :id AND state != 'Queued'")
+    abstract suspend fun queue(id: Long, sendAfter: Long, now: Long): Int
+
+    /** Takes a message back that is waiting to be sent; 0 when it has left already. */
+    @Query("UPDATE outbox SET state = 'Draft', sendAfter = 0, updatedAt = :now WHERE id = :id AND state = 'Queued'")
+    abstract suspend fun unqueue(id: Long, now: Long): Int
+
+    /** A waiting message no longer waits out its time. */
+    @Query("UPDATE outbox SET sendAfter = :time WHERE id = :id AND state = 'Queued' AND sendAfter > :time")
+    abstract suspend fun bringForward(id: Long, time: Long)
+
+    /** Takes a waiting message to send it; 0 when it was taken back in this very moment. */
+    @Query("UPDATE outbox SET state = 'Sending', updatedAt = :now WHERE id = :id AND state = 'Queued'")
+    abstract suspend fun claim(id: Long, now: Long): Int
+
+    /**
+     * What an earlier run was sending when it ended: whether the server took it is not known. It
+     * is not sent a second time unasked; it is shown as failed, and its writer decides.
+     */
+    @Query("UPDATE outbox SET state = 'Failed', error = :error, updatedAt = :now WHERE state = 'Sending'")
+    abstract suspend fun failInterrupted(error: String, now: Long): Int
+
+    /** When the first of the waiting messages is to go (a moment that may have passed); null when none waits. */
+    @Query("SELECT MIN(sendAfter) FROM outbox WHERE state = 'Queued'")
+    abstract suspend fun earliest(): Long?
+
+    /** What is to be sent now, the oldest first. */
+    @Query("SELECT * FROM outbox WHERE state = 'Queued' AND sendAfter <= :now ORDER BY id")
+    abstract suspend fun due(now: Long): List<OutboxEntity>
+
+    /** When the next message that is not due yet will be; null for none. */
+    @Query("SELECT MIN(sendAfter) FROM outbox WHERE state = 'Queued' AND sendAfter > :now")
+    abstract suspend fun nextDue(now: Long): Long?
+
+    @Query("SELECT * FROM outbox_file WHERE outboxId = :outboxId ORDER BY id")
+    abstract suspend fun files(outboxId: Long): List<OutboxFileEntity>
+
+    @Query("SELECT * FROM outbox_file ORDER BY id")
+    abstract fun observeFiles(): Flow<List<OutboxFileEntity>>
+
+    @Query("SELECT * FROM outbox_file WHERE id = :id")
+    abstract suspend fun file(id: Long): OutboxFileEntity?
+
+    @Insert
+    abstract suspend fun addFile(file: OutboxFileEntity): Long
+
+    @Query("DELETE FROM outbox_file WHERE id = :id")
+    abstract suspend fun removeFile(id: Long)
 }

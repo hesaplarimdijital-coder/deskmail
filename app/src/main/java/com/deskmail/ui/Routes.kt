@@ -13,6 +13,9 @@ object Routes {
     /** Every account's folders; how a phone or a tablet's rail reaches them. */
     const val FOLDERS = "folders"
     const val SEARCH = "search"
+
+    /** What is being written and what waits to be sent. */
+    const val OUTBOX = "outbox"
     const val SETTINGS = "settings"
 
     private const val FOLDER = "folder/"

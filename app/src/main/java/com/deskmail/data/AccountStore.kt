@@ -81,6 +81,15 @@ class AccountStore(db: DeskMailDatabase, private val box: SecretBox, private val
 
     suspend fun setState(accountId: Long, state: AccountState, detail: String = "") = accounts.setState(accountId, state.name, detail)
 
+    /**
+     * The name the account's mail is sent under and what it is signed with. The name is one line
+     * of a header: line breaks and control characters do not belong in it.
+     */
+    suspend fun saveWriting(accountId: Long, senderName: String, signature: String) {
+        val name = senderName.replace(CONTROLS, " ").trim().take(MAX_SENDER_NAME)
+        accounts.setWriting(accountId, name, signature.replace("\r\n", "\n").trim().take(MAX_SIGNATURE))
+    }
+
     /** Removes the account from the device with everything that was kept of its mail. The mail stays on its server. */
     suspend fun remove(accountId: Long) {
         accounts.delete(accountId)
@@ -99,6 +108,13 @@ class AccountStore(db: DeskMailDatabase, private val box: SecretBox, private val
 
         /** How a stored credential says what it is; OAuth tokens get a name of their own. */
         const val KIND_PASSWORD = "password"
+
+        /** Line breaks, tabs and the like, however many in a row. */
+        private val CONTROLS = Regex("\\p{Cntrl}+")
+
+        /** A sender's name and a signature are kept up to these lengths. */
+        const val MAX_SENDER_NAME = 100
+        const val MAX_SIGNATURE = 2000
 
         /** How far back mail is kept until the user says otherwise. */
         const val DEFAULT_SYNC_DAYS = 30

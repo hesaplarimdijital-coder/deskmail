@@ -6,9 +6,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.test.core.app.ApplicationProvider
 import com.deskmail.core.log.AppLog
+import com.deskmail.demo.DemoComposer
 import com.deskmail.demo.DemoMail
 import com.deskmail.mail.AccountActions
 import com.deskmail.mail.AccountDraft
+import com.deskmail.mail.MailComposer
 import com.deskmail.mail.MailContent
 import com.deskmail.mail.MailSource
 import com.deskmail.mail.SetupPlan
@@ -55,9 +57,13 @@ fun testMail() = DemoMail(TEST_NOW)
 /** The made-up mail before any account was added. */
 fun noMail() = DemoMail(TEST_NOW, empty = true)
 
+/** Writing and sending made up over [mail], dated as the tests' mail is. */
+fun testComposer(mail: DemoMail) = DemoComposer(mail, TEST_NOW)
+
 /**
  * The app as the tests draw it: no screen transitions, the pinned clock, and a message's plain text
- * where the app has a WebView (Robolectric does not draw one).
+ * where the app has a WebView (Robolectric does not draw one). Messages are written and "sent" in
+ * memory ([composer]; a test that looks at what was written hands in its own).
  */
 @Composable
 fun TestApp(
@@ -67,6 +73,7 @@ fun TestApp(
     ui: MailUiState = remember { MailUiState() },
     startRoute: String? = null,
     log: AppLog = remember { AppLog() },
+    composer: MailComposer? = remember(mail) { (mail as? DemoMail)?.let { testComposer(it) } },
     accounts: AccountActions? = null,
     settingsUi: SettingsUiState = remember { SettingsUiState() },
     messageBody: @Composable (MailContent.Ready, Boolean, Modifier) -> Unit = { content, _, modifier -> PlainMessageBody(content, modifier) },
@@ -75,6 +82,7 @@ fun TestApp(
         mail = mail,
         settings = settings,
         log = log,
+        composer = composer,
         accounts = accounts,
         ui = ui,
         settingsUi = settingsUi,
@@ -96,6 +104,9 @@ class FakeAccounts(var plan: SetupPlan = SetupPlan.Manual, var result: SetupResu
     val reconnected = ArrayList<Pair<Long, String>>()
     val removed = ArrayList<Long>()
 
+    /** What was saved of an account's name and signature: the account, the name, the signature. */
+    val written = ArrayList<Triple<Long, String, String>>()
+
     override suspend fun find(address: String): SetupPlan {
         looked += address
         return plan
@@ -109,6 +120,10 @@ class FakeAccounts(var plan: SetupPlan = SetupPlan.Manual, var result: SetupResu
     override suspend fun reconnect(accountId: Long, password: String): SetupResult {
         reconnected += accountId to password
         return result
+    }
+
+    override suspend fun saveWriting(accountId: Long, senderName: String, signature: String) {
+        written += Triple(accountId, senderName, signature)
     }
 
     override suspend fun remove(accountId: Long) {

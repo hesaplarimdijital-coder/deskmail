@@ -4,6 +4,7 @@ import android.content.SharedPreferences
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.deskmail.core.log.AppLog
@@ -86,6 +87,20 @@ class AppSettings(private val prefs: SharedPreferences, private val log: AppLog?
         prefs.edit().putString(KEY_WEB_LAYER, value.name).apply()
     }
 
+    // ------------------------------------------------------------------ writing
+
+    /**
+     * How many seconds a message waits after "Send" before it leaves: the time to take it back.
+     * One of [UNDO_SEND_CHOICES].
+     */
+    var undoSendSeconds by mutableIntStateOf(prefs.getInt(KEY_UNDO_SEND, DEFAULT_UNDO_SEND).let { stored -> if (stored in UNDO_SEND_CHOICES) stored else DEFAULT_UNDO_SEND })
+        private set
+
+    fun updateUndoSendSeconds(value: Int) {
+        undoSendSeconds = if (value in UNDO_SEND_CHOICES) value else DEFAULT_UNDO_SEND
+        prefs.edit().putInt(KEY_UNDO_SEND, undoSendSeconds).apply()
+    }
+
     // ------------------------------------------------------------------ the panes of a large window
 
     /** The inspector beside the reader starts closed: it leaves little room on anything but a monitor. */
@@ -118,6 +133,10 @@ class AppSettings(private val prefs: SharedPreferences, private val log: AppLog?
         /** The file the app's settings are kept in. */
         const val FILE = "deskmail"
 
+        /** How long "Send" can be taken back, in seconds: what there is to choose from, and what holds until something is chosen. */
+        val UNDO_SEND_CHOICES = listOf(5, 10, 15)
+        const val DEFAULT_UNDO_SEND = 10
+
         /** The list takes a little under half of the room until the divider is dragged. */
         const val DEFAULT_LIST_SHARE = 0.45f
 
@@ -130,6 +149,7 @@ class AppSettings(private val prefs: SharedPreferences, private val log: AppLog?
         private const val KEY_READER_UNDER_BARS = "experiment_reader_under_bars"
         private const val KEY_DARKEN_MESSAGES = "experiment_darken_messages"
         private const val KEY_WEB_LAYER = "experiment_web_layer"
+        private const val KEY_UNDO_SEND = "undo_send_seconds"
         private const val KEY_INSPECTOR_COLLAPSED = "inspector_collapsed"
         private const val KEY_INSPECTOR_WIDTH = "inspector_width"
         private const val KEY_LIST_SHARE = "list_share"

@@ -3,12 +3,16 @@ package com.deskmail
 import android.app.Application
 import android.content.Context
 import android.os.Build
+import androidx.work.Configuration
 import com.deskmail.core.log.AppLog
 import com.deskmail.core.provider.Autoconfig
 import com.deskmail.data.AccountSetup
 import com.deskmail.data.AccountStore
+import com.deskmail.data.ComposeWords
 import com.deskmail.data.DeviceSecretBox
+import com.deskmail.data.LiveComposer
 import com.deskmail.data.LiveMail
+import com.deskmail.data.MailSend
 import com.deskmail.data.MailSync
 import com.deskmail.db.DeskMailDatabase
 import com.deskmail.log.LogFile
@@ -17,12 +21,15 @@ import com.deskmail.net.DnsLookup
 import com.deskmail.net.HttpsText
 import com.deskmail.settings.AppSettings
 import com.deskmail.ui.mail.WebViewWarmUp
+import com.deskmail.work.SendWorker
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import java.io.File
 import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
 import java.util.Locale
 
 /**
@@ -30,7 +37,7 @@ import java.util.Locale
  * whatever goes wrong afterwards is written down; the rest (the database, the mail, the sync) is
  * created when it is first asked for.
  */
-class DeskMailApplication : Application() {
+class DeskMailApplication : Application(), Configuration.Provider {
 
     /** What the app did and what went wrong; see the log screen under Settings. */
     val log = AppLog()
@@ -61,6 +68,47 @@ class DeskMailApplication : Application() {
     val accounts: AccountActions by lazy {
         val autoconfig = Autoconfig(fetch = HttpsText::get, mailHosts = DnsLookup::mailHosts, services = DnsLookup::services, log = log)
         AccountSetup(database, accountStore, sync, autoconfig, log, background, startSync = { mail.sync(it) })
+    }
+
+    /** Where the files attached to messages that have not left yet are kept. */
+    private val outboxFiles: File get() = File(filesDir, OUTBOX_DIRECTORY)
+
+    /** Sends what waits in the outbox; the background work that does so ([SendWorker]) finds it here. */
+    val sender: MailSend by lazy { MailSend(database, accountStore, sync, log, File(cacheDir, OUTGOING_DIRECTORY), outboxFiles) }
+
+    /** Writing and sending, as the windows see it. */
+    val composer: LiveComposer by lazy {
+        LiveComposer(
+            db = database,
+            sync = sync,
+            scope = background,
+            files = outboxFiles,
+            scheduler = SendWorker.scheduler(this),
+            fetchFile = { mail.fetch(it) },
+            words = ::composeWords,
+            recover = { sender.recover() },
+            log = log,
+            undoMs = { settings.undoSendSeconds * 1000L },
+        )
+    }
+
+    /** WorkManager is set up when it is first asked for (the manifest takes its own start-up out). */
+    override val workManagerConfiguration: Configuration
+        get() = Configuration.Builder().setMinimumLoggingLevel(android.util.Log.INFO).build()
+
+    /** The words a reply and a forwarded message begin with, in the language the device speaks now. */
+    private fun composeWords(): ComposeWords {
+        val dates = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.LONG, FormatStyle.SHORT).withLocale(Locale.getDefault()).withZone(ZoneId.systemDefault())
+        return ComposeWords(
+            wrote = { date, who -> getString(R.string.compose_wrote, date, who) },
+            forwarded = getString(R.string.compose_forwarded),
+            from = getString(R.string.detail_from),
+            sent = getString(R.string.detail_date),
+            subject = getString(R.string.compose_subject),
+            to = getString(R.string.detail_to),
+            cc = getString(R.string.detail_cc),
+            date = { dates.format(it) },
+        )
     }
 
     /** Has the device's WebView ready before the first message is opened. */
@@ -116,6 +164,12 @@ class DeskMailApplication : Application() {
 
         /** Under the cache directory: the files of messages that were fetched to be opened, saved or shared. */
         const val FILES_DIRECTORY = "files"
+
+        /** Under the cache directory: a message is written out here just before it is handed to its server. */
+        private const val OUTGOING_DIRECTORY = "outgoing"
+
+        /** Under the app's files: what is attached to messages that have not left yet. Not a cache: it must still be there when they go. */
+        private const val OUTBOX_DIRECTORY = "outbox"
 
         /** How much of earlier runs the log screen shows. */
         private const val EARLIER_LINES = 1000
