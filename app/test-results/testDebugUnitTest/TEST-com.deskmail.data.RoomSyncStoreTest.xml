@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.data.RoomSyncStoreTest" tests="7" skipped="0" failures="0" errors="0" timestamp="2026-11-12T20:22:38.032Z" hostname="runnervmwuk1x" time="0.165">
+  <properties/>
+  <testcase name="aRoleTheUserGaveAFolderStays" classname="com.deskmail.data.RoomSyncStoreTest" time="0.021"/>
+  <testcase name="theFoldersBecomeThoseTheServerLists" classname="com.deskmail.data.RoomSyncStoreTest" time="0.021"/>
+  <testcase name="messagesAreKeptOnceAndFoundByTheirWords" classname="com.deskmail.data.RoomSyncStoreTest" time="0.021"/>
+  <testcase name="whatLeavesTheDeviceLeavesTheIndex" classname="com.deskmail.data.RoomSyncStoreTest" time="0.022"/>
+  <testcase name="aTextIsKeptWithItsFilesAndFound" classname="com.deskmail.data.RoomSyncStoreTest" time="0.028"/>
+  <testcase name="theUnifiedViewsLeaveOutWhatDoesNotBelong" classname="com.deskmail.data.RoomSyncStoreTest" time="0.027"/>
+  <testcase name="marksAreBroughtUpToDate" classname="com.deskmail.data.RoomSyncStoreTest" time="0.021"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
