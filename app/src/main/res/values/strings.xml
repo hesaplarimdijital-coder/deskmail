@@ -170,7 +170,7 @@
     <string name="setup_not_address">This is not an e-mail address.</string>
     <string name="setup_duplicate">This account is already added.</string>
     <string name="setup_gmail_note">Gmail takes no account password from mail programs. With 2-Step Verification on, make an app password in your Google account (myaccount.google.com/apppasswords) and enter or paste its 16 letters here.</string>
-    <string name="setup_outlook_note">Outlook, Hotmail and Live accounts sign in at Microsoft, in the browser. That arrives with the next pre-release.</string>
+    <string name="setup_outlook_note">Outlook, Hotmail and Live accounts sign in at Microsoft, in the browser. That is not ready yet; it arrives with one of the next pre-releases.</string>
     <string name="setup_found">Servers found</string>
     <string name="setup_receiving">Receiving (IMAP)</string>
     <string name="setup_sending">Sending (SMTP)</string>

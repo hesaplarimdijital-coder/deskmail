@@ -251,7 +251,7 @@ Koddan okundu, cihazda denenmedi.
     (saniyede yaklaşık 59). Kaydırma durunca yine tam;
   - eksik parçalar WebView'ın karoları: ekranın yarısı genişliğinde (540 piksel) sütunlar, yaklaşık 490
     piksellik şeritler. Eksilen yalnızca WebView'ın içeriği: çubuklar ve kaydırma çubuğu hep yerinde.
-- **Yorum (cihazda iki denemeyle kesinleşecek: "Cam çubuklar" kapalı; "WebView katmanı: Donanım"):**
+- **Yorum** ("Cam çubuklar" kapalıyken titreme olmadığı cihazda görüldü, 12 Kasım 2026):
   WebView kendi çizimini karede bir kez, tek bir görünüm alanı için yapılacak diye kurar; ikinci ve
   üçüncü çizim başka alan ve ölçek bildirince karolarını atıp yeniden üretir.
 - **İstek:** biri yeter:
@@ -262,6 +262,9 @@ Koddan okundu, cihazda denenmedi.
     bulanıklığı kendiliğinden bırakması;
   - en azından belgede uyarı ve ekran başına cam modu (`LocalGlassMode` bugün kabuğun üstünden
     verilebiliyor ama statik: değişince kabuğun tamamı yeniden bileşir).
-- **Şimdilik:** DeskMail, penceresinde bir iletinin WebView'ı varken kabuğa `glass = false` verir
-  (`ui/mail/MessageBody.kt`: `shellGlass`): çubuklar, sayfalar ve menüler o sırada düz yüzeydir, başka
-  her yerde cam kalır. Tablette ve DeX'te okuma bölmesi açıkken de böyle.
+- **Şimdilik:** DeskMail, kabuğun camı bulanıkken iletinin WebView'ını kendi donanım katmanına çizer
+  (`ui/mail/MessageBody.kt`: `webLayerFor`): WebView bir kez çizilir, pencere ve her cam yüzey hazır
+  resmi o katmandan alır (0.1.0-alpha.3; cihazda doğrulanacak). Katmana sığmayan uzun iletide
+  (`LayerLimits`) ve "İletinin üstünde cam" denemesi kapalıyken kabuğa `glass = false` verir
+  (`shellGlass`); alpha.2 bunu her iletide yapıyordu. İstek yine geçerli: katman, iletinin boyu kadar
+  bellek tutar ve uzun iletide çare değildir.

@@ -2,6 +2,14 @@
 
 Sürümler [SemVer](https://semver.org/lang/tr/) kuralına uyar; 0.1.0'a kadar olanlar ön sürümdür (`0.1.0-alpha.N`). Her sürümün imzalı APK'sı GitHub'daki sürüm sayfasına eklenir.
 
+## 0.1.0-alpha.3 (13 Kasım 2026)
+
+### Okuma: cam iletinin üstünde de kalır
+- alpha.2'de ileti açıkken çubuklar düz yüzeye dönüyordu. Artık cam kalır: çubuklar camken iletinin WebView'ı kendi donanım katmanına çizilir. İleti bir kez çizilir; pencere de çubukların bulanıklığı da hazır resmi o katmandan alır. (Titreme, camın altındaki içeriği her karede birkaç kez yeniden çizdirmesinden çıkıyordu.) **Cihazda doğrulanacak:** bu yol yalnızca testlerde denendi.
+- Bir katmana sığmayacak kadar uzun iletide (cihazın en büyük dokusu ya da 64 MB; telefonda yaklaşık altı ekran boyu) katman kullanılmaz ve o ileti ekrandayken cam kendiliğinden kapanır.
+- Ayarlar › Denemeler: "İletinin üstünde cam" (kapalıyken alpha.2'deki gibi: ileti açıkken düz çubuklar); "WebView katmanı" artık Otomatik, Yok, Donanım, Yazılım.
+- Günlük, her iletide WebView'ın neye çizildiğini yazar (`WebView 1080 x 5400 px: hardware layer, glass blurred`): titreme ya da boş kalan bir bölüm olursa ilk bakılacak satır.
+
 ## 0.1.0-alpha.2 (12 Kasım 2026)
 
 İlk gerçek posta: hesap eklenir, klasörler ve iletiler sunucudan gelir ve okunur. **Bu sürüm yalnızca okur:** okundu ve yıldız sunucuya yazılmaz; gönderme, taşıma, silme ve bildirim yok. Gmail uygulama şifresiyle çalışır; Outlook hesapları bir sonraki ön sürümde (Microsoft girişi).

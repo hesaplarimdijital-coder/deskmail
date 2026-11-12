@@ -4,10 +4,10 @@ Kişisel kullanım için Android e-posta uygulaması: telefon, tablet ve Samsung
 e-posta yapan bir istemci. Arayüzün tamamı [desktop-kit](https://github.com/hesaplarimdijital-coder/desktop-kit)
 ile çizilir. Play'de değildir; APK olarak kurulur.
 
-> **Durum:** 0.1.0'a giden ön sürümler. `0.1.0-alpha.2` gerçek postayı **okur**: hesap eklenir (Gmail
-> uygulama şifresiyle; başka sağlayıcılar şifreyle), klasörler ve iletiler eşitlenir, iletiler güvenli
-> biçimde gösterilir. Okundu/yıldız, taşıma, silme, yazma, arama ve bildirim henüz yok; Outlook hesapları
-> bir sonraki ön sürümde. Sıradaki adımlar `docs/PLAN.md`'de, yapılanlar `CHANGELOG.md`'de.
+> **Durum:** 0.1.0'a giden ön sürümler. Uygulama gerçek postayı **okur**: hesap eklenir (Gmail uygulama
+> şifresiyle; başka sağlayıcılar şifreyle), klasörler ve iletiler eşitlenir, iletiler güvenli biçimde
+> gösterilir. Okundu/yıldız, taşıma, silme, yazma, arama ve bildirim henüz yok; Outlook hesapları
+> Microsoft girişini bekliyor. Sıradaki adımlar `docs/PLAN.md`'de, yapılanlar `CHANGELOG.md`'de.
 
 ## Kurulum ve güncelleme
 
@@ -38,7 +38,7 @@ Ayarlar › Hesaplar › **Hesap ekle**. Adresi yazınca uygulama sunucuları ke
   seçeneği iş ve okul hesaplarında, Gelişmiş Koruma'da ve yalnızca güvenlik anahtarıyla doğrulanan
   hesaplarda görünmeyebilir. Google bir gün uygulama şifrelerini kapatırsa yedek yol Google OAuth'tur;
   planı 0.1.0 belgeleriyle yazılacak.
-- **Outlook, Hotmail, Live:** Microsoft'ta tarayıcıdan giriş ister (OAuth2); `0.1.0-alpha.3` ile gelir.
+- **Outlook, Hotmail, Live:** Microsoft'ta tarayıcıdan giriş ister (OAuth2); henüz eklenemez, sonraki ön sürümlerden biriyle gelir.
 - **Diğerleri:** sağlayıcının verdiği şifre ya da uygulama şifresi. Sunucular Thunderbird'ün sağlayıcı
   veritabanından ya da alan adının DNS kayıtlarından bulunur; dışarıya yalnızca adresin @ işaretinden
   sonraki bölümü gider.

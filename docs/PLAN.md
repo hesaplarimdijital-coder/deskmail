@@ -21,7 +21,7 @@ kitten istenenler `docs/KIT-ISTEKLERI.md`'de durur.
 | Senkron | Eklentisiz temel yol; CONDSTORE varsa hızlandırır; QRESYNC 0.1.0'da yok. |
 | Sunucu kimliği (TLS) | Sertifikanın bağlanılan sunucuya ait olduğunu uygulama kendisi denetler (`ServerIdentity`: RFC 6125, yalnızca SAN, joker tek etiket). Angus Mail bu denetimi platforma "LDAPS" adıyla bırakıyor; Java'nın TLS'i bu adı tanır, Android'inki tanımaz ve denetim sessizce yapılmazdı. Sertifika zincirinin güvenilir bir kökten gelmesi platformun denetimi olarak kalır. |
 | Angus Mail'in kaynak dosyaları | Kitaplığın sağlayıcı listesi, içerik işleyici tablosu ve kod çözücü bulucusu jar içindeki kaynak dosyalarıdır. Android paketlemesine güvenmemek için IMAP deposu doğrudan kurulur, çok parçalı iletinin parçaları ileti yapısından alınır, kod çözücülerin (base64, quoted-printable) sınıfı adıyla verilir (`MailLibrary`). CI, APK'ya giren bu dosyaların listesini günlük dalına yazar (`apk-resources.txt`). |
-| Okuma ve cam | İleti açıkken kabuğun camı kapalıdır: çubuklar, sayfalar ve menüler düz yüzey olur, başka her yerde cam kalır (`shellGlass`). Kit bulanıklık için içeriği her karede birkaç kez çizer; içindeki WebView buna dayanmaz ve kaydırılırken karoları gidip gelir (S24, alpha.1; `docs/KIT-ISTEKLERI.md`, 20). Kit bir görünümü cam kaynağının dışında tutmanın yolunu verince cam iletinin üstüne geri gelir. |
+| Okuma ve cam | Cam iletinin üstünde de kalır: kabuğun camı bulanıkken iletinin WebView'ı kendi donanım katmanına çizilir (`webLayerFor`); bir kez çizilir, pencere ve her bulanıklık hazır resmi o katmandan alır. Kit bulanıklık için içeriği her karede birkaç kez çizer; doğrudan pencereye çizen WebView buna dayanmaz ve kaydırılırken karoları gidip gelir (S24, alpha.1; `docs/KIT-ISTEKLERI.md`, 20). Katmana sığmayan uzun iletide (`LayerLimits`: cihazın en büyük dokusu, 64 MB) katman yoktur ve o ileti ekrandayken cam kapanır (`shellGlass`). alpha.2'nin yolu (ileti açıkken cam hep kapalı) Denemeler'de "İletinin üstünde cam" kapatılarak geri gelir. |
 | WebView'ın hazırlanması | Uygulamanın ilk ekranı çizildikten sonra bir WebView kurulup boş bir sayfa yüklenir ve bırakılır (`WebViewWarmUp`): ilk iletinin açılışı motorun yüklenmesini beklemez. Süre günlüğe yazılır. |
 | Kit eksikleri | Kite yazılır; uygulamada yamanmaz (`docs/KIT-ISTEKLERI.md`). |
 | GitHub | PR'ları CI yeşilken Claude birleştirir. Etiketi ve sürümü Barış açar (Releases'ta `main` üzerinde): Claude'un oturumu etiket ve sürüm açamıyor (12 Kasım 2026'da denendi, ikisi de reddedildi). Force-push ve geçmişi yeniden yazma yok. |
@@ -151,8 +151,8 @@ kitin metniyle Ctrl+Shift+N'e bağlar. Tek tuşlar ve Ctrl+Z, odak bir yazı ala
 açıkken çalışmaz.
 
 - **alpha.1'de olanlar:** Ctrl+N (yer tutucu), Ctrl+Shift+N, Ctrl+K, Ctrl+,, Ctrl+B, Ctrl+/, J/K, S, U,
-  Esc, /. Kalanlar işleriyle birlikte gelir: F5 alpha.2, R/A/F ve Ctrl+Enter alpha.5, E/Delete ve
-  Ctrl+Z alpha.4.
+  Esc, /. Kalanlar işleriyle birlikte gelir: F5 hesaplarla geldi (alpha.2); E/Delete ve Ctrl+Z ileti
+  işlemleriyle, R/A/F ve Ctrl+Enter yazmayla.
 - **Tuşlar nereden geçer:** etkinlik her tuşu odaktaki görünümden önce `KeyRouter`'a sorar. Yazı
   yazılıp yazılmadığı iki yerden okunur: odaktaki görünüm bir metin düzenleyici mi
   (`View.onCheckIsTextEditor`), ve Compose'un kendi ekran tarifinde odakta bir yazı alanı var mı.
@@ -161,9 +161,10 @@ açıkken çalışmaz.
 
 ## Aşama 1: PR'lar
 
-Her PR'ın son commit'i sürüm, `versionCode`, CHANGELOG ve cihaz deneme listesidir. Birleşince Barış
-Releases'ta `main` üzerinde etiketi açar (README, "Sürüm çıkarma"); iş akışı imzalı APK'yı ve sürüm
-notlarını ekler.
+Her PR'ın son commit'i CHANGELOG'u ve cihaz deneme listesini günceller. Ön sürüm, birleşen bir ya da
+birkaç PR'dan sonra çıkar (13 Kasım 2026'dan beri her PR'dan sonra beklenmiyor): sürüm ve `versionCode`
+o ön sürümün ilk PR'ında artar, sonraki PR'lar CHANGELOG'da aynı başlığın altına yazar. Barış Releases'ta
+`main` üzerinde etiketi açar (README, "Sürüm çıkarma"); iş akışı imzalı APK'yı ve sürüm notlarını ekler.
 
 1. **İskelet ve erken denemeler (alpha.1):** Gradle iskeleti ve CI · imza ve etiket iş akışı · kit
    kabuğu · sahte veriyle liste ve okuma · WebView deneme ekranı · kısayollar, menü çubuğu, palet ·
@@ -171,21 +172,24 @@ notlarını ekler.
 2. **Hesaplar ve senkron (alpha.2):** IMAP oturumu ve klasör listesi · sağlayıcı tablosu, ISPDB, MX/SRV ·
    MIME ve HTML temizleme · senkron planlayıcı · Room şeması v1, FTS · kimlik kasası ·
    hesap ekleme ve "Yeniden bağlan" · gerçek veriyle liste, klasörler, birleşik gelen, rozetler ·
-   güvenli okuma ve uzak görsel şeridi. Yalnızca okur: okundu ve yıldız alpha.4'te (bekleyen işlem
-   kuyruğu). Göç testi şemanın ilk değişikliğiyle gelir; o zamana kadar CI şemanın değişmediğini denetler.
-3. **Outlook OAuth2 (alpha.3):** PKCE ve jeton istemcisi · XOAUTH2 ile IMAP/SMTP girişi · tarayıcı
-   akışı ve jeton saklama · hesap eklemede Microsoft yolu · Outlook farkları ve hata yönlendirmeleri.
-4. **İleti işlemleri ve ekler (alpha.4):** bekleyen işlem kuyruğu · okundu ve yıldız · arşivle, sil,
+   güvenli okuma ve uzak görsel şeridi. Yalnızca okur: okundu ve yıldız bekleyen işlem kuyruğuyla gelir.
+   Göç testi şemanın ilk değişikliğiyle gelir; o zamana kadar CI şemanın değişmediğini denetler.
+3. **Cam iletinin üstünde (alpha.3):** WebView kendi donanım katmanında · katmana sığmayan iletide camın
+   kapanması · deneme anahtarları ve günlük satırı.
+4. **İleti işlemleri ve ekler:** bekleyen işlem kuyruğu · okundu ve yıldız · arşivle, sil,
    taşı, geri al · çoklu seçim, sağ tık, "⋯" · sürükle bırak · filtre çipleri ve sıralama · ekleri
    açma ve kaydetme · tek harfli kısayollar.
-5. **Yazma ve gönderme (alpha.5):** ileti oluşturma ve SMTP · giden kutusu, gönderim işi, gönderiyi
+5. **Yazma ve gönderme:** ileti oluşturma ve SMTP · giden kutusu, gönderim işi, gönderiyi
    geri alma · yazma ekranı · yanıtla, tümünü yanıtla, ilet · taslaklar · gönderileni kaydetme kuralı ·
    alıcı önerileri ve Contact Picker · `mailto:`, paylaşım, DeX'te ayrı pencere.
-6. **Arama (alpha.6):** FTS dizini ve Türkçe katlama · Ara ekranı · sunucu araması · palet ve "/".
-7. **Bildirimler (alpha.7):** IDLE döngüsü · ön plan hizmeti · alarm, uyandırma kilidi, ağ değişimi ·
+6. **Arama:** FTS dizini ve Türkçe katlama · Ara ekranı · sunucu araması · palet ve "/".
+7. **Bildirimler:** IDLE döngüsü · ön plan hizmeti · alarm, uyandırma kilidi, ağ değişimi ·
    açılışta ve güncellemeden sonra başlatma · yeni posta bildirimi ve düğmeleri · periyodik yedek yol ·
    pil yönlendirmesi.
-8. **Ayarlar, cilâ, 0.1.0:** hesap, bildirim, imza ayarları · boş ve hata durumları, erişilebilirlik ·
+8. **Outlook OAuth2:** PKCE ve jeton istemcisi · XOAUTH2 ile IMAP/SMTP girişi · tarayıcı
+   akışı ve jeton saklama · hesap eklemede Microsoft yolu · Outlook farkları ve hata yönlendirmeleri.
+   Azure uygulama kaydını bekler (Barış'ın tarayıcısında yapılacak); o yüzden sırası sona alındı.
+9. **Ayarlar, cilâ, 0.1.0:** hesap, bildirim, imza ayarları · boş ve hata durumları, erişilebilirlik ·
    lisanslar ekranı · belgeler (mimari, yıllık bakım listesi, Google OAuth yedek planı) · bağımsız
    inceleme bulguları · 0.1.0.
 
@@ -195,12 +199,13 @@ taşıma, bildirimden hızlı yanıt, satırı kaydırma.
 
 ## Riskler ve erken denenecekler
 
-- **WebView ile cam (alpha.1'de görüldü):** beklenen "bulanıklaşmaz" değil, daha kötüsü çıktı: cam açıkken
-  kaydırılan iletinin içeriği saniyede onlarca kez parça parça kaybolup geri geliyor (S24, ekran kaydı,
-  kare kare). alpha.2'den beri ileti açıkken cam kapalı (yukarıdaki karar). **Cihazda doğrulanacak:**
-  titreme bununla bitiyor mu? Bitmezse okuma bölmesinde kaydırmayı WebView'ın kendisine bırakmak gerekir
-  (bugün WebView iletinin boyundadır, sayfayı Compose kaydırır); Ayarlar › Denemeler'deki "WebView
-  katmanı" o durumda ilk bakılacak yer.
+- **WebView ile cam (alpha.1'de görüldü):** cam açıkken kaydırılan iletinin içeriği saniyede onlarca kez
+  parça parça kaybolup geri geliyordu (S24, ekran kaydı, kare kare); cam kapalıyken titreme olmadığı
+  cihazda görüldü, alpha.2 ileti açıkken camı kapattı. alpha.3 camı geri getirir: WebView kendi donanım
+  katmanına çizilir (yukarıdaki karar). **Cihazda doğrulanacak:** camla kaydırırken titreme var mı; uzun
+  bir iletinin bir bölümü boş kalıyor mu (katmandaki WebView, ekranın dışındaki bölümünü de çizmiş
+  olmalı); bellek. Olmazsa sıradaki yol kaydırmayı WebView'ın kendisine bırakmak (bugün WebView iletinin
+  boyundadır, sayfayı Compose kaydırır); o zamana kadar Denemeler'de "İletinin üstünde cam" kapatılır.
 - **Geniş iletiler:** sabit genişlikli bültenler (600 piksellik tablolar) telefonda ekrana sığdırılmıyor,
   sağı kesik kalıyor. Sığdırma (küçültme ya da tabloyu daraltma) okuma bölmesinin sonraki işi.
 - **IDLE'ın uykuda kalması (S24):** günlük her yenilemeyi, kopmayı ve yeniden bağlanmayı zaman

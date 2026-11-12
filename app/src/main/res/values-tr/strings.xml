@@ -147,7 +147,7 @@
     <string name="setup_not_address">Bu bir e-posta adresi değil.</string>
     <string name="setup_duplicate">Bu hesap zaten ekli.</string>
     <string name="setup_gmail_note">Gmail, posta uygulamalarından hesap şifresini kabul etmez. İki adımlı doğrulama açıkken Google hesabında bir uygulama şifresi üret (myaccount.google.com/apppasswords) ve 16 harfini buraya yaz ya da yapıştır.</string>
-    <string name="setup_outlook_note">Outlook, Hotmail ve Live hesapları Microsoft\'ta, tarayıcıdan giriş yapar. Bu, bir sonraki ön sürümle geliyor.</string>
+    <string name="setup_outlook_note">Outlook, Hotmail ve Live hesapları Microsoft\'ta, tarayıcıdan giriş yapar. Bu henüz hazır değil; sonraki ön sürümlerden biriyle geliyor.</string>
     <string name="setup_found">Sunucular bulundu</string>
     <string name="setup_receiving">Alma (IMAP)</string>
     <string name="setup_sending">Gönderme (SMTP)</string>
