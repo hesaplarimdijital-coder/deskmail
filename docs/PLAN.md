@@ -20,7 +20,7 @@ kitten istenenler `docs/KIT-ISTEKLERI.md`'de durur.
 | Yedekleme | Kapalı (`allowBackup=false`). Posta sunucuda; kimlik bilgileri cihazdan çıkmaz. |
 | Senkron | Eklentisiz temel yol; CONDSTORE varsa hızlandırır; QRESYNC 0.1.0'da yok. |
 | Kit eksikleri | Kite yazılır; uygulamada yamanmaz (`docs/KIT-ISTEKLERI.md`). |
-| GitHub | PR'ları CI yeşilken Claude birleştirir; etiketi ve sürümü de açar. Force-push ve geçmişi yeniden yazma yok. |
+| GitHub | PR'ları CI yeşilken Claude birleştirir. Etiketi ve sürümü Barış açar (Releases'ta `main` üzerinde): Claude'un oturumu etiket ve sürüm açamıyor (12 Kasım 2026'da denendi, ikisi de reddedildi). Force-push ve geçmişi yeniden yazma yok. |
 
 ## Mimari
 
@@ -142,8 +142,9 @@ açıkken çalışmaz.
 
 ## Aşama 1: PR'lar
 
-Her PR'ın son commit'i sürüm, `versionCode`, CHANGELOG ve cihaz deneme listesidir; birleşince etiket
-açılır ve imzalı APK sürüme eklenir.
+Her PR'ın son commit'i sürüm, `versionCode`, CHANGELOG ve cihaz deneme listesidir. Birleşince Barış
+Releases'ta `main` üzerinde etiketi açar (README, "Sürüm çıkarma"); iş akışı imzalı APK'yı ve sürüm
+notlarını ekler.
 
 1. **İskelet ve erken denemeler (alpha.1):** Gradle iskeleti ve CI · imza ve etiket iş akışı · kit
    kabuğu · sahte veriyle liste ve okuma · WebView deneme ekranı · kısayollar, menü çubuğu, palet ·
