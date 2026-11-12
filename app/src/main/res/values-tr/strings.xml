@@ -56,6 +56,19 @@
     <string name="detail_account">Hesap</string>
     <string name="detail_folder">Klasör</string>
 
+    <string name="menu_file">Dosya</string>
+    <string name="menu_message">İleti</string>
+    <string name="action_next_message">Sonraki ileti</string>
+    <string name="action_previous_message">Önceki ileti</string>
+    <string name="action_toggle_star">Yıldızla ya da yıldızı kaldır</string>
+    <string name="action_toggle_read">Okundu ya da okunmadı say</string>
+    <string name="action_close_message">İletiyi kapat</string>
+    <string name="action_find">İletilerde ara</string>
+    <string name="shortcut_scope_mail">Listede ve iletide</string>
+    <string name="palette_hint">İleti, klasör ya da komut ara</string>
+    <string name="palette_group_screens">Ekranlar ve klasörler</string>
+    <string name="palette_group_messages">İletiler</string>
+
     <string name="not_in_this_version">Bu ön sürümde henüz yok: %1$s</string>
 
     <string name="search_coming_title">Arama henüz yok</string>

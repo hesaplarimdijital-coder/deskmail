@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -81,10 +82,10 @@ fun MailScreen(
     }
     // from the store, so a message stays open when a filter takes it off the list
     val opened = ui.openedId(route)?.let { mail.message(it) }
-    val open: (MailMessage) -> Unit = { message ->
-        ui.open(route, message)
-        mail.setUnread(message.id, false)
-    }
+    val open: (MailMessage) -> Unit = { message -> openMessage(mail, ui, route, message) }
+    // what the keyboard steps through (J, K); the rows' list starts with the chips
+    val leadingItems = if (navKind == NavKind.Sidebar) 0 else 1
+    SideEffect { ui.setShown(route, messages.map { it.id }, leadingItems) }
     val composeLabel = stringResource(R.string.action_new_message)
     val showImages = stringResource(R.string.reader_remote_show)
     val openAttachment = stringResource(R.string.action_open_attachment)
@@ -201,6 +202,12 @@ fun MailScreen(
             }
         }
     }
+}
+
+/** Opens [message] in [route]'s reader. A message that is opened is read. */
+fun openMessage(mail: DemoMail, ui: MailUiState, route: String, message: MailMessage) {
+    ui.open(route, message)
+    mail.setUnread(message.id, false)
 }
 
 /** From this width of the content on, the list and the reader stand side by side. */

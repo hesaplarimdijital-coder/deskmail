@@ -11,25 +11,36 @@ import androidx.compose.ui.res.stringResource
 import com.deskmail.R
 import com.deskmail.settings.AppSettings
 import com.deskmail.settings.WebLayer
+import com.deskmail.ui.MailScope
+import com.deskmail.ui.shortcuts
 import desktopkit.components.KeyValueRow
 import desktopkit.components.SegmentedChoice
 import desktopkit.components.SettingRow
 import desktopkit.components.SwitchRow
+import desktopkit.input.showShortcutHints
 import desktopkit.screens.PageHeader
 import desktopkit.settings.AppearanceSection
 import desktopkit.settings.DeskPreferences
 import desktopkit.settings.InputSection
 import desktopkit.settings.SettingsSection
+import desktopkit.settings.ShortcutListSection
 import desktopkit.shell.rememberShellContentPadding
 import desktopkit.theme.DeskTheme
 
 /** Settings: the kit's own sections (theme and accent, density), then the app's. */
 @Composable
 fun SettingsScreen(prefs: DeskPreferences, settings: AppSettings) {
+    val keyboard = showShortcutHints()
     LazyColumn(Modifier.fillMaxSize(), contentPadding = rememberShellContentPadding()) {
         item(key = "header") { PageHeader(stringResource(desktopkit.R.string.dk_settings)) }
         item(key = "appearance") { AppearanceSection(prefs) }
         item(key = "input") { InputSection(prefs) }
+        // the list of shortcuts only where there is a keyboard to use them with
+        if (keyboard) {
+            item(key = "shortcuts") {
+                ShortcutListSection(shortcuts, scopeLabel = { scope -> if (scope == MailScope) stringResource(R.string.shortcut_scope_mail) else null })
+            }
+        }
         item(key = "experiments") { ExperimentsSection(settings) }
         item(key = "about") { AboutSection() }
     }

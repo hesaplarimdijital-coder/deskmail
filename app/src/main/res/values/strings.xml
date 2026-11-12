@@ -66,6 +66,22 @@
     <string name="detail_account">Account</string>
     <string name="detail_folder">Folder</string>
 
+    <!-- The menu bar and the shortcut table -->
+    <string name="menu_file">File</string>
+    <string name="menu_message">Message</string>
+    <string name="action_next_message">Next message</string>
+    <string name="action_previous_message">Previous message</string>
+    <string name="action_toggle_star">Star, or remove the star</string>
+    <string name="action_toggle_read">Mark as read or unread</string>
+    <string name="action_close_message">Close the message</string>
+    <string name="action_find">Search the mail</string>
+    <!-- Beside a shortcut that only works there -->
+    <string name="shortcut_scope_mail">In a list or a message</string>
+    <!-- The command palette (Ctrl+K) -->
+    <string name="palette_hint">Search messages, folders and commands</string>
+    <string name="palette_group_screens">Screens and folders</string>
+    <string name="palette_group_messages">Messages</string>
+
     <!-- A command the pre-release shows the place of, by its name -->
     <string name="not_in_this_version">Not in this pre-release yet: %1$s</string>
 

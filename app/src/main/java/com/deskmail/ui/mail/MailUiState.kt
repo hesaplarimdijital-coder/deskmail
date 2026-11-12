@@ -1,5 +1,6 @@
 package com.deskmail.ui.mail
 
+import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
@@ -29,6 +30,10 @@ class MailUiState(settings: AppSettings? = null) {
     private val opened = mutableStateMapOf<String, Long>()
     private val filters = mutableStateMapOf<String, Set<MailFilter>>()
     private val lists = HashMap<String, LazyListState>()
+    private val shown = HashMap<String, Shown>()
+
+    /** A screen's messages in the order it lists them, and how many items its list has before the first. */
+    private class Shown(val ids: List<Long>, val leadingItems: Int)
 
     /** The table's sort: its column (see [MessageColumns]) and direction. Newest first to begin with. */
     var sort by mutableStateOf(TableSort(MessageColumns.DATE, ascending = false))
@@ -68,6 +73,45 @@ class MailUiState(settings: AppSettings? = null) {
     }
 
     fun listState(route: String): LazyListState = lists.getOrPut(route) { LazyListState() }
+
+    /**
+     * Told by a screen what it lists, filtered and sorted as it is shown: the keyboard steps through
+     * that. [leadingItems] is how many items of its list come before the first message (the chips).
+     */
+    fun setShown(route: String, ids: List<Long>, leadingItems: Int) {
+        shown[route] = Shown(ids, leadingItems)
+    }
+
+    /**
+     * The message [step] rows after (or before) the open one in the list as it is shown; with none
+     * open, the first one going down and the last one going up. Null at the ends of the list.
+     */
+    fun neighbour(route: String, step: Int): Long? {
+        val ids = shown[route]?.ids.orEmpty()
+        if (ids.isEmpty()) return null
+        val index = ids.indexOf(opened[route])
+        return if (index < 0) (if (step > 0) ids.first() else ids.last()) else ids.getOrNull(index + step)
+    }
+
+    /**
+     * Scrolls [route]'s list just far enough to show the message [id] clear of what covers the
+     * list's ends (the phone's bars, a table's header): for a message opened from the keyboard.
+     */
+    suspend fun reveal(route: String, id: Long) {
+        val list = shown[route] ?: return
+        val state = lists[route] ?: return
+        val index = list.ids.indexOf(id)
+        if (index < 0) return
+        val item = index + list.leadingItems
+        val info = state.layoutInfo
+        val row = info.visibleItemsInfo.firstOrNull { it.index == item }
+        val end = info.viewportEndOffset - info.afterContentPadding
+        when {
+            row == null -> state.scrollToItem((item - 1).coerceAtLeast(0))
+            row.offset < 0 -> state.animateScrollBy(row.offset.toFloat())
+            row.offset + row.size > end -> state.animateScrollBy((row.offset + row.size - end).toFloat())
+        }
+    }
 }
 
 /** The columns of the message table, by their place in it; the sort refers to them. */
