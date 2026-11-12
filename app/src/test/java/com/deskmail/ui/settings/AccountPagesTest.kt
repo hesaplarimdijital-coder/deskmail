@@ -1,6 +1,9 @@
 package com.deskmail.ui.settings
 
 import androidx.activity.ComponentActivity
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.platform.UriHandler
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsSelected
@@ -48,10 +51,22 @@ class AccountPagesTest {
     private val mail = testMail()
     private val settingsUi = SettingsUiState()
 
+    /** The pages the app had the browser open. */
+    private val opened = ArrayList<String>()
+    private val browser = object : UriHandler {
+        override fun openUri(uri: String) {
+            opened += uri
+        }
+    }
+
     private fun launch(accounts: FakeAccounts) {
         val prefs = testPrefs()
         val settings = testSettings()
-        compose.setContent { TestApp(mail, prefs, settings, startRoute = Routes.SETTINGS, accounts = accounts, settingsUi = settingsUi) }
+        compose.setContent {
+            CompositionLocalProvider(LocalUriHandler provides browser) {
+                TestApp(mail, prefs, settings, startRoute = Routes.SETTINGS, accounts = accounts, settingsUi = settingsUi)
+            }
+        }
         compose.waitForIdle()
     }
 
@@ -83,6 +98,9 @@ class AccountPagesTest {
         // what Gmail asks for is said, and where its servers are
         compose.onNodeWithText("uygulama şifresi üret", substring = true).assertExists()
         compose.onNodeWithText("imap.gmail.com:993").assertExists()
+        // the page where such a password is made is one tap away
+        press("Uygulama şifresi sayfasını aç")
+        assertEquals(listOf("https://myaccount.google.com/apppasswords"), opened)
 
         compose.onNodeWithTag(AccountTags.PASSWORD).performTextInput("abcd efgh ijkl mnop")
         compose.waitForIdle()
@@ -140,6 +158,8 @@ class AccountPagesTest {
         // the usual names are filled in for the user to correct
         compose.onNodeWithText("imap.kendi.example").assertExists()
         compose.onNodeWithText("smtp.kendi.example").assertExists()
+        // nobody's app passwords are offered where the provider is not known
+        compose.onNodeWithText("Uygulama şifresi sayfasını aç").assertDoesNotExist()
 
         compose.onNodeWithTag(AccountTags.PASSWORD).performTextInput("parola")
         compose.waitForIdle()

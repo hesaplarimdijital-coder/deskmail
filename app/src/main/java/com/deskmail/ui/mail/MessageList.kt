@@ -53,6 +53,9 @@ fun MailFilterChips(selected: Set<MailFilter>, onToggle: (MailFilter) -> Unit, o
         selected = shown,
         onToggle = { filter -> if (filter == null) onClear() else onToggle(filter) },
         modifier = modifier,
+        // one line in every layout, scrolling sideways where it is short: a second line of chips
+        // would take a row of messages off a narrow list
+        wrap = false,
     )
 }
 

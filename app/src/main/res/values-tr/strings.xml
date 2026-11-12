@@ -143,11 +143,13 @@
     <string name="setup_continue">Devam</string>
     <string name="setup_not_address">Bu bir e-posta adresi değil.</string>
     <string name="setup_duplicate">Bu hesap zaten ekli.</string>
-    <string name="setup_gmail_note">Gmail, posta uygulamalarından hesap şifresini kabul etmez. İki adımlı doğrulama açıkken Google hesabında bir uygulama şifresi üret (myaccount.google.com/apppasswords) ve 16 harfini buraya yaz. Gmail ayarlarında IMAP açık olmalı.</string>
+    <string name="setup_gmail_note">Gmail, posta uygulamalarından hesap şifresini kabul etmez. İki adımlı doğrulama açıkken Google hesabında bir uygulama şifresi üret (myaccount.google.com/apppasswords) ve 16 harfini buraya yaz ya da yapıştır.</string>
     <string name="setup_outlook_note">Outlook, Hotmail ve Live hesapları Microsoft\'ta, tarayıcıdan giriş yapar. Bu, bir sonraki ön sürümle geliyor.</string>
     <string name="setup_found">Sunucular bulundu</string>
     <string name="setup_receiving">Alma (IMAP)</string>
     <string name="setup_sending">Gönderme (SMTP)</string>
+    <string name="setup_open_app_passwords">Uygulama şifresi sayfasını aç</string>
+    <string name="setup_security">Bağlantı güvenliği</string>
     <string name="setup_password">Şifre</string>
     <string name="setup_app_password">Uygulama şifresi</string>
     <string name="setup_password_note">Sağlayıcın uygulama şifresi veriyorsa onu yaz.</string>

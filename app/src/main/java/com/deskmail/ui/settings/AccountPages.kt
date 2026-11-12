@@ -20,6 +20,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
@@ -147,6 +148,17 @@ private fun PasswordStep(form: AccountSetupForm, plan: SetupPlan.Found, onAdd: (
         KeyValueRow(stringResource(R.string.setup_receiving), serverLabel(plan.settings.imap), mono = true)
         KeyValueRow(stringResource(R.string.setup_sending), serverLabel(plan.settings.smtp), mono = true)
         Note(stringResource(if (appPassword) R.string.setup_gmail_note else R.string.setup_password_note), Modifier.padding(top = dimens.gapS))
+        // the page where such a password is made, one tap away: made there, copied, pasted here
+        val page = provider?.appPasswordPage
+        if (page != null) {
+            val browser = LocalUriHandler.current
+            DeskButton(
+                stringResource(R.string.setup_open_app_passwords),
+                { runCatching { browser.openUri(page) } },
+                Modifier.padding(top = dimens.gapS),
+                icon = DeskIcons.OpenWindow,
+            )
+        }
         PasswordField(form, stringResource(if (appPassword) R.string.setup_app_password else R.string.setup_password), onAdd)
         Problem(form, appPassword)
         Waiting(form.busy)
@@ -197,7 +209,7 @@ private fun ManualStep(form: AccountSetupForm, onAdd: () -> Unit) {
             },
             enabled = !form.busy,
         )
-        SettingRow(stringResource(R.string.setup_receiving)) {
+        SettingRow(stringResource(R.string.setup_security)) {
             SegmentedChoice(options = security, selected = servers.imapSecurity, onSelect = servers::chooseImapSecurity)
         }
         ServerFields(
@@ -214,7 +226,7 @@ private fun ManualStep(form: AccountSetupForm, onAdd: () -> Unit) {
             },
             enabled = !form.busy,
         )
-        SettingRow(stringResource(R.string.setup_sending)) {
+        SettingRow(stringResource(R.string.setup_security)) {
             SegmentedChoice(options = security, selected = servers.smtpSecurity, onSelect = servers::chooseSmtpSecurity)
         }
         DeskTextField(
@@ -385,7 +397,7 @@ fun AccountPage(
         }
     }
     SettingsPageFrame(account.name, onClose) {
-        SettingsSection(account.name) {
+        SettingsSection(stringResource(R.string.detail_account)) {
             KeyValueRow(stringResource(R.string.account_address), account.address, selectable = true)
             KeyValueRow(stringResource(R.string.account_server), account.server, mono = true)
             KeyValueRow(

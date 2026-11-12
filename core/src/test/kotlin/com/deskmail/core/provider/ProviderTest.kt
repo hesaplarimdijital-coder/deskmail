@@ -36,6 +36,11 @@ class ProviderTest {
         assertEquals("deniz@gmail.com", gmail.username)
         assertEquals(AuthKind.AppPassword, gmail.auth)
         assertEquals(AuthKind.MicrosoftOAuth, ProviderTable.Outlook.auth)
+        // who signs in with an app password is told where to make one, over https
+        for (provider in ProviderTable.all) {
+            assertEquals(provider.auth == AuthKind.AppPassword, provider.appPasswordPage != null)
+            assertTrue(provider.appPasswordPage?.startsWith("https://") ?: true)
+        }
     }
 
     private val posteo = """

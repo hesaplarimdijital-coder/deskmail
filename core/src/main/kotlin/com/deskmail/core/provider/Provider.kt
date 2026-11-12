@@ -37,6 +37,8 @@ data class MailSettings(
  *   itself: the app must not add a second copy.
  * @param archiveLeavesAllMail archiving is taking a message out of the inbox; it stays in "All Mail"
  *   (Gmail). Elsewhere a message is archived by moving it to the Archive folder.
+ * @param appPasswordPage where the provider's users make a password for a mail program, when that
+ *   is how they sign in.
  */
 data class Provider(
     val id: String,
@@ -47,6 +49,7 @@ data class Provider(
     val auth: AuthKind,
     val savesSentItself: Boolean,
     val archiveLeavesAllMail: Boolean,
+    val appPasswordPage: String? = null,
 ) {
     fun settingsFor(address: String) = MailSettings(imap, smtp, username = address, auth = auth)
 }
@@ -63,6 +66,7 @@ object ProviderTable {
         auth = AuthKind.AppPassword,
         savesSentItself = true,
         archiveLeavesAllMail = true,
+        appPasswordPage = "https://myaccount.google.com/apppasswords",
     )
 
     /**
