@@ -15,6 +15,7 @@ import com.deskmail.core.mail.RemoteBody
 import com.deskmail.core.mail.RemoteFlags
 import com.deskmail.core.mail.RemoteFolder
 import com.deskmail.core.mail.RemoteMessage
+import java.io.File
 import java.io.OutputStream
 import java.time.Instant
 import java.time.LocalDate
@@ -59,6 +60,9 @@ class FakeFolder(val path: String, var uidValidity: Long = 7, private val condst
         entries[uid] = Entry(header, RemoteBody(text, html, emptyList()), ++modSeq)
         return uid
     }
+
+    /** The messages that were added from the device (a sent copy, a draft), as they travelled, by UID. */
+    val appended = HashMap<Long, ByteArray>()
 
     /** What the files of the messages hold, by UID and part. */
     val files = HashMap<Pair<Long, String>, ByteArray>()
@@ -110,6 +114,15 @@ class FakeFolder(val path: String, var uidValidity: Long = 7, private val condst
         override fun expunge(uids: List<Long>) {
             ask("expunge $uids")
             uids.forEach { if (entries.containsKey(it)) this@FakeFolder.expunge(it) }
+        }
+
+        override fun append(message: File, seen: Boolean, draft: Boolean): Long {
+            ask("append seen=$seen draft=$draft")
+            val raw = message.readBytes()
+            val subject = Regex("(?m)^Subject: (.*)$").find(String(raw, Charsets.UTF_8))?.groupValues?.get(1)?.trim().orEmpty()
+            val uid = deliver(subject, Instant.EPOCH, flags = MessageFlags(seen = seen, draft = draft))
+            appended[uid] = raw
+            return if (account.uidPlus) uid else 0
         }
 
         override fun close() = Unit

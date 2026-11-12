@@ -5,8 +5,12 @@ import com.deskmail.core.mail.Mark
 import com.deskmail.core.mail.Moved
 import jakarta.mail.Flags
 import jakarta.mail.Message
+import jakarta.mail.Session
+import jakarta.mail.internet.MimeMessage
+import jakarta.mail.util.SharedFileInputStream
 import org.eclipse.angus.mail.imap.AppendUID
 import org.eclipse.angus.mail.imap.IMAPFolder
+import java.io.File
 
 /**
  * A folder of an [ImapConnection], opened for changing it (SELECT): the marks, moves and removals
@@ -63,6 +67,24 @@ class ImapEditor internal constructor(
     override fun expunge(uids: List<Long>) = connection.call("expunge") {
         val messages = present(uids)
         if (messages.isNotEmpty()) remove(messages, connection.has("UIDPLUS"))
+    }
+
+    override fun append(message: File, seen: Boolean, draft: Boolean): Long = connection.call("append") {
+        // read from the file as it is sent: the library asks for it twice, once to count its bytes
+        SharedFileInputStream(message).use { stream ->
+            val copy = MimeMessage(null as Session?, stream)
+            val flags = Flags()
+            if (seen) flags.add(Flags.Flag.SEEN)
+            if (draft) flags.add(Flags.Flag.DRAFT)
+            copy.setFlags(flags, true)
+            if (connection.has("UIDPLUS")) {
+                val appended: Array<AppendUID?>? = folder.appendUIDMessages(arrayOf<Message>(copy))
+                appended?.firstOrNull()?.uid?.coerceAtLeast(0) ?: 0
+            } else {
+                folder.appendMessages(arrayOf<Message>(copy))
+                0
+            }
+        }
     }
 
     override fun close() {

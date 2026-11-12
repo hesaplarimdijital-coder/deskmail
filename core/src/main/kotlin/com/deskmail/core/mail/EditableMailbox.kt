@@ -1,6 +1,7 @@
 package com.deskmail.core.mail
 
 import java.io.Closeable
+import java.io.File
 
 /** A mark on a message that its reader sets and clears. */
 enum class Mark { Seen, Flagged }
@@ -32,4 +33,13 @@ interface EditableMailbox : Closeable {
 
     /** Removes the messages for good. A UID the folder no longer has is passed over. */
     fun expunge(uids: List<Long>)
+
+    /**
+     * Adds a message to the folder: the copy of what was sent, or a draft.
+     *
+     * @param message the whole message as it travels ([com.deskmail.core.mime.MessageWriter]).
+     * @param seen whether it is put there as read; [draft] whether as a draft.
+     * @return the UID it has in the folder where the server tells (UIDPLUS), else 0.
+     */
+    fun append(message: File, seen: Boolean, draft: Boolean): Long
 }
