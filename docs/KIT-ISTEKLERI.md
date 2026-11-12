@@ -84,3 +84,16 @@ Satır ve dosya adları kitin 2.4.0 etiketine göredir.
 - **Bugün:** tek satır başlık ve tek satır alt başlık.
 - **İstek:** `subtitleMaxLines` ya da ikinci alt satır (gönderen / konu / önizleme).
 - **Şimdilik:** alt satır "Konu — önizleme" olarak tek satırda.
+
+## 9. `DetailTransition`: ayrıntı açıkken listenin durumu kayboluyor
+
+- **Bugün:** telefonda ayrıntı tamamen açılınca `list` içeriği bileşimden çıkıyor
+  (`shell/DetailTransition.kt`: `transition.AnimatedContent { target -> if (target == null) list() … }`);
+  `AnimatedContent` çıkan içeriğin `rememberSaveable` durumunu saklamıyor. Geri dönünce liste yeniden
+  kuruluyor: içinde hatırlanan kaydırma konumu, açık bölümler, yazılmış süzgeç sıfırlanıyor.
+  DeskMail'de görüldü: Ayarlar'da aşağı kaydırıp günlüğü aç, geri dön → Ayarlar en başta
+  (`LogScreenTest`, 12 Kasım 2026).
+- **İstek:** `list` ve `detailContent` bir `SaveableStateHolder` içinde dursun (Navigation'ın ekranlar
+  için yaptığı gibi); liste geri gelince kendi durumunu bulsun.
+- **Şimdilik:** korunması gereken durum (`LazyListState`, süzgeçler, açık ileti) `DetailTransition`'ın
+  dışında tutuluyor.

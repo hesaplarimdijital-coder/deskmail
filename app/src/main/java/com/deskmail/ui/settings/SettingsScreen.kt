@@ -7,6 +7,8 @@ import android.content.Intent
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -60,10 +62,13 @@ fun SettingsScreen(prefs: DeskPreferences, settings: AppSettings, log: AppLog, o
     val context = LocalContext.current
     val resources = appResources()
     val scope = rememberCoroutineScope()
+    // Kept here, outside the transition: the list leaves the composition while the log covers it,
+    // and what it remembered itself would be gone on the way back (docs/KIT-ISTEKLERI.md, 9).
+    val list = rememberLazyListState()
     DetailTransition(
         detail = if (logOpen) LogPage else null,
         onBack = { logOpen = false },
-        list = { SettingsList(prefs, settings, onOpenLog = { logOpen = true }) },
+        list = { SettingsList(prefs, settings, list, onOpenLog = { logOpen = true }) },
         sharedElements = false,
     ) {
         LogScreen(
@@ -115,9 +120,9 @@ private fun shareLog(context: Context, file: File, title: String) {
 }
 
 @Composable
-private fun SettingsList(prefs: DeskPreferences, settings: AppSettings, onOpenLog: () -> Unit) {
+private fun SettingsList(prefs: DeskPreferences, settings: AppSettings, state: LazyListState, onOpenLog: () -> Unit) {
     val keyboard = showShortcutHints()
-    LazyColumn(Modifier.fillMaxSize(), contentPadding = rememberShellContentPadding()) {
+    LazyColumn(Modifier.fillMaxSize(), state = state, contentPadding = rememberShellContentPadding()) {
         item(key = "header") { PageHeader(stringResource(desktopkit.R.string.dk_settings)) }
         item(key = "appearance") { AppearanceSection(prefs) }
         item(key = "input") { InputSection(prefs) }
