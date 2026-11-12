@@ -88,6 +88,8 @@ dependencies {
     // Brings Compose (BOM 2026.09.00), Navigation and Haze at the versions it was built with.
     implementation(libs.desktop.kit)
     implementation(libs.activity.compose)
+    // FileProvider, to share the log as a file
+    implementation(libs.androidx.core)
 
     testImplementation(libs.junit)
     testImplementation(libs.robolectric)

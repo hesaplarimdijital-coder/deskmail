@@ -5,6 +5,7 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.deskmail.TEST_CLOCK
+import com.deskmail.core.log.AppLog
 import com.deskmail.mail.MailView
 import com.deskmail.testMail
 import com.deskmail.testPrefs
@@ -43,6 +44,7 @@ class CommandsTest {
             DeskMailApp(
                 mail = mail,
                 settings = settings,
+                log = AppLog(),
                 ui = ui,
                 prefs = prefs,
                 clock = TEST_CLOCK,

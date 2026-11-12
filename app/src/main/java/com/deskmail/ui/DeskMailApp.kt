@@ -15,6 +15,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.deskmail.R
+import com.deskmail.core.log.AppLog
 import com.deskmail.core.mail.FolderRole
 import com.deskmail.demo.DemoMail
 import com.deskmail.mail.MailMessage
@@ -63,6 +64,7 @@ import kotlinx.coroutines.launch
  * palette and the commands behind the shortcut table.
  *
  * @param settings the app's own settings, shared by every window.
+ * @param log the app's log; Settings shows it.
  * @param ui what this window shows of the mail (the open messages, the filters); the activity keeps it.
  * @param startRoute where a window opened from another one starts.
  * @param clock the time the lists are dated against; the device's own unless a test pins one.
@@ -76,6 +78,7 @@ import kotlinx.coroutines.launch
 fun DeskMailApp(
     mail: DemoMail,
     settings: AppSettings,
+    log: AppLog,
     ui: MailUiState = remember { MailUiState() },
     startRoute: String? = null,
     prefs: DeskPreferences = rememberDeskPreferences(),
@@ -102,8 +105,9 @@ fun DeskMailApp(
     val entry by navController.currentBackStackEntryAsState()
     val currentRoute = entry?.destination?.route ?: spec.startRoute
 
+    val notify: (String) -> Unit = { text -> scope.launch { toasts.show(text) } }
     // a command this pre-release has a place for, but not yet the work behind it
-    val notYet: (String) -> Unit = { name -> scope.launch { toasts.show(resources.getString(R.string.not_in_this_version, name)) } }
+    val notYet: (String) -> Unit = { name -> notify(resources.getString(R.string.not_in_this_version, name)) }
     val newMessage = stringResource(R.string.action_new_message)
     // a tapped link is never followed inside a message: its real address is shown instead
     val showLink: (String) -> Unit = { url -> scope.launch { toasts.show(url.take(LINK_LENGTH), duration = ToastDuration.Long) } }
@@ -206,6 +210,11 @@ fun DeskMailApp(
     CompositionLocalProvider(LocalMailClock provides clock) {
         val dates = rememberDateLabels()
         DesktopKitRoot(prefs) { widthClass ->
+            // which layout a report is about: the window's size and what the shell made of it
+            val configuration = LocalConfiguration.current
+            LaunchedEffect(widthClass) {
+                log.info("window", "$widthClass, ${configuration.screenWidthDp} x ${configuration.screenHeightDp} dp")
+            }
             DesktopShell(
                 spec = spec,
                 widthClass = widthClass,
@@ -292,7 +301,7 @@ fun DeskMailApp(
                             if (navKind == NavKind.Sidebar) navigator.navigate(target) else navController.navigate(target) { launchSingleTop = true }
                         },
                     )
-                    route == Routes.SETTINGS -> SettingsScreen(prefs, settings)
+                    route == Routes.SETTINGS -> SettingsScreen(prefs, settings, log, onNotify = notify)
                     else -> MessageScreen(
                         title = stringResource(R.string.search_coming_title),
                         icon = DeskIcons.Search,

@@ -103,6 +103,26 @@
     <string name="web_layer_hardware">Hardware</string>
     <string name="web_layer_software">Software</string>
 
+    <!-- Settings › Log -->
+    <string name="settings_log">Log</string>
+    <string name="settings_log_note">What the app did and what went wrong. Passwords and tokens are masked before a line is kept. Share it when something breaks.</string>
+    <string name="settings_log_open">Open the log</string>
+    <string name="log_copy">Copy</string>
+    <string name="log_share">Share as a file</string>
+    <string name="log_clear">Clear the log</string>
+    <string name="log_empty">The log is empty</string>
+    <string name="log_cleared">The log was cleared</string>
+    <string name="log_share_title">DeskMail log</string>
+    <string name="log_share_failed">The log could not be shared</string>
+    <plurals name="log_lines">
+        <item quantity="one">%d line</item>
+        <item quantity="other">%d lines</item>
+    </plurals>
+    <plurals name="log_copied">
+        <item quantity="one">Copied the last line</item>
+        <item quantity="other">Copied the last %d lines</item>
+    </plurals>
+
     <string name="settings_about">About</string>
     <string name="settings_version">Version</string>
     <string name="settings_about_note">A pre-release with made-up mail: the shell and the layouts, to be tried on the devices.</string>

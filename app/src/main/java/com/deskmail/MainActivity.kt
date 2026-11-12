@@ -48,6 +48,7 @@ class MainActivity : ComponentActivity() {
             DeskMailApp(
                 mail = DemoMail.shared,
                 settings = deskMail.settings,
+                log = deskMail.log,
                 ui = state.mail,
                 startRoute = DeskWindows.startRoute(intent),
                 palette = palette,

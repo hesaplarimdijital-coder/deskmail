@@ -87,5 +87,22 @@ object MailIcons {
         )
     }
 
+    /** An arrow out of a tray: hand something to another app. */
+    val Share: ImageVector by lazy {
+        DeskIcons.build(
+            "Share",
+            DeskIcons.stroke("M8 10.5V2.5M5 5.3 8 2.4l3 2.9"),
+            DeskIcons.stroke("M3.5 8.5v4a1 1 0 0 0 1 1h7a1 1 0 0 0 1-1v-4"),
+        )
+    }
+
+    val Copy: ImageVector by lazy {
+        DeskIcons.build(
+            "Copy",
+            DeskIcons.stroke("M6.5,5.5H12.5A1,1 0 0 1 13.5,6.5V12.5A1,1 0 0 1 12.5,13.5H6.5A1,1 0 0 1 5.5,12.5V6.5A1,1 0 0 1 6.5,5.5Z"),
+            DeskIcons.stroke("M10.5 5.5v-2a1 1 0 0 0-1-1h-6a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2"),
+        )
+    }
+
     private const val STAR = "M8.0,2.4L9.5,6.3L13.7,6.5L10.4,9.2L11.5,13.3L8.0,10.9L4.5,13.3L5.6,9.2L2.3,6.5L6.5,6.3Z"
 }

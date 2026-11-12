@@ -6,6 +6,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import com.deskmail.core.log.AppLog
 
 /** How the reader's WebView is drawn into the window; see [AppSettings.webLayer]. */
 enum class WebLayer { Default, Hardware, Software }
@@ -13,10 +14,11 @@ enum class WebLayer { Default, Hardware, Software }
 /**
  * The app's own settings, stored in shared preferences and observable from Compose. One instance
  * serves every window, so a switch flipped in one window changes the others at once. (Theme,
- * accent and density are the kit's and live in its own file.)
+ * accent and density are the kit's and live in its own file.) A changed experiment is noted in
+ * the [log], so a shared log says what was switched when.
  */
 @Stable
-class AppSettings(private val prefs: SharedPreferences) {
+class AppSettings(private val prefs: SharedPreferences, private val log: AppLog? = null) {
 
     // ------------------------------------------------------------------ experiments
     // What the first pre-releases are for: each of these is a question to answer on the devices.
@@ -41,21 +43,25 @@ class AppSettings(private val prefs: SharedPreferences) {
         private set
 
     fun updateGlass(value: Boolean) {
+        log?.info("settings", "glass = $value")
         glass = value
         prefs.edit().putBoolean(KEY_GLASS, value).apply()
     }
 
     fun updateReaderUnderBars(value: Boolean) {
+        log?.info("settings", "readerUnderBars = $value")
         readerUnderBars = value
         prefs.edit().putBoolean(KEY_READER_UNDER_BARS, value).apply()
     }
 
     fun updateDarkenMessages(value: Boolean) {
+        log?.info("settings", "darkenMessages = $value")
         darkenMessages = value
         prefs.edit().putBoolean(KEY_DARKEN_MESSAGES, value).apply()
     }
 
     fun updateWebLayer(value: WebLayer) {
+        log?.info("settings", "webLayer = $value")
         webLayer = value
         prefs.edit().putString(KEY_WEB_LAYER, value.name).apply()
     }

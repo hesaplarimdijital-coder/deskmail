@@ -6,6 +6,8 @@ agp = "9.4.1"
 kotlin = "2.4.20"
 desktopKit = "2.4.0"
 activityCompose = "1.13.0"
+# FileProvider. The kit already brings this version; named here because the app uses the class itself.
+core = "1.19.1"
 junit = "4.13.2"
 # The tests of :app, as in the kit: Robolectric 4.17 runs Android 16 (API 36) on Java 21.
 robolectric = "4.17"
@@ -18,6 +20,7 @@ composeBom = "2026.09.00"
 [libraries]
 desktop-kit = { module = "com.github.hesaplarimdijital-coder:desktop-kit", version.ref = "desktopKit" }
 activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activityCompose" }
+androidx-core = { module = "androidx.core:core", version.ref = "core" }
 junit = { module = "junit:junit", version.ref = "junit" }
 robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
 test-core = { module = "androidx.test:core", version.ref = "testCore" }

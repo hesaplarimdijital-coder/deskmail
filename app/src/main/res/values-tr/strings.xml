@@ -88,6 +88,25 @@
     <string name="web_layer_hardware">Donanım</string>
     <string name="web_layer_software">Yazılım</string>
 
+    <string name="settings_log">Günlük</string>
+    <string name="settings_log_note">Uygulamanın yaptıkları ve ters giden şeyler. Şifreler ve jetonlar satır saklanmadan önce maskelenir. Bir şey bozulunca paylaş.</string>
+    <string name="settings_log_open">Günlüğü aç</string>
+    <string name="log_copy">Kopyala</string>
+    <string name="log_share">Dosya olarak paylaş</string>
+    <string name="log_clear">Günlüğü temizle</string>
+    <string name="log_empty">Günlük boş</string>
+    <string name="log_cleared">Günlük temizlendi</string>
+    <string name="log_share_title">DeskMail günlüğü</string>
+    <string name="log_share_failed">Günlük paylaşılamadı</string>
+    <plurals name="log_lines">
+        <item quantity="one">%d satır</item>
+        <item quantity="other">%d satır</item>
+    </plurals>
+    <plurals name="log_copied">
+        <item quantity="one">Son satır kopyalandı</item>
+        <item quantity="other">Son %d satır kopyalandı</item>
+    </plurals>
+
     <string name="settings_about">Hakkında</string>
     <string name="settings_version">Sürüm</string>
     <string name="settings_about_note">Uydurma postayla bir ön sürüm: kabuk ve düzenler cihazlarda denensin diye.</string>

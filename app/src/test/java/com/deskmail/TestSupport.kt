@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.test.core.app.ApplicationProvider
+import com.deskmail.core.log.AppLog
 import com.deskmail.demo.DemoMail
 import com.deskmail.settings.AppSettings
 import com.deskmail.ui.DeskMailApp
@@ -54,10 +55,12 @@ fun TestApp(
     settings: AppSettings,
     ui: MailUiState = remember { MailUiState() },
     startRoute: String? = null,
+    log: AppLog = remember { AppLog() },
 ) {
     DeskMailApp(
         mail = mail,
         settings = settings,
+        log = log,
         ui = ui,
         startRoute = startRoute,
         prefs = prefs,

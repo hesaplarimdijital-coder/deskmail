@@ -23,6 +23,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
 import com.deskmail.R
+import com.deskmail.deskMail
 import com.deskmail.mail.MailMessage
 import com.deskmail.settings.WebLayer
 import desktopkit.theme.DeskTheme
@@ -54,7 +55,10 @@ fun WebMessageBody(
     val latestOnLink by rememberUpdatedState(onLink)
     val web = remember(context, dark) {
         val themed = ContextThemeWrapper(context, if (dark) R.style.DeskMailWebDark else R.style.DeskMailWebLight)
-        runCatching { createMessageWebView(themed) { url -> latestOnLink(url) } }.getOrNull()
+        runCatching { createMessageWebView(themed) { url -> latestOnLink(url) } }
+            .onSuccess { logWebViewOnce(context) }
+            .onFailure { context.deskMail.log.warn("reader", "no usable WebView: showing the plain text", it) }
+            .getOrNull()
     }
     if (web == null) {
         PlainMessageBody(message, modifier)
@@ -92,6 +96,16 @@ fun WebMessageBody(
         )
     }
 }
+
+/** Notes in the log, once per run, which WebView draws the mail: the first thing to know when a message looks wrong. */
+private fun logWebViewOnce(context: Context) {
+    if (webViewLogged) return
+    webViewLogged = true
+    val provider = runCatching { WebView.getCurrentWebViewPackage() }.getOrNull()
+    context.deskMail.log.info("reader", "WebView: " + (provider?.let { it.packageName + " " + it.versionName } ?: "unknown"))
+}
+
+private var webViewLogged = false
 
 /** A message's plain text: where there is no WebView to draw the HTML (and in the screenshot tests). */
 @Composable
