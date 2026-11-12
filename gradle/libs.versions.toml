@@ -1,0 +1,21 @@
+# Every version is pinned. The build tools are the ones desktop-kit 2.4.0 is built with:
+# AGP 9.4.1, Gradle 9.8.2 (gradle/wrapper), Kotlin 2.4.20; tests run on Java 21.
+# Compose (BOM 2026.09.00), Navigation and Haze come with the kit at the versions it was built with.
+[versions]
+agp = "9.4.1"
+kotlin = "2.4.20"
+desktopKit = "2.4.0"
+activityCompose = "1.13.0"
+junit = "4.13.2"
+
+[libraries]
+desktop-kit = { module = "com.github.hesaplarimdijital-coder:desktop-kit", version.ref = "desktopKit" }
+activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activityCompose" }
+junit = { module = "junit:junit", version.ref = "junit" }
+
+[plugins]
+android-application = { id = "com.android.application", version.ref = "agp" }
+# Never applied (AGP 9 compiles Kotlin itself); declared in the root build file only to pin the Kotlin version.
+kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
