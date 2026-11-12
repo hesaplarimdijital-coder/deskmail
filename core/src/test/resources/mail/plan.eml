@@ -1,0 +1,48 @@
+From: Mehmet Demir <mehmet.demir@example.org>
+To: Deniz Aksoy <deniz@example.org>
+Subject: =?UTF-8?B?UmU6IFByb2plIHBsYW7EsSAodjMp?=
+Date: Wed, 11 Nov 2026 18:30:00 +0300
+Message-ID: <plan-3@example.org>
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="dis"
+
+--dis
+Content-Type: multipart/alternative; boundary="ic"
+
+--ic
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: base64
+
+RGVuaXogc2VsYW0sDQoNClBsYW7EsW4gw7zDp8O8bmPDvCBzw7xyw7xtw7wgZWt0ZS4NCg==
+--ic
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: quoted-printable
+
+<html><head><style>.kutu{color:#333}</style></head><body><p class=3D"kutu=
+">Deniz selam,</p><p>Plan=C4=B1n <b>=C3=BC=C3=A7=C3=BCnc=C3=BC</b> s=C3=
+=BCr=C3=BCm=C3=BC ekte.</p><img src=3D"cid:logo@example.org"><img src=3D"=
+https://example.org/izle.gif" width=3D"1" height=3D"1"><script>alert(1)</=
+script></body></html>
+--ic--
+--dis
+Content-Type: image/png
+Content-Transfer-Encoding: base64
+Content-ID: <logo@example.org>
+Content-Disposition: inline
+
+iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGJgAQAAAAUAAaX2RUAA
+AAAASUVORK5CYII=
+--dis
+Content-Type: application/pdf; name="=?UTF-8?B?UHJvamUgcGxhbsSxIHYzLnBkZg==?="
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment; filename="=?UTF-8?B?UHJvamUgcGxhbsSxIHYzLnBkZg==?="
+
+JVBERi0xLjQKJSBhIG1hZGUtdXAgZmlsZSBmb3IgdGhlIHRlc3RzCjAxMjM0NTY3ODkwMTIzNDU2
+Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIz
+NDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkw
+MTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3
+ODkwMTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0
+NTY3ODkwMTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MDEyMzQ1Njc4OTAx
+MjM0NTY3ODkwMTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MDEyMzQ1Njc4
+OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODk=
+--dis--

@@ -1,0 +1,2 @@
+# Sample messages for the tests: stored byte for byte, with the line ends mail has.
+*.eml -text

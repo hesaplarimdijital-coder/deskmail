@@ -1,8 +1,10 @@
 package com.deskmail.core.imap
 
 import com.deskmail.core.log.AppLog
+import com.deskmail.core.mail.FolderCounts
 import com.deskmail.core.mail.FolderRoles
 import com.deskmail.core.mail.MailException
+import com.deskmail.core.mail.RemoteAccount
 import com.deskmail.core.mail.RemoteFolder
 import com.deskmail.core.net.Credentials
 import com.deskmail.core.net.Security
@@ -11,7 +13,7 @@ import jakarta.mail.Folder
 import jakarta.mail.Session
 import org.eclipse.angus.mail.imap.IMAPFolder
 import org.eclipse.angus.mail.imap.IMAPStore
-import java.io.Closeable
+import org.eclipse.angus.mail.imap.ResyncData
 import java.util.Properties
 
 /**
@@ -26,7 +28,7 @@ class ImapConnection private constructor(
     private val store: IMAPStore,
     private val server: ServerAddress,
     private val log: AppLog?,
-) : Closeable {
+) : RemoteAccount {
 
     /** What the server says it can do, of the things the app asks about. */
     val capabilities: Set<String> = KNOWN_CAPABILITIES.filterTo(LinkedHashSet()) { name ->
@@ -39,7 +41,7 @@ class ImapConnection private constructor(
      * Every folder of the account, in the server's order, each with its role
      * ([FolderRoles]: by the server's own attributes where it gives them, by name otherwise).
      */
-    fun folders(): List<RemoteFolder> = call("list folders") {
+    override fun folders(): List<RemoteFolder> = call("list folders") {
         val listed = store.defaultFolder.list("*").map { folder ->
             val imap = folder as IMAPFolder
             RemoteFolder(
@@ -52,6 +54,29 @@ class ImapConnection private constructor(
         FolderRoles.assign(listed)
     }
 
+    /**
+     * Opens the folder at [path] for reading. Close the mailbox before opening another: a server
+     * allows an account only so many connections.
+     */
+    override fun open(path: String): ImapMailbox = call("open $path") {
+        val folder = store.getFolder(path) as IMAPFolder
+        val condstore = has("CONDSTORE")
+        if (condstore) folder.open(Folder.READ_ONLY, ResyncData.CONDSTORE) else folder.open(Folder.READ_ONLY)
+        ImapMailbox(this, folder, condstore)
+    }
+
+    /**
+     * How many messages the folder at [path] holds and how many of them are unread, without opening
+     * it (STATUS); null where the server will not say.
+     */
+    override fun counts(path: String): FolderCounts? = try {
+        val folder = store.getFolder(path) as IMAPFolder
+        FolderCounts(total = folder.messageCount.coerceAtLeast(0), unread = folder.unreadMessageCount.coerceAtLeast(0))
+    } catch (e: Exception) {
+        note("$path: no counts (${MailException.from(e).message})")
+        null
+    }
+
     val isConnected: Boolean get() = runCatching { store.isConnected }.getOrDefault(false)
 
     override fun close() {
@@ -59,14 +84,22 @@ class ImapConnection private constructor(
     }
 
     /** Runs [block] against the server; whatever it throws comes out as a [MailException], noted in the log. */
-    private inline fun <T> call(what: String, block: () -> T): T =
+    internal fun <T> call(what: String, block: () -> T): T =
         try {
             block()
+        } catch (e: MailException) {
+            // noted where it was first caught
+            throw e
         } catch (e: Exception) {
             val failure = MailException.from(e)
             log?.warn(TAG, "${server.host}: $what failed (${failure.kind}): ${failure.message}")
             throw failure
         }
+
+    /** Something worth knowing later that is no failure. */
+    internal fun note(text: String) {
+        log?.info(TAG, "${server.host}: $text")
+    }
 
     companion object {
         private const val TAG = "imap"

@@ -3,10 +3,15 @@ package com.deskmail.core.imap
 import com.deskmail.core.net.Credentials
 import com.deskmail.core.net.Security
 import com.deskmail.core.net.ServerAddress
+import com.icegreen.greenmail.store.MailFolder
 import com.icegreen.greenmail.user.GreenMailUser
 import com.icegreen.greenmail.util.GreenMail
+import com.icegreen.greenmail.util.GreenMailUtil
 import com.icegreen.greenmail.util.ServerSetup
+import jakarta.mail.Flags
 import org.junit.rules.ExternalResource
+import java.time.Instant
+import java.util.Date
 
 /**
  * A mail server for a test (GreenMail): IMAP, IMAP over TLS with a certificate nobody trusts, and
@@ -45,6 +50,31 @@ class TestMailServer : ExternalResource() {
     /** Makes a folder on the server; "Projeler.2026" nests. */
     fun createFolder(path: String) {
         greenMail.managers.imapHostManager.createMailbox(user, path)
+    }
+
+    private fun folder(path: String): MailFolder {
+        val host = greenMail.managers.imapHostManager
+        return if (path.equals("INBOX", ignoreCase = true)) host.getInbox(user) else host.getFolder(user, path)
+    }
+
+    /**
+     * Puts one of the sample messages (src/test/resources/mail) into a folder as if it had arrived
+     * at [received]; returns its UID.
+     */
+    fun deliver(sample: String, received: Instant, folder: String = "INBOX", flags: Flags = Flags()): Long {
+        val message = javaClass.getResourceAsStream("/mail/$sample.eml").use { GreenMailUtil.newMimeMessage(it) }
+        return folder(folder).appendMessage(message, flags, Date.from(received))
+    }
+
+    /** Sets or clears a flag, as another mail program would. */
+    fun setFlag(uid: Long, flag: Flags.Flag, value: Boolean, folder: String = "INBOX") {
+        folder(folder).setFlags(Flags(flag), value, uid, null, false)
+    }
+
+    /** Deletes a message for good, as another mail program would. */
+    fun expunge(uid: Long, folder: String = "INBOX") {
+        setFlag(uid, Flags.Flag.DELETED, true, folder)
+        folder(folder).expunge()
     }
 
     companion object {
