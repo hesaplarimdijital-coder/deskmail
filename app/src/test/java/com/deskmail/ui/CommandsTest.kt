@@ -1,7 +1,9 @@
 package com.deskmail.ui
 
 import androidx.activity.ComponentActivity
+import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.deskmail.TEST_CLOCK
@@ -14,6 +16,7 @@ import com.deskmail.testComposer
 import com.deskmail.testMail
 import com.deskmail.testPrefs
 import com.deskmail.testSettings
+import com.deskmail.ui.mail.MailTags
 import com.deskmail.ui.mail.MailUiState
 import com.deskmail.ui.mail.PlainMessageBody
 import desktopkit.components.CommandPaletteState
@@ -245,6 +248,23 @@ class CommandsTest {
 
         assertEquals(DemoMail.GMAIL, composer.outbox.single().accountId)
         assertEquals(Routes.folder(folder.id), ui.writing!!.route)
+    }
+
+    /** "/" goes to the search screen and puts the cursor into its field. */
+    @Test
+    fun slashOpensTheSearchReadyToBeTypedInto() {
+        launch()
+        perform(Commands.NEXT)
+
+        assertTrue(perform(Commands.FIND))
+
+        compose.onNodeWithTag(MailTags.SEARCH).assertIsFocused()
+        assertFalse(ui.searchFocusAsked)
+        // what is found is walked with the same keys
+        compose.runOnUiThread { ui.search("fatura") }
+        compose.waitForIdle()
+        assertTrue(perform(Commands.NEXT))
+        assertEquals(mail.messages(MailView.Search("fatura")).first().id, ui.openedId(Routes.SEARCH))
     }
 
     @Test

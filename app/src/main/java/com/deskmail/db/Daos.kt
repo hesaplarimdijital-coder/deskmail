@@ -231,6 +231,17 @@ abstract class MessageDao {
     @Query("SELECT COUNT(*) FROM message")
     abstract suspend fun count(): Int
 
+    /**
+     * The messages the index finds for [query] (FTS4 syntax over folded text) that are still
+     * where they are filed, the newest first: every folder but Spam.
+     */
+    @Query(
+        "SELECT message.* FROM message JOIN folder ON folder.id = message.folderId " +
+            "WHERE message.id IN (SELECT rowid FROM message_fts WHERE message_fts MATCH :query) AND folder.role != 'Junk' AND $STAYING " +
+            "ORDER BY message.date DESC, message.id DESC LIMIT :limit",
+    )
+    abstract fun observeFound(query: String, limit: Int): Flow<List<MessageEntity>>
+
     /** The ids of the messages the index finds for [query] (FTS4 syntax over folded text). */
     @Query("SELECT rowid FROM message_fts WHERE message_fts MATCH :query")
     abstract suspend fun search(query: String): List<Long>

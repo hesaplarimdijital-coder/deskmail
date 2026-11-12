@@ -302,6 +302,14 @@ class AppScreenshotTest {
         capture("phone-outbox-light")
     }
 
+    /** The search with something found: three invoices, from two folders. */
+    @Test @Config(qualifiers = PHONE)
+    fun phoneSearchDark() {
+        ui.search("fatura")
+        launch(ThemeMode.Dark, startRoute = Routes.SEARCH)
+        capture("phone-search-dark")
+    }
+
     // ------------------------------------------------------------------ tablet
 
     /** Upright: the rail, and the list alone (a message would slide over it). */
@@ -396,6 +404,15 @@ class AppScreenshotTest {
     fun dexSettingsDark() {
         launch(ThemeMode.Dark, DensityPreference.Pointer, startRoute = Routes.SETTINGS)
         capture("dex-settings-dark")
+    }
+
+    /** The search in a DeX window: what is found as a table, one of them open beside it. */
+    @Test @Config(qualifiers = DEX)
+    fun dexSearchLight() {
+        ui.search("fatura")
+        open(Routes.SEARCH, "Kasım 2026 faturanız hazır")
+        launch(ThemeMode.Light, DensityPreference.Pointer, startRoute = Routes.SEARCH)
+        capture("dex-search-light")
     }
 
     /** A new message in a DeX window: two accounts to send from, a copy to somebody, and a file. */

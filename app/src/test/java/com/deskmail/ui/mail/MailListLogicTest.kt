@@ -74,6 +74,9 @@ class MailListLogicTest {
     fun routesNameTheirMail() {
         assertEquals(MailView.Inbox, mailView(Routes.INBOX))
         assertEquals(MailView.Folder(17), mailView(Routes.folder(17)))
+        // the search screen lists what is found for what the window looks for
+        assertEquals(MailView.Search("fatura"), mailView(Routes.SEARCH, "fatura"))
+        assertEquals(MailView.Search(""), mailView(Routes.SEARCH))
         assertNull(mailView(Routes.SETTINGS))
         assertNull(mailView("folder/x"))
     }

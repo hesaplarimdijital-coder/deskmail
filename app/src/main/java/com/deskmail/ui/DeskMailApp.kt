@@ -52,7 +52,6 @@ import desktopkit.appResources
 import desktopkit.components.ActionGroup
 import desktopkit.components.CommandPalette
 import desktopkit.components.CommandPaletteState
-import desktopkit.components.DeskIcons
 import desktopkit.components.MenuEntry
 import desktopkit.components.PaletteItem
 import desktopkit.components.ToastDuration
@@ -213,8 +212,14 @@ fun DeskMailApp(
         // a message is being written there: the list and the open message behind it are out of reach
         val writing = compose != null && ui.writingOver(route) != null
         when (id) {
-            CommonShortcuts.SEARCH, Commands.FIND -> {
+            CommonShortcuts.SEARCH -> {
                 palette.open()
+                true
+            }
+            // "/": the search screen, with its field ready to be typed into
+            Commands.FIND -> {
+                ui.searchFocusAsked = true
+                navigator.navigate(Routes.SEARCH)
                 true
             }
             CommonShortcuts.NEW_WINDOW -> {
@@ -235,7 +240,7 @@ fun DeskMailApp(
                 compose != null
             }
             Commands.REFRESH -> {
-                mail.refresh(mailView(route))
+                mail.refresh(mailView(route, ui.searchQuery))
                 true
             }
             // the latest thing first: a message that was just handed over, then what was done to one
@@ -292,7 +297,7 @@ fun DeskMailApp(
     // open, what steps through a list while the screen in front is not one; while a message is
     // being written in front, the list and the open message behind it are out of reach.
     val writingInFront = compose != null && ui.writingOver(currentRoute) != null
-    val listInFront = !writingInFront && mailView(currentRoute) != null
+    val listInFront = !writingInFront && mailView(currentRoute, ui.searchQuery) != null
     val messageOpen = !writingInFront && ui.openedId(currentRoute) != null
     val menus = shortcuts.menus(
         resources = resources,
@@ -383,7 +388,7 @@ fun DeskMailApp(
                 },
             ) { route, _ ->
                 val navKind = LocalNavKind.current
-                val view = mailView(route)
+                val view = mailView(route, ui.searchQuery)
                 // a folder is no tab of the phone's bottom bar: it was opened from the Folders list, or from "⋯"
                 val backFromFolder: (() -> Unit)? =
                     if (widthClass == WidthClass.Compact && view is MailView.Folder) ({ navController.popBackStack() }) else null
@@ -456,11 +461,12 @@ fun DeskMailApp(
                         onOpen = { draft -> compose.takeUp(route, draft) },
                         onDelete = { draft -> compose.discard(draft) },
                     )
+                    // the outbox where nothing can be written: there is nothing in it
                     else -> MessageScreen(
-                        title = stringResource(R.string.search_coming_title),
-                        icon = DeskIcons.Search,
-                        pageTitle = stringResource(R.string.nav_search),
-                        description = stringResource(R.string.search_coming_text),
+                        title = stringResource(R.string.outbox_empty_title),
+                        icon = MailIcons.Sent,
+                        pageTitle = stringResource(R.string.nav_outbox),
+                        description = stringResource(R.string.outbox_empty_text),
                     )
                 }
             }
@@ -474,10 +480,14 @@ private const val LINK_LENGTH = 300
 /** A dragged divider is stored once the drag has rested this long. */
 private const val SAVE_AFTER_MS = 500L
 
-/** The mail a route lists, or null for a screen that is not a list of messages. */
-fun mailView(route: String): MailView? = when (route) {
+/**
+ * The mail a route lists, or null for a screen that is not a list of messages. The search screen
+ * lists what is found for [search], the window's query.
+ */
+fun mailView(route: String, search: String = ""): MailView? = when (route) {
     Routes.INBOX -> MailView.Inbox
     Routes.UNREAD -> MailView.Unread
     Routes.STARRED -> MailView.Starred
+    Routes.SEARCH -> MailView.Search(search)
     else -> Routes.folderId(route)?.let { MailView.Folder(it) }
 }

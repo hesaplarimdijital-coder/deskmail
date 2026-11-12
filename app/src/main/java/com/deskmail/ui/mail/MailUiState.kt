@@ -114,6 +114,21 @@ class MailUiState(private val settings: AppSettings? = null) {
     /** The message being written over [route], if that is where one is being written. */
     fun writingOver(route: String): Writing? = writing?.takeIf { it.route == route }
 
+    /** What is typed into the search field. */
+    var searchText by mutableStateOf("")
+
+    /** What the search screen is looking for: what is typed, a moment after the typing pauses. */
+    var searchQuery by mutableStateOf("")
+
+    /** "/" asked for the search field: it takes the focus when its screen is drawn. */
+    var searchFocusAsked by mutableStateOf(false)
+
+    /** Looks for [text] at once, as if it had been typed and waited for. */
+    fun search(text: String) {
+        searchText = text
+        searchQuery = text
+    }
+
     /** The message a folder is being chosen for ("Move…"), or null. */
     var moving by mutableStateOf<MailMessage?>(null)
 

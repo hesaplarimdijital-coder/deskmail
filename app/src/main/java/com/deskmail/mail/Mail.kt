@@ -131,4 +131,11 @@ sealed interface MailView {
     data object Starred : MailView
 
     data class Folder(val id: Long) : MailView
+
+    /**
+     * What the search finds for [query] among the messages the device has, in every account and
+     * folder but Spam: every word typed must be in the message (its subject, the people on it or
+     * its text), as the beginning of a word. Nothing for a query with nothing to look for.
+     */
+    data class Search(val query: String) : MailView
 }

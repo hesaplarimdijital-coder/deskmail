@@ -164,8 +164,11 @@
 
     <!-- A command the pre-release shows the place of, by its name -->
 
-    <string name="search_coming_title">Search is not here yet</string>
-    <string name="search_coming_text">It comes with one of the next pre-releases.</string>
+    <string name="search_hint">Search the mail</string>
+    <string name="search_start_title">What are you looking for?</string>
+    <string name="search_start_text">Type a few words of the subject, the people or the text. The beginning of a word is enough: “inv” finds “invoice”.</string>
+    <string name="search_none_title">Nothing found</string>
+    <string name="search_scope">The search looks through the messages on this device: the last 30 days of the inboxes, and the folders you opened. For older mail, open its folder and sync; searching on the server comes with one of the next pre-releases.</string>
 
     <!-- Settings › Experiments: what the first pre-releases are to find out on the devices -->
     <string name="settings_experiments">Experiments</string>
@@ -306,5 +309,5 @@
 
     <string name="settings_about">About</string>
     <string name="settings_version">Version</string>
-    <string name="settings_about_note">A pre-release that reads, files and sends your mail. Search and notifications arrive with the next ones.</string>
+    <string name="settings_about_note">A pre-release that reads, files, sends and searches your mail. Notifications arrive with the next ones.</string>
 </resources>

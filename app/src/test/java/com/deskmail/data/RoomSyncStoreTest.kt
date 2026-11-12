@@ -13,6 +13,7 @@ import com.deskmail.core.mail.RemoteMessage
 import com.deskmail.core.sync.ChangeOutcome
 import com.deskmail.core.sync.FolderState
 import com.deskmail.core.sync.StoredBody
+import com.deskmail.core.text.SearchQuery
 import com.deskmail.db.DeskMailDatabase
 import com.deskmail.db.MessageEntity
 import com.deskmail.db.testAccount
@@ -133,6 +134,46 @@ class RoomSyncStoreTest {
         // the people on it
         assertEquals(listOf(db.messages().byUid(inbox, 2)!!.id), db.messages().search("sahaf"))
         assertEquals(3, db.messages().search("people:elif").size)
+    }
+
+    /** A search lists what the index finds: the newest first, not what is in Spam, and not what is on its way out of its folder. */
+    @Test
+    fun whatASearchFindsIsListedNewestFirstWhileItStaysWhereItIs() = runBlocking {
+        val folders = store.saveFolders(account, listOf(remote("INBOX", FolderRole.Inbox), remote("Spam", FolderRole.Junk), remote("Arşiv", FolderRole.Archive)))
+        val (inbox, spam, archive) = folders.map { it.id }
+        store.insert(inbox, listOf(message(1, "Kasım faturası"), message(2, "Toplantı tutanağı"), message(3, "Aralık FATURASI")))
+        store.insert(spam, listOf(message(5, "Sahte fatura")))
+        store.insert(archive, listOf(message(9, "Arşivdeki fatura")))
+
+        suspend fun found(typed: String) = db.messages().observeFound(SearchQuery.match(typed)!!, 10).first().map { it.subject }
+
+        assertEquals(listOf("Arşivdeki fatura", "Aralık FATURASI", "Kasım faturası"), found("fatura"))
+        // every word typed, each from its beginning
+        assertEquals(listOf("Kasım faturası"), found("fat kas"))
+        assertEquals(emptyList<String>(), found("atura"))
+        // the people on a message
+        assertEquals(4, found("ayse yilmaz").size)
+        // no more than asked for, and then the newest
+        assertEquals(listOf("Arşivdeki fatura"), db.messages().observeFound("fatura*", 1).first().map { it.subject })
+
+        // on its way to the trash: off this list as off every other
+        val leaving = db.messages().byUid(inbox, 3)!!.id
+        db.pending().leave(listOf(leaving), targetFolderId = 0, notBefore = 100, now = 1)
+        assertEquals(listOf("Arşivdeki fatura", "Kasım faturası"), found("fatura"))
+    }
+
+    /** Gmail's "All Mail" holds every message once more: a search shows it where it is filed, and from "All Mail" only what lies nowhere else. */
+    @Test
+    fun aSearchShowsAMessageOnceThoughAllMailHoldsItAgain() = runBlocking {
+        val folders = store.saveFolders(account, listOf(remote("INBOX", FolderRole.Inbox), remote("[Gmail]/All Mail", FolderRole.All)))
+        val (inbox, all) = folders.map { it.id }
+        store.insert(inbox, listOf(message(1, "Kasım faturası")))
+        // the same message once more, and one that was archived
+        store.insert(all, listOf(message(1, "Kasım faturası"), message(2, "Ekim faturası")))
+
+        val found = once(db.messages().observeFound("fatura*", 10).first(), db.folders().ofAccount(account))
+
+        assertEquals(listOf("Ekim faturası" to all, "Kasım faturası" to inbox), found.map { it.subject to it.folderId })
     }
 
     @Test

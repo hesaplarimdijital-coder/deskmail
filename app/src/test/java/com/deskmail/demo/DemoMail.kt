@@ -8,6 +8,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import com.deskmail.core.mail.FolderRole
+import com.deskmail.core.text.SearchQuery
 import com.deskmail.mail.AccountState
 import com.deskmail.mail.FetchedFile
 import com.deskmail.mail.MailAccount
@@ -123,6 +124,18 @@ class DemoMail(private val now: Instant = Instant.now(), empty: Boolean = false)
             MailView.Unread -> stored.filter { it.unread && roles[it.folderId] !in OUTSIDE_THE_VIEWS }
             MailView.Starred -> stored.filter { it.starred && roles[it.folderId] !in OUTSIDE_THE_VIEWS }
             is MailView.Folder -> stored.filter { it.folderId == view.id }
+            is MailView.Search -> found(view.query)
+        }
+    }
+
+    /** What a search finds: every word typed begins a word of the message's subject, of the people on it or of its text. Not in Spam. */
+    private fun found(query: String): List<MailMessage> {
+        if (SearchQuery.match(query) == null) return emptyList()
+        val words = SearchQuery.words(query)
+        val roles = tree.associate { it.id to it.role }
+        return stored.filter { message ->
+            roles[message.folderId] != FolderRole.Junk && roles[message.folderId] != FolderRole.All &&
+                SearchQuery.matches(words, listOf(message.subject, message.fromName, message.fromAddress, message.to, contents[message.id]?.text.orEmpty()).joinToString(" "))
         }
     }
 

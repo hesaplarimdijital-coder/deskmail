@@ -16,6 +16,7 @@ import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -24,6 +25,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.deskmail.R
+import com.deskmail.core.text.SearchQuery
 import com.deskmail.mail.AccountState
 import com.deskmail.mail.DraftKind
 import com.deskmail.mail.MailAccount
@@ -78,6 +80,9 @@ import desktopkit.theme.InputMode
  * window from one layout into another keeps them. The messages come from [mail] and follow it;
  * coming to the front, the screen has [mail] bring what it shows up to date.
  *
+ * The search is this screen as well ([MailView.Search]): the field ([SearchBox]) stands above
+ * what is found, and what is found is listed, opened and acted on like any other mail.
+ *
  * @param title the view's name, for the header of a large window.
  * @param onBack set on a phone for a folder opened from the Folders list: the top bar gets a back arrow.
  * @param onCompose "New message"; the phone shows it as the accent icon of the top bar.
@@ -112,11 +117,16 @@ fun MailScreen(
     val compact = currentWidthClass() == WidthClass.Compact
     val pointer = DeskTheme.inputMode == InputMode.Pointer
     val filters = ui.filters(route)
+    val searching = view as? MailView.Search
     // newest first, as the store hands them out: what was last seen of the view at once, then what is
     val listed by remember(mail, view) { mail.observe(view) }.collectAsState(initial = mail.cached(view))
-    val all = listed.orEmpty()
+    // While the next thing typed is being looked for, what the last one found stays on screen.
+    val lastFound = remember { mutableStateOf<List<MailMessage>?>(null) }
+    if (searching != null && listed != null) SideEffect { lastFound.value = listed }
+    val known = listed ?: if (searching != null) lastFound.value else null
+    val all = known.orEmpty()
     // nothing is known yet: neither "no account" nor "no messages" may be said
-    val reading = listed == null || !mail.loaded
+    val reading = known == null || !mail.loaded
     val noAccount = !reading && mail.accounts.isEmpty()
     val filtered = remember(all, filters) { filterMessages(all, filters) }
     val openedId = ui.openedId(route)
@@ -172,6 +182,7 @@ fun MailScreen(
 
     val chips: @Composable () -> Unit = {
         Column {
+            if (searching != null) SearchBox(ui)
             if (mail.syncing) {
                 DeskProgressBar(
                     fraction = null,
@@ -200,7 +211,7 @@ fun MailScreen(
     val empty: @Composable () -> Unit = {
         when {
             // not known yet, or on its way from the server: neither is "no messages"
-            reading || (mail.syncing && all.isEmpty()) -> SkeletonList()
+            reading || (searching == null && mail.syncing && all.isEmpty()) -> SkeletonList()
             noAccount -> MessageScreen(
                 title = stringResource(R.string.welcome_title),
                 icon = MailIcons.Mail,
@@ -208,6 +219,20 @@ fun MailScreen(
                 description = stringResource(R.string.welcome_text),
                 actionLabel = stringResource(R.string.welcome_action),
                 onAction = onAddAccount,
+            )
+            // nothing typed that could be looked for: what to type
+            searching != null && SearchQuery.match(searching.query) == null -> MessageScreen(
+                title = stringResource(R.string.search_start_title),
+                icon = DeskIcons.Search,
+                modifier = Modifier.padding(top = 48.dp),
+                description = stringResource(R.string.search_start_text),
+            )
+            // nothing found: where was looked, so that "it is not there" is not read as "it does not exist"
+            searching != null -> MessageScreen(
+                title = stringResource(if (filters.isEmpty()) R.string.search_none_title else R.string.list_empty_filtered),
+                icon = DeskIcons.Search,
+                modifier = Modifier.padding(top = 48.dp),
+                description = stringResource(R.string.search_scope),
             )
             else -> MessageScreen(
                 title = stringResource(if (filters.isEmpty()) R.string.list_empty_title else R.string.list_empty_filtered),
@@ -257,6 +282,8 @@ fun MailScreen(
                 TopBarAction(MailIcons.Compose, composeLabel, onCompose, primary = true),
                 TopBarAction(MailIcons.Refresh, refreshLabel, refresh),
             ),
+            // the search screen has its own field; the bar's magnifier would open the palette beside it
+            showSearch = searching == null,
         )
         MessageRows(
             messages = filtered,
@@ -459,6 +486,7 @@ fun openMessage(mail: MailSource, ui: MailUiState, route: String, message: MailM
 object MailTags {
     const val LIST = "mail-list"
     const val READER = "mail-reader"
+    const val SEARCH = "mail-search"
 }
 
 /** The inspector of a large window: the open message's details, and its attachments (a click opens one, its menu saves or shares it). */

@@ -77,6 +77,18 @@ internal fun MessageEntity.toMessage(outgoing: Boolean): MailMessage {
     )
 }
 
+/**
+ * [found] with every message once. Gmail's "All Mail" holds every message of the account once
+ * more: a message that is also found where it is filed is shown there, and only a message that
+ * lies nowhere else (an archived one) is shown from "All Mail".
+ */
+internal fun once(found: List<MessageEntity>, folders: List<FolderEntity>): List<MessageEntity> {
+    val allMail = folders.filter { folderRole(it.role) == FolderRole.All }.mapTo(HashSet()) { it.id }
+    if (allMail.isEmpty()) return found
+    val filed = found.filter { it.folderId !in allMail && it.globalId.isNotEmpty() }.mapTo(HashSet()) { it.accountId to it.globalId }
+    return found.filter { it.folderId !in allMail || (it.accountId to it.globalId) !in filed }
+}
+
 /** The files a message offers: not the pictures its HTML shows in its own place. */
 internal fun List<AttachmentEntity>.toFiles(): List<MailAttachment> =
     filter { !it.inline || it.contentId.isEmpty() }.map { MailAttachment(it.name.ifEmpty { it.mimeType }, it.size, it.id, it.mimeType) }
