@@ -8,14 +8,17 @@ import android.view.Menu
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModelProvider
-import com.deskmail.demo.DemoMail
 import com.deskmail.ui.CommandHost
 import com.deskmail.ui.DeskMailApp
 import com.deskmail.ui.KeyRouter
 import com.deskmail.ui.isTyping
 import com.deskmail.ui.mail.MailUiState
+import com.deskmail.ui.settings.SettingsUiState
 import com.deskmail.ui.shortcuts
 import desktopkit.components.CommandPaletteState
 import desktopkit.shell.DeskWindows
@@ -34,6 +37,9 @@ class MainActivity : ComponentActivity() {
     /** The composition says what performs the window's commands. */
     private val commands = CommandHost()
 
+    /** How often the window came to the front; the screens read it. */
+    private var resumes by mutableIntStateOf(0)
+
     private val keys = KeyRouter(
         registry = shortcuts,
         paletteOpen = { palette.isOpen },
@@ -46,15 +52,24 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             DeskMailApp(
-                mail = DemoMail.shared,
+                mail = deskMail.mail,
                 settings = deskMail.settings,
                 log = deskMail.log,
+                accounts = deskMail.accounts,
                 ui = state.mail,
+                settingsUi = state.settings,
+                resumes = resumes,
                 startRoute = DeskWindows.startRoute(intent),
                 palette = palette,
                 commands = commands,
             )
         }
+    }
+
+    /** Back in front: the screen that shows mail looks for what is new, unless it just did. */
+    override fun onResume() {
+        super.onResume()
+        resumes++
     }
 
     /** Every key passes here first, whatever has the focus: the shortcut table decides. */
@@ -69,4 +84,5 @@ class MainActivity : ComponentActivity() {
 /** What this window shows, kept when something recreates its activity. */
 class WindowState(application: Application) : AndroidViewModel(application) {
     val mail = MailUiState(application.deskMail.settings)
+    val settings = SettingsUiState()
 }

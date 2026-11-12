@@ -58,6 +58,16 @@ class ShortcutsTest {
     }
 
     @Test
+    fun f5SyncsWhereverTheFocusIs() {
+        assertEquals(KeyChord(Key.F5), shortcuts[Commands.REFRESH].chord)
+        assertTrue(router.route(down(KeyEvent.KEYCODE_F5)))
+        // a function key is no letter: it works in a text field too
+        typing = true
+        assertTrue(router.route(down(KeyEvent.KEYCODE_F5)))
+        assertEquals(listOf(Commands.REFRESH, Commands.REFRESH), performed)
+    }
+
+    @Test
     fun theOpenPaletteKeepsEveryKey() {
         paletteOpen = true
         assertFalse(router.route(down(KeyEvent.KEYCODE_J)))

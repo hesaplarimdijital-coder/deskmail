@@ -54,7 +54,7 @@ class MailListLogicTest {
         val unread = filterMessages(inbox, setOf(MailFilter.Unread))
         assertTrue(unread.isNotEmpty() && unread.all { it.unread })
         val both = filterMessages(inbox, setOf(MailFilter.Unread, MailFilter.Attachments))
-        assertTrue(both.isNotEmpty() && both.all { it.unread && it.attachments.isNotEmpty() })
+        assertTrue(both.isNotEmpty() && both.all { it.unread && it.attachmentCount > 0 })
         assertTrue(both.size < unread.size)
     }
 

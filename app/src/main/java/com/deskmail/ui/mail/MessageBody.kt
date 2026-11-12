@@ -27,7 +27,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.viewinterop.AndroidView
 import com.deskmail.R
 import com.deskmail.deskMail
-import com.deskmail.mail.MailMessage
+import com.deskmail.mail.MailContent
 import com.deskmail.settings.WebLayer
 import desktopkit.theme.DeskTheme
 import kotlin.math.roundToInt
@@ -37,18 +37,21 @@ import kotlin.math.roundToInt
  * header, under the phone's bars.
  *
  * The WebView runs no scripts, reads no files or content providers and loads nothing from the
- * network. A tapped link is handed to [onLink] and never followed inside the view. The page is
- * light or dark with the kit's theme, not the system's: the view is created with a context whose
- * theme says which, and created anew when the theme changes. With [darken] off, a dark theme shows
- * the message on white, as its sender made it. [layer] is an experiment: what the view draws into.
+ * network, until the reader asks to see the message's images ([showImages]): then pictures are
+ * fetched over https, and nothing else. A tapped link is handed to [onLink] and never followed
+ * inside the view. The page is light or dark with the kit's theme, not the system's: the view is
+ * created with a context whose theme says which, and created anew when the theme changes. With
+ * [darken] off, a dark theme shows the message on white, as its sender made it. [layer] is an
+ * experiment: what the view draws into.
  *
  * Where the device has no usable WebView (it is being updated, or disabled), the message's plain
  * text is shown instead.
  */
 @Composable
 fun WebMessageBody(
-    message: MailMessage,
+    content: MailContent.Ready,
     modifier: Modifier = Modifier,
+    showImages: Boolean = false,
     darken: Boolean = true,
     layer: WebLayer = WebLayer.Default,
     onLink: (String) -> Unit = {},
@@ -64,13 +67,13 @@ fun WebMessageBody(
             .getOrNull()
     }
     if (web == null) {
-        PlainMessageBody(message, modifier)
+        PlainMessageBody(content, modifier)
         return
     }
     DisposableEffect(web) {
         onDispose { web.destroy() }
     }
-    val document = remember(message.html, message.text) { MessageDocument.build(message.html, message.text) }
+    val document = remember(content.html, content.text, showImages) { MessageDocument.build(content.html, content.text, remoteImages = showImages) }
     // the system's font size setting reaches the page too
     val textZoom = (LocalConfiguration.current.fontScale * 100).roundToInt()
     // one node per view: a view made for another theme takes the old one's place
@@ -91,6 +94,10 @@ fun WebMessageBody(
                     WebLayer.Software -> View.LAYER_TYPE_SOFTWARE
                 }
                 if (view.layerType != layerType) view.setLayerType(layerType, null)
+                // The network stays shut until the reader asks for the pictures. Then the page's own
+                // policy lets pictures in over https and still nothing else (MessageDocument).
+                view.settings.blockNetworkLoads = !showImages
+                view.settings.blockNetworkImage = !showImages
                 if (view.tag != document) {
                     view.tag = document
                     view.loadDataWithBaseURL(null, document, "text/html", "utf-8", null)
@@ -115,7 +122,7 @@ private var webViewLogged = false
  * Its lines end where a line still reads well ([PLAIN_TEXT_EMS]), however wide the reader is.
  */
 @Composable
-fun PlainMessageBody(message: MailMessage, modifier: Modifier = Modifier) {
+fun PlainMessageBody(content: MailContent.Ready, modifier: Modifier = Modifier) {
     val dimens = DeskTheme.dimens
     val style = DeskTheme.type.body
     val widest = with(LocalDensity.current) { (style.fontSize * PLAIN_TEXT_EMS).toDp() }
@@ -124,7 +131,7 @@ fun PlainMessageBody(message: MailMessage, modifier: Modifier = Modifier) {
     Box(modifier) {
         SelectionContainer {
             Text(
-                message.text,
+                content.text,
                 style = style,
                 color = DeskTheme.colors.text,
                 modifier = Modifier

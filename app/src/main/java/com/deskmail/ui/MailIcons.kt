@@ -104,5 +104,23 @@ object MailIcons {
         )
     }
 
+    /** An arrow going round: ask the servers for what is new. */
+    val Refresh: ImageVector by lazy {
+        DeskIcons.build(
+            "Refresh",
+            DeskIcons.stroke("M13 8a5 5 0 1 1-1.46-3.54"),
+            DeskIcons.stroke("M12.4 2.2v2.6H9.8"),
+        )
+    }
+
+    /** Head and shoulders: an account. */
+    val Account: ImageVector by lazy {
+        DeskIcons.build(
+            "Account",
+            DeskIcons.stroke("M8 2.8a2.4 2.4 0 1 0 0 4.8 2.4 2.4 0 0 0 0-4.8z"),
+            DeskIcons.stroke("M3.2 13.2c.5-2.4 2.4-3.6 4.8-3.6s4.3 1.2 4.8 3.6"),
+        )
+    }
+
     private const val STAR = "M8.0,2.4L9.5,6.3L13.7,6.5L10.4,9.2L11.5,13.3L8.0,10.9L4.5,13.3L5.6,9.2L2.3,6.5L6.5,6.3Z"
 }

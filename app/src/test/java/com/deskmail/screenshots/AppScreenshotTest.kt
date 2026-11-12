@@ -14,10 +14,19 @@ import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performSemanticsAction
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import com.deskmail.FakeAccounts
 import com.deskmail.TEST_CLOCK
 import com.deskmail.core.log.AppLog
+import com.deskmail.core.mail.MailException
+import com.deskmail.core.provider.ProviderTable
 import com.deskmail.demo.DemoMail
+import com.deskmail.mail.AccountActions
+import com.deskmail.mail.AccountState
+import com.deskmail.mail.MailContent
 import com.deskmail.mail.MailMessage
+import com.deskmail.mail.MailSource
+import com.deskmail.mail.SetupPlan
+import com.deskmail.noMail
 import com.deskmail.settings.AppSettings
 import com.deskmail.testMail
 import com.deskmail.testPrefs
@@ -27,10 +36,13 @@ import com.deskmail.ui.Routes
 import com.deskmail.ui.mail.MailUiState
 import com.deskmail.ui.mail.PlainMessageBody
 import com.deskmail.ui.mail.openMessage
+import com.deskmail.ui.settings.SettingsPage
+import com.deskmail.ui.settings.SettingsUiState
 import desktopkit.components.CommandPaletteState
 import desktopkit.shell.ShellTransitions
 import desktopkit.theme.DensityPreference
 import desktopkit.theme.ThemeMode
+import kotlinx.coroutines.runBlocking
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.ExternalResource
@@ -72,6 +84,7 @@ class AppScreenshotTest {
 
     private val mail: DemoMail = testMail()
     private val ui = MailUiState()
+    private val settingsUi = SettingsUiState()
     private val palette = CommandPaletteState()
     private val log = AppLog(zone = { ZoneId.of("Europe/Istanbul") }, now = { com.deskmail.TEST_NOW })
     private lateinit var settings: AppSettings
@@ -81,23 +94,31 @@ class AppScreenshotTest {
     /** Opens [subject] in the reader of [route] before the app is drawn. */
     private fun open(route: String, subject: String) = openMessage(mail, ui, route, message(subject))
 
-    private fun launch(theme: ThemeMode, density: DensityPreference = DensityPreference.Touch, startRoute: String? = null) {
+    private fun launch(
+        theme: ThemeMode,
+        density: DensityPreference = DensityPreference.Touch,
+        startRoute: String? = null,
+        source: MailSource = mail,
+        accounts: AccountActions = FakeAccounts(),
+    ) {
         val prefs = testPrefs(theme, density)
         settings = testSettings()
         // the test activity's theme has an action bar; the app's has none
         compose.runOnUiThread { compose.activity.actionBar?.hide() }
         compose.setContent {
             DeskMailApp(
-                mail = mail,
+                mail = source,
                 settings = settings,
                 log = log,
+                accounts = accounts,
                 ui = ui,
+                settingsUi = settingsUi,
                 startRoute = startRoute,
                 prefs = prefs,
                 clock = TEST_CLOCK,
                 transitions = ShellTransitions.None,
                 palette = palette,
-                messageBody = { message, modifier -> PlainMessageBody(message, modifier) },
+                messageBody = { content, _, modifier -> PlainMessageBody(content, modifier) },
             )
         }
         compose.waitForIdle()
@@ -195,6 +216,42 @@ class AppScreenshotTest {
         capture("phone-palette-dark")
     }
 
+    /** Before the first account: the inbox says how to get one. */
+    @Test @Config(qualifiers = PHONE)
+    fun phoneWelcomeLight() {
+        launch(ThemeMode.Light, source = noMail())
+        capture("phone-welcome-light")
+    }
+
+    /** An account that has to sign in again says so above the list. */
+    @Test @Config(qualifiers = PHONE)
+    fun phoneAccountNoticeDark() {
+        mail.setAccountState(DemoMail.GMAIL, AccountState.NeedsLogin)
+        launch(ThemeMode.Dark)
+        capture("phone-account-notice-dark")
+    }
+
+    /** "Add an account" at the step Gmail calls for: an app password. */
+    @Test @Config(qualifiers = PHONE)
+    fun phoneAddAccountDark() {
+        val gmail = FakeAccounts(plan = SetupPlan.Found(ProviderTable.Gmail.settingsFor("deniz.aksoy@gmail.com"), ProviderTable.Gmail))
+        settingsUi.addAccount()
+        settingsUi.setup.address = "deniz.aksoy@gmail.com"
+        runBlocking { settingsUi.setup.lookUp(gmail) }
+        launch(ThemeMode.Dark, startRoute = Routes.SETTINGS, accounts = gmail)
+        capture("phone-add-account-dark")
+    }
+
+    /** A message whose text could not be fetched: the header is there, and a way to try again. */
+    @Test @Config(qualifiers = PHONE)
+    fun phoneReaderFailedLight() {
+        val breakfast = message("Cumartesi kahvaltı?")
+        mail.setContent(breakfast.id, MailContent.Failed(MailException.Kind.Network))
+        open(Routes.INBOX, "Cumartesi kahvaltı?")
+        launch(ThemeMode.Light)
+        capture("phone-reader-failed-light")
+    }
+
     // ------------------------------------------------------------------ tablet
 
     /** Upright: the rail, and the list alone (a message would slide over it). */
@@ -202,6 +259,16 @@ class AppScreenshotTest {
     fun tabletPortraitInboxDark() {
         launch(ThemeMode.Dark)
         capture("tablet-portrait-inbox-dark")
+    }
+
+    /** "Add an account" for an address nobody knows: the servers by hand. */
+    @Test @Config(qualifiers = TABLET_PORTRAIT)
+    fun tabletPortraitServersLight() {
+        settingsUi.addAccount()
+        settingsUi.setup.address = "deniz@kendi.example"
+        runBlocking { settingsUi.setup.lookUp(FakeAccounts(plan = SetupPlan.Manual)) }
+        launch(ThemeMode.Light, startRoute = Routes.SETTINGS)
+        capture("tablet-portrait-servers-light")
     }
 
     @Test @Config(qualifiers = TABLET_PORTRAIT)
@@ -279,6 +346,15 @@ class AppScreenshotTest {
     fun dexSettingsDark() {
         launch(ThemeMode.Dark, DensityPreference.Pointer, startRoute = Routes.SETTINGS)
         capture("dex-settings-dark")
+    }
+
+    /** An account's page, for one the server no longer lets in. */
+    @Test @Config(qualifiers = DEX)
+    fun dexAccountLight() {
+        mail.setAccountState(DemoMail.GMAIL, AccountState.NeedsLogin, "[AUTHENTICATIONFAILED] Invalid credentials (Failure)")
+        settingsUi.page = SettingsPage.Account(DemoMail.GMAIL)
+        launch(ThemeMode.Light, DensityPreference.Pointer, startRoute = Routes.SETTINGS)
+        capture("dex-account-light")
     }
 
     companion object {

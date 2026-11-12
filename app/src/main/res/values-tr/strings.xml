@@ -107,7 +107,80 @@
         <item quantity="other">Son %d satır kopyalandı</item>
     </plurals>
 
+    <string name="message_no_subject">(konu yok)</string>
+    <string name="message_cc">Bilgi: %1$s</string>
+    <string name="detail_cc">Bilgi</string>
+    <string name="action_retry">Yeniden dene</string>
+    <string name="action_cancel">Vazgeç</string>
+    <string name="reader_failed_network">İleti alınamadı: sunucuya ulaşılamıyor.</string>
+    <string name="reader_failed_login">İleti alınamadı: hesabın yeniden giriş yapması gerekiyor.</string>
+    <string name="reader_failed_other">İleti alınamadı.</string>
+    <string name="reader_unavailable">Bu iletinin metni cihazda yok: çok büyük ya da sunucu vermedi.</string>
+
+    <string name="action_refresh">Eşitle</string>
+    <string name="list_syncing">Eşitleniyor</string>
+    <string name="account_notice_login">%1$s hesabının yeniden giriş yapması gerekiyor.</string>
+    <string name="account_notice_unreachable">%1$s: sunucuya ulaşılamadı.</string>
+    <string name="account_notice_error">%1$s eşitlenemedi.</string>
+    <string name="account_action_reconnect">Yeniden bağlan</string>
+
+    <string name="welcome_title">Henüz hesap yok</string>
+    <string name="welcome_text">Postanı burada görmek için e-posta hesabını ekle.</string>
+    <string name="welcome_action">Hesap ekle</string>
+
+    <string name="settings_accounts">Hesaplar</string>
+    <string name="settings_accounts_empty">Henüz hesap yok. Gmail uygulama şifresiyle çalışır; Outlook bir sonraki ön sürümle geliyor.</string>
+    <string name="account_add">Hesap ekle</string>
+    <string name="account_manage">Yönet</string>
+    <string name="account_state_ok">Çalışıyor</string>
+    <string name="account_state_login">Yeniden giriş gerekiyor</string>
+    <string name="account_state_unreachable">Sunucuya ulaşılamadı</string>
+    <string name="account_state_error">Son eşitleme başarısız</string>
+
+    <string name="setup_address">E-posta adresi</string>
+    <string name="setup_address_hint">ad@ornek.com</string>
+    <string name="setup_address_note">Uygulama, adresin sunucularının nerede olduğunu arar. Yalnızca @ işaretinden sonraki bölüm bir yere gönderilir.</string>
+    <string name="setup_continue">Devam</string>
+    <string name="setup_not_address">Bu bir e-posta adresi değil.</string>
+    <string name="setup_duplicate">Bu hesap zaten ekli.</string>
+    <string name="setup_gmail_note">Gmail, posta uygulamalarından hesap şifresini kabul etmez. İki adımlı doğrulama açıkken Google hesabında bir uygulama şifresi üret (myaccount.google.com/apppasswords) ve 16 harfini buraya yaz. Gmail ayarlarında IMAP açık olmalı.</string>
+    <string name="setup_outlook_note">Outlook, Hotmail ve Live hesapları Microsoft\'ta, tarayıcıdan giriş yapar. Bu, bir sonraki ön sürümle geliyor.</string>
+    <string name="setup_found">Sunucular bulundu</string>
+    <string name="setup_receiving">Alma (IMAP)</string>
+    <string name="setup_sending">Gönderme (SMTP)</string>
+    <string name="setup_password">Şifre</string>
+    <string name="setup_app_password">Uygulama şifresi</string>
+    <string name="setup_password_note">Sağlayıcın uygulama şifresi veriyorsa onu yaz.</string>
+    <string name="setup_manual_title">Sunucuları elle gir</string>
+    <string name="setup_manual_note">Uygulamanın sorduğu yerler bu adresin sunucularını bilmiyor. Sağlayıcının yardım sayfaları yazar; doldurulmuş olanları düzelt.</string>
+    <string name="setup_manual_switch">Sunucuları elle gir</string>
+    <string name="setup_imap_host">IMAP sunucusu</string>
+    <string name="setup_smtp_host">SMTP sunucusu</string>
+    <string name="setup_port">Port</string>
+    <string name="setup_username">Kullanıcı adı</string>
+    <string name="setup_add">Hesabı ekle</string>
+    <string name="setup_other_address">Başka adres</string>
+    <string name="setup_servers_incomplete">Bir sunucu adı, bir port ya da kullanıcı adı eksik.</string>
+    <string name="setup_failed_login">Sunucu girişi reddetti. Adresi ve şifreyi denetle.</string>
+    <string name="setup_failed_login_app_password">Sunucu girişi reddetti. Hesabın kendi şifresi değil uygulama şifresi gerekir; hesap ayarlarında IMAP açık olmalı.</string>
+    <string name="setup_failed_network">Sunucuya ulaşılamadı. Bağlantıyı ve sunucu adını denetle.</string>
+    <string name="setup_failed_security">Sunucuyla güvenli bağlantı kurulamadı.</string>
+    <string name="setup_failed_server">Sunucu hata verdi.</string>
+    <string name="setup_server_said">Sunucunun yanıtı: %1$s</string>
+    <string name="setup_added">%1$s eklendi. Postası geliyor.</string>
+
+    <string name="account_address">Adres</string>
+    <string name="account_server">Sunucu</string>
+    <string name="account_state">Durum</string>
+    <string name="account_sync_now">Şimdi eşitle</string>
+    <string name="account_reconnect_note">Şifreyi yeniden gir (Gmail için uygulama şifresi). Hesabın geri kalanı olduğu gibi kalır.</string>
+    <string name="account_reconnected">Yeniden giriş yapıldı.</string>
+    <string name="account_remove">Hesabı kaldır</string>
+    <string name="account_remove_note">Hesap ve postasından saklananlar bu cihazdan silinir. Posta sunucuda kalır.</string>
+    <string name="account_remove_title">%1$s kaldırılsın mı?</string>
+    <string name="account_removed">%1$s kaldırıldı.</string>
+
     <string name="settings_about">Hakkında</string>
     <string name="settings_version">Sürüm</string>
-    <string name="settings_about_note">Uydurma postayla bir ön sürüm: kabuk ve düzenler cihazlarda denensin diye.</string>
+    <string name="settings_about_note">Postanı okuyan bir ön sürüm. İşaretleme, gönderme ve bildirimler sonraki ön sürümlerle gelir.</string>
 </resources>

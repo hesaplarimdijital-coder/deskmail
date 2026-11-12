@@ -22,6 +22,13 @@ object DnsLookup {
 
     fun services(name: String): List<ServiceHost> = query(name, DnsAnswer.TYPE_SRV)?.let { DnsAnswer.services(it) }.orEmpty()
 
+    /**
+     * The device's resolver. Android 17 added a constructor and marks this call as the old way; it
+     * is the one that exists on every version the app runs on (docs/PLAN.md, "Bakım notları").
+     */
+    @Suppress("DEPRECATION")
+    private fun resolver(): DnsResolver = DnsResolver.getInstance()
+
     /** The raw answer, or null when there is none in time (no such name, no network). */
     private fun query(name: String, type: Int): ByteArray? {
         val done = CountDownLatch(1)
@@ -36,7 +43,7 @@ object DnsLookup {
                 done.countDown()
             }
         }
-        DnsResolver.getInstance().rawQuery(null, name, DnsResolver.CLASS_IN, type, DnsResolver.FLAG_EMPTY, direct, null, callback)
+        resolver().rawQuery(null, name, DnsResolver.CLASS_IN, type, DnsResolver.FLAG_EMPTY, direct, null, callback)
         done.await(TIMEOUT_MS, TimeUnit.MILLISECONDS)
         return answer
     }

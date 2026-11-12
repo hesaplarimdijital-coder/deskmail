@@ -19,8 +19,12 @@ import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -30,13 +34,16 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.deskmail.R
+import com.deskmail.core.mail.MailException
 import com.deskmail.mail.MailAttachment
+import com.deskmail.mail.MailContent
 import com.deskmail.mail.MailMessage
 import com.deskmail.ui.MailIcons
 import desktopkit.components.BannerTone
 import desktopkit.components.DeskChip
 import desktopkit.components.DeskIconButton
 import desktopkit.components.DeskIcons
+import desktopkit.components.SkeletonList
 import desktopkit.components.StatusBanner
 import desktopkit.screens.MessageScreen
 import desktopkit.shell.CompactTopBar
@@ -44,27 +51,35 @@ import desktopkit.shell.TopBarAction
 import desktopkit.shell.WidthClass
 import desktopkit.shell.currentWidthClass
 import desktopkit.theme.DeskTheme
+import kotlinx.coroutines.delay
 
 /**
- * One message: its actions, the subject, who it is from and to, when, its attachments, a strip
- * when images were kept from loading, and the body ([body], the WebView in the app). Everything
- * scrolls as one page: beneath the phone's bars with [underBars], between them without.
- * [barsPadding] is what the bars cover (the shell's padding, which the screen asks for).
+ * One message: its actions, the subject, who it is from and to, when, and then what it says
+ * ([content]): its attachments, a strip when images were kept from loading, and the body ([body],
+ * the WebView in the app). While the text is on its way there is a placeholder in its place, and
+ * a strip with "Try again" when it could not be fetched. Everything scrolls as one page: beneath
+ * the phone's bars with [underBars], between them without. [barsPadding] is what the bars cover
+ * (the shell's padding, which the screen asks for).
  *
  * On a phone the actions are in the top bar, with the back arrow ([onClose]); wider windows show
  * them in a row above the subject, with [trailingActions] at its end and a back arrow only where
  * the reader covers the list ([onClose] set).
+ *
+ * @param showImages the reader asked for this message's remote images.
  */
 @Composable
 fun MessageReader(
     message: MailMessage,
+    content: MailContent,
+    showImages: Boolean,
     onToggleStar: () -> Unit,
     onToggleUnread: () -> Unit,
     onClose: (() -> Unit)?,
     onShowRemoteImages: () -> Unit,
     onAttachment: (MailAttachment) -> Unit,
+    onRetry: () -> Unit,
     barsPadding: PaddingValues,
-    body: @Composable (MailMessage, Modifier) -> Unit,
+    body: @Composable (MailContent.Ready, Boolean, Modifier) -> Unit,
     modifier: Modifier = Modifier,
     underBars: Boolean = true,
     trailingActions: @Composable RowScope.() -> Unit = {},
@@ -112,20 +127,61 @@ fun MessageReader(
             }
         }
         ReaderHeader(message)
-        if (message.attachments.isNotEmpty()) Attachments(message.attachments, onAttachment)
-        if (message.remoteImages) {
-            StatusBanner(
-                tone = BannerTone.Info,
-                text = stringResource(R.string.reader_remote_blocked),
-                modifier = Modifier.padding(horizontal = dimens.pagePadding).padding(bottom = dimens.gapM),
-                actionLabel = stringResource(R.string.reader_remote_show),
-                onAction = onShowRemoteImages,
+        val strip = Modifier.padding(horizontal = dimens.pagePadding).padding(bottom = dimens.gapM)
+        when (content) {
+            is MailContent.Ready -> {
+                if (content.attachments.isNotEmpty()) Attachments(content.attachments, onAttachment)
+                if (content.remoteImages && !showImages) {
+                    StatusBanner(
+                        tone = BannerTone.Info,
+                        text = stringResource(R.string.reader_remote_blocked),
+                        modifier = strip,
+                        actionLabel = stringResource(R.string.reader_remote_show),
+                        onAction = onShowRemoteImages,
+                    )
+                }
+                // a view of its own for every message
+                key(message.id) { body(content, showImages, Modifier.fillMaxWidth()) }
+            }
+            MailContent.Loading -> ContentOnItsWay()
+            is MailContent.Failed -> StatusBanner(
+                tone = BannerTone.Warning,
+                text = stringResource(
+                    when (content.kind) {
+                        MailException.Kind.Network -> R.string.reader_failed_network
+                        MailException.Kind.Authentication -> R.string.reader_failed_login
+                        else -> R.string.reader_failed_other
+                    },
+                ),
+                modifier = strip,
+                actionLabel = stringResource(R.string.action_retry),
+                onAction = onRetry,
+            )
+            MailContent.Unavailable -> Text(
+                stringResource(R.string.reader_unavailable),
+                style = DeskTheme.type.body,
+                color = colors.textSecondary,
+                modifier = strip,
             )
         }
-        // a view of its own for every message
-        key(message.id) { body(message, Modifier.fillMaxWidth()) }
     }
 }
+
+/**
+ * The place of a message's text while it is fetched. Text the device already has is there within
+ * a frame or two; the placeholder only shows when the wait is long enough to see.
+ */
+@Composable
+private fun ContentOnItsWay() {
+    var waited by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        delay(SHOW_PLACEHOLDER_AFTER_MS)
+        waited = true
+    }
+    if (waited) SkeletonList(count = 4, leading = false, lines = 1)
+}
+
+private const val SHOW_PLACEHOLDER_AFTER_MS = 300L
 
 /** The subject, then the sender's name and address, the recipients and the whole date. */
 @Composable
@@ -135,10 +191,18 @@ private fun ReaderHeader(message: MailMessage) {
     val dates = rememberDateLabels()
     SelectionContainer {
         Column(Modifier.fillMaxWidth().padding(horizontal = dimens.pagePadding).padding(top = dimens.gapM, bottom = dimens.gapL)) {
-            Text(message.subject, style = DeskTheme.type.headline, color = colors.text, modifier = Modifier.semantics { heading() })
+            Text(
+                message.subject.ifBlank { stringResource(R.string.message_no_subject) },
+                style = DeskTheme.type.headline,
+                color = colors.text,
+                modifier = Modifier.semantics { heading() },
+            )
             Spacer(Modifier.height(dimens.gapM))
             Text(message.fromName, style = DeskTheme.type.bodyStrong, color = colors.text, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Text(message.fromAddress, style = DeskTheme.type.labelSmall, color = colors.textSecondary, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            // a sender without a name is already shown by the address
+            if (message.fromAddress != message.fromName) {
+                Text(message.fromAddress, style = DeskTheme.type.labelSmall, color = colors.textSecondary, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
             Spacer(Modifier.height(dimens.gapXs))
             Text(
                 stringResource(R.string.message_to, message.to),
@@ -147,6 +211,15 @@ private fun ReaderHeader(message: MailMessage) {
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
             )
+            if (message.cc.isNotEmpty()) {
+                Text(
+                    stringResource(R.string.message_cc, message.cc),
+                    style = DeskTheme.type.labelSmall,
+                    color = colors.textTertiary,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
             Text(dates.full(message.sentAt), style = DeskTheme.type.labelSmall, color = colors.textTertiary)
         }
     }

@@ -123,7 +123,92 @@
         <item quantity="other">Copied the last %d lines</item>
     </plurals>
 
+    <!-- A message: what the header and the reader say besides the mail's own words -->
+    <string name="message_no_subject">(no subject)</string>
+    <string name="message_cc">Cc: %1$s</string>
+    <string name="detail_cc">Cc</string>
+    <string name="action_retry">Try again</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="reader_failed_network">The message could not be fetched: the server cannot be reached.</string>
+    <string name="reader_failed_login">The message could not be fetched: the account has to sign in again.</string>
+    <string name="reader_failed_other">The message could not be fetched.</string>
+    <string name="reader_unavailable">This message\'s text is not on the device: it is too large, or the server would not hand it over.</string>
+
+    <!-- Syncing, and an account in trouble, above a list -->
+    <string name="action_refresh">Sync</string>
+    <string name="list_syncing">Syncing</string>
+    <string name="account_notice_login">%1$s has to sign in again.</string>
+    <string name="account_notice_unreachable">%1$s: the server could not be reached.</string>
+    <string name="account_notice_error">%1$s could not be synced.</string>
+    <string name="account_action_reconnect">Reconnect</string>
+
+    <!-- A list while there is no account -->
+    <string name="welcome_title">No account yet</string>
+    <string name="welcome_text">Add your e-mail account to see your mail here.</string>
+    <string name="welcome_action">Add an account</string>
+
+    <!-- Settings › Accounts -->
+    <string name="settings_accounts">Accounts</string>
+    <string name="settings_accounts_empty">No account yet. Gmail works with an app password; Outlook arrives with the next pre-release.</string>
+    <string name="account_add">Add an account</string>
+    <string name="account_manage">Manage</string>
+    <string name="account_state_ok">Working</string>
+    <string name="account_state_login">Has to sign in again</string>
+    <string name="account_state_unreachable">Server not reached</string>
+    <string name="account_state_error">Last sync failed</string>
+    <!-- An account's address and how it is doing, on one line -->
+    <string name="account_summary" translatable="false">%1$s · %2$s</string>
+
+    <!-- Settings › Accounts › Add an account -->
+    <string name="setup_address">E-mail address</string>
+    <string name="setup_address_hint">name@example.com</string>
+    <string name="setup_address_note">The app looks up where the address\'s servers are. Only the part after the @ is sent anywhere.</string>
+    <string name="setup_continue">Continue</string>
+    <string name="setup_not_address">This is not an e-mail address.</string>
+    <string name="setup_duplicate">This account is already added.</string>
+    <string name="setup_gmail_note">Gmail takes no account password from mail programs. With 2-Step Verification on, make an app password in your Google account (myaccount.google.com/apppasswords) and enter its 16 letters here. IMAP has to be on in Gmail\'s settings.</string>
+    <string name="setup_outlook_note">Outlook, Hotmail and Live accounts sign in at Microsoft, in the browser. That arrives with the next pre-release.</string>
+    <string name="setup_found">Servers found</string>
+    <string name="setup_receiving">Receiving (IMAP)</string>
+    <string name="setup_sending">Sending (SMTP)</string>
+    <!-- A server and its port -->
+    <string name="setup_server" translatable="false">%1$s:%2$d</string>
+    <string name="setup_password">Password</string>
+    <string name="setup_app_password">App password</string>
+    <string name="setup_password_note">If your provider hands out app passwords, enter one of those.</string>
+    <string name="setup_manual_title">Servers by hand</string>
+    <string name="setup_manual_note">Nobody the app asks knows this address\'s servers. Your provider\'s help pages name them; correct what is filled in.</string>
+    <string name="setup_manual_switch">Enter the servers by hand</string>
+    <string name="setup_imap_host">IMAP server</string>
+    <string name="setup_smtp_host">SMTP server</string>
+    <string name="setup_port">Port</string>
+    <string name="setup_username">User name</string>
+    <string name="security_tls" translatable="false">TLS</string>
+    <string name="security_starttls" translatable="false">STARTTLS</string>
+    <string name="setup_add">Add the account</string>
+    <string name="setup_other_address">Another address</string>
+    <string name="setup_servers_incomplete">A server\'s name, a port or the user name is missing.</string>
+    <string name="setup_failed_login">The server refused the sign-in. Check the address and the password.</string>
+    <string name="setup_failed_login_app_password">The server refused the sign-in. It takes an app password, not the account\'s own, and IMAP has to be on in the account\'s settings.</string>
+    <string name="setup_failed_network">The server could not be reached. Check the connection and the server\'s name.</string>
+    <string name="setup_failed_security">No secure connection could be made to the server.</string>
+    <string name="setup_failed_server">The server answered with an error.</string>
+    <string name="setup_server_said">The server\'s words: %1$s</string>
+    <string name="setup_added">%1$s added. Its mail is arriving.</string>
+
+    <!-- Settings › Accounts › an account -->
+    <string name="account_address">Address</string>
+    <string name="account_server">Server</string>
+    <string name="account_state">State</string>
+    <string name="account_sync_now">Sync now</string>
+    <string name="account_reconnect_note">Enter the password again (for Gmail: an app password). Everything else about the account stays.</string>
+    <string name="account_reconnected">Signed in again.</string>
+    <string name="account_remove">Remove the account</string>
+    <string name="account_remove_note">The account and what is kept of its mail leave this device. The mail stays on the server.</string>
+    <string name="account_remove_title">Remove %1$s?</string>
+    <string name="account_removed">%1$s removed.</string>
+
     <string name="settings_about">About</string>
     <string name="settings_version">Version</string>
-    <string name="settings_about_note">A pre-release with made-up mail: the shell and the layouts, to be tried on the devices.</string>
+    <string name="settings_about_note">A pre-release that reads your mail. Marking, sending and notifications arrive with the next ones.</string>
 </resources>

@@ -6,8 +6,10 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
@@ -17,8 +19,10 @@ import androidx.navigation.compose.rememberNavController
 import com.deskmail.R
 import com.deskmail.core.log.AppLog
 import com.deskmail.core.mail.FolderRole
-import com.deskmail.demo.DemoMail
-import com.deskmail.mail.MailMessage
+import com.deskmail.mail.AccountActions
+import com.deskmail.mail.MailAccount
+import com.deskmail.mail.MailContent
+import com.deskmail.mail.MailSource
 import com.deskmail.mail.MailView
 import com.deskmail.settings.AppSettings
 import com.deskmail.ui.mail.FoldersScreen
@@ -30,7 +34,9 @@ import com.deskmail.ui.mail.WebMessageBody
 import com.deskmail.ui.mail.counterpart
 import com.deskmail.ui.mail.openMessage
 import com.deskmail.ui.mail.rememberDateLabels
+import com.deskmail.ui.settings.SettingsPage
 import com.deskmail.ui.settings.SettingsScreen
+import com.deskmail.ui.settings.SettingsUiState
 import desktopkit.DesktopKitRoot
 import desktopkit.appResources
 import desktopkit.components.ActionGroup
@@ -63,30 +69,37 @@ import kotlinx.coroutines.launch
  * bar, rail or sidebar by the window's width) around the screens, with the menu bar, the command
  * palette and the commands behind the shortcut table.
  *
+ * @param mail where the mail comes from: the accounts' in the app, made-up mail in the tests.
+ * @param accounts adds, reconnects and removes accounts (Settings); null where nothing can.
  * @param settings the app's own settings, shared by every window.
  * @param log the app's log; Settings shows it.
  * @param ui what this window shows of the mail (the open messages, the filters); the activity keeps it.
+ * @param settingsUi what this window's Settings screen shows; the activity keeps it too.
+ * @param resumes how often the window came back to the front: each time is a reason to look for new mail.
  * @param startRoute where a window opened from another one starts.
  * @param clock the time the lists are dated against; the device's own unless a test pins one.
  * @param transitions how the shell moves between screens; tests turn it off.
  * @param palette the command palette's state. The activity holds it, to leave the keys alone while it is open.
  * @param commands where the activity finds the window's commands, for the keys it routes.
  * @param messageBody draws a message's body instead of the WebView: the plain text where there is no
- *   WebView to draw with (the screenshot tests).
+ *   WebView to draw with (the screenshot tests). The flag says whether its remote images are shown.
  */
 @Composable
 fun DeskMailApp(
-    mail: DemoMail,
+    mail: MailSource,
     settings: AppSettings,
     log: AppLog,
+    accounts: AccountActions? = null,
     ui: MailUiState = remember { MailUiState() },
+    settingsUi: SettingsUiState = remember { SettingsUiState() },
+    resumes: Int = 0,
     startRoute: String? = null,
     prefs: DeskPreferences = rememberDeskPreferences(),
     clock: MailClock = remember { MailClock() },
     transitions: ShellTransitions = ShellTransitions.Default,
     palette: CommandPaletteState = remember { CommandPaletteState() },
     commands: CommandHost? = null,
-    messageBody: (@Composable (MailMessage, Modifier) -> Unit)? = null,
+    messageBody: (@Composable (MailContent.Ready, Boolean, Modifier) -> Unit)? = null,
 ) {
     val navController = rememberNavController()
     val navigator = remember(navController) { ShellNavigator(navController) }
@@ -95,15 +108,33 @@ fun DeskMailApp(
     val locales = LocalConfiguration.current.locales
     val scope = rememberCoroutineScope()
     val toasts = rememberToastState()
-    val accounts = mail.accounts
     val folders = mail.folders
-    // The kit builds its navigation graph from the spec: a new one only when the folders themselves
-    // change, not with every message that is read (the counts are the badges' business).
+    // The kit builds its navigation graph from the spec: a new one only when the accounts' names or
+    // the folders themselves change, not with every message that is read or every sync that ends
+    // (the counts are the badges' business, how an account is doing the lists').
+    val named = mail.accounts.map { MailAccount(it.id, it.name, it.address) }
     val tree = folders.map { it.copy(unread = 0, total = 0) }
-    val spec = remember(locales, accounts, tree, startRoute) { buildShellSpec(resources, accounts, tree, startRoute) }
+    val spec = remember(locales, named, tree, startRoute) { buildShellSpec(resources, named, tree, startRoute) }
     val badges = remember(folders) { navBadges(folders) }
     val entry by navController.currentBackStackEntryAsState()
     val currentRoute = entry?.destination?.route ?: spec.startRoute
+
+    // A new set of routes (a folder made on the server, an account added or removed) makes the
+    // kit build a new navigation graph, and the shell is back at its start screen
+    // (docs/KIT-ISTEKLERI.md, 3). The window goes back to where it was, if that is still there.
+    // While an account is being added the start screen is where to be: its mail arrives there.
+    val routes = remember(spec) { spec.items.map { it.route } }
+    var routesSeen by remember { mutableStateOf(routes) }
+    var at by remember { mutableStateOf(spec.startRoute) }
+    if (routesSeen == routes) SideEffect { at = currentRoute }
+    LaunchedEffect(routes) {
+        if (routesSeen != routes) {
+            val back = at
+            val here = navController.currentBackStackEntry?.destination?.route
+            if (!settingsUi.setup.busy && back != here && back in routes) navigator.navigate(back)
+            routesSeen = routes
+        }
+    }
 
     val notify: (String) -> Unit = { text -> scope.launch { toasts.show(text) } }
     // a command this pre-release has a place for, but not yet the work behind it
@@ -111,8 +142,19 @@ fun DeskMailApp(
     val newMessage = stringResource(R.string.action_new_message)
     // a tapped link is never followed inside a message: its real address is shown instead
     val showLink: (String) -> Unit = { url -> scope.launch { toasts.show(url.take(LINK_LENGTH), duration = ToastDuration.Long) } }
-    val body: @Composable (MailMessage, Modifier) -> Unit = messageBody ?: { message, modifier ->
-        WebMessageBody(message, modifier, darken = settings.darkenMessages, layer = settings.webLayer, onLink = showLink)
+    val body: @Composable (MailContent.Ready, Boolean, Modifier) -> Unit = messageBody ?: { content, showImages, modifier ->
+        WebMessageBody(content, modifier, showImages = showImages, darken = settings.darkenMessages, layer = settings.webLayer, onLink = showLink)
+    }
+    val starLabel = stringResource(R.string.action_toggle_star)
+    val readLabel = stringResource(R.string.action_toggle_read)
+    // "Add an account", from wherever it is asked for: the page in Settings, with nothing typed
+    val addAccount: () -> Unit = {
+        settingsUi.addAccount()
+        navigator.navigate(Routes.SETTINGS)
+    }
+    val openAccount: (Long) -> Unit = { id ->
+        settingsUi.page = SettingsPage.Account(id)
+        navigator.navigate(Routes.SETTINGS)
     }
     // What the divider between list and reader was dragged to outlives the window: once a drag
     // has rested, the window's state takes it as the list's share and stores it.
@@ -126,18 +168,22 @@ fun DeskMailApp(
     // ------------------------------------------------------------------ commands
 
     // the open message of the screen in front, for the commands that act on it
-    val withOpen: (String, (MailMessage) -> Unit) -> Boolean = { route, action ->
-        val message = ui.openedId(route)?.let { mail.message(it) }
-        if (message != null) action(message)
-        message != null
+    val withOpen: (String, (Long) -> Unit) -> Boolean = { route, action ->
+        val id = ui.openedId(route)
+        if (id != null) action(id)
+        id != null
+    }
+    // read/unread and the star: where the mail lets them be changed; otherwise a word that they are to come
+    val mark: (String, String, (Long) -> Unit) -> Boolean = { route, name, change ->
+        withOpen(route) { id -> if (mail.canMark) change(id) else notYet(name) }
     }
     val step: (String, Int) -> Boolean = { route, by ->
-        val message = ui.neighbour(route, by)?.let { mail.message(it) }
-        if (message != null) {
-            openMessage(mail, ui, route, message)
-            scope.launch { ui.reveal(route, message.id) }
+        val id = ui.neighbour(route, by)
+        if (id != null) {
+            openMessage(mail, ui, route, id)
+            scope.launch { ui.reveal(route, id) }
         }
-        message != null
+        id != null
     }
     val perform: (String) -> Boolean = { id ->
         // read when the command runs: the screen in front then
@@ -164,10 +210,14 @@ fun DeskMailApp(
                 notYet(newMessage)
                 true
             }
+            Commands.REFRESH -> {
+                mail.refresh(mailView(route))
+                true
+            }
             Commands.NEXT -> step(route, 1)
             Commands.PREVIOUS -> step(route, -1)
-            Commands.STAR -> withOpen(route) { mail.setStarred(it.id, !it.starred) }
-            Commands.TOGGLE_READ -> withOpen(route) { mail.setUnread(it.id, !it.unread) }
+            Commands.STAR -> mark(route, starLabel) { mail.toggleStarred(it) }
+            Commands.TOGGLE_READ -> mark(route, readLabel) { mail.toggleUnread(it) }
             Commands.CLOSE -> withOpen(route) { ui.close(route) }
             else -> false
         }
@@ -207,6 +257,7 @@ fun DeskMailApp(
     )
     val screensGroup = stringResource(R.string.palette_group_screens)
     val messagesGroup = stringResource(R.string.palette_group_messages)
+    val noSubject = stringResource(R.string.message_no_subject)
 
     CompositionLocalProvider(LocalMailClock provides clock) {
         val dates = rememberDateLabels()
@@ -249,17 +300,17 @@ fun DeskMailApp(
                                     },
                                 )
                             }
-                            // "All Mail" holds every message once more: one entry each is enough
+                            // the newest ones, each once ("All Mail" holds every message once more)
                             val allMail = mail.folders.filter { it.role == FolderRole.All }.map { it.id }.toSet()
-                            val messages = mail.messages.filter { it.folderId !in allMail }.map { message ->
+                            val messages = mail.recent.filter { it.folderId !in allMail }.map { message ->
                                 PaletteItem(
                                     id = "message/" + message.id,
-                                    title = message.subject,
+                                    title = message.subject.ifBlank { noSubject },
                                     group = messagesGroup,
                                     onSelect = {
                                         val route = Routes.folder(message.folderId)
                                         navigator.navigate(route)
-                                        openMessage(mail, ui, route, message)
+                                        openMessage(mail, ui, route, message.id)
                                     },
                                     subtitle = counterpart(message) + " · " + dates.short(message.sentAt),
                                     icon = MailIcons.Mail,
@@ -289,12 +340,16 @@ fun DeskMailApp(
                         onBack = backFromFolder,
                         onCompose = { perform(Commands.NEW_MESSAGE) },
                         onNotYet = notYet,
+                        onAddAccount = addAccount,
+                        onOpenAccount = openAccount,
                         readerUnderBars = settings.readerUnderBars,
                         body = body,
+                        resumes = resumes,
                     )
                     route == Routes.FOLDERS -> FoldersScreen(
-                        accounts = accounts,
+                        accounts = mail.accounts,
                         folders = folders,
+                        onAddAccount = if (mail.loaded && mail.accounts.isEmpty()) addAccount else null,
                         onOpen = { folder ->
                             val target = Routes.folder(folder.id)
                             // The sidebar lists the folders itself and switches between them. On a phone or beside a
@@ -302,7 +357,22 @@ fun DeskMailApp(
                             if (navKind == NavKind.Sidebar) navigator.navigate(target) else navController.navigate(target) { launchSingleTop = true }
                         },
                     )
-                    route == Routes.SETTINGS -> SettingsScreen(prefs, settings, log, onNotify = notify)
+                    route == Routes.SETTINGS -> SettingsScreen(
+                        prefs = prefs,
+                        settings = settings,
+                        log = log,
+                        mail = mail,
+                        accounts = accounts,
+                        ui = settingsUi,
+                        scope = scope,
+                        onNotify = notify,
+                        onAccountAdded = { address ->
+                            // to the inbox, where its mail is arriving
+                            settingsUi.close()
+                            notify(resources.getString(R.string.setup_added, address))
+                            navigator.navigate(Routes.INBOX)
+                        },
+                    )
                     else -> MessageScreen(
                         title = stringResource(R.string.search_coming_title),
                         icon = DeskIcons.Search,
