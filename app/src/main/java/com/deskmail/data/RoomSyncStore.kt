@@ -76,10 +76,17 @@ class RoomSyncStore(db: DeskMailDatabase) : SyncStore {
         val rows = flags.map { remote ->
             var seen = remote.flags.seen
             var flagged = remote.flags.flagged
+            var answered = remote.flags.answered
+            var forwarded = remote.flags.forwarded
             for (mark in waiting[remote.uid].orEmpty()) {
-                if (mark.kind == PendingOpEntity.SEEN) seen = mark.value else flagged = mark.value
+                when (mark.kind) {
+                    PendingOpEntity.SEEN -> seen = mark.value
+                    PendingOpEntity.FLAGGED -> flagged = mark.value
+                    PendingOpEntity.ANSWERED -> answered = mark.value
+                    PendingOpEntity.FORWARDED -> forwarded = mark.value
+                }
             }
-            FlagRow(remote.uid, seen, flagged, remote.flags.answered, remote.flags.forwarded, remote.flags.draft)
+            FlagRow(remote.uid, seen, flagged, answered, forwarded, remote.flags.draft)
         }
         messages.updateFlags(folderId, rows)
     }

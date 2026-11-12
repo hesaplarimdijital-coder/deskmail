@@ -29,7 +29,7 @@ class ImapEditor internal constructor(
 
     override fun mark(uids: List<Long>, mark: Mark, value: Boolean) = connection.call("mark") {
         val messages = present(uids)
-        if (messages.isNotEmpty()) folder.setFlags(messages, Flags(flag(mark)), value)
+        if (messages.isNotEmpty()) folder.setFlags(messages, flags(mark), value)
     }
 
     override fun move(uids: List<Long>, target: String): List<Moved> = connection.call("move to $target") {
@@ -106,8 +106,15 @@ class ImapEditor internal constructor(
     private fun present(uids: List<Long>): Array<Message> =
         folder.getMessagesByUID(uids.toLongArray()).orEmpty().filterNotNull().toTypedArray()
 
-    private fun flag(mark: Mark): Flags.Flag = when (mark) {
-        Mark.Seen -> Flags.Flag.SEEN
-        Mark.Flagged -> Flags.Flag.FLAGGED
+    private fun flags(mark: Mark): Flags = when (mark) {
+        Mark.Seen -> Flags(Flags.Flag.SEEN)
+        Mark.Flagged -> Flags(Flags.Flag.FLAGGED)
+        Mark.Answered -> Flags(Flags.Flag.ANSWERED)
+        // no flag of the protocol's own: the keyword mail programs agree on (RFC 5788)
+        Mark.Forwarded -> Flags(FORWARDED)
+    }
+
+    private companion object {
+        const val FORWARDED = "\$Forwarded"
     }
 }

@@ -18,6 +18,8 @@ coroutines = "1.11.0"
 ksp = "2.3.13"
 room = "3.0.3"
 sqlite = "2.7.1"
+# Sends what waits in the outbox when there is a network, also after the app was closed.
+work = "2.12.0"
 junit = "4.13.2"
 # A mail server inside the tests: IMAP and SMTP on a free local port.
 greenmail = "2.1.15"
@@ -40,6 +42,7 @@ coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-androi
 room-runtime = { module = "androidx.room3:room3-runtime", version.ref = "room" }
 room-compiler = { module = "androidx.room3:room3-compiler", version.ref = "room" }
 sqlite-framework = { module = "androidx.sqlite:sqlite-framework", version.ref = "sqlite" }
+work-runtime = { module = "androidx.work:work-runtime", version.ref = "work" }
 junit = { module = "junit:junit", version.ref = "junit" }
 greenmail = { module = "com.icegreen:greenmail", version.ref = "greenmail" }
 robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }

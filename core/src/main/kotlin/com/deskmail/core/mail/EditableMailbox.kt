@@ -3,8 +3,11 @@ package com.deskmail.core.mail
 import java.io.Closeable
 import java.io.File
 
-/** A mark on a message that its reader sets and clears. */
-enum class Mark { Seen, Flagged }
+/**
+ * A mark on a message: read and starred, which its reader sets and clears, and answered and
+ * forwarded, which the app sets when a reply or a forwarded copy has been sent.
+ */
+enum class Mark { Seen, Flagged, Answered, Forwarded }
 
 /**
  * A message that was moved: its UID where it was, and where the server tells (UIDPLUS) the UID it

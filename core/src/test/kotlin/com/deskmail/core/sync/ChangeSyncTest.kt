@@ -51,6 +51,17 @@ class ChangeSyncTest {
     }
 
     @Test
+    fun aMessageThatWasAnsweredOrForwardedIsMarkedSo() {
+        val answered = inbox.deliver("soru", now)
+        val forwarded = inbox.deliver("plan", now)
+
+        push(change(answered, PendingChange.Kind.Answered, value = true), change(forwarded, PendingChange.Kind.Forwarded, value = true))
+
+        assertEquals(MessageFlags(answered = true), inbox.flags(answered))
+        assertEquals(MessageFlags(forwarded = true), inbox.flags(forwarded))
+    }
+
+    @Test
     fun aMoveSaysWhereTheMessageWent() {
         archive.deliver("eski", now)
         val uid = inbox.deliver("plan", now)

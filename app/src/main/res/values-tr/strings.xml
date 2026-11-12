@@ -5,6 +5,7 @@
     <string name="nav_starred">Yıldızlı</string>
     <string name="nav_folders">Klasörler</string>
     <string name="nav_search">Ara</string>
+    <string name="nav_outbox">Giden kutusu</string>
 
     <string name="folder_inbox">Gelen Kutusu</string>
     <string name="folder_drafts">Taslaklar</string>
@@ -89,6 +90,48 @@
     <string name="detail_date">Tarih</string>
     <string name="detail_account">Hesap</string>
     <string name="detail_folder">Klasör</string>
+
+    <string name="action_reply">Yanıtla</string>
+    <string name="action_reply_all">Tümünü yanıtla</string>
+    <string name="action_forward">İlet</string>
+    <string name="action_send">Gönder</string>
+    <string name="action_attach">Dosya ekle</string>
+    <string name="action_discard">Taslağı sil</string>
+    <string name="action_close_compose">Kapat (taslak kalır)</string>
+    <string name="compose_title">Yeni ileti</string>
+    <string name="compose_from">Kimden</string>
+    <string name="compose_to">Kime</string>
+    <string name="compose_cc">Bilgi (Cc)</string>
+    <string name="compose_bcc">Gizli (Bcc)</string>
+    <string name="compose_more_recipients">Bilgi ve gizli alıcı</string>
+    <string name="compose_subject">Konu</string>
+    <string name="compose_body">İleti</string>
+    <string name="compose_body_hint">İletini yaz</string>
+    <string name="compose_recipients_hint">ad@ornek.com, virgülle ayır</string>
+    <string name="compose_no_recipients">Kime gideceğini yaz.</string>
+    <string name="compose_bad_addresses">Adres değil: %1$s</string>
+    <string name="compose_file_remove">Çıkar</string>
+    <string name="compose_attach_failed">Dosya eklenemedi.</string>
+    <string name="compose_sending">Gönderiliyor…</string>
+    <string name="compose_too_late">Geri alınamadı: ileti çoktan gitti.</string>
+    <string name="compose_discarded">Taslak silindi.</string>
+    <string name="compose_kept">Taslak Giden kutusu\'nda duruyor.</string>
+    <string name="compose_no_account">Önce bir hesap ekle.</string>
+    <string name="compose_gone">Kaynak ileti artık yok.</string>
+    <string name="compose_wrote">%1$s tarihinde %2$s yazdı:</string>
+    <string name="compose_forwarded">---------- İletilen ileti ----------</string>
+    <string name="outbox_empty_title">Giden kutusu boş</string>
+    <string name="outbox_empty_text">Yazmakta olduğun, gönderilmeyi bekleyen ve gönderilemeyen iletiler burada durur.</string>
+    <string name="outbox_draft">Taslak</string>
+    <string name="outbox_waiting">Gönderilecek</string>
+    <string name="outbox_failed">Gönderilemedi</string>
+    <string name="outbox_no_recipients">(alıcı yok)</string>
+    <string name="outbox_interrupted">Gönderim yarıda kesildi; ileti gitmiş olabilir. Yeniden göndermeden önce Gönderilmiş klasörüne bak.</string>
+    <string name="outbox_send_now">Şimdi gönder</string>
+    <string name="outbox_retry">Yeniden dene</string>
+    <string name="outbox_edit">Düzenle</string>
+    <string name="outbox_take_back">Geri al ve düzenle</string>
+    <string name="outbox_delete">Sil</string>
 
     <string name="menu_file">Dosya</string>
     <string name="menu_edit">Düzen</string>

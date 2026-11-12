@@ -260,6 +260,24 @@ class MailSync(
     }
 
     /**
+     * What became of adding a message to a folder.
+     *
+     * @param uid the UID the message has there; 0 where the server does not tell, or it failed.
+     */
+    data class Appended(val outcome: Outcome, val uid: Long = 0)
+
+    /**
+     * Adds a message the user wrote to a folder of its account: the copy of what was sent, or a
+     * draft that is put away. [message] is the message as it travels.
+     */
+    suspend fun append(accountId: Long, folderId: Long, message: File, seen: Boolean, draft: Boolean): Appended {
+        val folder = db.folders().byId(folderId) ?: return Appended(Outcome.Gone)
+        var uid = 0L
+        val outcome = connected(accountId) { _, remote -> remote.edit(folder.path).use { uid = it.append(message, seen, draft) } }
+        return Appended(outcome, uid)
+    }
+
+    /**
      * Signs in to the account's server and runs [work] there. How it went is written on the
      * account: all well, sign in again, or what failed.
      */
@@ -320,6 +338,8 @@ internal fun DueChange.toChange(): PendingChange? {
     val what = when (kind) {
         PendingOpEntity.SEEN -> PendingChange.Kind.Seen
         PendingOpEntity.FLAGGED -> PendingChange.Kind.Flagged
+        PendingOpEntity.ANSWERED -> PendingChange.Kind.Answered
+        PendingOpEntity.FORWARDED -> PendingChange.Kind.Forwarded
         PendingOpEntity.MOVE -> PendingChange.Kind.Move
         PendingOpEntity.EXPUNGE -> PendingChange.Kind.Expunge
         // written by a newer version: nothing this one knows how to say

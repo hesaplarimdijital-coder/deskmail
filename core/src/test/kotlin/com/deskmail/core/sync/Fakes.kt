@@ -95,7 +95,15 @@ class FakeFolder(val path: String, var uidValidity: Long = 7, private val condst
             ask("mark $mark=$value $uids")
             for (uid in uids) {
                 val flags = entries[uid]?.header?.flags ?: continue
-                setFlags(uid, if (mark == Mark.Seen) flags.copy(seen = value) else flags.copy(flagged = value))
+                setFlags(
+                    uid,
+                    when (mark) {
+                        Mark.Seen -> flags.copy(seen = value)
+                        Mark.Flagged -> flags.copy(flagged = value)
+                        Mark.Answered -> flags.copy(answered = value)
+                        Mark.Forwarded -> flags.copy(forwarded = value)
+                    },
+                )
             }
         }
 

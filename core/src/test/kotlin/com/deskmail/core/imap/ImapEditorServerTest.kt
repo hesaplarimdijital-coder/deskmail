@@ -53,6 +53,23 @@ class ImapEditorServerTest {
     }
 
     @Test
+    fun answeredAndForwardedAreMarksTheServerKeeps() {
+        val plan = server.deliver("plan", monday)
+
+        edit { editor ->
+            editor.mark(listOf(plan), Mark.Answered, true)
+            editor.mark(listOf(plan), Mark.Forwarded, true)
+        }
+
+        // read back as the sync reads them
+        val flags = ImapConnection.open(server.imap, server.credentials).use { connection ->
+            connection.open("INBOX").use { it.flags(listOf(plan)).single().flags }
+        }
+        assertTrue(flags.answered)
+        assertTrue(flags.forwarded)
+    }
+
+    @Test
     fun aMessageIsMovedAndTheServerSaysWhereItWent() {
         server.deliver("newsletter", monday, folder = "Arşiv")
         val plan = server.deliver("plan", monday, flags = Flags(Flags.Flag.SEEN))
