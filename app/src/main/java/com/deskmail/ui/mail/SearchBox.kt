@@ -4,11 +4,15 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import com.deskmail.R
@@ -28,6 +32,7 @@ import kotlinx.coroutines.delay
 fun SearchBox(ui: MailUiState, modifier: Modifier = Modifier) {
     val dimens = DeskTheme.dimens
     val focus = remember { FocusRequester() }
+    var focused by remember { mutableStateOf(false) }
     LaunchedEffect(ui.searchText) {
         if (ui.searchText != ui.searchQuery) {
             delay(SEARCH_AFTER_MS)
@@ -36,9 +41,14 @@ fun SearchBox(ui: MailUiState, modifier: Modifier = Modifier) {
     }
     LaunchedEffect(ui.searchFocusAsked) {
         if (ui.searchFocusAsked || ui.searchText.isEmpty()) {
-            // once the field has its place in the window
-            withFrameNanos { }
-            runCatching { focus.requestFocus() }
+            // Once the field has its place in the window. A screen that is only just being drawn
+            // may not be ready to give the focus at its first frame: the field is asked for a
+            // moment, until it has it.
+            for (attempt in 1..FOCUS_TRIES) {
+                withFrameNanos { }
+                if (focused) break
+                runCatching { focus.requestFocus() }
+            }
             ui.searchFocusAsked = false
         }
     }
@@ -50,6 +60,7 @@ fun SearchBox(ui: MailUiState, modifier: Modifier = Modifier) {
             .padding(horizontal = dimens.pagePadding)
             .padding(top = dimens.gapS)
             .focusRequester(focus)
+            .onFocusChanged { focused = it.isFocused }
             .testTag(MailTags.SEARCH),
         hint = stringResource(R.string.search_hint),
         onSearch = { ui.searchQuery = it },
@@ -58,3 +69,6 @@ fun SearchBox(ui: MailUiState, modifier: Modifier = Modifier) {
 
 /** What is typed is looked for once the typing has paused this long. */
 private const val SEARCH_AFTER_MS = 250L
+
+/** For how many frames the field is asked to take the focus. */
+private const val FOCUS_TRIES = 10

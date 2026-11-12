@@ -4,6 +4,8 @@ import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsFocused
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.isSelectable
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
@@ -54,9 +56,17 @@ class SearchTest {
         compose.waitForIdle()
     }
 
+    /** The search tab, as a thumb reaches it from the inbox: the screen says what to type, and its field is ready for it. */
     @Test
     fun theScreenOpensReadyToBeTypedInto() {
-        launch()
+        val prefs = testPrefs()
+        val settings = testSettings()
+        compose.setContent { TestApp(mail, prefs, settings, ui) }
+        compose.waitForIdle()
+
+        compose.onNode(hasText("Ara") and isSelectable()).performClick()
+        compose.waitForIdle()
+
         compose.onNodeWithText("Ne arıyorsun?").assertIsDisplayed()
         compose.onNodeWithTag(MailTags.SEARCH).assertIsFocused()
     }
