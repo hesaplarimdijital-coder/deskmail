@@ -27,6 +27,10 @@ kitten istenenler `docs/KIT-ISTEKLERI.md`'de durur.
 | Geri alma | Taşıma ve silme sunucuya hemen söylenmez: bildirim ekrandayken (ve en çok 15 saniye) bekler; geri almak kuyruktan çıkarmaktır. Bildirim gidince söylenir. Sonradan geri alma (Ctrl+Z) ters yönde yeni bir taşımadır ve iletinin yeni UID'sinin bilinmesine bağlıdır. Kalıcı silme söylendikten sonra geri alınamaz. |
 | Arşiv | Hesabın `\Archive` klasörü; yoksa `\All` (Gmail: "Tüm postalar"a taşımak, Gelen etiketini kaldırmaktır). İkisi de yoksa arşivle düğmesi görünmez. |
 | Ekler | İstenince iner (`BODY.PEEK[parça]`, okundukça akar), önbellek dizininde bir hafta kalır. Açma ve paylaşma FileProvider ile, kaydetme Storage Access Framework ile; depolama izni yok. |
+| Giden kutusu ve gönderim | Yazılan ileti `outbox` tablosundadır: taslak, bekliyor, gönderiliyor, gönderilemedi. Yazılan metin duruma dokunmadan ve yalnızca ileti yazılabilir durumdayken kaydedilir; durum geçişleri tek sorguluk koşullu güncellemelerdir, böylece geç gelen bir kayıt, sıraya alınmış iletiyi ne değiştirir ne geri getirir. Gönderimi WorkManager yapar (tek adlı iş, ağ koşulu, yenisi eskisinin yerine geçer; iş hep en erken bekleyen iletinin zamanına kurulur). Sunucuya ulaşılamazsa ileti bekler ve iş artan aralıklarla yeniden dener; sunucu reddederse ileti "gönderilemedi" olur. Sunucuya verilmeye başlanan ileti yarıda bırakılmaz; uygulama o sırada ölürse ileti bir sonraki çalışmada "gönderilemedi (yarıda kesildi)" olur ve kendiliğinden ikinci kez gönderilmez. Bu bakış her çalışmada bir kez, o çalışma bir şey göndermeden önce yapılır. |
+| Gönderiyi geri alma | Gönder, iletiyi `sendAfter = şimdi + süre` ile sıraya koyar (süre ayarlardan 5, 10, 15 sn). Pencere o süre boyunca "Geri al"lı bildirimi gösterir; geri almak sıradan çıkarmaktır. Bildirim giderse (süre doldu, kaydırıldı, yerine başka bildirim geldi) pencere iletiyi hemen gönderttirir; pencere kapanırsa ileti süresi dolunca kendiliğinden gider. |
+| Gönderilenin kopyası | Sağlayıcı tablosu söyler (`savesSentItself`): Gmail ve Outlook kendileri kaydeder, uygulama yazmaz. Ötekilerde gönderilen ileti, gizli alıcılarıyla, Gönderilmiş klasörüne APPEND edilir. |
+| İletinin yazılması | Gönderilen ileti uygulamanın kendi yazıcısıyla yazılır (`MessageWriter`: RFC 5322 başlıkları, RFC 2047 sözcükleri, quoted-printable metin, base64 ekler, RFC 2231 dosya adları) ve SMTP'ye dosyadan akıtılır. Angus Mail'in `MimeMessage` kurucuları içerik işleyici tablosuna dayanır; o tablo jar içindeki kaynak dosyalarıdır ve Android paketlemesine güvenilmez. Yalnızca düz metin; biçimli yazma Aşama 2'de. |
 | Kit eksikleri | Kite yazılır; uygulamada yamanmaz (`docs/KIT-ISTEKLERI.md`). |
 | GitHub | PR'ları CI yeşilken Claude birleştirir. Etiketi ve sürümü Barış açar (Releases'ta `main` üzerinde): Claude'un oturumu etiket ve sürüm açamıyor (12 Kasım 2026'da denendi, ikisi de reddedildi). Force-push ve geçmişi yeniden yazma yok. |
 
@@ -57,8 +61,11 @@ Room 3; şema dışa aktarılır, v1'den itibaren göç testi vardır.
 - `message_fts`: FTS4; konu, kişiler ve gövde Türkçe harfler katlanarak yazılır.
 - `pending_op` (şema 2): yerelde yapılan işlemlerin kuyruğu; ileti, tür (Seen, Flagged, Move, Expunge), değer, hedef
   klasör, en erken gönderim zamanı. Çevrimdışı çalışma ve geri al buradan.
-- `outbox`: taslak ve giden; `send_after` ile gönderiyi geri alma.
-- `address`: geçmiş iletilerdeki adresler (alıcı önerisi).
+- `outbox`, `outbox_file` (şema 3): yazılan iletiler ve dosyaları. Durum (Draft, Queued, Sending, Failed), yazılan
+  alanlar, Message-ID, yanıtlanan iletinin kimliği ve dizisi, kaynak ileti (gönderilince yanıtlandı/iletildi diye
+  işaretlenir), `sendAfter` (gönderiyi geri alma süresi), sunucunun hata yanıtı. Dosyaların kopyası uygulamanın
+  kendi deposunda durur (önbellekte değil: ileti gidene kadar orada olmalı).
+- Ayrı bir adres tablosu yok: alıcı önerileri en yeni 500 iletinin adreslerinden okunur.
 
 ## Senkron
 
@@ -158,8 +165,10 @@ kitin metniyle Ctrl+Shift+N'e bağlar. Tek tuşlar ve Ctrl+Z, odak bir yazı ala
 açıkken çalışmaz.
 
 - **alpha.1'de olanlar:** Ctrl+N (yer tutucu), Ctrl+Shift+N, Ctrl+K, Ctrl+,, Ctrl+B, Ctrl+/, J/K, S, U,
-  Esc, /. Kalanlar işleriyle birlikte gelir: F5 hesaplarla geldi (alpha.2); E, V, Delete ve Ctrl+Z ileti
-  işlemleriyle (alpha.3); R/A/F ve Ctrl+Enter yazmayla.
+  Esc, /. Kalanlar işleriyle birlikte geldi: F5 hesaplarla (alpha.2); E, V, Delete ve Ctrl+Z ileti
+  işlemleriyle, R/A/F ve Ctrl+Enter yazmayla (alpha.3). Ctrl+Z önce az önce gönderilen iletiyi geri alır
+  (bildirimi ekrandayken), sonra son ileti işlemini. Yazma ekranı öndeyken listenin tek tuşları çalışmaz;
+  Esc yazma ekranını kapatır.
 - **Tuşlar nereden geçer:** etkinlik her tuşu odaktaki görünümden önce `KeyRouter`'a sorar. Yazı
   yazılıp yazılmadığı iki yerden okunur: odaktaki görünüm bir metin düzenleyici mi
   (`View.onCheckIsTextEditor`), ve Compose'un kendi ekran tarifinde odakta bir yazı alanı var mı.
@@ -187,9 +196,12 @@ o ön sürümün ilk PR'ında artar, sonraki PR'lar CHANGELOG'da aynı başlığ
    arşivle, sil, taşı, geri al · sağ tık ve uzun basma menüsü · ekleri açma, kaydetme, paylaşma · tek
    harfli kısayollar (E, V, Delete) ve Ctrl+Z.
    - **Kalan (ayrı PR):** çoklu seçim ve toplu işlem · geniş pencerede klasöre sürükle bırak.
-5. **Yazma ve gönderme:** ileti oluşturma ve SMTP · giden kutusu, gönderim işi, gönderiyi
-   geri alma · yazma ekranı · yanıtla, tümünü yanıtla, ilet · taslaklar · gönderileni kaydetme kuralı ·
-   alıcı önerileri ve Contact Picker · `mailto:`, paylaşım, DeX'te ayrı pencere.
+5. **Yazma ve gönderme (alpha.3):** iletinin yazılması ve SMTP · giden kutusu (şema 3 ve göç testi),
+   gönderim işi (WorkManager), gönderiyi geri alma ve süresi · yazma ekranı · yanıtla, tümünü yanıtla, ilet ·
+   dosya ekleme · cihazda taslaklar · gönderileni kaydetme kuralı · yanıtlandı ve iletildi işaretleri ·
+   hesabın adı ve imzası · R, A, F ve Ctrl+Enter.
+   - **Kalan (ayrı PR):** taslakların sunucudaki Taslaklar klasörüne kaydı · alıcı önerilerinin arayüzü
+     (kit isteği 4) ve Contact Picker · `mailto:` ve paylaşım · DeX'te yazmanın ayrı pencerede açılması.
 6. **Arama:** FTS dizini ve Türkçe katlama · Ara ekranı · sunucu araması · palet ve "/".
 7. **Bildirimler:** IDLE döngüsü · ön plan hizmeti · alarm, uyandırma kilidi, ağ değişimi ·
    açılışta ve güncellemeden sonra başlatma · yeni posta bildirimi ve düğmeleri · periyodik yedek yol ·

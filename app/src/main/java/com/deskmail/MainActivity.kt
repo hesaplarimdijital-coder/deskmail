@@ -55,6 +55,7 @@ class MainActivity : ComponentActivity() {
                 mail = deskMail.mail,
                 settings = deskMail.settings,
                 log = deskMail.log,
+                composer = deskMail.composer,
                 accounts = deskMail.accounts,
                 ui = state.mail,
                 settingsUi = state.settings,

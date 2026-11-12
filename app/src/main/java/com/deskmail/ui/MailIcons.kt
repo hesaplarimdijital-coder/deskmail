@@ -44,6 +44,34 @@ object MailIcons {
         )
     }
 
+    /** An arrow that turns back: reply. */
+    val Reply: ImageVector by lazy {
+        DeskIcons.build(
+            "Reply",
+            DeskIcons.stroke("M6.5 4 2.5 8l4 4"),
+            DeskIcons.stroke("M2.5 8h6.5a4.5 4.5 0 0 1 4.5 4.5"),
+        )
+    }
+
+    /** Two arrows that turn back: reply to all. */
+    val ReplyAll: ImageVector by lazy {
+        DeskIcons.build(
+            "ReplyAll",
+            DeskIcons.stroke("M5.5 4 1.5 8l4 4"),
+            DeskIcons.stroke("M9 4 5 8l4 4"),
+            DeskIcons.stroke("M5 8h5a4 4 0 0 1 4 4.5"),
+        )
+    }
+
+    /** An arrow that turns onward: forward. */
+    val ForwardMail: ImageVector by lazy {
+        DeskIcons.build(
+            "ForwardMail",
+            DeskIcons.stroke("M9.5 4l4 4-4 4"),
+            DeskIcons.stroke("M13.5 8H7a4.5 4.5 0 0 0-4.5 4.5"),
+        )
+    }
+
     val Star: ImageVector by lazy { DeskIcons.build("Star", DeskIcons.stroke(STAR)) }
 
     val StarFilled: ImageVector by lazy { DeskIcons.build("StarFilled", DeskIcons.fill(STAR), DeskIcons.stroke(STAR)) }

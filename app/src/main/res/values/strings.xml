@@ -8,6 +8,7 @@
     <string name="nav_starred">Starred</string>
     <string name="nav_folders">Folders</string>
     <string name="nav_search">Search</string>
+    <string name="nav_outbox">Outbox</string>
 
     <!-- Folders by what they are for; the server's own names differ from provider to provider -->
     <string name="folder_inbox">Inbox</string>
@@ -100,6 +101,50 @@
     <string name="detail_account">Account</string>
     <string name="detail_folder">Folder</string>
 
+    <!-- Writing a message, and the outbox -->
+    <string name="action_reply">Reply</string>
+    <string name="action_reply_all">Reply to all</string>
+    <string name="action_forward">Forward</string>
+    <string name="action_send">Send</string>
+    <string name="action_attach">Attach a file</string>
+    <string name="action_discard">Delete the draft</string>
+    <string name="action_close_compose">Close (the draft is kept)</string>
+    <string name="compose_title">New message</string>
+    <string name="compose_from">From</string>
+    <string name="compose_to">To</string>
+    <string name="compose_cc">Cc</string>
+    <string name="compose_bcc">Bcc</string>
+    <string name="compose_more_recipients">Cc and Bcc</string>
+    <string name="compose_subject">Subject</string>
+    <string name="compose_body">Message</string>
+    <string name="compose_body_hint">Write your message</string>
+    <string name="compose_recipients_hint">name@example.com, separated by commas</string>
+    <string name="compose_no_recipients">Say who it goes to.</string>
+    <string name="compose_bad_addresses">Not an address: %1$s</string>
+    <string name="compose_file_remove">Remove</string>
+    <string name="compose_attach_failed">The file could not be attached.</string>
+    <string name="compose_sending">Sending…</string>
+    <string name="compose_too_late">Could not be undone: the message has left.</string>
+    <string name="compose_discarded">The draft was deleted.</string>
+    <string name="compose_kept">The draft is in the Outbox.</string>
+    <string name="compose_no_account">Add an account first.</string>
+    <string name="compose_gone">The original message is no longer there.</string>
+    <string name="compose_wrote">On %1$s, %2$s wrote:</string>
+    <string name="compose_forwarded">---------- Forwarded message ----------</string>
+    <string name="outbox_empty_title">The outbox is empty</string>
+    <string name="outbox_empty_text">What you are writing, what waits to be sent and what could not be sent is kept here.</string>
+    <string name="outbox_draft">Draft</string>
+    <string name="outbox_waiting">To be sent</string>
+    <string name="outbox_failed">Could not be sent</string>
+    <string name="outbox_no_recipients">(no recipients)</string>
+    <string name="outbox_interrupted">Sending was cut short; the message may have left. Look into Sent before you send it again.</string>
+    <string name="outbox_send_now">Send now</string>
+    <string name="outbox_retry">Try again</string>
+    <string name="outbox_edit">Edit</string>
+    <string name="outbox_take_back">Take back and edit</string>
+    <string name="outbox_delete">Delete</string>
+    <string name="outbox_unreachable">The server could not be reached. The message goes by itself once it can be.</string>
+
     <!-- The menu bar and the shortcut table -->
     <string name="menu_file">File</string>
     <string name="menu_edit">Edit</string>
@@ -118,7 +163,6 @@
     <string name="palette_group_messages">Messages</string>
 
     <!-- A command the pre-release shows the place of, by its name -->
-    <string name="not_in_this_version">Not in this pre-release yet: %1$s</string>
 
     <string name="search_coming_title">Search is not here yet</string>
     <string name="search_coming_text">It comes with one of the next pre-releases.</string>
@@ -243,12 +287,24 @@
     <string name="account_sync_now">Sync now</string>
     <string name="account_reconnect_note">Enter the password again (for Gmail: an app password). Everything else about the account stays.</string>
     <string name="account_reconnected">Signed in again.</string>
+    <string name="account_writing">Writing</string>
+    <string name="account_writing_note">The name the people you write to see beside your address, and what your messages end with.</string>
+    <string name="account_sender_name">Your name</string>
+    <string name="account_signature">Signature</string>
+    <string name="account_writing_save">Save</string>
+    <string name="account_writing_saved">Saved.</string>
     <string name="account_remove">Remove the account</string>
     <string name="account_remove_note">The account and what is kept of its mail leave this device. The mail stays on the server.</string>
     <string name="account_remove_title">Remove %1$s?</string>
     <string name="account_removed">%1$s removed.</string>
 
+    <!-- Settings › Writing -->
+    <string name="settings_writing">Writing</string>
+    <string name="settings_undo_send">Time to take a message back</string>
+    <string name="settings_undo_send_note">After “Send” a message waits this long before it leaves; until then “Undo” takes it back.</string>
+    <string name="settings_undo_send_seconds">%1$d s</string>
+
     <string name="settings_about">About</string>
     <string name="settings_version">Version</string>
-    <string name="settings_about_note">A pre-release that reads your mail. Marking, sending and notifications arrive with the next ones.</string>
+    <string name="settings_about_note">A pre-release that reads, files and sends your mail. Search and notifications arrive with the next ones.</string>
 </resources>

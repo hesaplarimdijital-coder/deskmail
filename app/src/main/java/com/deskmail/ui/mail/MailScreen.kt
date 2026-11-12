@@ -25,6 +25,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.deskmail.R
 import com.deskmail.mail.AccountState
+import com.deskmail.mail.DraftKind
 import com.deskmail.mail.MailAccount
 import com.deskmail.mail.MailContent
 import com.deskmail.mail.MailMessage
@@ -80,6 +81,7 @@ import desktopkit.theme.InputMode
  * @param title the view's name, for the header of a large window.
  * @param onBack set on a phone for a folder opened from the Folders list: the top bar gets a back arrow.
  * @param onCompose "New message"; the phone shows it as the accent icon of the top bar.
+ * @param onWrite begins a reply to a message, or sends it on; null where nothing can be written.
  * @param actions archives, moves and deletes messages, and says what came of it.
  * @param files opens, saves and shares the files of messages.
  * @param onAddAccount where "Add an account" leads while there is none.
@@ -97,6 +99,7 @@ fun MailScreen(
     prefs: DeskPreferences,
     onBack: (() -> Unit)?,
     onCompose: () -> Unit,
+    onWrite: ((DraftKind, MailMessage) -> Unit)?,
     actions: MailActions,
     files: AttachmentHandler,
     onAddAccount: () -> Unit,
@@ -131,6 +134,9 @@ fun MailScreen(
     val archiveLabel = stringResource(R.string.action_archive)
     val moveLabel = stringResource(R.string.action_move)
     val deleteLabel = stringResource(R.string.action_delete)
+    val replyLabel = stringResource(R.string.action_reply)
+    val replyAllLabel = stringResource(R.string.action_reply_all)
+    val forwardLabel = stringResource(R.string.action_forward)
     // What can be done with a message from its row: a long press, a right click, the Menu key.
     val rowMenu: (MailMessage) -> List<MenuEntry> = { message ->
         buildList {
@@ -138,6 +144,12 @@ fun MailScreen(
             add(MenuEntry.Item(if (message.unread) markReadLabel else markUnreadLabel, { mail.toggleUnread(message.id) }, shortcut = "U"))
             add(MenuEntry.Item(if (message.starred) unstarLabel else starLabel, { mail.toggleStarred(message.id) }, shortcut = "S"))
             add(MenuEntry.Separator)
+            if (onWrite != null) {
+                add(MenuEntry.Item(replyLabel, { onWrite(DraftKind.Reply, message) }, shortcut = "R", icon = MailIcons.Reply))
+                add(MenuEntry.Item(replyAllLabel, { onWrite(DraftKind.ReplyAll, message) }, shortcut = "A", icon = MailIcons.ReplyAll))
+                add(MenuEntry.Item(forwardLabel, { onWrite(DraftKind.Forward, message) }, shortcut = "F", icon = MailIcons.ForwardMail))
+                add(MenuEntry.Separator)
+            }
             if (archivable(mail, message)) add(MenuEntry.Item(archiveLabel, { actions.archive(listOf(message.id)) }, shortcut = "E", icon = MailIcons.Archive))
             if (mail.moveTargets(message).isNotEmpty()) add(MenuEntry.Item(moveLabel, { ui.moving = message }, shortcut = "V", icon = MailIcons.MoveTo))
             add(MenuEntry.Item(deleteLabel, { actions.delete(listOf(message.id)) }, shortcut = "Delete", icon = DeskIcons.Delete, destructive = true))
@@ -212,6 +224,7 @@ fun MailScreen(
             showImages = ui.showsImages(message.id),
             onToggleStar = { mail.toggleStarred(message.id) },
             onToggleUnread = { mail.toggleUnread(message.id) },
+            onWrite = onWrite?.let { write -> { kind -> write(kind, message) } },
             onArchive = if (archivable(mail, message)) ({ actions.archive(listOf(message.id)) }) else null,
             onDelete = { actions.delete(listOf(message.id)) },
             onMove = if (mail.moveTargets(message).isNotEmpty()) ({ ui.moving = message }) else null,

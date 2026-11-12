@@ -11,6 +11,8 @@ import com.icegreen.greenmail.util.GreenMail
 import com.icegreen.greenmail.util.GreenMailUtil
 import com.icegreen.greenmail.util.ServerSetup
 import jakarta.mail.Flags
+import jakarta.mail.Multipart
+import jakarta.mail.internet.MimeMessage
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Runnable
 import org.junit.rules.ExternalResource
@@ -53,11 +55,18 @@ class HeldDispatcher : CoroutineDispatcher() {
 }
 
 /**
- * An IMAP server for a test (GreenMail) on a free local port, with one account. Folders nest
- * with a dot. Messages are written here, in the test, as a mail program would send them.
+ * A mail server for a test (GreenMail) on free local ports, with one account: IMAP to read from
+ * and SMTP to send through. Folders nest with a dot. The messages a test reads are written here,
+ * as a mail program would send them; what the app sends through it lands in the inbox of whoever
+ * it was sent to ([inboxOf]).
  */
 class TestImapServer : ExternalResource() {
-    private val greenMail = GreenMail(arrayOf(ServerSetup(0, LOCALHOST, ServerSetup.PROTOCOL_IMAP)))
+    private val greenMail = GreenMail(
+        arrayOf(
+            ServerSetup(0, LOCALHOST, ServerSetup.PROTOCOL_IMAP),
+            ServerSetup(0, LOCALHOST, ServerSetup.PROTOCOL_SMTP),
+        ),
+    )
     private var counter = 0
 
     lateinit var user: GreenMailUser
@@ -65,8 +74,10 @@ class TestImapServer : ExternalResource() {
 
     val imap: ServerAddress get() = ServerAddress(LOCALHOST, greenMail.imap.port, Security.None)
 
-    /** The account's settings as the app would have found them; mail is not sent in these tests. */
-    val settings: MailSettings get() = MailSettings(imap, ServerAddress(LOCALHOST, 1, Security.None), USER, AuthKind.Password)
+    val smtp: ServerAddress get() = ServerAddress(LOCALHOST, greenMail.smtp.port, Security.None)
+
+    /** The account's settings as the app would have found them. */
+    val settings: MailSettings get() = MailSettings(imap, smtp, USER, AuthKind.Password)
 
     val credentials: Credentials get() = Credentials.Password(USER, PASSWORD)
 
@@ -132,6 +143,15 @@ class TestImapServer : ExternalResource() {
         folder(folder).setFlags(Flags(flag), value, uid, null, false)
     }
 
+    /** What the app sent to [address] through this server: the inbox of somebody the test has no account for. */
+    fun inboxOf(address: String): List<MimeMessage> {
+        val recipient = greenMail.userManager.getUserByEmail(address) ?: return emptyList()
+        return greenMail.managers.imapHostManager.getInbox(recipient).messages.map { it.mimeMessage }
+    }
+
+    /** A message as a folder holds it; null for one it does not hold. */
+    fun message(uid: Long, folder: String = "INBOX"): MimeMessage? = folder(folder).getMessage(uid)?.mimeMessage
+
     /** The UIDs of the messages a folder holds, ascending. */
     fun uids(folder: String = "INBOX"): List<Long> = folder(folder).messageUids.sorted()
 
@@ -171,6 +191,20 @@ class TestImapServer : ExternalResource() {
         /** A part's content in base64, in lines as mail has them. */
         private fun encoded(text: String): String = Base64.getMimeEncoder(76, "\r\n".toByteArray()).encodeToString(text.toByteArray(Charsets.UTF_8)) + "\r\n"
     }
+}
+
+/** A message's plain text as it was sent. */
+fun MimeMessage.sentText(): String {
+    val whole = content
+    if (whole !is Multipart) return String(inputStream.readBytes(), Charsets.UTF_8)
+    val text = (0 until whole.count).map { whole.getBodyPart(it) }.first { it.fileName == null }
+    return String(text.inputStream.readBytes(), Charsets.UTF_8)
+}
+
+/** The files a message carries as it was sent: each one's name and what is in it. */
+fun MimeMessage.sentFiles(): List<Pair<String, ByteArray>> {
+    val whole = content as? Multipart ?: return emptyList()
+    return (0 until whole.count).map { whole.getBodyPart(it) }.filter { it.fileName != null }.map { it.fileName to it.inputStream.readBytes() }
 }
 
 /** Waits until [check] holds: for what the app does on threads of its own. */

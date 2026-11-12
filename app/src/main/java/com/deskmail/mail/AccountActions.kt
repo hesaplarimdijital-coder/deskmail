@@ -64,6 +64,9 @@ interface AccountActions {
     /** Signs in to an account again with a new password ("Reconnect"), and keeps it when the server takes it. */
     suspend fun reconnect(accountId: Long, password: String): SetupResult
 
+    /** Keeps the name the account's mail is sent under, and what its messages are signed with. */
+    suspend fun saveWriting(accountId: Long, senderName: String, signature: String)
+
     /** Takes the account off the device with everything kept of its mail. The mail stays on its server. */
     suspend fun remove(accountId: Long)
 }

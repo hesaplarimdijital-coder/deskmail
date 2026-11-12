@@ -27,8 +27,10 @@ import kotlinx.coroutines.Dispatchers
         AttachmentEntity::class,
         MessageFts::class,
         PendingOpEntity::class,
+        OutboxEntity::class,
+        OutboxFileEntity::class,
     ],
-    version = 2,
+    version = 3,
     exportSchema = true,
 )
 abstract class DeskMailDatabase : RoomDatabase() {
@@ -39,6 +41,8 @@ abstract class DeskMailDatabase : RoomDatabase() {
     abstract fun messages(): MessageDao
 
     abstract fun pending(): PendingDao
+
+    abstract fun outbox(): OutboxDao
 
     companion object {
         /** The database's file among the app's databases. */
@@ -62,8 +66,29 @@ abstract class DeskMailDatabase : RoomDatabase() {
             }
         }
 
+        /** 0.1.0-alpha.3: the messages that are being written and those waiting to be sent, with their files. */
+        val MIGRATION_2_3: Migration = object : Migration(2, 3) {
+            override suspend fun migrate(connection: SQLiteConnection) {
+                connection.runSql(
+                    "CREATE TABLE IF NOT EXISTS `outbox` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `accountId` INTEGER NOT NULL, " +
+                        "`state` TEXT NOT NULL, `toText` TEXT NOT NULL, `ccText` TEXT NOT NULL, `bccText` TEXT NOT NULL, `subject` TEXT NOT NULL, " +
+                        "`body` TEXT NOT NULL, `messageId` TEXT NOT NULL, `inReplyTo` TEXT NOT NULL, `refs` TEXT NOT NULL, `sourceId` INTEGER NOT NULL, " +
+                        "`sourceKind` TEXT NOT NULL, `draftFolderId` INTEGER NOT NULL, `draftUid` INTEGER NOT NULL, `sendAfter` INTEGER NOT NULL, " +
+                        "`error` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, " +
+                        "FOREIGN KEY(`accountId`) REFERENCES `account`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+                )
+                connection.runSql("CREATE INDEX IF NOT EXISTS `index_outbox_accountId` ON `outbox` (`accountId`)")
+                connection.runSql(
+                    "CREATE TABLE IF NOT EXISTS `outbox_file` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `outboxId` INTEGER NOT NULL, " +
+                        "`name` TEXT NOT NULL, `mimeType` TEXT NOT NULL, `size` INTEGER NOT NULL, `path` TEXT NOT NULL, " +
+                        "FOREIGN KEY(`outboxId`) REFERENCES `outbox`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+                )
+                connection.runSql("CREATE INDEX IF NOT EXISTS `index_outbox_file_outboxId` ON `outbox_file` (`outboxId`)")
+            }
+        }
+
         /** Every step from a version that was released to the one after it, in order. */
-        val MIGRATIONS: Array<Migration> = arrayOf(MIGRATION_1_2)
+        val MIGRATIONS: Array<Migration> = arrayOf(MIGRATION_1_2, MIGRATION_2_3)
 
         /** Runs one statement that answers nothing. */
         private suspend fun SQLiteConnection.runSql(sql: String) {

@@ -226,6 +226,22 @@ class RoomSyncStoreTest {
         assertFalse(db.messages().byUid(inbox, 1)!!.seen)
     }
 
+    /** A reply that was just sent marks its original before the server knows of it: a sync in between leaves the mark. */
+    @Test
+    fun anAnsweredMarkThatWaitsForTheServerIsNotOverwritten() = runBlocking {
+        val inbox = inbox()
+        store.insert(inbox, listOf(message(1, "bir"), message(2, "iki")))
+        val answered = db.messages().byUid(inbox, 1)!!.id
+        val sentOn = db.messages().byUid(inbox, 2)!!.id
+        db.pending().markAnswered(answered, forwarded = false, now = 100)
+        db.pending().markAnswered(sentOn, forwarded = true, now = 100)
+
+        store.updateFlags(inbox, listOf(RemoteFlags(1, MessageFlags()), RemoteFlags(2, MessageFlags())))
+
+        assertTrue(db.messages().byUid(inbox, 1)!!.answered)
+        assertTrue(db.messages().byUid(inbox, 2)!!.forwarded)
+    }
+
     @Test
     fun whatLeavesTheDeviceLeavesTheIndex() = runBlocking {
         val inbox = inbox()

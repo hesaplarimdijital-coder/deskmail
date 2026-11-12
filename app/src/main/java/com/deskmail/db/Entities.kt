@@ -226,10 +226,88 @@ data class PendingOpEntity(
     companion object {
         const val SEEN = "Seen"
         const val FLAGGED = "Flagged"
+
+        /** Set when a reply to the message was sent, [FORWARDED] when it was sent on. */
+        const val ANSWERED = "Answered"
+        const val FORWARDED = "Forwarded"
         const val MOVE = "Move"
         const val EXPUNGE = "Expunge"
     }
 }
+
+/**
+ * A message the user is writing or has handed over to be sent. It is the device's until the
+ * server has taken it; what was sent, and a draft that was put away, are then the server's, as
+ * all mail is (Sent, Drafts).
+ *
+ * @param state [DRAFT] while it is written, [QUEUED] once it was handed over: it is sent when
+ *   [sendAfter] has passed (the time to take it back), and is [SENDING] while the server is
+ *   being handed it. [FAILED] when the server would not take it; [error] says why in the
+ *   server's words.
+ * @param toText what was typed into "To", as it was typed; [ccText] and [bccText] likewise. They
+ *   are read as addresses when the message is sent.
+ * @param messageId the Message-ID the message travels under, the same for every copy of it.
+ * @param inReplyTo the Message-ID it answers and [refs] its thread so far; empty for a new thread.
+ * @param sourceId the message it answers or forwards, by the app's own id, 0 for none; [sourceKind]
+ *   says which ([REPLY], [FORWARD]): that message is marked so once this one is sent.
+ * @param draftFolderId where the draft's copy on the server lies and [draftUid] its UID there; 0 for none.
+ */
+@Entity(
+    tableName = "outbox",
+    foreignKeys = [ForeignKey(entity = AccountEntity::class, parentColumns = ["id"], childColumns = ["accountId"], onDelete = ForeignKey.CASCADE)],
+    indices = [Index(value = ["accountId"])],
+)
+data class OutboxEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val accountId: Long,
+    val state: String,
+    val toText: String,
+    val ccText: String,
+    val bccText: String,
+    val subject: String,
+    val body: String,
+    val messageId: String,
+    val inReplyTo: String,
+    val refs: String,
+    val sourceId: Long,
+    val sourceKind: String,
+    val draftFolderId: Long,
+    val draftUid: Long,
+    val sendAfter: Long,
+    val error: String,
+    val createdAt: Long,
+    val updatedAt: Long,
+) {
+    companion object {
+        const val DRAFT = "Draft"
+        const val QUEUED = "Queued"
+
+        /** Being handed to the server right now. */
+        const val SENDING = "Sending"
+        const val FAILED = "Failed"
+
+        const val REPLY = "Reply"
+        const val FORWARD = "Forward"
+    }
+}
+
+/**
+ * A file that goes with a message that is being written: [path] is its copy in the app's own
+ * storage, taken when it was attached, so that it is still there when the message is sent.
+ */
+@Entity(
+    tableName = "outbox_file",
+    foreignKeys = [ForeignKey(entity = OutboxEntity::class, parentColumns = ["id"], childColumns = ["outboxId"], onDelete = ForeignKey.CASCADE)],
+    indices = [Index(value = ["outboxId"])],
+)
+data class OutboxFileEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val outboxId: Long,
+    val name: String,
+    val mimeType: String,
+    val size: Long,
+    val path: String,
+)
 
 /**
  * The search index: a message's subject, the people on it and its text, folded

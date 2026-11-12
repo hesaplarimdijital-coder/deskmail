@@ -5,8 +5,12 @@ import com.deskmail.core.mail.Mark
 import com.deskmail.core.mail.Moved
 import jakarta.mail.Flags
 import jakarta.mail.Message
+import jakarta.mail.Session
+import jakarta.mail.internet.MimeMessage
+import jakarta.mail.util.SharedFileInputStream
 import org.eclipse.angus.mail.imap.AppendUID
 import org.eclipse.angus.mail.imap.IMAPFolder
+import java.io.File
 
 /**
  * A folder of an [ImapConnection], opened for changing it (SELECT): the marks, moves and removals
@@ -24,8 +28,16 @@ class ImapEditor internal constructor(
     override val uidValidity: Long = connection.call("read UIDVALIDITY") { folder.uidValidity }
 
     override fun mark(uids: List<Long>, mark: Mark, value: Boolean) = connection.call("mark") {
+        // a keyword is kept only by a server that keeps keywords (Gmail does, Outlook.com does not): one that does not is not asked
+        if (mark == Mark.Forwarded && !keepsForwarded()) return@call
         val messages = present(uids)
-        if (messages.isNotEmpty()) folder.setFlags(messages, Flags(flag(mark)), value)
+        if (messages.isNotEmpty()) folder.setFlags(messages, flags(mark), value)
+    }
+
+    /** Whether the folder keeps the keyword for a forwarded message: any keyword at all, or this one by name. */
+    private fun keepsForwarded(): Boolean {
+        val kept = folder.permanentFlags ?: return false
+        return kept.contains(Flags.Flag.USER) || kept.contains(FORWARDED)
     }
 
     override fun move(uids: List<Long>, target: String): List<Moved> = connection.call("move to $target") {
@@ -65,6 +77,24 @@ class ImapEditor internal constructor(
         if (messages.isNotEmpty()) remove(messages, connection.has("UIDPLUS"))
     }
 
+    override fun append(message: File, seen: Boolean, draft: Boolean): Long = connection.call("append") {
+        // read from the file as it is sent: the library asks for it twice, once to count its bytes
+        SharedFileInputStream(message).use { stream ->
+            val copy = MimeMessage(null as Session?, stream)
+            val flags = Flags()
+            if (seen) flags.add(Flags.Flag.SEEN)
+            if (draft) flags.add(Flags.Flag.DRAFT)
+            copy.setFlags(flags, true)
+            if (connection.has("UIDPLUS")) {
+                val appended: Array<AppendUID?>? = folder.appendUIDMessages(arrayOf<Message>(copy))
+                appended?.firstOrNull()?.uid?.coerceAtLeast(0) ?: 0
+            } else {
+                folder.appendMessages(arrayOf<Message>(copy))
+                0
+            }
+        }
+    }
+
     override fun close() {
         // nothing is removed in passing: what is removed is removed by name
         runCatching { folder.close(false) }
@@ -84,8 +114,15 @@ class ImapEditor internal constructor(
     private fun present(uids: List<Long>): Array<Message> =
         folder.getMessagesByUID(uids.toLongArray()).orEmpty().filterNotNull().toTypedArray()
 
-    private fun flag(mark: Mark): Flags.Flag = when (mark) {
-        Mark.Seen -> Flags.Flag.SEEN
-        Mark.Flagged -> Flags.Flag.FLAGGED
+    private fun flags(mark: Mark): Flags = when (mark) {
+        Mark.Seen -> Flags(Flags.Flag.SEEN)
+        Mark.Flagged -> Flags(Flags.Flag.FLAGGED)
+        Mark.Answered -> Flags(Flags.Flag.ANSWERED)
+        // no flag of the protocol's own: the keyword mail programs agree on (RFC 5788)
+        Mark.Forwarded -> Flags(FORWARDED)
+    }
+
+    private companion object {
+        const val FORWARDED = "\$Forwarded"
     }
 }

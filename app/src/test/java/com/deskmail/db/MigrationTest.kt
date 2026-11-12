@@ -6,6 +6,7 @@ import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.driver.AndroidSQLiteDriver
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.json.JSONArray
 import org.json.JSONObject
@@ -99,13 +100,46 @@ class MigrationTest {
             val inbox = db.folders().ofAccount(1).single()
             assertEquals("INBOX", inbox.path)
             assertEquals(7L, inbox.uidValidity)
-            // and what the new version adds works on it
+            // and what the versions since add works on it
             val message = db.messages().insert(listOf(testMessage(1, inbox.id, uid = 1))).single()
             assertEquals(1L, db.pending().mark(message, seen = true, flagged = null, now = 5))
             assertEquals(listOf("Seen"), db.pending().due(1, now = 5).map { it.kind })
+            aMessageIsWrittenAndHandedOver(db)
         } finally {
             db.close()
         }
+    }
+
+    /** Version 2 (the pre-release builds between alpha.2 and alpha.3): a change that waited for its server still does. */
+    @Test
+    fun version2BecomesTheCurrentVersionAndKeepsWhatWasWaiting() = runBlocking {
+        create(2) { connection ->
+            anAccountWithItsInbox(connection)
+            connection.runSql(
+                "INSERT INTO message (accountId, folderId, uid, globalId, inReplyTo, refs, subject, fromList, toList, ccList, bccList, replyToList, " +
+                    "sentAt, date, size, seen, flagged, answered, forwarded, draft, attachments, preview, bodyState) VALUES " +
+                    "(1, 1, 1, '<1@example.org>', '', '', 'konu', '', '', '', '', '', 1000, 1000, 100, 0, 0, 0, 0, 0, 0, '', 0)",
+            )
+            connection.runSql("INSERT INTO pending_op (accountId, messageId, kind, value, targetFolderId, notBefore, createdAt) VALUES (1, 1, 'Seen', 1, 0, 5, 5)")
+        }
+
+        val db = open(*DeskMailDatabase.MIGRATIONS)
+        try {
+            assertEquals(listOf("konu"), db.messages().observeFolder(1).first().map { it.subject })
+            assertEquals(listOf("Seen"), db.pending().due(1, now = 5).map { it.kind })
+            aMessageIsWrittenAndHandedOver(db)
+        } finally {
+            db.close()
+        }
+    }
+
+    /** What version 3 added: the outbox and its files. */
+    private suspend fun aMessageIsWrittenAndHandedOver(db: DeskMailDatabase) {
+        val id = db.outbox().insert(testOutbox(accountId = 1))
+        db.outbox().addFile(OutboxFileEntity(outboxId = id, name = "ek.txt", mimeType = "text/plain", size = 2, path = "/outbox/ek.txt"))
+        assertEquals(1, db.outbox().queue(id, sendAfter = 10, now = 5))
+        assertEquals(listOf(id), db.outbox().due(now = 10).map { it.id })
+        assertEquals(listOf("ek.txt"), db.outbox().files(id).map { it.name })
     }
 
     /** The check this test relies on is really made: without its migrations an old database does not open. */
@@ -126,7 +160,7 @@ class MigrationTest {
         val kept = SCHEMAS.list().orEmpty().toSet()
         // the build writes this version's schema before the tests run: the highest number is the current one
         val current = kept.maxOf { it.removeSuffix(".json").toInt() }
-        assertTrue(current >= 2)
+        assertTrue(current >= 3)
         assertEquals((1..current).map { "$it.json" }.toSet(), kept)
         assertEquals(current, JSONObject(File(SCHEMAS, "$current.json").readText()).getJSONObject("database").getInt("version"))
         assertEquals((1 until current).map { it to it + 1 }, DeskMailDatabase.MIGRATIONS.map { it.startVersion to it.endVersion })

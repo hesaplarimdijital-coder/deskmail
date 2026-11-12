@@ -444,7 +444,7 @@ class DemoMail(private val now: Instant = Instant.now(), empty: Boolean = false)
     companion object {
         const val OUTLOOK = 1L
         const val GMAIL = 2L
-        private const val ME = "Deniz Aksoy"
+        const val ME = "Deniz Aksoy"
 
         /** Mail in these is not counted as unread or starred in the views over every account. */
         private val OUTSIDE_THE_VIEWS = setOf(FolderRole.All, FolderRole.Junk, FolderRole.Trash)

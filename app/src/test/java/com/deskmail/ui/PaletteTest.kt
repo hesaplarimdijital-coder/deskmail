@@ -15,6 +15,7 @@ import androidx.compose.ui.test.pressKey
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.deskmail.TEST_CLOCK
 import com.deskmail.core.log.AppLog
+import com.deskmail.testComposer
 import com.deskmail.testMail
 import com.deskmail.testPrefs
 import com.deskmail.testSettings
@@ -54,6 +55,7 @@ class PaletteTest {
                 mail = mail,
                 settings = settings,
                 log = AppLog(),
+                composer = testComposer(mail),
                 ui = ui,
                 prefs = prefs,
                 clock = TEST_CLOCK,

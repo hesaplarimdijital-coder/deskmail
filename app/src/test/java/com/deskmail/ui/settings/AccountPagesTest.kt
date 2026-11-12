@@ -198,6 +198,21 @@ class AccountPagesTest {
     }
 
     @Test
+    fun theNameAndTheSignatureAnAccountWritesWithAreSaved() {
+        val accounts = FakeAccounts()
+        settingsUi.page = SettingsPage.Account(DemoMail.GMAIL)
+        launch(accounts)
+
+        compose.onNodeWithTag(AccountTags.SENDER_NAME).performTextInput("Deniz Aksoy")
+        compose.onNodeWithTag(AccountTags.SIGNATURE).performTextInput("Deniz Aksoy\nİstanbul")
+        compose.waitForIdle()
+        press("Kaydet")
+
+        assertEquals(listOf(Triple(DemoMail.GMAIL, "Deniz Aksoy", "Deniz Aksoy\nİstanbul")), accounts.written)
+        compose.onNodeWithText("Kaydedildi.").assertExists()
+    }
+
+    @Test
     fun theSettingsListLeadsToAnAccountsPage() {
         launch(FakeAccounts())
         compose.onNode(hasScrollToNodeAction()).performScrollToNode(hasText("deniz@gmail.example · Çalışıyor"))

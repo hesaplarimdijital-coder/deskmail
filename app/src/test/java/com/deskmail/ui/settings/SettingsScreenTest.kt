@@ -14,6 +14,7 @@ import com.deskmail.testMail
 import com.deskmail.testPrefs
 import com.deskmail.testSettings
 import com.deskmail.ui.Routes
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -53,5 +54,20 @@ class SettingsScreenTest {
         assertTrue(settings.darkenMessages)
         toggle("Koyu temada iletiyi karart")
         assertFalse(settings.darkenMessages)
+    }
+
+    /** How long "Send" can be taken back is chosen among a few times. */
+    @Test
+    fun theTimeToTakeAMessageBackIsChosen() {
+        val prefs = testPrefs()
+        val settings = testSettings()
+        compose.setContent { TestApp(testMail(), prefs, settings, startRoute = Routes.SETTINGS) }
+        assertEquals(10, settings.undoSendSeconds)
+
+        compose.onNode(hasScrollToNodeAction()).performScrollToNode(hasText("15 sn"))
+        compose.onNodeWithText("15 sn").performSemanticsAction(SemanticsActions.OnClick)
+        compose.waitForIdle()
+
+        assertEquals(15, settings.undoSendSeconds)
     }
 }
