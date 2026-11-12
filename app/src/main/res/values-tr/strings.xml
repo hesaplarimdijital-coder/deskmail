@@ -1,7 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="skeleton_description">İskelet hazır. Posta sonraki sürümlerle geliyor.</string>
-
     <string name="nav_inbox">Gelen</string>
     <string name="nav_unread">Okunmamış</string>
     <string name="nav_starred">Yıldızlı</string>
@@ -15,6 +13,50 @@
     <string name="folder_junk">Spam</string>
     <string name="folder_trash">Çöp</string>
     <string name="folder_all">Tüm postalar</string>
+
+    <string name="filter_all">Tümü</string>
+    <string name="filter_unread">Okunmamış</string>
+    <string name="filter_starred">Yıldızlı</string>
+    <string name="filter_attachments">Ekli</string>
+    <string name="column_from">Kimden</string>
+    <string name="column_subject">Konu</string>
+    <string name="column_attachments">Ek</string>
+    <string name="column_date">Tarih</string>
+    <string name="list_empty_title">Burada ileti yok</string>
+    <string name="list_empty_filtered">Süzgeçlere uyan ileti yok</string>
+    <string name="list_resize">İleti listesini boyutlandır</string>
+    <plurals name="message_count">
+        <item quantity="one">%d ileti</item>
+        <item quantity="other">%d ileti</item>
+    </plurals>
+    <string name="message_unread">Okunmamış</string>
+    <string name="message_starred">Yıldızlı</string>
+    <plurals name="message_attachments">
+        <item quantity="one">%d ek</item>
+        <item quantity="other">%d ek</item>
+    </plurals>
+    <string name="message_to">Kime: %1$s</string>
+
+    <string name="action_new_message">Yeni ileti</string>
+    <string name="action_star">Yıldızla</string>
+    <string name="action_unstar">Yıldızı kaldır</string>
+    <string name="action_mark_read">Okundu say</string>
+    <string name="action_mark_unread">Okunmadı say</string>
+    <string name="action_open_attachment">Eki aç</string>
+    <string name="reader_empty_title">Açık ileti yok</string>
+    <string name="reader_empty_text">Okumak için listeden bir ileti seç.</string>
+    <string name="reader_remote_blocked">Uzak görseller yüklenmedi.</string>
+    <string name="reader_remote_show">Göster</string>
+    <string name="inspector_details">Ayrıntılar</string>
+    <string name="inspector_attachments">Ekler</string>
+    <string name="inspector_no_attachments">Ek yok</string>
+    <string name="detail_from">Kimden</string>
+    <string name="detail_to">Kime</string>
+    <string name="detail_date">Tarih</string>
+    <string name="detail_account">Hesap</string>
+    <string name="detail_folder">Klasör</string>
+
+    <string name="not_in_this_version">Bu ön sürümde henüz yok: %1$s</string>
 
     <string name="search_coming_title">Arama henüz yok</string>
     <string name="search_coming_text">Sonraki ön sürümlerden biriyle gelecek.</string>

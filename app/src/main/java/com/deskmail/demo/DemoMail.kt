@@ -1,44 +1,323 @@
 package com.deskmail.demo
 
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import com.deskmail.core.mail.FolderRole
 import com.deskmail.mail.MailAccount
+import com.deskmail.mail.MailAttachment
 import com.deskmail.mail.MailFolder
+import com.deskmail.mail.MailMessage
+import com.deskmail.mail.MailView
+import java.time.Duration
+import java.time.Instant
 
 /**
- * The made-up accounts and folders the first pre-release shows instead of real mail, so the shell
- * and the layouts can be tried on the devices before the app talks to a server. The addresses use
- * the reserved ".example" domain: they belong to nobody.
+ * The made-up accounts, folders and messages the first pre-release shows instead of real mail, so
+ * the shell, the lists and the reader can be tried on the devices before the app talks to a
+ * server. Nothing here leaves the device and nothing is stored: reading and starring change the
+ * copy in memory, and a restart brings the mail back as it was.
+ *
+ * The addresses use the reserved ".example" domain: they belong to nobody. The messages are dated
+ * back from [now], so the list always has mail of today, of this week and of last year.
  */
-class DemoMail {
+class DemoMail(private val now: Instant = Instant.now()) {
+
     val accounts: List<MailAccount> = listOf(
         MailAccount(OUTLOOK, "Outlook", "deniz@outlook.example"),
         MailAccount(GMAIL, "Gmail", "deniz@gmail.example"),
     )
 
-    val folders: List<MailFolder> = listOf(
-        MailFolder(11, OUTLOOK, listOf("Inbox"), FolderRole.Inbox, unread = 4, total = 9),
-        MailFolder(12, OUTLOOK, listOf("Drafts"), FolderRole.Drafts, total = 1),
-        MailFolder(13, OUTLOOK, listOf("Sent"), FolderRole.Sent, total = 3),
-        MailFolder(14, OUTLOOK, listOf("Archive"), FolderRole.Archive, total = 2),
-        MailFolder(15, OUTLOOK, listOf("Junk"), FolderRole.Junk, unread = 1, total = 1),
+    private val tree: List<MailFolder> = listOf(
+        MailFolder(11, OUTLOOK, listOf("Inbox"), FolderRole.Inbox),
+        MailFolder(12, OUTLOOK, listOf("Drafts"), FolderRole.Drafts),
+        MailFolder(13, OUTLOOK, listOf("Sent"), FolderRole.Sent),
+        MailFolder(14, OUTLOOK, listOf("Archive"), FolderRole.Archive),
+        MailFolder(15, OUTLOOK, listOf("Junk"), FolderRole.Junk),
         MailFolder(16, OUTLOOK, listOf("Deleted"), FolderRole.Trash),
-        MailFolder(17, OUTLOOK, listOf("Faturalar"), FolderRole.Other, total = 2),
+        MailFolder(17, OUTLOOK, listOf("Faturalar"), FolderRole.Other),
         MailFolder(18, OUTLOOK, listOf("Projeler"), FolderRole.Other),
-        MailFolder(19, OUTLOOK, listOf("Projeler", "2026"), FolderRole.Other, unread = 1, total = 2),
-        MailFolder(21, GMAIL, listOf("INBOX"), FolderRole.Inbox, unread = 2, total = 5),
+        MailFolder(19, OUTLOOK, listOf("Projeler", "2026"), FolderRole.Other),
+        MailFolder(21, GMAIL, listOf("INBOX"), FolderRole.Inbox),
         MailFolder(22, GMAIL, listOf("[Gmail]", "Drafts"), FolderRole.Drafts),
-        MailFolder(23, GMAIL, listOf("[Gmail]", "Sent Mail"), FolderRole.Sent, total = 1),
-        MailFolder(24, GMAIL, listOf("[Gmail]", "All Mail"), FolderRole.All, unread = 2, total = 7),
+        MailFolder(23, GMAIL, listOf("[Gmail]", "Sent Mail"), FolderRole.Sent),
+        MailFolder(24, GMAIL, listOf("[Gmail]", "All Mail"), FolderRole.All),
         MailFolder(25, GMAIL, listOf("[Gmail]", "Spam"), FolderRole.Junk),
         MailFolder(26, GMAIL, listOf("[Gmail]", "Trash"), FolderRole.Trash),
-        MailFolder(27, GMAIL, listOf("Seyahat"), FolderRole.Other, total = 1),
+        MailFolder(27, GMAIL, listOf("Seyahat"), FolderRole.Other),
     )
+
+    private val stored = mutableStateListOf<MailMessage>().apply { addAll(demoMessages()) }
+
+    /** Every message, newest first. */
+    val messages: List<MailMessage> get() = stored
+
+    /** The folders with their counts, which follow what is read. */
+    val folders: List<MailFolder> by derivedStateOf {
+        tree.map { folder ->
+            val inFolder = stored.filter { it.folderId == folder.id }
+            folder.copy(unread = inFolder.count { it.unread }, total = inFolder.size)
+        }
+    }
+
+    fun folder(id: Long): MailFolder? = folders.firstOrNull { it.id == id }
+
+    fun account(id: Long): MailAccount? = accounts.firstOrNull { it.id == id }
+
+    fun message(id: Long): MailMessage? = stored.firstOrNull { it.id == id }
+
+    /** The messages of [view], newest first. */
+    fun messages(view: MailView): List<MailMessage> {
+        val roles = tree.associate { it.id to it.role }
+        return when (view) {
+            MailView.Inbox -> stored.filter { roles[it.folderId] == FolderRole.Inbox }
+            MailView.Unread -> stored.filter { it.unread && roles[it.folderId] !in OUTSIDE_THE_VIEWS }
+            MailView.Starred -> stored.filter { it.starred && roles[it.folderId] !in OUTSIDE_THE_VIEWS }
+            is MailView.Folder -> stored.filter { it.folderId == view.id }
+        }
+    }
+
+    fun setUnread(id: Long, unread: Boolean) = change(id) { it.copy(unread = unread) }
+
+    fun setStarred(id: Long, starred: Boolean) = change(id) { it.copy(starred = starred) }
+
+    private fun change(id: Long, edit: (MailMessage) -> MailMessage) {
+        val index = stored.indexOfFirst { it.id == id }
+        if (index < 0) return
+        val edited = edit(stored[index])
+        if (edited != stored[index]) stored[index] = edited
+    }
+
+    // ------------------------------------------------------------------ the mail itself
+
+    private fun demoMessages(): List<MailMessage> {
+        val list = ArrayList<MailMessage>()
+        var nextId = 100L
+        fun add(
+            folder: Long,
+            from: String,
+            address: String,
+            subject: String,
+            ago: Duration,
+            text: String,
+            html: String? = null,
+            unread: Boolean = false,
+            starred: Boolean = false,
+            to: String = ME,
+            attachments: List<MailAttachment> = emptyList(),
+            remoteImages: Boolean = false,
+            outgoing: Boolean = false,
+        ) {
+            list += MailMessage(
+                id = nextId++,
+                accountId = tree.first { it.id == folder }.accountId,
+                folderId = folder,
+                fromName = from,
+                fromAddress = address,
+                to = to,
+                subject = subject,
+                sentAt = now.minus(ago),
+                text = text,
+                html = html,
+                unread = unread,
+                starred = starred,
+                attachments = attachments,
+                remoteImages = remoteImages,
+                outgoing = outgoing,
+            )
+        }
+
+        // Outlook · Inbox
+        add(
+            11, "Ayşe Yılmaz", "ayse.yilmaz@posta.example", "Cumartesi kahvaltı?", Duration.ofMinutes(25),
+            "Selam Deniz,\n\nCumartesi sabahı Moda'da kahvaltıya ne dersin? Zeynep de geliyor, saat 10 gibi buluşuruz diye düşündük. " +
+                "Yer ayırtmam gerekiyor, akşama kadar haber verirsen sevinirim.\n\nSevgiler,\nAyşe",
+            unread = true,
+        )
+        add(
+            11, "Sahaf Kitabevi", "bulten@sahaf.example", "Kasım bülteni: yeni gelenler ve imza günü", Duration.ofHours(2),
+            "Merhaba Deniz, bu ay raflara 140 kitap girdi: ilk baskı şiir kitapları, 1950'lerden dergi ciltleri ve imzalı birkaç roman. " +
+                "İmza günü: 21 Kasım Cumartesi, saat 15.00.",
+            html = DemoBodies.newsletter, unread = true, remoteImages = true,
+        )
+        add(
+            11, "Mehmet Demir", "mehmet.demir@isyeri.example", "Re: Proje planı (v3)", Duration.ofHours(5),
+            "Deniz selam,\n\nPlanın üçüncü sürümü ekte. İki değişiklik var: senkron işi iki haftaya çıktı, bildirimler bir hafta öne geldi. " +
+                "Perşembe günü üstünden geçelim mi?\n\nMehmet",
+            html = DemoBodies.replyChain, starred = true, to = "$ME, Elif Şahin",
+            attachments = listOf(MailAttachment("Proje planı v3.pdf", 284_000)),
+        )
+        add(
+            11, "Derleme Sunucusu", "ci@ci.example", "[deskmail] feature/skeleton: 3 iş başarılı", Duration.ofHours(21),
+            "feature/skeleton dalındaki son çalışma bitti. :core:test başarılı, :app:testDebugUnitTest başarılı, :app:assembleRelease başarılı. " +
+                "APK sabit anahtarla imzalandı.",
+            html = DemoBodies.buildReport, unread = true,
+        )
+        add(
+            11, "Elektrik Dağıtım", "fatura@elektrik.example", "Kasım 2026 faturanız hazır", Duration.ofDays(2),
+            "Sayın Deniz Aksoy, 1002003004 numaralı tesisatınızın Kasım dönemi faturası ektedir. Ödenecek tutar: 893,52 TL. " +
+                "Son ödeme tarihi: 27 Kasım 2026.",
+            html = DemoBodies.invoice, attachments = listOf(MailAttachment("Fatura-2026-11.pdf", 96_500)),
+        )
+        add(
+            11, "Zeynep Kaya", "zeynep.kaya@posta.example", "Kapadokya gezi notları", Duration.ofDays(3),
+            TRAVEL_NOTES, starred = true,
+            attachments = listOf(MailAttachment("Göreme sabahı.jpg", 2_480_000), MailAttachment("Ihlara vadisi.jpg", 3_120_000)),
+        )
+        add(
+            11, "İlçe Kütüphanesi", "bilgi@kutuphane.example", "İade tarihi yaklaşıyor", Duration.ofDays(4),
+            "Sayın üyemiz,\n\nÜzerinizdeki \"Tutunamayanlar\" adlı kitabın iade tarihi 16 Kasım 2026'dır. " +
+                "Süreyi kütüphaneye uğramadan, üye sayfanızdan bir kez uzatabilirsiniz.",
+            unread = true,
+        )
+        add(
+            11, "Can Öztürk", "can.ozturk@isyeri.example", "Toplantı tutanağı ve yapılacaklar", Duration.ofDays(6),
+            "10 Kasım toplantısı. Katılanlar: Can, Deniz, Elif, Mehmet. İskelet ve imza bitti; hesap ekleme için Outlook kaydı bekleniyor; " +
+                "bildirimler için gece denemesi yapılacak.",
+            html = DemoBodies.minutes, to = "$ME, Elif Şahin, Mehmet Demir",
+        )
+        add(
+            11, "Apartman Yönetimi", "yonetim@apartman.example", "Aidat ve genel kurul duyurusu", Duration.ofDays(9),
+            "Değerli kat malikleri,\n\nOlağan genel kurul toplantımız 29 Kasım Pazar günü saat 14.00'te sığınakta yapılacaktır. " +
+                "Aralık ayından itibaren aidat 1.250 TL olarak önerilecektir. Katılamayacak olanların vekâlet vermesini rica ederiz.",
+        )
+
+        // Outlook · the other folders
+        add(
+            12, ME, "deniz@outlook.example", "Re: Cumartesi kahvaltı?", Duration.ofMinutes(8),
+            "Ayşe selam,\n\nOlur, gelirim. Saat 10 uygun, yalnız", to = "Ayşe Yılmaz", outgoing = true,
+        )
+        add(
+            13, ME, "deniz@outlook.example", "Re: Proje planı (v2)", Duration.ofHours(19),
+            "Senkron için bir hafta az. Klasör listesi, bayraklar ve gövdeler ayrı ayrı sınanmalı; en az iki hafta diyelim.",
+            to = "Mehmet Demir", outgoing = true,
+        )
+        add(
+            13, ME, "deniz@outlook.example", "Kitap ayırtma", Duration.ofDays(5),
+            "Merhaba,\n\nBültende gördüğüm Varlık 1953 cildini ayırtmak istiyorum. Cumartesi uğrayıp alabilirim.\n\nDeniz Aksoy",
+            to = "Sahaf Kitabevi", outgoing = true,
+        )
+        add(
+            13, ME, "deniz@outlook.example", "Genel kurul için vekâlet", Duration.ofDays(8),
+            "Merhaba,\n\n29 Kasım'da şehir dışında olacağım. Vekâleti 7 numaradaki Elif Hanım'a verdim, imzalı kâğıdı kendisi getirecek.",
+            to = "Apartman Yönetimi", outgoing = true, attachments = listOf(MailAttachment("Vekâlet.pdf", 61_000)),
+        )
+        add(
+            14, "Mehmet Demir", "mehmet.demir@isyeri.example", "Proje planı (v1)", Duration.ofDays(12),
+            "İlk taslağı gönderiyorum, tarihler kabaca. Yorumlarını bekliyorum.",
+            attachments = listOf(MailAttachment("Proje planı v1.pdf", 251_000)),
+        )
+        add(
+            14, "Zeynep Kaya", "zeynep.kaya@posta.example", "Uçak mı tren mi?", Duration.ofDays(20),
+            "Ankara'ya trenle gidelim diyorum; kapıdan kapıya süre aynı çıkıyor, üstelik yolda çalışılır. Ne dersin?",
+        )
+        add(
+            15, "ÖDÜL MERKEZİ", "kazandiniz@odul.example", "TEBRİKLER! Ödülünüz sizi bekliyor", Duration.ofHours(30),
+            "Tebrikler! Ödülünüz hazır. Ödülünüzü almak için 24 saat içinde bilgilerinizi doğrulayın.",
+            html = DemoBodies.junk, unread = true, remoteImages = true,
+        )
+        add(
+            17, "Elektrik Dağıtım", "fatura@elektrik.example", "Ekim 2026 faturanız hazır", Duration.ofDays(33),
+            "Sayın Deniz Aksoy, Ekim dönemi faturanız ektedir. Ödenecek tutar: 742,10 TL.",
+            attachments = listOf(MailAttachment("Fatura-2026-10.pdf", 95_200)),
+        )
+        add(
+            17, "Doğalgaz", "e-fatura@dogalgaz.example", "Aralık 2025 dönemi faturanız", Duration.ofDays(330),
+            "Sayın abonemiz, Aralık 2025 dönemi faturanız ektedir. Ödenecek tutar: 1.914,00 TL.",
+            attachments = listOf(MailAttachment("Fatura-2025-12.pdf", 88_400)),
+        )
+        add(
+            19, "Elif Şahin", "elif.sahin@isyeri.example", "Tablet düzeni için notlar", Duration.ofDays(1),
+            "Deniz, tablet düzenini denedim. Yatayda liste ile okuma bölmesi yan yana çok iyi; dikeyde listeden iletiye geçiş daha doğal. " +
+                "Ayrıntı paneli varsayılan olarak kapalı gelsin derim.",
+            unread = true,
+        )
+        add(
+            19, "Can Öztürk", "can.ozturk@isyeri.example", "Sağlayıcı tablosu taslağı", Duration.ofDays(7),
+            "Outlook ve Gmail satırlarını yazdım: sunucular, giriş türü, gönderileni kimin kaydettiği. Gözden geçirir misin?",
+            attachments = listOf(MailAttachment("saglayicilar.csv", 4_200)),
+        )
+
+        // Gmail
+        add(
+            21, "Zeynep Kaya", "zeynep.kaya@posta.example", "Bilet tamam", Duration.ofHours(1),
+            "Biletleri aldım, 28 Kasım 08:15 treni. Seninkini de iletiyorum. Söğütlüçeşme'de 07:45'te buluşalım.",
+            unread = true,
+        )
+        add(
+            21, "Hızlı Tren Bilet", "bilet@tren.example", "E-biletiniz: İstanbul → Ankara, 28 Kasım", Duration.ofMinutes(95),
+            "Elektronik bilet. İstanbul (Söğütlüçeşme) → Ankara, 28 Kasım 2026 Cumartesi, kalkış 08:15, vagon 4, koltuk 12A.",
+            html = DemoBodies.ticket, unread = true, attachments = listOf(MailAttachment("Bilet-12A.pdf", 132_000)),
+        )
+        add(
+            21, "Fotoğraf Kulübü", "duyuru@fotografkulubu.example", "Kasım buluşması: sis ve sabah ışığı", Duration.ofDays(2),
+            "Bu ayki buluşmada sisli havada çekim konuşulacak. Yanınızda en sevdiğiniz üç kareyi getirin.",
+        )
+        add(
+            21, "Ayşe Yılmaz", "ayse.yilmaz@posta.example", "Tarif", Duration.ofDays(5),
+            "Geçen hafta sorduğun mercimek köftesinin tarifi:\n\n1 su bardağı kırmızı mercimek, yarım su bardağı ince bulgur, " +
+                "1 kuru soğan, salça, kimyon, maydanoz ve yeşil soğan. Mercimeği haşla, bulguru içine at ve demlendir.",
+            starred = true,
+        )
+        add(
+            21, "Yapı Kooperatifi", "bilgi@kooperatif.example", "2025 yılı faaliyet raporu", Duration.ofDays(340),
+            "Sayın ortağımız, 2025 yılı faaliyet raporu ve denetim kurulu raporu ektedir.",
+            attachments = listOf(MailAttachment("Faaliyet raporu 2025.pdf", 1_240_000)),
+        )
+        add(
+            23, ME, "deniz@gmail.example", "Re: Bilet tamam", Duration.ofMinutes(50),
+            "Harika, teşekkürler. 07:45'te oradayım.", to = "Zeynep Kaya", outgoing = true,
+        )
+        add(
+            27, "Otel Rezervasyon", "rezervasyon@otel.example", "Rezervasyon onayı: Ankara, 28-29 Kasım", Duration.ofDays(1),
+            "Rezervasyonunuz onaylandı. Giriş: 28 Kasım 14.00, çıkış: 29 Kasım 12.00. Kahvaltı dâhil, iki kişi.",
+            attachments = listOf(MailAttachment("Rezervasyon.pdf", 74_000)),
+        )
+
+        // Gmail's "All Mail" holds every message of the account once more
+        list.filter { it.accountId == GMAIL }.forEach { list += it.copy(id = nextId++, folderId = 24) }
+
+        return list.sortedByDescending { it.sentAt }
+    }
 
     companion object {
         const val OUTLOOK = 1L
         const val GMAIL = 2L
+        private const val ME = "Deniz Aksoy"
 
-        /** One set of demo data for every window of the app. */
+        /** Mail in these is not counted as unread or starred in the views over every account. */
+        private val OUTSIDE_THE_VIEWS = setOf(FolderRole.All, FolderRole.Junk, FolderRole.Trash)
+
+        /** One set of demo mail for every window of the app. */
         val shared: DemoMail by lazy { DemoMail() }
+
+        /** Long enough to scroll under the bars on every device. */
+        private val TRAVEL_NOTES = """
+            Deniz merhaba,
+
+            Söz verdiğim gibi Kapadokya notlarını yazıyorum. Fotoğrafların ikisini ekledim, kalanı için bağlantı gönderirim.
+
+            1. gün: Göreme
+            Sabah beşte kalkıp gün doğumunu izledik. Balonlar tam güneşle birlikte yükseliyor; en iyi yer Âşıklar Tepesi, ama kalabalık. Biraz aşağıdaki patikada kimse yok ve manzara aynı. Kahvaltıyı köy meydanındaki fırında yaptık.
+
+            Öğleden sonra Açık Hava Müzesi'ne gittik. Karanlık Kilise'ye ayrı bilet gerekiyor ama freskler buna değer. Müzeden çıkınca Kılıçlar Vadisi'nden yürüyerek döndük; yol bir buçuk saat sürüyor, yanına su al.
+
+            2. gün: Ihlara
+            Vadiye Ihlara köyünden girip Belisırma'ya kadar yürüdük, yedi kilometre kadar. Dere kenarındaki çardaklarda öğle yemeği yeniyor. Dönüşte Selime Katedrali'ne tırmandık; ayakkabının tabanı kaymasın.
+
+            3. gün: Avanos ve Ürgüp
+            Avanos'ta çömlek atölyesinde çarkın başına oturduk, benimki kâseden çok tabağa benzedi. Kızılırmak kıyısında yürüyüş yolu yeni yapılmış. Akşam Ürgüp'te kaldık.
+
+            Pratik notlar
+            - Kasımda sabahlar sıfırın altında, öğlen güneş yakıyor: kat kat giyin.
+            - Müze kartı varsa çoğu yere ücretsiz giriliyor.
+            - Araç kiralamak şart değil ama Ihlara için çok kolaylık.
+            - Balon uçuşları rüzgâra göre iptal olabiliyor; ilk sabaha ayırt ki yedek günün kalsın.
+
+            Bir dahaki sefere baharda gidelim, vadiler yeşilken.
+
+            Sevgiler,
+            Zeynep
+        """.trimIndent()
     }
 }

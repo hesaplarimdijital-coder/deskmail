@@ -6,4 +6,15 @@
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
     </style>
+
+    <!-- A WebView draws a light or a dark page by the theme of the context it is created with
+         (isLightTheme), not by the system's night mode. The reader wraps its context in one of
+         these, so a message follows the theme chosen in the app. -->
+    <style name="DeskMailWebLight">
+        <item name="android:isLightTheme">true</item>
+    </style>
+
+    <style name="DeskMailWebDark">
+        <item name="android:isLightTheme">false</item>
+    </style>
 </resources>

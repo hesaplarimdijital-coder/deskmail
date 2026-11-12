@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name" translatable="false">DeskMail</string>
-    <string name="skeleton_description">The skeleton is in place. Mail comes with the next versions.</string>
 
     <!-- Navigation: the views over every account, and the screens -->
     <string name="nav_inbox">Inbox</string>
@@ -20,6 +19,55 @@
     <string name="folder_all">All mail</string>
     <!-- An account above its folders: its name and its address -->
     <string name="folders_account" translatable="false">%1$s · %2$s</string>
+
+    <!-- The list of messages -->
+    <string name="filter_all">All</string>
+    <string name="filter_unread">Unread</string>
+    <string name="filter_starred">Starred</string>
+    <string name="filter_attachments">With attachments</string>
+    <string name="column_from">From</string>
+    <string name="column_subject">Subject</string>
+    <string name="column_attachments">Att.</string>
+    <string name="column_date">Date</string>
+    <string name="list_empty_title">No messages here</string>
+    <string name="list_empty_filtered">No message matches the filters</string>
+    <string name="list_resize">Resize the message list</string>
+    <plurals name="message_count">
+        <item quantity="one">%d message</item>
+        <item quantity="other">%d messages</item>
+    </plurals>
+    <!-- What a row says of its message, for TalkBack -->
+    <string name="message_unread">Unread</string>
+    <string name="message_starred">Starred</string>
+    <plurals name="message_attachments">
+        <item quantity="one">%d attachment</item>
+        <item quantity="other">%d attachments</item>
+    </plurals>
+    <!-- The recipients of a message: "To: Ayşe Yılmaz" -->
+    <string name="message_to">To: %1$s</string>
+
+    <!-- The reader -->
+    <string name="action_new_message">New message</string>
+    <string name="action_star">Star</string>
+    <string name="action_unstar">Remove the star</string>
+    <string name="action_mark_read">Mark as read</string>
+    <string name="action_mark_unread">Mark as unread</string>
+    <string name="action_open_attachment">Open the attachment</string>
+    <string name="reader_empty_title">No message open</string>
+    <string name="reader_empty_text">Pick a message from the list to read it here.</string>
+    <string name="reader_remote_blocked">Remote images were not loaded.</string>
+    <string name="reader_remote_show">Show them</string>
+    <string name="inspector_details">Details</string>
+    <string name="inspector_attachments">Attachments</string>
+    <string name="inspector_no_attachments">No attachments</string>
+    <string name="detail_from">From</string>
+    <string name="detail_to">To</string>
+    <string name="detail_date">Date</string>
+    <string name="detail_account">Account</string>
+    <string name="detail_folder">Folder</string>
+
+    <!-- A command the pre-release shows the place of, by its name -->
+    <string name="not_in_this_version">Not in this pre-release yet: %1$s</string>
 
     <string name="search_coming_title">Search is not here yet</string>
     <string name="search_coming_text">It comes with one of the next pre-releases.</string>
