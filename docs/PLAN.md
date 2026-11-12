@@ -23,6 +23,10 @@ kitten istenenler `docs/KIT-ISTEKLERI.md`'de durur.
 | Angus Mail'in kaynak dosyaları | Kitaplığın sağlayıcı listesi, içerik işleyici tablosu ve kod çözücü bulucusu jar içindeki kaynak dosyalarıdır. Android paketlemesine güvenmemek için IMAP deposu doğrudan kurulur, çok parçalı iletinin parçaları ileti yapısından alınır, kod çözücülerin (base64, quoted-printable) sınıfı adıyla verilir (`MailLibrary`). CI, APK'ya giren bu dosyaların listesini günlük dalına yazar (`apk-resources.txt`). |
 | Okuma ve cam | Cam iletinin üstünde de kalır: kabuğun camı bulanıkken iletinin WebView'ı kendi donanım katmanına çizilir (`webLayerFor`); bir kez çizilir, pencere ve her bulanıklık hazır resmi o katmandan alır. Kit bulanıklık için içeriği her karede birkaç kez çizer; doğrudan pencereye çizen WebView buna dayanmaz ve kaydırılırken karoları gidip gelir (S24, alpha.1; `docs/KIT-ISTEKLERI.md`, 20). Katmana sığmayan uzun iletide (`LayerLimits`: cihazın en büyük dokusu, 64 MB) katman yoktur ve o ileti ekrandayken cam kapanır (`shellGlass`). alpha.2'nin yolu (ileti açıkken cam hep kapalı) Denemeler'de "İletinin üstünde cam" kapatılarak geri gelir. |
 | WebView'ın hazırlanması | Uygulamanın ilk ekranı çizildikten sonra bir WebView kurulup boş bir sayfa yüklenir ve bırakılır (`WebViewWarmUp`): ilk iletinin açılışı motorun yüklenmesini beklemez. Süre günlüğe yazılır. |
+| Bekleyen işlemler | Kullanıcının yaptığı (okundu, yıldız, taşıma, silme) önce cihazda görünür ve `pending_op` tablosuna yazılır; sunucuya arka planda, klasör klasör, önce bayraklar sonra taşımalar sonra silmeler sırasıyla söylenir (`ChangeSync`). Her eşitleme önce bekleyenleri gönderir, sonra sunucuyu okur. Bayrak bekleyen iletide sunucunun eski bayrağı kullanıcınınkini ezmez. Taşınan ve silinen ileti, sunucuya söylenene kadar hiçbir listede görünmez; sunucu yeni UID'yi söylerse (UIDPLUS) satır metniyle birlikte yeni klasörüne taşınır, söylemezse silinir ve o klasörün eşitlemesi getirir. |
+| Geri alma | Taşıma ve silme sunucuya hemen söylenmez: bildirim ekrandayken (ve en çok 15 saniye) bekler; geri almak kuyruktan çıkarmaktır. Bildirim gidince söylenir. Sonradan geri alma (Ctrl+Z) ters yönde yeni bir taşımadır ve iletinin yeni UID'sinin bilinmesine bağlıdır. Kalıcı silme söylendikten sonra geri alınamaz. |
+| Arşiv | Hesabın `\Archive` klasörü; yoksa `\All` (Gmail: "Tüm postalar"a taşımak, Gelen etiketini kaldırmaktır). İkisi de yoksa arşivle düğmesi görünmez. |
+| Ekler | İstenince iner (`BODY.PEEK[parça]`, okundukça akar), önbellek dizininde bir hafta kalır. Açma ve paylaşma FileProvider ile, kaydetme Storage Access Framework ile; depolama izni yok. |
 | Kit eksikleri | Kite yazılır; uygulamada yamanmaz (`docs/KIT-ISTEKLERI.md`). |
 | GitHub | PR'ları CI yeşilken Claude birleştirir. Etiketi ve sürümü Barış açar (Releases'ta `main` üzerinde): Claude'un oturumu etiket ve sürüm açamıyor (12 Kasım 2026'da denendi, ikisi de reddedildi). Force-push ve geçmişi yeniden yazma yok. |
 
@@ -51,7 +55,8 @@ Room 3; şema dışa aktarılır, v1'den itibaren göç testi vardır.
   gövde durumu.
 - `body`, `attachment`: düz metin, temizlenmiş HTML, ek parçaları.
 - `message_fts`: FTS4; konu, kişiler ve gövde Türkçe harfler katlanarak yazılır.
-- `pending_op`: yerelde yapılan işlemlerin kuyruğu; çevrimdışı çalışma ve geri al buradan.
+- `pending_op` (şema 2): yerelde yapılan işlemlerin kuyruğu; ileti, tür (Seen, Flagged, Move, Expunge), değer, hedef
+  klasör, en erken gönderim zamanı. Çevrimdışı çalışma ve geri al buradan.
 - `outbox`: taslak ve giden; `send_after` ile gönderiyi geri alma.
 - `address`: geçmiş iletilerdeki adresler (alıcı önerisi).
 
@@ -67,11 +72,13 @@ Room 3; şema dışa aktarılır, v1'den itibaren göç testi vardır.
 6. Gövdeler: penceredeki metin parçaları boyut sınırıyla iner, temizlenir, dizine yazılır. Ekler ve
    eski iletiler istenince gelir.
 
-- **Nasıl yürür (alpha.2):** üç iş, her biri kendi bağlantısında, biri ötekini bekletmez (`MailSync`):
+- **Nasıl yürür:** dört iş, her biri kendi bağlantısında, biri ötekini bekletmez (`MailSync`):
+  - cihazda yapılanlar: bekleyen bayraklar, taşımalar, silmeler sunucuya söylenir; bekleyen yoksa bağlantı
+    kurulmaz. Liste işi de kendi bağlantısında önce bunu yapar.
   - listeler: klasör listesi ve sayıları, gelen kutusu, istenen klasör; her klasörün en yeni 20
     iletisinin metni de bu sırada iner. Hesap başına aynı anda bir tane.
   - kalan metinler: liste işi bitince arka planda, klasör klasör, 50'şer; liste yeniden sorulmaz.
-  - açılan iletinin metni: cihazda yoksa sırası beklenmeden.
+  - açılan iletinin metni, istenen ek: cihazda yoksa sırası beklenmeden.
   - Klasörün UID'leri anlam değiştirdiyse (UIDVALIDITY) son iki iş hiçbir şey almaz; sıradaki liste işi
     baştan başlar.
 - Hesabın durumu her işin sonunda yazılır: çalışıyor, yeniden giriş gerekiyor (kimlik hatası ya da
@@ -143,7 +150,7 @@ Room 3; şema dışa aktarılır, v1'den itibaren göç testi vardır.
 | J / K | Sonraki / önceki | Liste, okuma |
 | Enter | Aç | Liste |
 | R / A / F | Yanıtla / tümünü yanıtla / ilet | Liste, okuma |
-| E / Delete | Arşivle / sil | Liste, okuma |
+| E / V / Delete | Arşivle / taşı / sil | Liste, okuma |
 | S / U | Yıldız / okundu-okunmadı | Liste, okuma |
 
 Kit `NewWindow`'u (Ctrl+N) `CommonShortcuts.all` dışında tutar; DeskMail onu eklemez, "Yeni pencere"yi
@@ -151,8 +158,8 @@ kitin metniyle Ctrl+Shift+N'e bağlar. Tek tuşlar ve Ctrl+Z, odak bir yazı ala
 açıkken çalışmaz.
 
 - **alpha.1'de olanlar:** Ctrl+N (yer tutucu), Ctrl+Shift+N, Ctrl+K, Ctrl+,, Ctrl+B, Ctrl+/, J/K, S, U,
-  Esc, /. Kalanlar işleriyle birlikte gelir: F5 hesaplarla geldi (alpha.2); E/Delete ve Ctrl+Z ileti
-  işlemleriyle, R/A/F ve Ctrl+Enter yazmayla.
+  Esc, /. Kalanlar işleriyle birlikte gelir: F5 hesaplarla geldi (alpha.2); E, V, Delete ve Ctrl+Z ileti
+  işlemleriyle (alpha.3); R/A/F ve Ctrl+Enter yazmayla.
 - **Tuşlar nereden geçer:** etkinlik her tuşu odaktaki görünümden önce `KeyRouter`'a sorar. Yazı
   yazılıp yazılmadığı iki yerden okunur: odaktaki görünüm bir metin düzenleyici mi
   (`View.onCheckIsTextEditor`), ve Compose'un kendi ekran tarifinde odakta bir yazı alanı var mı.
@@ -176,9 +183,10 @@ o ön sürümün ilk PR'ında artar, sonraki PR'lar CHANGELOG'da aynı başlığ
    Göç testi şemanın ilk değişikliğiyle gelir; o zamana kadar CI şemanın değişmediğini denetler.
 3. **Cam iletinin üstünde (alpha.3):** WebView kendi donanım katmanında · katmana sığmayan iletide camın
    kapanması · deneme anahtarları ve günlük satırı.
-4. **İleti işlemleri ve ekler:** bekleyen işlem kuyruğu · okundu ve yıldız · arşivle, sil,
-   taşı, geri al · çoklu seçim, sağ tık, "⋯" · sürükle bırak · filtre çipleri ve sıralama · ekleri
-   açma ve kaydetme · tek harfli kısayollar.
+4. **İleti işlemleri ve ekler (alpha.3):** bekleyen işlem kuyruğu, şema 2 ve göç testi · okundu ve yıldız ·
+   arşivle, sil, taşı, geri al · sağ tık ve uzun basma menüsü · ekleri açma, kaydetme, paylaşma · tek
+   harfli kısayollar (E, V, Delete) ve Ctrl+Z.
+   - **Kalan (ayrı PR):** çoklu seçim ve toplu işlem · geniş pencerede klasöre sürükle bırak.
 5. **Yazma ve gönderme:** ileti oluşturma ve SMTP · giden kutusu, gönderim işi, gönderiyi
    geri alma · yazma ekranı · yanıtla, tümünü yanıtla, ilet · taslaklar · gönderileni kaydetme kuralı ·
    alıcı önerileri ve Contact Picker · `mailto:`, paylaşım, DeX'te ayrı pencere.
