@@ -1,7 +1,10 @@
 package com.deskmail.core.imap
 
+import com.deskmail.core.mail.MailAddress
 import com.deskmail.core.mail.MailException
 import com.deskmail.core.mail.Mark
+import com.deskmail.core.mime.MessageWriter
+import com.deskmail.core.mime.OutgoingMessage
 import jakarta.mail.Flags
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -11,6 +14,7 @@ import org.junit.Assert.fail
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import java.io.File
 import java.time.Instant
 
 /** Marking, moving and removing messages on a real IMAP server inside the test. */
@@ -46,6 +50,23 @@ class ImapEditorServerTest {
         assertTrue(server.flags(plan)!!.contains(Flags.Flag.FLAGGED))
         assertFalse(server.flags(breakfast)!!.contains(Flags.Flag.SEEN))
         assertTrue(server.flags(breakfast)!!.contains(Flags.Flag.FLAGGED))
+    }
+
+    @Test
+    fun answeredAndForwardedAreMarksTheServerKeeps() {
+        val plan = server.deliver("plan", monday)
+
+        edit { editor ->
+            editor.mark(listOf(plan), Mark.Answered, true)
+            editor.mark(listOf(plan), Mark.Forwarded, true)
+        }
+
+        // read back as the sync reads them
+        val flags = ImapConnection.open(server.imap, server.credentials).use { connection ->
+            connection.open("INBOX").use { it.flags(listOf(plan)).single().flags }
+        }
+        assertTrue(flags.answered)
+        assertTrue(flags.forwarded)
     }
 
     @Test
@@ -106,6 +127,38 @@ class ImapEditorServerTest {
 
         assertTrue(server.uids().isEmpty())
         assertEquals(1, server.uids("Arşiv").size)
+    }
+
+    @Test
+    fun aMessageIsAddedToAFolderAsItWasWritten() {
+        server.createFolder("Sent")
+        val written = OutgoingMessage(
+            from = MailAddress("Deniz Aksoy", "deniz@example.org"),
+            to = listOf(MailAddress("Ayşe Yılmaz", "ayse@example.org")),
+            bcc = listOf(MailAddress("", "mehmet@example.org")),
+            subject = "Re: Cumartesi kahvaltı?",
+            text = "Olur, geliyorum.\n",
+            messageId = "<yanit-1@example.org>",
+            date = thursday,
+        )
+        val file = File.createTempFile("deskmail-test", ".eml").apply { deleteOnExit() }
+        file.outputStream().use { MessageWriter.write(written, it, withBcc = true) }
+
+        val uid = edit("Sent") { it.append(file, seen = true, draft = false) }
+
+        assertEquals(listOf(uid), server.uids("Sent"))
+        val kept = server.message(uid, "Sent")!!
+        assertEquals("Re: Cumartesi kahvaltı?", kept.subject)
+        assertEquals("<yanit-1@example.org>", kept.messageID)
+        // the copy that is kept knows whom it was hidden from the others
+        assertEquals("mehmet@example.org", kept.getHeader("Bcc", null))
+        assertTrue(server.flags(uid, "Sent")!!.contains(Flags.Flag.SEEN))
+        assertFalse(server.flags(uid, "Sent")!!.contains(Flags.Flag.DRAFT))
+
+        // a draft is marked as one
+        server.createFolder("Drafts")
+        val draft = edit("Drafts") { it.append(file, seen = true, draft = true) }
+        assertTrue(server.flags(draft, "Drafts")!!.contains(Flags.Flag.DRAFT))
     }
 
     @Test

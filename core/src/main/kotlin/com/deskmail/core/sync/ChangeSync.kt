@@ -24,7 +24,7 @@ data class PendingChange(
     val value: Boolean = false,
     val target: String = "",
 ) {
-    enum class Kind { Seen, Flagged, Move, Expunge }
+    enum class Kind { Seen, Flagged, Answered, Forwarded, Move, Expunge }
 }
 
 /** What became of a [PendingChange]. */
@@ -82,11 +82,10 @@ class ChangeSync(private val log: AppLog? = null) {
         if (void.isNotEmpty()) log?.info(TAG, "$path: ${void.size} changes were for UIDs that mean something else now")
         void.forEach { settled(it, ChangeOutcome.Gone) }
 
-        val marks = current.filter { it.kind == PendingChange.Kind.Seen || it.kind == PendingChange.Kind.Flagged }
+        val marks = current.filter { markOf(it.kind) != null }
         for ((what, same) in marks.groupBy { it.kind to it.value }) {
             attempt(path, same, settled) {
-                val mark = if (what.first == PendingChange.Kind.Seen) Mark.Seen else Mark.Flagged
-                editor.mark(same.map { it.uid }, mark, what.second)
+                editor.mark(same.map { it.uid }, markOf(what.first) ?: return@attempt, what.second)
                 same.forEach { settled(it, ChangeOutcome.Done()) }
             }
         }
@@ -104,6 +103,15 @@ class ChangeSync(private val log: AppLog? = null) {
             }
         }
         log?.info(TAG, "$path: ${marks.size} marks, ${current.count { it.kind == PendingChange.Kind.Move }} moves, ${removals.size} removals sent")
+    }
+
+    /** The mark a change sets or clears; null for a change that is no mark. */
+    private fun markOf(kind: PendingChange.Kind): Mark? = when (kind) {
+        PendingChange.Kind.Seen -> Mark.Seen
+        PendingChange.Kind.Flagged -> Mark.Flagged
+        PendingChange.Kind.Answered -> Mark.Answered
+        PendingChange.Kind.Forwarded -> Mark.Forwarded
+        PendingChange.Kind.Move, PendingChange.Kind.Expunge -> null
     }
 
     /** Runs [work] for [changes]; a "no" from the server settles them as refused, anything else is for the caller. */

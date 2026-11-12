@@ -9,6 +9,7 @@ import com.icegreen.greenmail.util.GreenMail
 import com.icegreen.greenmail.util.GreenMailUtil
 import com.icegreen.greenmail.util.ServerSetup
 import jakarta.mail.Flags
+import jakarta.mail.internet.MimeMessage
 import org.junit.rules.ExternalResource
 import java.time.Instant
 import java.util.Date
@@ -79,6 +80,12 @@ class TestMailServer : ExternalResource() {
 
     /** The subject of a message in a folder. */
     fun subject(uid: Long, folder: String = "INBOX"): String? = folder(folder).getMessage(uid)?.mimeMessage?.subject
+
+    /** The messages the server was handed for delivery, in the order they came. */
+    fun delivered(): List<MimeMessage> = greenMail.receivedMessages.toList()
+
+    /** A message of a folder as the server keeps it. */
+    fun message(uid: Long, folder: String = "INBOX"): MimeMessage? = folder(folder).getMessage(uid)?.mimeMessage
 
     /** Deletes a message for good, as another mail program would. */
     fun expunge(uid: Long, folder: String = "INBOX") {
