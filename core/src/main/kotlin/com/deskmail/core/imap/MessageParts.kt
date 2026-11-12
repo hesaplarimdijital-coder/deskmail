@@ -120,15 +120,18 @@ internal object MessageParts {
         return decoded.replace(Regex("[\\r\\n\\t]"), " ").trim()
     }
 
-    /**
-     * About how large the file is. The server counts the part as it travels; in base64, as files
-     * do, 57 bytes are a line of 76 letters and a line break.
-     */
     private fun fileSize(part: Part): Long {
         val travelling = runCatching { part.size.toLong() }.getOrDefault(0).coerceAtLeast(0)
         val encoding = runCatching { (part as? MimePart)?.encoding }.getOrNull().orEmpty()
-        return if (encoding.equals("base64", ignoreCase = true)) travelling * 57 / 78 else travelling
+        return fileSize(travelling, encoding)
     }
+
+    /**
+     * About how large a file is whose part the server counts as [travelling] bytes. In base64, as
+     * files travel, 57 bytes are a line of 76 letters and a line break.
+     */
+    fun fileSize(travelling: Long, encoding: String): Long =
+        if (encoding.trim().equals("base64", ignoreCase = true)) travelling * 57 / 78 else travelling
 
     private fun contentId(part: Part): String {
         val id = runCatching { (part as? MimePart)?.contentID }.getOrNull() ?: return ""
