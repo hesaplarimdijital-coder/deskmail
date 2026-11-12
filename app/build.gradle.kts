@@ -110,8 +110,12 @@ dependencies {
     implementation(libs.room.runtime)
     implementation(libs.sqlite.framework)
     ksp(libs.room.compiler)
+    // Coroutines with Android's main thread; the same version :core is built with
+    implementation(libs.coroutines.android)
 
     testImplementation(libs.junit)
+    // an IMAP server inside the tests: the sync is run against it, into the real database
+    testImplementation(libs.greenmail)
     testImplementation(libs.robolectric)
     testImplementation(libs.test.core)
     testImplementation(libs.test.ext.junit)

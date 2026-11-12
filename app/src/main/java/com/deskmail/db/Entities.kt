@@ -1,7 +1,10 @@
 package com.deskmail.db
 
+import androidx.room3.ColumnInfo
 import androidx.room3.Entity
 import androidx.room3.ForeignKey
+import androidx.room3.Fts4
+import androidx.room3.FtsOptions
 import androidx.room3.Index
 import androidx.room3.PrimaryKey
 
@@ -96,4 +99,110 @@ data class FolderEntity(
     val unread: Int,
     val total: Int,
     val syncedAt: Long,
+)
+
+/**
+ * A message of a folder as lists show it: who, what, when and its marks. The server names it by
+ * its folder and [uid]; the app by [id].
+ *
+ * @param globalId the Message-ID header: the same for every copy of the message, in every folder.
+ * @param refs the References header as the mail has it, for threads.
+ * @param fromList the senders, and [toList], [ccList], [bccList], [replyToList] likewise: a line per
+ *   address, name and address a tab apart ([com.deskmail.core.mail.MailAddress.encode]).
+ * @param sentAt the mail's own date in milliseconds, 0 where it has none; [date] is when the server
+ *   received it, which is what lists are ordered by.
+ * @param attachments how many files it carries.
+ * @param preview its first words, once its text has been fetched.
+ * @param bodyState 0 while its text has not been fetched, 1 when it is kept ([BodyEntity]), 2 when
+ *   there is none to keep (too large, or the server would not hand it over).
+ */
+@Entity(
+    tableName = "message",
+    foreignKeys = [ForeignKey(entity = FolderEntity::class, parentColumns = ["id"], childColumns = ["folderId"], onDelete = ForeignKey.CASCADE)],
+    indices = [
+        Index(value = ["folderId", "uid"], unique = true),
+        Index(value = ["folderId", "date"]),
+        Index(value = ["accountId"]),
+        Index(value = ["globalId"]),
+    ],
+)
+data class MessageEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val accountId: Long,
+    val folderId: Long,
+    val uid: Long,
+    val globalId: String,
+    val inReplyTo: String,
+    val refs: String,
+    val subject: String,
+    val fromList: String,
+    val toList: String,
+    val ccList: String,
+    val bccList: String,
+    val replyToList: String,
+    val sentAt: Long,
+    val date: Long,
+    val size: Long,
+    val seen: Boolean,
+    val flagged: Boolean,
+    val answered: Boolean,
+    val forwarded: Boolean,
+    val draft: Boolean,
+    val attachments: Int,
+    val preview: String,
+    val bodyState: Int,
+) {
+    companion object {
+        const val BODY_MISSING = 0
+        const val BODY_KEPT = 1
+        const val BODY_NONE = 2
+    }
+}
+
+/**
+ * What a message says: its plain text and, where it has one, its HTML, cleaned before it was
+ * stored. [remoteImages] says the HTML asks for pictures from the network.
+ */
+@Entity(
+    tableName = "body",
+    foreignKeys = [ForeignKey(entity = MessageEntity::class, parentColumns = ["id"], childColumns = ["messageId"], onDelete = ForeignKey.CASCADE)],
+)
+data class BodyEntity(
+    @PrimaryKey val messageId: Long,
+    val text: String,
+    val html: String?,
+    val remoteImages: Boolean,
+)
+
+/**
+ * A file inside a message: where it is ([part], as IMAP numbers the parts), what it is, and the
+ * name the message's HTML refers to it by ([contentId], empty for none).
+ */
+@Entity(
+    tableName = "attachment",
+    foreignKeys = [ForeignKey(entity = MessageEntity::class, parentColumns = ["id"], childColumns = ["messageId"], onDelete = ForeignKey.CASCADE)],
+    indices = [Index(value = ["messageId"])],
+)
+data class AttachmentEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val messageId: Long,
+    val part: String,
+    val name: String,
+    val mimeType: String,
+    val size: Long,
+    val contentId: String,
+    val inline: Boolean,
+)
+
+/**
+ * The search index: a message's subject, the people on it and its text, folded
+ * ([com.deskmail.core.text.TurkishFold]) so that "sarki" finds "Şarkı". The row's id is the message's.
+ */
+@Fts4(tokenizer = FtsOptions.TOKENIZER_UNICODE61)
+@Entity(tableName = "message_fts")
+data class MessageFts(
+    @PrimaryKey @ColumnInfo(name = "rowid") val rowId: Long,
+    val subject: String,
+    val people: String,
+    val body: String,
 )

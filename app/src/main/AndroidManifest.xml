@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <!-- The mail servers of the user's accounts, and the provider database when an account is added.
+         Nothing else: no analytics, no server of the app's own. -->
+    <uses-permission android:name="android.permission.INTERNET" />
+
     <!-- allowBackup: nothing of the app is backed up; mail is on the server and the credentials
          must not leave the device.
          enableOnBackInvokedCallback: the predictive Back gesture plays the kit's transitions. -->

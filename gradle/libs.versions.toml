@@ -19,7 +19,7 @@ ksp = "2.3.13"
 room = "3.0.3"
 sqlite = "2.7.1"
 junit = "4.13.2"
-# A mail server inside the tests of :core: IMAP and SMTP on a free local port.
+# A mail server inside the tests: IMAP and SMTP on a free local port.
 greenmail = "2.1.15"
 # The tests of :app, as in the kit: Robolectric 4.17 runs Android 16 (API 36) on Java 21.
 robolectric = "4.17"
@@ -36,6 +36,7 @@ androidx-core = { module = "androidx.core:core", version.ref = "core" }
 angus-mail = { module = "org.eclipse.angus:angus-mail", version.ref = "angusMail" }
 jsoup = { module = "org.jsoup:jsoup", version.ref = "jsoup" }
 coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
+coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "coroutines" }
 room-runtime = { module = "androidx.room3:room3-runtime", version.ref = "room" }
 room-compiler = { module = "androidx.room3:room3-compiler", version.ref = "room" }
 sqlite-framework = { module = "androidx.sqlite:sqlite-framework", version.ref = "sqlite" }

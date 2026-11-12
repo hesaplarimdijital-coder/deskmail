@@ -16,7 +16,15 @@ import kotlinx.coroutines.Dispatchers
  * over the version before it and the accounts stay.
  */
 @Database(
-    entities = [AccountEntity::class, CredentialEntity::class, FolderEntity::class],
+    entities = [
+        AccountEntity::class,
+        CredentialEntity::class,
+        FolderEntity::class,
+        MessageEntity::class,
+        BodyEntity::class,
+        AttachmentEntity::class,
+        MessageFts::class,
+    ],
     version = 1,
     exportSchema = true,
 )
@@ -24,6 +32,8 @@ abstract class DeskMailDatabase : RoomDatabase() {
     abstract fun accounts(): AccountDao
 
     abstract fun folders(): FolderDao
+
+    abstract fun messages(): MessageDao
 
     companion object {
         /** The database's file among the app's databases. */
