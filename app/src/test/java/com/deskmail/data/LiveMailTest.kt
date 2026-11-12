@@ -98,7 +98,10 @@ class LiveMailTest {
         val id = account()
         assertEquals(MailSync.Outcome.Done, sync.account(id, also = setOf("Sent")))
 
-        eventually("the accounts and folders are read") { mail.loaded && mail.folders.size == 4 }
+        // the lists follow the database a moment later: it is what the sync ended with that is waited for
+        eventually("the accounts and folders are read") {
+            mail.loaded && mail.folders.size == 4 && mail.folders[0].total == 2 && mail.accounts.firstOrNull()?.state == AccountState.Ok
+        }
         assertEquals(listOf("Posta"), mail.accounts.map { it.name })
         assertEquals(AccountState.Ok, mail.accounts[0].state)
         assertEquals(TestImapServer.LOCALHOST, mail.accounts[0].server)

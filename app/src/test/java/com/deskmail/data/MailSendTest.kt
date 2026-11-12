@@ -430,9 +430,10 @@ class MailSendTest {
         composer.attach(second, "ek.txt", "text/plain") { "ek".byteInputStream() }
         composer.send(second)
 
-        // the latest touched first
-        eventually("the outbox is read") { composer.outbox.size == 2 }
-        assertEquals(listOf("İkinci" to DraftState.Waiting, "Birinci" to DraftState.Writing), composer.outbox.map { it.subject to it.state })
+        // the latest touched first. The list follows what was done a moment later, so it is its last
+        // state that is waited for: both messages were in it before the second was handed over
+        val listed = listOf("İkinci" to DraftState.Waiting, "Birinci" to DraftState.Writing)
+        eventually("the outbox lists both, the one handed over as waiting") { composer.outbox.map { it.subject to it.state } == listed }
 
         assertTrue(composer.discard(second))
         assertTrue(composer.discard(first))
