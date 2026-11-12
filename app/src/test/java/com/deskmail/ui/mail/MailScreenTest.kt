@@ -4,6 +4,9 @@ import androidx.activity.ComponentActivity
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
+import androidx.compose.ui.test.hasAnyAncestor
+import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
@@ -17,6 +20,7 @@ import com.deskmail.TestApp
 import com.deskmail.testMail
 import com.deskmail.testPrefs
 import com.deskmail.testSettings
+import com.deskmail.ui.Routes
 import desktopkit.theme.DensityPreference
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -179,6 +183,25 @@ class MailScreenTest {
         compose.mainClock.advanceTimeBy(2_000)
         compose.waitForIdle()
         assertEquals(0.35f, settings.listShare, 0.001f)
+    }
+
+    /** However wide the reader, a plain-text message keeps lines of a length that reads well. */
+    @Test
+    @Config(qualifiers = "tr-w1920dp-h1080dp-mdpi")
+    fun aWideReaderKeepsPlainTextToAReadableLine() {
+        val prefs = testPrefs(density = DensityPreference.Pointer)
+        val settings = testSettings()
+        val ui = MailUiState(settings)
+        val newsletter = mail.messages.first { it.subject.startsWith("Kasım bülteni") }
+        openMessage(mail, ui, Routes.INBOX, newsletter)
+        compose.setContent { TestApp(mail, prefs, settings, ui) }
+        val reader = compose.onNodeWithTag(MailTags.READER).getUnclippedBoundsInRoot()
+        val readerWidth = (reader.right - reader.left).value
+        assertTrue("the reader is $readerWidth dp wide", readerWidth > 800f)
+        val text = compose.onNode(hasText(newsletter.text) and hasAnyAncestor(hasTestTag(MailTags.READER))).getUnclippedBoundsInRoot()
+        // 42 em of the body's size (14 sp here: 588 dp) and the page's padding; far from the reader's width
+        val textWidth = (text.right - text.left).value
+        assertTrue("the text is $textWidth dp wide", textWidth in 480f..700f)
     }
 
     /** A window with a sidebar but little room: the rows, even with a mouse. */

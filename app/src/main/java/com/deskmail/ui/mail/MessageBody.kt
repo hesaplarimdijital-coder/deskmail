@@ -9,6 +9,7 @@ import android.webkit.WebResourceRequest
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.text.selection.SelectionContainer
@@ -118,15 +119,19 @@ fun PlainMessageBody(message: MailMessage, modifier: Modifier = Modifier) {
     val dimens = DeskTheme.dimens
     val style = DeskTheme.type.body
     val widest = with(LocalDensity.current) { (style.fontSize * PLAIN_TEXT_EMS).toDp() }
-    SelectionContainer(modifier) {
-        Text(
-            message.text,
-            style = style,
-            color = DeskTheme.colors.text,
-            modifier = Modifier
-                .padding(start = dimens.pagePadding, end = dimens.pagePadding, bottom = dimens.gapXl)
-                .widthIn(max = widest),
-        )
+    // A box of the reader's width around the text: handed that width directly, the text would be
+    // held to it as its least width, and the limit below would count for nothing.
+    Box(modifier) {
+        SelectionContainer {
+            Text(
+                message.text,
+                style = style,
+                color = DeskTheme.colors.text,
+                modifier = Modifier
+                    .padding(start = dimens.pagePadding, end = dimens.pagePadding, bottom = dimens.gapXl)
+                    .widthIn(max = widest),
+            )
+        }
     }
 }
 
