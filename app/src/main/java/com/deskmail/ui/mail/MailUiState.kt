@@ -26,7 +26,7 @@ enum class MailFilter { Unread, Starred, Attachments }
  * crosses from list → message to two panes: neither may lose the open message.
  */
 @Stable
-class MailUiState(settings: AppSettings? = null) {
+class MailUiState(private val settings: AppSettings? = null) {
     private val opened = mutableStateMapOf<String, Long>()
     private val filters = mutableStateMapOf<String, Set<MailFilter>>()
     private val lists = HashMap<String, LazyListState>()
@@ -38,8 +38,22 @@ class MailUiState(settings: AppSettings? = null) {
     /** The table's sort: its column (see [MessageColumns]) and direction. Newest first to begin with. */
     var sort by mutableStateOf(TableSort(MessageColumns.DATE, ascending = false))
 
-    /** The width of the list beside the reader, shared by every screen; [AppSettings.listWidth] to begin with. */
-    val listSplit = SplitState(settings?.listWidth ?: 440f)
+    /**
+     * The list's share of the room it has with the reader, shared by every screen:
+     * [AppSettings.listShare] to begin with, then what the divider is dragged to in this window.
+     */
+    var listShare = settings?.listShare ?: AppSettings.DEFAULT_LIST_SHARE
+        private set
+
+    /**
+     * The divider between the list and the reader. The kit keeps a width in it; [fitList] makes that
+     * width the list's share of the window's room, so the split follows a window that is resized.
+     */
+    val listSplit = SplitState(MailLayout.listWidth(MailLayout.TWO_PANES_FROM, listShare))
+
+    /** The room last fitted to, and the width that gave the list: any other width in [listSplit] was dragged to. */
+    private var room = 0f
+    private var fitted = Float.NaN
 
     /**
      * The inspector of a large window, shared by every screen. Its width and whether it is open
@@ -50,6 +64,30 @@ class MailUiState(settings: AppSettings? = null) {
         initialWidthDp = settings?.inspectorWidth ?: 320f,
         initialCollapsed = settings?.inspectorCollapsed ?: true,
     ) { width, collapsed -> settings?.updateInspector(width, collapsed) }
+
+    /**
+     * Told by a screen how much room the list and the reader have between them: gives the list its
+     * share of it. A drag since the last time becomes the share first.
+     */
+    fun fitList(room: Float) {
+        noteDraggedList()
+        this.room = room
+        val width = MailLayout.listWidth(room, listShare)
+        fitted = width
+        if (listSplit.startWidthDp != width) listSplit.startWidthDp = width
+    }
+
+    /**
+     * Looks whether the divider was dragged since the list was last fitted: the width it was
+     * dragged to becomes the list's share, here and in the settings.
+     */
+    fun noteDraggedList() {
+        val width = listSplit.startWidthDp
+        if (room <= 0f || width == fitted) return
+        fitted = width
+        listShare = MailLayout.listShare(room, width)
+        settings?.updateListShare(listShare)
+    }
 
     fun openedId(route: String): Long? = opened[route]
 

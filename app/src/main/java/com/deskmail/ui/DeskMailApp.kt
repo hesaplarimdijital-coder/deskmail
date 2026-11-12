@@ -114,11 +114,12 @@ fun DeskMailApp(
     val body: @Composable (MailMessage, Modifier) -> Unit = messageBody ?: { message, modifier ->
         WebMessageBody(message, modifier, darken = settings.darkenMessages, layer = settings.webLayer, onLink = showLink)
     }
-    // the width the list was dragged to outlives the window
-    LaunchedEffect(ui, settings) {
-        snapshotFlow { ui.listSplit.startWidthDp }.drop(1).collectLatest { width ->
+    // What the divider between list and reader was dragged to outlives the window: once a drag
+    // has rested, the window's state takes it as the list's share and stores it.
+    LaunchedEffect(ui) {
+        snapshotFlow { ui.listSplit.startWidthDp }.drop(1).collectLatest {
             delay(SAVE_AFTER_MS)
-            settings.updateListWidth(width)
+            ui.noteDraggedList()
         }
     }
 
@@ -317,7 +318,7 @@ fun DeskMailApp(
 /** A link's address is shown whole up to this many characters. */
 private const val LINK_LENGTH = 300
 
-/** A dragged width is stored once the drag has rested this long. */
+/** A dragged divider is stored once the drag has rested this long. */
 private const val SAVE_AFTER_MS = 500L
 
 /** The mail a route lists, or null for a screen that is not a list of messages. */

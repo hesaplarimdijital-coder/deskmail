@@ -75,8 +75,12 @@ class AppSettings(private val prefs: SharedPreferences, private val log: AppLog?
     var inspectorWidth by mutableFloatStateOf(prefs.getFloat(KEY_INSPECTOR_WIDTH, 320f))
         private set
 
-    /** The width of the message list beside the reader, in dp. */
-    var listWidth by mutableFloatStateOf(prefs.getFloat(KEY_LIST_WIDTH, 440f))
+    /**
+     * The message list's share of the room it has with the reader, 0 to 1: what the divider between
+     * them was dragged to. A share and not a width, so a window of another size (the tablet upright,
+     * a monitor) divides its room the same way.
+     */
+    var listShare by mutableFloatStateOf(prefs.getFloat(KEY_LIST_SHARE, DEFAULT_LIST_SHARE).coerceIn(MIN_LIST_SHARE, MAX_LIST_SHARE))
         private set
 
     fun updateInspector(width: Float, collapsed: Boolean) {
@@ -85,14 +89,21 @@ class AppSettings(private val prefs: SharedPreferences, private val log: AppLog?
         prefs.edit().putFloat(KEY_INSPECTOR_WIDTH, width).putBoolean(KEY_INSPECTOR_COLLAPSED, collapsed).apply()
     }
 
-    fun updateListWidth(width: Float) {
-        listWidth = width
-        prefs.edit().putFloat(KEY_LIST_WIDTH, width).apply()
+    fun updateListShare(share: Float) {
+        listShare = share.coerceIn(MIN_LIST_SHARE, MAX_LIST_SHARE)
+        prefs.edit().putFloat(KEY_LIST_SHARE, listShare).apply()
     }
 
     companion object {
         /** The file the app's settings are kept in. */
         const val FILE = "deskmail"
+
+        /** The list takes a little under half of the room until the divider is dragged. */
+        const val DEFAULT_LIST_SHARE = 0.45f
+
+        /** No stored share leaves the list or the reader without room. */
+        const val MIN_LIST_SHARE = 0.15f
+        const val MAX_LIST_SHARE = 0.85f
 
         private const val KEY_GLASS = "experiment_glass"
         private const val KEY_READER_UNDER_BARS = "experiment_reader_under_bars"
@@ -100,6 +111,6 @@ class AppSettings(private val prefs: SharedPreferences, private val log: AppLog?
         private const val KEY_WEB_LAYER = "experiment_web_layer"
         private const val KEY_INSPECTOR_COLLAPSED = "inspector_collapsed"
         private const val KEY_INSPECTOR_WIDTH = "inspector_width"
-        private const val KEY_LIST_WIDTH = "list_width"
+        private const val KEY_LIST_SHARE = "list_share"
     }
 }

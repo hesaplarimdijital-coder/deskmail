@@ -170,8 +170,8 @@ class AppScreenshotTest {
 
     @Test @Config(qualifiers = PHONE)
     fun phoneLogDark() {
+        // the app adds the window's line itself when it is drawn
         log.info("app", "started: DeskMail 0.1.0-alpha.1 (1), Android 17 (API 37), samsung SM-S921B, tr-TR, Europe/Istanbul")
-        log.info("window", "Compact, 411 x 891 dp")
         log.info("reader", "WebView: com.google.android.webview 142.0.7444.102")
         log.info("imap", "C: a1 LOGIN deniz@gmail.example abcd-efgh-ijkl-mnop")
         log.warn("idle", "outlook.office365.com: connection lost, trying again in 30 s")
@@ -211,12 +211,20 @@ class AppScreenshotTest {
         capture("tablet-portrait-reader-light")
     }
 
-    /** On its side the tablet is a large window: sidebar, table and reader, with a finger's sizes. */
+    /** On its side the tablet is a large window: sidebar, list and reader. A finger gets the rows. */
     @Test @Config(qualifiers = TABLET_LANDSCAPE)
     fun tabletLandscapeDark() {
         open(Routes.INBOX, "Re: Proje planı (v3)")
         launch(ThemeMode.Dark)
         capture("tablet-landscape-dark")
+    }
+
+    /** The same window with the keyboard cover's touchpad, or as a DeX window on the tablet itself: the table. */
+    @Test @Config(qualifiers = TABLET_LANDSCAPE)
+    fun tabletLandscapeWithAMouseDark() {
+        open(Routes.INBOX, "Re: Proje planı (v3)")
+        launch(ThemeMode.Dark, DensityPreference.Pointer)
+        capture("tablet-landscape-mouse-dark")
     }
 
     @Test @Config(qualifiers = TABLET_LANDSCAPE)

@@ -1,6 +1,7 @@
 package com.deskmail.ui.mail
 
 import androidx.activity.ComponentActivity
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
@@ -9,7 +10,9 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performSemanticsAction
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.deskmail.R
 import com.deskmail.TestApp
 import com.deskmail.testMail
 import com.deskmail.testPrefs
@@ -113,7 +116,7 @@ class MailScreenTest {
         compose.onNodeWithText("İade tarihi yaklaşıyor", substring = true).assertIsDisplayed()
     }
 
-    /** A large window: the table, the reader, and the inspector once it is opened. */
+    /** A large window with a mouse: the table, the reader, and the inspector once it is opened. */
     @Test
     @Config(qualifiers = "tr-w1440dp-h900dp-mdpi")
     fun aLargeWindowShowsTheTableTheReaderAndTheInspector() {
@@ -132,5 +135,62 @@ class MailScreenTest {
         compose.onNodeWithContentDescription(show).performClick()
         compose.waitForIdle()
         compose.onNodeWithText("Hesap").assertIsDisplayed()
+    }
+
+    /** The table is for a mouse: a finger gets the rows in a large window too, beside the reader. */
+    @Test
+    @Config(qualifiers = "tr-w1480dp-h924dp-mdpi")
+    fun aLargeWindowListsRowsForAFinger() {
+        val prefs = testPrefs(density = DensityPreference.Touch)
+        val settings = testSettings()
+        compose.setContent { TestApp(mail, prefs, settings) }
+        compose.onNodeWithText("14 ileti").assertIsDisplayed()
+        compose.onNodeWithText("Kimden").assertDoesNotExist()
+        compose.onNodeWithText("Açık ileti yok").assertIsDisplayed()
+        compose.onNodeWithText(subject, substring = true).performClick()
+        compose.waitForIdle()
+        compose.onNodeWithText(subject).assertIsDisplayed()
+        // the list is still there
+        compose.onNodeWithText("İade tarihi yaklaşıyor", substring = true).assertIsDisplayed()
+    }
+
+    /**
+     * The list has its share of the room beside the sidebar, and the divider changes the share: a
+     * list too narrow for columns shows the rows, and what was dragged is there for the next window.
+     */
+    @Test
+    @Config(qualifiers = "tr-w1440dp-h900dp-mdpi")
+    fun theDividerSetsTheListsShareAndANarrowListShowsRows() {
+        val prefs = testPrefs(density = DensityPreference.Pointer)
+        val settings = testSettings()
+        val ui = MailUiState(settings)
+        compose.setContent { TestApp(mail, prefs, settings, ui) }
+        // 1440 dp less the sidebar's 240: 45 % of 1200
+        assertEquals(540f, ui.listSplit.startWidthDp, 0.5f)
+        compose.onNodeWithText("Kimden").assertIsDisplayed()
+
+        val divider = compose.activity.getString(R.string.list_resize)
+        compose.onNodeWithContentDescription(divider).performSemanticsAction(SemanticsActions.SetProgress) { it(420f) }
+        compose.waitForIdle()
+        compose.onNodeWithText("Kimden").assertDoesNotExist()
+        compose.onNodeWithText(subject, substring = true).assertIsDisplayed()
+
+        // stored once the drag has rested
+        compose.mainClock.advanceTimeBy(2_000)
+        compose.waitForIdle()
+        assertEquals(0.35f, settings.listShare, 0.001f)
+    }
+
+    /** A window with a sidebar but little room: the rows, even with a mouse. */
+    @Test
+    @Config(qualifiers = "tr-w1240dp-h800dp-mdpi")
+    fun aListTooNarrowForATableShowsRows() {
+        val prefs = testPrefs(density = DensityPreference.Pointer)
+        val settings = testSettings()
+        compose.setContent { TestApp(mail, prefs, settings) }
+        // 45 % of 1000 dp
+        compose.onNodeWithText("14 ileti").assertIsDisplayed()
+        compose.onNodeWithText("Kimden").assertDoesNotExist()
+        compose.onNodeWithText(subject, substring = true).assertIsDisplayed()
     }
 }

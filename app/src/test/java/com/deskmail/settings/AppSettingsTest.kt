@@ -22,7 +22,7 @@ class AppSettingsTest {
         assertTrue(settings.darkenMessages)
         assertEquals(WebLayer.Default, settings.webLayer)
         assertTrue(settings.inspectorCollapsed)
-        assertEquals(440f, settings.listWidth, 0f)
+        assertEquals(0.45f, settings.listShare, 0f)
     }
 
     @Test
@@ -33,7 +33,7 @@ class AppSettingsTest {
             updateDarkenMessages(false)
             updateWebLayer(WebLayer.Software)
             updateInspector(width = 380f, collapsed = false)
-            updateListWidth(512f)
+            updateListShare(0.6f)
         }
         // the process starts again: a new object over the same file
         val restarted = AppSettings(prefs)
@@ -43,7 +43,16 @@ class AppSettingsTest {
         assertEquals(WebLayer.Software, restarted.webLayer)
         assertFalse(restarted.inspectorCollapsed)
         assertEquals(380f, restarted.inspectorWidth, 0f)
-        assertEquals(512f, restarted.listWidth, 0f)
+        assertEquals(0.6f, restarted.listShare, 0f)
+    }
+
+    /** Whatever a share was stored as, both the list and the reader keep some room. */
+    @Test
+    fun aStoredShareStaysWithinBounds() {
+        prefs.edit().putFloat("list_share", 7f).commit()
+        assertEquals(0.85f, AppSettings(prefs).listShare, 0f)
+        AppSettings(prefs).updateListShare(0.01f)
+        assertEquals(0.15f, AppSettings(prefs).listShare, 0f)
     }
 
     @Test

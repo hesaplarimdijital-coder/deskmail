@@ -3,6 +3,7 @@ package com.deskmail.ui.mail
 import android.text.format.Formatter
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -42,13 +43,18 @@ import desktopkit.shell.TopBarAction
 import desktopkit.shell.WidthClass
 import desktopkit.shell.rememberShellContentPadding
 import desktopkit.theme.DeskTheme
+import desktopkit.theme.InputMode
 
 /**
  * A view over the mail (the unified inbox, a folder) in the layout its window has room for:
  *
  * - a phone, and a tablet held upright: the list, and the message sliding over it (list → message);
  * - beside a rail, once the two fit: the list and the reader side by side;
- * - a large window (the sidebar; DeX): the table, the reader and the inspector that opens and closes.
+ * - a large window (the sidebar; DeX): the list, the reader and the inspector that opens and closes.
+ *
+ * Beside the reader the list has a share of the room, which the divider between them changes. In a
+ * large window it is a table when a mouse is in use and the list is wide enough for columns
+ * ([MailLayout.TABLE_FROM]); a finger, and a narrow list, get the two-line rows.
  *
  * Which message is open, the filters and the scroll position are kept by [ui], so resizing the
  * window from one layout into another keeps them.
@@ -73,21 +79,15 @@ fun MailScreen(
     readerUnderBars: Boolean,
     body: @Composable (MailMessage, Modifier) -> Unit,
 ) {
-    val navKind = LocalNavKind.current
+    val sidebar = LocalNavKind.current == NavKind.Sidebar
+    val pointer = DeskTheme.inputMode == InputMode.Pointer
     val filters = ui.filters(route)
     val all = mail.messages(view)
-    val sort = ui.sort
-    // a table is sorted by its header; the rows of the touch layouts are always newest first
-    val messages = remember(all, filters, sort, navKind) {
-        val filtered = filterMessages(all, filters)
-        if (navKind == NavKind.Sidebar) sortMessages(filtered, sort) else filtered
-    }
+    // newest first, as the store hands them out
+    val filtered = remember(all, filters) { filterMessages(all, filters) }
     // from the store, so a message stays open when a filter takes it off the list
     val opened = ui.openedId(route)?.let { mail.message(it) }
     val open: (MailMessage) -> Unit = { message -> openMessage(mail, ui, route, message) }
-    // what the keyboard steps through (J, K); the rows' list starts with the chips
-    val leadingItems = if (navKind == NavKind.Sidebar) 0 else 1
-    SideEffect { ui.setShown(route, messages.map { it.id }, leadingItems) }
     val composeLabel = stringResource(R.string.action_new_message)
     val showImages = stringResource(R.string.reader_remote_show)
     val openAttachment = stringResource(R.string.action_open_attachment)
@@ -126,79 +126,82 @@ fun MailScreen(
             trailingActions = { trailing() },
         )
     }
+    // The rows as a phone, a tablet held upright and a window beside a rail list them: under the
+    // chips, which scroll away with them. They are what the keyboard steps through there (J, K).
+    val rows: @Composable () -> Unit = {
+        // a phone's top bar: the view's name, back for a folder opened from the Folders list, "New message"
+        CompactTopBar(onBack = onBack, actions = listOf(TopBarAction(MailIcons.Compose, composeLabel, onCompose, primary = true)))
+        MessageRows(
+            messages = filtered,
+            openedId = opened?.id,
+            state = ui.listState(route),
+            onOpen = open,
+            contentPadding = bars,
+            modifier = Modifier.testTag(MailTags.LIST),
+            header = chips,
+            empty = empty,
+        )
+    }
+    if (!sidebar) SideEffect { ui.setShown(route, filtered.map { it.id }, leadingItems = 1) }
 
-    when (navKind) {
-        NavKind.Sidebar -> {
-            // DeX and large windows: table | reader | inspector
-            val inspector = ui.inspector
-            WorkstationLayout(
-                state = inspector,
-                main = {
-                    HorizontalSplitPane(
-                        state = ui.listSplit,
-                        start = {
-                            Column(Modifier.fillMaxSize()) {
-                                PageHeader(title, subtitle = pluralString(R.plurals.message_count, all.size))
-                                chips()
-                                if (messages.isEmpty()) {
-                                    empty()
+    BoxWithConstraints(Modifier.fillMaxSize()) {
+        // what the list and the reader have between them
+        val room = maxWidth.value
+        // before the panes are measured: the list's share of this window's room
+        SideEffect { ui.fitList(room) }
+        when {
+            sidebar -> {
+                // DeX and large windows: list | reader | inspector
+                val inspector = ui.inspector
+                WorkstationLayout(
+                    state = inspector,
+                    main = {
+                        HorizontalSplitPane(
+                            state = ui.listSplit,
+                            start = {
+                                ListPane(
+                                    route = route,
+                                    title = title,
+                                    count = all.size,
+                                    messages = filtered,
+                                    openedId = opened?.id,
+                                    ui = ui,
+                                    prefs = prefs,
+                                    pointer = pointer,
+                                    onOpen = open,
+                                    chips = chips,
+                                    empty = empty,
+                                )
+                            },
+                            end = {
+                                if (opened == null) {
+                                    NoMessageOpen()
                                 } else {
-                                    MessageTable(
-                                        messages = messages,
-                                        openedId = opened?.id,
-                                        state = ui.listState(route),
-                                        sort = sort,
-                                        onSortChange = { ui.sort = it },
-                                        onOpen = open,
-                                        prefs = prefs,
-                                        modifier = Modifier.testTag(MailTags.LIST),
-                                    )
+                                    reader(opened, null) { InspectorToggleButton(inspector) }
                                 }
-                            }
-                        },
-                        end = {
-                            if (opened == null) {
-                                NoMessageOpen()
-                            } else {
-                                reader(opened, null) { InspectorToggleButton(inspector) }
-                            }
-                        },
-                        minStart = 320.dp,
-                        minEnd = 360.dp,
-                        dividerLabel = stringResource(R.string.list_resize),
-                    )
-                },
-                inspector = { MessageInspector(opened, mail, inspector.selectedTab, { inspector.selectedTab = it }, inspector::toggle) },
-                minMain = 680.dp,
-                showFrom = WidthClass.Large,
-            )
-        }
-        else -> BoxWithConstraints(Modifier.fillMaxSize()) {
-            val rows: @Composable () -> Unit = {
-                // a phone's top bar: the view's name, back for a folder opened from the Folders list, "New message"
-                CompactTopBar(onBack = onBack, actions = listOf(TopBarAction(MailIcons.Compose, composeLabel, onCompose, primary = true)))
-                MessageRows(
-                    messages = messages,
-                    openedId = opened?.id,
-                    state = ui.listState(route),
-                    onOpen = open,
-                    contentPadding = bars,
-                    modifier = Modifier.testTag(MailTags.LIST),
-                    header = chips,
-                    empty = empty,
+                            },
+                            minStart = MailLayout.MIN_LIST.dp,
+                            minEnd = MailLayout.MIN_READER.dp,
+                            dividerLabel = stringResource(R.string.list_resize),
+                        )
+                    },
+                    inspector = { MessageInspector(opened, mail, inspector.selectedTab, { inspector.selectedTab = it }, inspector::toggle) },
+                    minMain = 680.dp,
+                    showFrom = WidthClass.Large,
                 )
             }
-            if (maxWidth >= TWO_PANES_FROM) {
+            room >= MailLayout.TWO_PANES_FROM -> {
                 // beside a rail with room for both: list | reader
                 HorizontalSplitPane(
                     state = ui.listSplit,
                     start = rows,
                     end = { if (opened == null) NoMessageOpen() else reader(opened, null) {} },
-                    minStart = 320.dp,
-                    minEnd = 360.dp,
+                    minStart = MailLayout.MIN_LIST.dp,
+                    minEnd = MailLayout.MIN_READER.dp,
                     dividerLabel = stringResource(R.string.list_resize),
                 )
-            } else {
+            }
+            else -> {
                 // a phone, a tablet held upright: the message slides over the list
                 DetailTransition(
                     detail = opened,
@@ -215,14 +218,64 @@ fun MailScreen(
     }
 }
 
+/**
+ * The list of a large window, under the view's name and the chips: a table when a mouse is in use
+ * ([pointer]) and the pane is wide enough for columns, the rows otherwise. A table is sorted by its
+ * header; the rows are always newest first.
+ */
+@Composable
+private fun ListPane(
+    route: String,
+    title: String,
+    count: Int,
+    messages: List<MailMessage>,
+    openedId: Long?,
+    ui: MailUiState,
+    prefs: DeskPreferences,
+    pointer: Boolean,
+    onOpen: (MailMessage) -> Unit,
+    chips: @Composable () -> Unit,
+    empty: @Composable () -> Unit,
+) {
+    BoxWithConstraints(Modifier.fillMaxSize()) {
+        val table = pointer && maxWidth >= MailLayout.TABLE_FROM.dp
+        val sort = ui.sort
+        val shown = remember(messages, sort, table) { if (table) sortMessages(messages, sort) else messages }
+        // what the keyboard steps through (J, K)
+        SideEffect { ui.setShown(route, shown.map { it.id }, leadingItems = 0) }
+        Column(Modifier.fillMaxSize()) {
+            PageHeader(title, subtitle = pluralString(R.plurals.message_count, count))
+            chips()
+            when {
+                shown.isEmpty() -> empty()
+                table -> MessageTable(
+                    messages = shown,
+                    openedId = openedId,
+                    state = ui.listState(route),
+                    sort = sort,
+                    onSortChange = { ui.sort = it },
+                    onOpen = onOpen,
+                    prefs = prefs,
+                    modifier = Modifier.testTag(MailTags.LIST),
+                )
+                else -> MessageRows(
+                    messages = shown,
+                    openedId = openedId,
+                    state = ui.listState(route),
+                    onOpen = onOpen,
+                    contentPadding = PaddingValues(bottom = 8.dp),
+                    modifier = Modifier.testTag(MailTags.LIST),
+                )
+            }
+        }
+    }
+}
+
 /** Opens [message] in [route]'s reader. A message that is opened is read. */
 fun openMessage(mail: DemoMail, ui: MailUiState, route: String, message: MailMessage) {
     ui.open(route, message)
     mail.setUnread(message.id, false)
 }
-
-/** From this width of the content on, the list and the reader stand side by side. */
-private val TWO_PANES_FROM = 880.dp
 
 /** Names the tests find the screen's two parts by. */
 object MailTags {
