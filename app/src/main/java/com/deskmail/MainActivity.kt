@@ -1,10 +1,11 @@
 package com.deskmail
 
+import android.app.Application
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.lifecycle.ViewModel
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.deskmail.demo.DemoMail
 import com.deskmail.ui.DeskMailApp
@@ -23,12 +24,12 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            DeskMailApp(mail = DemoMail.shared, ui = state.mail, startRoute = DeskWindows.startRoute(intent))
+            DeskMailApp(mail = DemoMail.shared, settings = deskMail.settings, ui = state.mail, startRoute = DeskWindows.startRoute(intent))
         }
     }
 }
 
 /** What this window shows, kept when something recreates its activity. */
-class WindowState : ViewModel() {
-    val mail = MailUiState()
+class WindowState(application: Application) : AndroidViewModel(application) {
+    val mail = MailUiState(application.deskMail.settings)
 }

@@ -7,6 +7,7 @@ import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.deskmail.mail.MailMessage
+import com.deskmail.settings.AppSettings
 import desktopkit.components.InspectorState
 import desktopkit.components.SplitState
 import desktopkit.components.TableSort
@@ -24,7 +25,7 @@ enum class MailFilter { Unread, Starred, Attachments }
  * crosses from list → message to two panes: neither may lose the open message.
  */
 @Stable
-class MailUiState {
+class MailUiState(settings: AppSettings? = null) {
     private val opened = mutableStateMapOf<String, Long>()
     private val filters = mutableStateMapOf<String, Set<MailFilter>>()
     private val lists = HashMap<String, LazyListState>()
@@ -32,14 +33,18 @@ class MailUiState {
     /** The table's sort: its column (see [MessageColumns]) and direction. Newest first to begin with. */
     var sort by mutableStateOf(TableSort(MessageColumns.DATE, ascending = false))
 
-    /** The width of the list beside the reader, shared by every screen. */
-    val listSplit = SplitState(440f)
+    /** The width of the list beside the reader, shared by every screen; [AppSettings.listWidth] to begin with. */
+    val listSplit = SplitState(settings?.listWidth ?: 440f)
 
     /**
-     * The inspector of a large window, shared by every screen. Closed to begin with: beside the
-     * sidebar, the table and the reader it leaves little room on anything but a monitor.
+     * The inspector of a large window, shared by every screen. Its width and whether it is open
+     * are the app's settings ([AppSettings.inspectorCollapsed]: closed to begin with); without
+     * settings (a test) they last as long as the window.
      */
-    val inspector = InspectorState(initialWidthDp = 320f, initialCollapsed = true)
+    val inspector = InspectorState(
+        initialWidthDp = settings?.inspectorWidth ?: 320f,
+        initialCollapsed = settings?.inspectorCollapsed ?: true,
+    ) { width, collapsed -> settings?.updateInspector(width, collapsed) }
 
     fun openedId(route: String): Long? = opened[route]
 

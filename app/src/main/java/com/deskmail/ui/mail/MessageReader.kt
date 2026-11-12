@@ -48,7 +48,7 @@ import desktopkit.theme.DeskTheme
 /**
  * One message: its actions, the subject, who it is from and to, when, its attachments, a strip
  * when images were kept from loading, and the body ([body], the WebView in the app). Everything
- * scrolls as one page, under the phone's bars.
+ * scrolls as one page: beneath the phone's bars with [underBars], between them without.
  *
  * On a phone the actions are in the top bar, with the back arrow ([onClose]); wider windows show
  * them in a row above the subject, with [trailingActions] at its end and a back arrow only where
@@ -64,6 +64,7 @@ fun MessageReader(
     onAttachment: (MailAttachment) -> Unit,
     body: @Composable (MailMessage, Modifier) -> Unit,
     modifier: Modifier = Modifier,
+    underBars: Boolean = true,
     trailingActions: @Composable RowScope.() -> Unit = {},
 ) {
     val colors = DeskTheme.colors
@@ -85,12 +86,16 @@ fun MessageReader(
     }
     // every message starts at its top
     val scroll = remember(message.id) { ScrollState(0) }
+    // The bars' padding inside the scrolling page lets the page pass beneath them and still rest
+    // clear of them at its ends; around the page it keeps the page between the bars.
+    val bars = Modifier.padding(rememberShellContentPadding())
     Column(
         modifier
             .fillMaxSize()
             .background(colors.background)
+            .then(if (underBars) Modifier else bars)
             .verticalScroll(scroll)
-            .padding(rememberShellContentPadding()),
+            .then(if (underBars) bars else Modifier),
     ) {
         if (!compact) {
             Row(

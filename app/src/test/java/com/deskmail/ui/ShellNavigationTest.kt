@@ -26,7 +26,10 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.deskmail.core.mail.FolderRole
 import com.deskmail.demo.DemoMail
 import com.deskmail.mail.MailFolder
+import com.deskmail.TestApp
+import com.deskmail.testMail
 import com.deskmail.testPrefs
+import com.deskmail.testSettings
 import desktopkit.shell.DesktopShell
 import desktopkit.shell.ShellTransitions
 import desktopkit.shell.WidthClass
@@ -53,7 +56,8 @@ class ShellNavigationTest {
     @Config(qualifiers = "tr-w411dp-h891dp-xxhdpi")
     fun aPhoneOpensAFolderOnTopOfTheFolderList() {
         val prefs = testPrefs()
-        compose.setContent { DeskMailApp(mail = DemoMail(), prefs = prefs) }
+        val settings = testSettings()
+        compose.setContent { TestApp(testMail(), prefs, settings) }
         compose.onNode(hasText("Klasörler") and isSelectable()).performClick()
         compose.onNodeWithText(outlookCaption).assertExists()
 
@@ -71,7 +75,8 @@ class ShellNavigationTest {
     @Config(qualifiers = "tr-w1280dp-h800dp-mdpi")
     fun aLargeWindowListsTheFoldersInTheSidebar() {
         val prefs = testPrefs(density = DensityPreference.Pointer)
-        compose.setContent { DeskMailApp(mail = DemoMail(), prefs = prefs) }
+        val settings = testSettings()
+        compose.setContent { TestApp(testMail(), prefs, settings) }
         compose.onNode(hasText("Gelen") and isSelectable()).assertIsSelected()
         compose.onNode(hasText("Projeler / 2026") and isSelectable()).performScrollTo().performClick()
         compose.waitForIdle()

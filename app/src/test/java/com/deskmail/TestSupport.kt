@@ -2,8 +2,10 @@ package com.deskmail
 
 import android.content.Context
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.test.core.app.ApplicationProvider
 import com.deskmail.demo.DemoMail
+import com.deskmail.settings.AppSettings
 import com.deskmail.ui.DeskMailApp
 import com.deskmail.ui.mail.MailClock
 import com.deskmail.ui.mail.MailUiState
@@ -27,6 +29,12 @@ fun testPrefs(theme: ThemeMode = ThemeMode.Dark, density: DensityPreference = De
     }
 }
 
+/** The app's settings in a file of the test's own; every test starts from the defaults. */
+fun testSettings(): AppSettings {
+    val context = ApplicationProvider.getApplicationContext<Context>()
+    return AppSettings(context.getSharedPreferences("test-deskmail", Context.MODE_PRIVATE))
+}
+
 /** The moment the tests' mail is dated back from: 12 November 2026, 12:30 in Istanbul. */
 val TEST_NOW: Instant = Instant.parse("2026-11-12T09:30:00Z")
 
@@ -40,9 +48,16 @@ fun testMail() = DemoMail(TEST_NOW)
  * where the app has a WebView (Robolectric does not draw one).
  */
 @Composable
-fun TestApp(mail: DemoMail, prefs: DeskPreferences, ui: MailUiState = MailUiState(), startRoute: String? = null) {
+fun TestApp(
+    mail: DemoMail,
+    prefs: DeskPreferences,
+    settings: AppSettings,
+    ui: MailUiState = remember { MailUiState() },
+    startRoute: String? = null,
+) {
     DeskMailApp(
         mail = mail,
+        settings = settings,
         ui = ui,
         startRoute = startRoute,
         prefs = prefs,

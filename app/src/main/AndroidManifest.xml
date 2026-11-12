@@ -5,6 +5,7 @@
          must not leave the device.
          enableOnBackInvokedCallback: the predictive Back gesture plays the kit's transitions. -->
     <application
+        android:name=".DeskMailApplication"
         android:allowBackup="false"
         android:enableOnBackInvokedCallback="true"
         android:icon="@mipmap/ic_launcher"

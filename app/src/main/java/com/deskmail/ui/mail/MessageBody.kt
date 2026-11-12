@@ -24,6 +24,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
 import com.deskmail.R
 import com.deskmail.mail.MailMessage
+import com.deskmail.settings.WebLayer
 import desktopkit.theme.DeskTheme
 import kotlin.math.roundToInt
 
@@ -34,13 +35,20 @@ import kotlin.math.roundToInt
  * The WebView runs no scripts, reads no files or content providers and loads nothing from the
  * network. A tapped link is handed to [onLink] and never followed inside the view. The page is
  * light or dark with the kit's theme, not the system's: the view is created with a context whose
- * theme says which, and created anew when the theme changes.
+ * theme says which, and created anew when the theme changes. With [darken] off, a dark theme shows
+ * the message on white, as its sender made it. [layer] is an experiment: what the view draws into.
  *
  * Where the device has no usable WebView (it is being updated, or disabled), the message's plain
  * text is shown instead.
  */
 @Composable
-fun WebMessageBody(message: MailMessage, modifier: Modifier = Modifier, onLink: (String) -> Unit = {}) {
+fun WebMessageBody(
+    message: MailMessage,
+    modifier: Modifier = Modifier,
+    darken: Boolean = true,
+    layer: WebLayer = WebLayer.Default,
+    onLink: (String) -> Unit = {},
+) {
     val context = LocalContext.current
     val dark = DeskTheme.colors.isDark
     val latestOnLink by rememberUpdatedState(onLink)
@@ -65,6 +73,17 @@ fun WebMessageBody(message: MailMessage, modifier: Modifier = Modifier, onLink: 
             modifier = modifier,
             update = { view ->
                 view.settings.textZoom = textZoom
+                // on a dark theme the view darkens a page that brings no dark style of its own
+                view.settings.isAlgorithmicDarkeningAllowed = darken
+                // the kit's background shows through wherever the message paints none; a message kept
+                // light on a dark theme gets the white page it was written for
+                view.setBackgroundColor(if (dark && !darken) Color.WHITE else Color.TRANSPARENT)
+                val layerType = when (layer) {
+                    WebLayer.Default -> View.LAYER_TYPE_NONE
+                    WebLayer.Hardware -> View.LAYER_TYPE_HARDWARE
+                    WebLayer.Software -> View.LAYER_TYPE_SOFTWARE
+                }
+                if (view.layerType != layerType) view.setLayerType(layerType, null)
                 if (view.tag != document) {
                     view.tag = document
                     view.loadDataWithBaseURL(null, document, "text/html", "utf-8", null)
@@ -95,7 +114,6 @@ fun PlainMessageBody(message: MailMessage, modifier: Modifier = Modifier) {
 internal fun createMessageWebView(context: Context, onLink: (String) -> Unit): WebView = WebView(context).apply {
     // as tall as its content: the reader scrolls, not the view
     layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
-    // the kit's background shows through wherever the message paints none
     setBackgroundColor(Color.TRANSPARENT)
     isVerticalScrollBarEnabled = false
     overScrollMode = View.OVER_SCROLL_NEVER
@@ -115,8 +133,6 @@ internal fun createMessageWebView(context: Context, onLink: (String) -> Unit): W
         builtInZoomControls = false
         displayZoomControls = false
         setSupportMultipleWindows(false)
-        // on a dark theme the view darkens a page that brings no dark style of its own
-        isAlgorithmicDarkeningAllowed = true
     }
     webViewClient = object : WebViewClient() {
         override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {

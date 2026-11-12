@@ -72,6 +72,21 @@
     <string name="search_coming_title">Search is not here yet</string>
     <string name="search_coming_text">It comes with one of the next pre-releases.</string>
 
+    <!-- Settings › Experiments: what the first pre-releases are to find out on the devices -->
+    <string name="settings_experiments">Experiments</string>
+    <string name="settings_experiments_note">Questions the first pre-releases are to answer on the devices. Open a message, then try each.</string>
+    <string name="experiment_glass">Glass bars</string>
+    <string name="experiment_glass_note">Off: bars, sheets and menus are solid surfaces.</string>
+    <string name="experiment_under_bars">Message scrolls under the bars</string>
+    <string name="experiment_under_bars_note">Phone. Off: the message stays between the top and the bottom bar.</string>
+    <string name="experiment_darken">Darken messages on dark themes</string>
+    <string name="experiment_darken_note">Off: a message is shown on white, as its sender made it.</string>
+    <string name="experiment_web_layer">WebView layer</string>
+    <string name="experiment_web_layer_note">Try the others if the glass does not blur the message beneath it.</string>
+    <string name="web_layer_default">Default</string>
+    <string name="web_layer_hardware">Hardware</string>
+    <string name="web_layer_software">Software</string>
+
     <string name="settings_about">About</string>
     <string name="settings_version">Version</string>
     <string name="settings_about_note">A pre-release with made-up mail: the shell and the layouts, to be tried on the devices.</string>

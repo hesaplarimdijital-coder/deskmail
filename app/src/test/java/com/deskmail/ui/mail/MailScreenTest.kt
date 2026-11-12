@@ -10,6 +10,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.deskmail.TestApp
 import com.deskmail.testMail
 import com.deskmail.testPrefs
+import com.deskmail.testSettings
 import desktopkit.theme.DensityPreference
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -37,7 +38,8 @@ class MailScreenTest {
     @Config(qualifiers = "tr-w411dp-h891dp-xxhdpi")
     fun aPhoneOpensAMessageOverTheList() {
         val prefs = testPrefs()
-        compose.setContent { TestApp(mail, prefs) }
+        val settings = testSettings()
+        compose.setContent { TestApp(mail, prefs, settings) }
         assertTrue(breakfast().unread)
         // the row: the subject, then the first words
         compose.onNodeWithText(subject, substring = true).performClick()
@@ -57,7 +59,8 @@ class MailScreenTest {
     @Config(qualifiers = "tr-w411dp-h891dp-xxhdpi")
     fun theUnreadChipLeavesReadMessagesOut() {
         val prefs = testPrefs()
-        compose.setContent { TestApp(mail, prefs) }
+        val settings = testSettings()
+        compose.setContent { TestApp(mail, prefs, settings) }
         compose.onNodeWithText("Re: Proje planı (v3)", substring = true).assertExists()
         compose.onNodeWithText("Okunmamış").performClick()
         compose.waitForIdle()
@@ -70,7 +73,8 @@ class MailScreenTest {
     @Config(qualifiers = "tr-w1000dp-h800dp-mdpi")
     fun aWideWindowBesideARailShowsListAndReaderSideBySide() {
         val prefs = testPrefs()
-        compose.setContent { TestApp(mail, prefs) }
+        val settings = testSettings()
+        compose.setContent { TestApp(mail, prefs, settings) }
         compose.onNodeWithText("Açık ileti yok").assertIsDisplayed()
         compose.onNodeWithText(subject, substring = true).performClick()
         compose.waitForIdle()
@@ -84,7 +88,8 @@ class MailScreenTest {
     @Config(qualifiers = "tr-w1440dp-h900dp-mdpi")
     fun aLargeWindowShowsTheTableTheReaderAndTheInspector() {
         val prefs = testPrefs(density = DensityPreference.Pointer)
-        compose.setContent { TestApp(mail, prefs) }
+        val settings = testSettings()
+        compose.setContent { TestApp(mail, prefs, settings) }
         compose.onNodeWithText("Kimden").assertIsDisplayed()
         compose.onNodeWithText(subject, substring = true).performClick()
         compose.waitForIdle()

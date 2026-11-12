@@ -54,6 +54,7 @@ import desktopkit.theme.DeskTheme
  * @param onBack set on a phone for a folder opened from the Folders list: the top bar gets a back arrow.
  * @param onCompose "New message"; the phone shows it as the accent icon of the top bar.
  * @param onNotYet a command that this pre-release does not have yet, by its name.
+ * @param readerUnderBars on a phone the open message scrolls beneath the bars (an experiment's switch).
  */
 @Composable
 fun MailScreen(
@@ -66,6 +67,7 @@ fun MailScreen(
     onBack: (() -> Unit)?,
     onCompose: () -> Unit,
     onNotYet: (String) -> Unit,
+    readerUnderBars: Boolean,
     body: @Composable (MailMessage, Modifier) -> Unit,
 ) {
     val navKind = LocalNavKind.current
@@ -110,6 +112,7 @@ fun MailScreen(
             onClose = onClose,
             onShowRemoteImages = { onNotYet(showImages) },
             onAttachment = { _: MailAttachment -> onNotYet(openAttachment) },
+            underBars = readerUnderBars,
             body = body,
             trailingActions = { trailing() },
         )
