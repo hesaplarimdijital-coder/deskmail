@@ -9,6 +9,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.deskmail.R
+import com.deskmail.core.mail.AddressList
+import com.deskmail.core.mail.MailAddress
 import com.deskmail.mail.Draft
 import com.deskmail.mail.DraftState
 import com.deskmail.mail.MailComposer
@@ -73,7 +75,7 @@ fun OutboxScreen(
             }
             val open: () -> Unit = { onOpen(draft) }
             DeskListRow(
-                title = draft.to.ifBlank { nobody },
+                title = recipientsOf(draft).ifBlank { nobody },
                 subtitle = previewOf(draft, noSubject),
                 trailing = state,
                 trailingColor = if (draft.state == DraftState.Failed) colors.danger else colors.textSecondary,
@@ -121,6 +123,16 @@ fun OutboxScreen(
             }
         }
     }
+}
+
+/**
+ * Who the message goes to, as a list names them: by name where there is one ("Ayşe Yılmaz, Elif
+ * Şahin"). What does not read as addresses yet (a draft half typed) is shown as it was typed.
+ */
+private fun recipientsOf(draft: Draft): String {
+    val typed = listOf(draft.to, draft.cc, draft.bcc).filter { it.isNotBlank() }.joinToString(", ")
+    val read = AddressList.parse(typed)
+    return if (read.isValid && read.addresses.isNotEmpty()) MailAddress.labels(read.addresses) else typed.trim()
 }
 
 /** The subject and the first words of what was written, on one line. */

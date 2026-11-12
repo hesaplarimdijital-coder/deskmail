@@ -300,7 +300,8 @@ fun ComposeScreen(
         // a large window names the screen here; its actions stand with the form, not at the far end of the window
         if (!compact) PageHeader(title)
         Column(
-            Modifier.fillMaxWidth().widthIn(max = MAX_WIDTH.dp).padding(horizontal = dimens.pagePadding).padding(top = dimens.gapS, bottom = dimens.gapXl),
+            // the limit first: asked to fill before it, the column would fill the window whatever the limit
+            Modifier.widthIn(max = MAX_WIDTH.dp).fillMaxWidth().padding(horizontal = dimens.pagePadding).padding(top = dimens.gapS, bottom = dimens.gapXl),
             verticalArrangement = Arrangement.spacedBy(dimens.gapM),
         ) {
             if (!compact) {
