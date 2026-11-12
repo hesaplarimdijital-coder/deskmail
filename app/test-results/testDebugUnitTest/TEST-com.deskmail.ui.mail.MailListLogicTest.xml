@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.ui.mail.MailListLogicTest" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-11-12T23:19:18.200Z" hostname="runnervmwuk1x" time="0.038">
+  <properties/>
+  <testcase name="readingAMessageTakesItOffTheBadges" classname="com.deskmail.ui.mail.MailListLogicTest" time="0.031"/>
+  <testcase name="routesNameTheirMail" classname="com.deskmail.ui.mail.MailListLogicTest" time="0.002"/>
+  <testcase name="theUnifiedInboxHoldsTheInboxesOfEveryAccountNewestFirst" classname="com.deskmail.ui.mail.MailListLogicTest" time="0.001"/>
+  <testcase name="filtersNarrowTogether" classname="com.deskmail.ui.mail.MailListLogicTest" time="0.0"/>
+  <testcase name="theTableSortsByItsColumns" classname="com.deskmail.ui.mail.MailListLogicTest" time="0.002"/>
+  <testcase name="thePageLetsNothingInFromTheNetworkUnlessImagesAreAllowed" classname="com.deskmail.ui.mail.MailListLogicTest" time="0.0"/>
+  <testcase name="aPlainTextMessageIsEscapedIntoThePage" classname="com.deskmail.ui.mail.MailListLogicTest" time="0.001"/>
+  <testcase name="gmailsAllMailDoesNotCountTwice" classname="com.deskmail.ui.mail.MailListLogicTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
