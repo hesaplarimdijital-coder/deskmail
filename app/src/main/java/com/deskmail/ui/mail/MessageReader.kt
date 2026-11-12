@@ -5,6 +5,7 @@ import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -22,16 +23,19 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.deskmail.R
 import com.deskmail.core.mail.MailException
@@ -39,10 +43,14 @@ import com.deskmail.mail.MailAttachment
 import com.deskmail.mail.MailContent
 import com.deskmail.mail.MailMessage
 import com.deskmail.ui.MailIcons
+import desktopkit.components.ActionGroup
 import desktopkit.components.BannerTone
 import desktopkit.components.DeskChip
 import desktopkit.components.DeskIconButton
 import desktopkit.components.DeskIcons
+import desktopkit.components.DeskProgressBar
+import desktopkit.components.MenuEntry
+import desktopkit.components.MoreSheet
 import desktopkit.components.SkeletonList
 import desktopkit.components.StatusBanner
 import desktopkit.screens.MessageScreen
@@ -61,11 +69,16 @@ import kotlinx.coroutines.delay
  * the phone's bars with [underBars], between them without. [barsPadding] is what the bars cover
  * (the shell's padding, which the screen asks for).
  *
- * On a phone the actions are in the top bar, with the back arrow ([onClose]); wider windows show
- * them in a row above the subject, with [trailingActions] at its end and a back arrow only where
- * the reader covers the list ([onClose] set).
+ * On a phone the actions are in the top bar, with the back arrow ([onClose]): archive and delete,
+ * the rest behind the bar's "more". Wider windows show them in a row above the subject, with
+ * [trailingActions] at its end and a back arrow only where the reader covers the list ([onClose]
+ * set). The star is beside the sender in every layout.
  *
  * @param showImages the reader asked for this message's remote images.
+ * @param onArchive null where the message has no archive to go to (it is in it, or its account has none).
+ * @param onMove asks which folder to move it to; null where there is no other folder.
+ * @param onAttachment what to do with a file of the message: open, save or share it.
+ * @param fetchingFile a file is on its way from the server.
  */
 @Composable
 fun MessageReader(
@@ -74,30 +87,37 @@ fun MessageReader(
     showImages: Boolean,
     onToggleStar: () -> Unit,
     onToggleUnread: () -> Unit,
+    onArchive: (() -> Unit)?,
+    onDelete: () -> Unit,
+    onMove: (() -> Unit)?,
     onClose: (() -> Unit)?,
     onShowRemoteImages: () -> Unit,
-    onAttachment: (MailAttachment) -> Unit,
+    onAttachment: (MailAttachment, AttachmentAction) -> Unit,
     onRetry: () -> Unit,
     barsPadding: PaddingValues,
     body: @Composable (MailContent.Ready, Boolean, Modifier) -> Unit,
     modifier: Modifier = Modifier,
     underBars: Boolean = true,
+    fetchingFile: Boolean = false,
     trailingActions: @Composable RowScope.() -> Unit = {},
 ) {
     val colors = DeskTheme.colors
     val dimens = DeskTheme.dimens
     val compact = currentWidthClass() == WidthClass.Compact
-    val starIcon = if (message.starred) MailIcons.StarFilled else MailIcons.Star
-    val starLabel = stringResource(if (message.starred) R.string.action_unstar else R.string.action_star)
     val unreadIcon = if (message.unread) MailIcons.MailOpen else MailIcons.Mail
     val unreadLabel = stringResource(if (message.unread) R.string.action_mark_read else R.string.action_mark_unread)
+    val archiveLabel = stringResource(R.string.action_archive)
+    val deleteLabel = stringResource(R.string.action_delete)
+    val moveLabel = stringResource(R.string.action_move)
     if (onClose != null) {
-        // a phone: back, the star and read/unread in the top bar (nothing happens on wider windows)
+        // a phone: back and the actions in the top bar (nothing happens on wider windows)
         CompactTopBar(
             onBack = onClose,
-            actions = listOf(
-                TopBarAction(starIcon, starLabel, onToggleStar),
+            actions = listOfNotNull(
+                onArchive?.let { TopBarAction(MailIcons.Archive, archiveLabel, it) },
+                TopBarAction(DeskIcons.Delete, deleteLabel, onDelete),
                 TopBarAction(unreadIcon, unreadLabel, onToggleUnread),
+                onMove?.let { TopBarAction(MailIcons.MoveTo, moveLabel, it) },
             ),
         )
     }
@@ -121,16 +141,18 @@ fun MessageReader(
             ) {
                 if (onClose != null) DeskIconButton(DeskIcons.ArrowLeft, stringResource(desktopkit.R.string.dk_back), onClose)
                 Spacer(Modifier.weight(1f))
-                DeskIconButton(starIcon, starLabel, onToggleStar, tint = if (message.starred) colors.warning else colors.textSecondary)
+                if (onArchive != null) DeskIconButton(MailIcons.Archive, archiveLabel, onArchive)
+                DeskIconButton(DeskIcons.Delete, deleteLabel, onDelete)
+                if (onMove != null) DeskIconButton(MailIcons.MoveTo, moveLabel, onMove)
                 DeskIconButton(unreadIcon, unreadLabel, onToggleUnread)
                 trailingActions()
             }
         }
-        ReaderHeader(message)
+        ReaderHeader(message, onToggleStar)
         val strip = Modifier.padding(horizontal = dimens.pagePadding).padding(bottom = dimens.gapM)
         when (content) {
             is MailContent.Ready -> {
-                if (content.attachments.isNotEmpty()) Attachments(content.attachments, onAttachment)
+                if (content.attachments.isNotEmpty()) Attachments(content.attachments, fetchingFile, onAttachment)
                 if (content.remoteImages && !showImages) {
                     StatusBanner(
                         tone = BannerTone.Info,
@@ -183,71 +205,110 @@ private fun ContentOnItsWay() {
 
 private const val SHOW_PLACEHOLDER_AFTER_MS = 300L
 
-/** The subject, then the sender's name and address, the recipients and the whole date. */
+/** The subject, then the sender's name and address with the star beside them, the recipients and the whole date. */
 @Composable
-private fun ReaderHeader(message: MailMessage) {
+private fun ReaderHeader(message: MailMessage, onToggleStar: () -> Unit) {
     val colors = DeskTheme.colors
     val dimens = DeskTheme.dimens
     val dates = rememberDateLabels()
-    SelectionContainer {
-        Column(Modifier.fillMaxWidth().padding(horizontal = dimens.pagePadding).padding(top = dimens.gapM, bottom = dimens.gapL)) {
-            Text(
-                message.subject.ifBlank { stringResource(R.string.message_no_subject) },
-                style = DeskTheme.type.headline,
-                color = colors.text,
-                modifier = Modifier.semantics { heading() },
-            )
-            Spacer(Modifier.height(dimens.gapM))
-            Text(message.fromName, style = DeskTheme.type.bodyStrong, color = colors.text, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            // a sender without a name is already shown by the address
-            if (message.fromAddress != message.fromName) {
-                Text(message.fromAddress, style = DeskTheme.type.labelSmall, color = colors.textSecondary, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            }
-            Spacer(Modifier.height(dimens.gapXs))
-            Text(
-                stringResource(R.string.message_to, message.to),
-                style = DeskTheme.type.labelSmall,
-                color = colors.textTertiary,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-            )
-            if (message.cc.isNotEmpty()) {
+    val starIcon = if (message.starred) MailIcons.StarFilled else MailIcons.Star
+    val starLabel = stringResource(if (message.starred) R.string.action_unstar else R.string.action_star)
+    Row(
+        Modifier.fillMaxWidth().padding(start = dimens.pagePadding, end = dimens.pagePadding - 8.dp).padding(top = dimens.gapM, bottom = dimens.gapL),
+        verticalAlignment = Alignment.Top,
+    ) {
+        SelectionContainer(Modifier.weight(1f)) {
+            Column {
                 Text(
-                    stringResource(R.string.message_cc, message.cc),
+                    message.subject.ifBlank { stringResource(R.string.message_no_subject) },
+                    style = DeskTheme.type.headline,
+                    color = colors.text,
+                    modifier = Modifier.semantics { heading() },
+                )
+                Spacer(Modifier.height(dimens.gapM))
+                Text(message.fromName, style = DeskTheme.type.bodyStrong, color = colors.text, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                // a sender without a name is already shown by the address
+                if (message.fromAddress != message.fromName) {
+                    Text(message.fromAddress, style = DeskTheme.type.labelSmall, color = colors.textSecondary, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                }
+                Spacer(Modifier.height(dimens.gapXs))
+                Text(
+                    stringResource(R.string.message_to, message.to),
                     style = DeskTheme.type.labelSmall,
                     color = colors.textTertiary,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                 )
+                if (message.cc.isNotEmpty()) {
+                    Text(
+                        stringResource(R.string.message_cc, message.cc),
+                        style = DeskTheme.type.labelSmall,
+                        color = colors.textTertiary,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+                Text(dates.full(message.sentAt), style = DeskTheme.type.labelSmall, color = colors.textTertiary)
             }
-            Text(dates.full(message.sentAt), style = DeskTheme.type.labelSmall, color = colors.textTertiary)
+        }
+        DeskIconButton(starIcon, starLabel, onToggleStar, tint = if (message.starred) colors.warning else colors.textSecondary)
+    }
+}
+
+/**
+ * The attachments as chips on one line that scrolls sideways: name and size. A chip opens what
+ * can be done with its file; a thin line under the chips shows that one is being fetched ([busy]).
+ */
+@Composable
+private fun Attachments(attachments: List<MailAttachment>, busy: Boolean, onAttachment: (MailAttachment, AttachmentAction) -> Unit) {
+    val context = LocalContext.current
+    val dimens = DeskTheme.dimens
+    Column(Modifier.fillMaxWidth().padding(bottom = dimens.gapM)) {
+        Row(
+            Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = dimens.pagePadding),
+            horizontalArrangement = Arrangement.spacedBy(dimens.gapS),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            attachments.forEach { attachment ->
+                AttachmentChip(attachment, Formatter.formatShortFileSize(context, attachment.bytes), onAttachment)
+            }
+        }
+        if (busy) {
+            DeskProgressBar(
+                fraction = null,
+                modifier = Modifier.padding(horizontal = dimens.pagePadding).padding(top = dimens.gapS),
+                height = 2.dp,
+                contentDescription = stringResource(R.string.attachment_fetching),
+            )
         }
     }
 }
 
-/** The attachments as chips on one line that scrolls sideways: name and size. */
+/** A file of the message; tapping it offers to open, save or share it (a sheet on a phone, a menu under the chip elsewhere). */
 @Composable
-private fun Attachments(attachments: List<MailAttachment>, onAttachment: (MailAttachment) -> Unit) {
-    val context = LocalContext.current
-    val dimens = DeskTheme.dimens
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .horizontalScroll(rememberScrollState())
-            .padding(horizontal = dimens.pagePadding)
-            .padding(bottom = dimens.gapM),
-        horizontalArrangement = Arrangement.spacedBy(dimens.gapS),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        attachments.forEach { attachment ->
-            DeskChip(
-                text = attachment.name,
-                selected = false,
-                onClick = { onAttachment(attachment) },
-                icon = MailIcons.Attachment,
-                count = Formatter.formatShortFileSize(context, attachment.bytes),
-            )
-        }
+private fun AttachmentChip(attachment: MailAttachment, size: String, onAttachment: (MailAttachment, AttachmentAction) -> Unit) {
+    var open by remember { mutableStateOf(false) }
+    var height by remember { mutableIntStateOf(0) }
+    val actions = listOf(
+        MenuEntry.Item(stringResource(R.string.attachment_open), { onAttachment(attachment, AttachmentAction.Open) }),
+        MenuEntry.Item(stringResource(R.string.attachment_save), { onAttachment(attachment, AttachmentAction.Save) }),
+        MenuEntry.Item(stringResource(R.string.attachment_share), { onAttachment(attachment, AttachmentAction.Share) }, icon = MailIcons.Share),
+    )
+    Box(Modifier.onSizeChanged { height = it.height }) {
+        DeskChip(
+            text = attachment.name,
+            selected = false,
+            onClick = { open = true },
+            icon = MailIcons.Attachment,
+            count = size,
+        )
+        MoreSheet(
+            visible = open,
+            onDismiss = { open = false },
+            groups = if (open) listOf(ActionGroup(null, actions)) else emptyList(),
+            title = attachment.name,
+            menuOffset = IntOffset(0, height),
+        )
     }
 }
 

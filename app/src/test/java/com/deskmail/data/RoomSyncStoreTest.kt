@@ -10,6 +10,7 @@ import com.deskmail.core.mail.RemoteAttachment
 import com.deskmail.core.mail.RemoteFlags
 import com.deskmail.core.mail.RemoteFolder
 import com.deskmail.core.mail.RemoteMessage
+import com.deskmail.core.sync.ChangeOutcome
 import com.deskmail.core.sync.FolderState
 import com.deskmail.core.sync.StoredBody
 import com.deskmail.db.DeskMailDatabase
@@ -199,6 +200,30 @@ class RoomSyncStoreTest {
         assertFalse(third.seen)
         assertEquals(listOf(third.id), db.messages().observeUnread().first().map { it.id })
         assertEquals(listOf(first.id), db.messages().observeStarred().first().map { it.id })
+    }
+
+    /** The user's word on a mark is newer than the server's until the server has been told. */
+    @Test
+    fun aMarkThatWaitsForTheServerIsNotOverwritten() = runBlocking {
+        val inbox = inbox()
+        store.insert(inbox, listOf(message(1, "bir"), message(2, "iki", flags = MessageFlags(flagged = true))))
+        val first = db.messages().byUid(inbox, 1)!!.id
+        val second = db.messages().byUid(inbox, 2)!!.id
+        db.pending().mark(first, seen = true, flagged = null, now = 100)
+        db.pending().mark(second, seen = null, flagged = false, now = 100)
+
+        // a sync reads the marks before the server was told: it still has the old ones
+        store.updateFlags(inbox, listOf(RemoteFlags(1, MessageFlags(answered = true)), RemoteFlags(2, MessageFlags(seen = true, flagged = true))))
+
+        val rows = db.messages().observeFolder(inbox).first().associateBy { it.uid }
+        // the user's marks stand, what else the server knows comes in
+        assertTrue(rows.getValue(1).seen && rows.getValue(1).answered)
+        assertTrue(rows.getValue(2).seen && !rows.getValue(2).flagged)
+
+        // once the server has it, the server's word counts again
+        db.pending().all().forEach { db.pending().settle(it.id, ChangeOutcome.Done()) }
+        store.updateFlags(inbox, listOf(RemoteFlags(1, MessageFlags())))
+        assertFalse(db.messages().byUid(inbox, 1)!!.seen)
     }
 
     @Test

@@ -101,6 +101,14 @@ class MailUiState(private val settings: AppSettings? = null) {
         opened.remove(route)
     }
 
+    /** Closes these messages wherever a screen has one of them open: they have left their lists. */
+    fun closeMessages(ids: Collection<Long>) {
+        opened.entries.filter { it.value in ids }.map { it.key }.forEach { opened.remove(it) }
+    }
+
+    /** The message a folder is being chosen for ("Move…"), or null. */
+    var moving by mutableStateOf<MailMessage?>(null)
+
     /**
      * How many message bodies this window is drawing with a WebView right now, and how many of
      * them are too tall for a layer of their own. What the shell's glass goes by ([shellGlass]).

@@ -295,30 +295,4 @@ class MailStatesTest {
         // for this message only
         assertFalse(ui.showsImages(message("Cumartesi kahvaltı?").id))
     }
-
-    /** Mail that can only be read, as an account's is in this pre-release. */
-    private class ReadOnly(private val demo: DemoMail) : MailSource by demo {
-        override val canMark: Boolean get() = false
-
-        override fun markRead(id: Long) = Unit
-    }
-
-    @Test
-    fun mailThatCanOnlyBeReadKeepsItsMarks() {
-        val breakfast = message("Cumartesi kahvaltı?")
-        assertTrue(breakfast.unread)
-        launch(ReadOnly(mail))
-
-        compose.onNodeWithText("Cumartesi kahvaltı?", substring = true).performClick()
-        compose.waitForIdle()
-        // opened, and still unread: the marks are the server's
-        compose.onNodeWithText("Cumartesi kahvaltı?").assertIsDisplayed()
-        assertTrue(mail.message(breakfast.id)!!.unread)
-
-        compose.onNodeWithTag(MailTags.READER).assertExists()
-        compose.onNodeWithContentDescription(compose.activity.getString(R.string.action_star)).performClick()
-        compose.waitForIdle()
-        assertFalse(mail.message(breakfast.id)!!.starred)
-        compose.onNodeWithText("Bu ön sürümde henüz yok", substring = true).assertExists()
-    }
 }

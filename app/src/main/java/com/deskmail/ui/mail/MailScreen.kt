@@ -26,7 +26,6 @@ import androidx.compose.ui.unit.dp
 import com.deskmail.R
 import com.deskmail.mail.AccountState
 import com.deskmail.mail.MailAccount
-import com.deskmail.mail.MailAttachment
 import com.deskmail.mail.MailContent
 import com.deskmail.mail.MailMessage
 import com.deskmail.mail.MailSource
@@ -36,6 +35,7 @@ import com.deskmail.ui.folderPathLabel
 import desktopkit.appResources
 import desktopkit.components.BannerTone
 import desktopkit.components.DeskIconButton
+import desktopkit.components.DeskIcons
 import desktopkit.components.DeskListRow
 import desktopkit.components.DeskProgressBar
 import desktopkit.components.HorizontalSplitPane
@@ -43,6 +43,7 @@ import desktopkit.components.InspectorPane
 import desktopkit.components.InspectorTab
 import desktopkit.components.InspectorToggleButton
 import desktopkit.components.KeyValueRow
+import desktopkit.components.MenuEntry
 import desktopkit.components.SkeletonList
 import desktopkit.components.StatusBanner
 import desktopkit.components.WorkstationLayout
@@ -79,7 +80,8 @@ import desktopkit.theme.InputMode
  * @param title the view's name, for the header of a large window.
  * @param onBack set on a phone for a folder opened from the Folders list: the top bar gets a back arrow.
  * @param onCompose "New message"; the phone shows it as the accent icon of the top bar.
- * @param onNotYet a command that this pre-release does not have yet, by its name.
+ * @param actions archives, moves and deletes messages, and says what came of it.
+ * @param files opens, saves and shares the files of messages.
  * @param onAddAccount where "Add an account" leads while there is none.
  * @param onOpenAccount an account's page, for one that has to sign in again.
  * @param readerUnderBars on a phone the open message scrolls beneath the bars (an experiment's switch).
@@ -95,7 +97,8 @@ fun MailScreen(
     prefs: DeskPreferences,
     onBack: (() -> Unit)?,
     onCompose: () -> Unit,
-    onNotYet: (String) -> Unit,
+    actions: MailActions,
+    files: AttachmentHandler,
     onAddAccount: () -> Unit,
     onOpenAccount: (Long) -> Unit,
     readerUnderBars: Boolean,
@@ -120,9 +123,26 @@ fun MailScreen(
     val refresh: () -> Unit = { mail.refresh(view) }
     val composeLabel = stringResource(R.string.action_new_message)
     val refreshLabel = stringResource(R.string.action_refresh)
-    val starLabel = stringResource(R.string.action_toggle_star)
-    val readLabel = stringResource(R.string.action_toggle_read)
-    val openAttachment = stringResource(R.string.action_open_attachment)
+    val openLabel = stringResource(R.string.action_open_message)
+    val markReadLabel = stringResource(R.string.action_mark_read)
+    val markUnreadLabel = stringResource(R.string.action_mark_unread)
+    val starLabel = stringResource(R.string.action_star)
+    val unstarLabel = stringResource(R.string.action_unstar)
+    val archiveLabel = stringResource(R.string.action_archive)
+    val moveLabel = stringResource(R.string.action_move)
+    val deleteLabel = stringResource(R.string.action_delete)
+    // What can be done with a message from its row: a long press, a right click, the Menu key.
+    val rowMenu: (MailMessage) -> List<MenuEntry> = { message ->
+        buildList {
+            add(MenuEntry.Item(openLabel, { open(message) }))
+            add(MenuEntry.Item(if (message.unread) markReadLabel else markUnreadLabel, { mail.toggleUnread(message.id) }, shortcut = "U"))
+            add(MenuEntry.Item(if (message.starred) unstarLabel else starLabel, { mail.toggleStarred(message.id) }, shortcut = "S"))
+            add(MenuEntry.Separator)
+            if (archivable(mail, message)) add(MenuEntry.Item(archiveLabel, { actions.archive(listOf(message.id)) }, shortcut = "E", icon = MailIcons.Archive))
+            if (mail.moveTargets(message).isNotEmpty()) add(MenuEntry.Item(moveLabel, { ui.moving = message }, shortcut = "V", icon = MailIcons.MoveTo))
+            add(MenuEntry.Item(deleteLabel, { actions.delete(listOf(message.id)) }, shortcut = "Delete", icon = DeskIcons.Delete, destructive = true))
+        }
+    }
     // What the phone's bars cover. Asked for here, in the screen's own composition, and handed
     // down: asked for from inside the BoxWithConstraints below, the shell does not notice and pads
     // the screen as well, so everything stands a bar's height too low (docs/KIT-ISTEKLERI.md, 12).
@@ -190,19 +210,30 @@ fun MailScreen(
             // watched here, by the reader that shows it: a message that is being closed keeps its text while it leaves
             content = watchedContent(mail, message.id),
             showImages = ui.showsImages(message.id),
-            onToggleStar = { if (mail.canMark) mail.toggleStarred(message.id) else onNotYet(starLabel) },
-            onToggleUnread = { if (mail.canMark) mail.toggleUnread(message.id) else onNotYet(readLabel) },
+            onToggleStar = { mail.toggleStarred(message.id) },
+            onToggleUnread = { mail.toggleUnread(message.id) },
+            onArchive = if (archivable(mail, message)) ({ actions.archive(listOf(message.id)) }) else null,
+            onDelete = { actions.delete(listOf(message.id)) },
+            onMove = if (mail.moveTargets(message).isNotEmpty()) ({ ui.moving = message }) else null,
             onClose = onClose,
             onShowRemoteImages = { ui.showImages(message.id) },
-            onAttachment = { _: MailAttachment -> onNotYet(openAttachment) },
+            onAttachment = files::handle,
             onRetry = { mail.retryContent(message.id) },
             barsPadding = bars,
             body = body,
             modifier = Modifier.testTag(MailTags.READER),
             underBars = readerUnderBars,
+            fetchingFile = files.busy,
             trailingActions = { trailing() },
         )
     }
+    // "Move…": which folder, asked over whatever layout the window has
+    MoveChooser(
+        message = ui.moving,
+        mail = mail,
+        onMove = { message, folderId -> actions.move(listOf(message.id), folderId) },
+        onDismiss = { ui.moving = null },
+    )
     // The rows as a phone, a tablet held upright and a window beside a rail list them: under the
     // chips, which scroll away with them. They are what the keyboard steps through there (J, K).
     val rows: @Composable () -> Unit = {
@@ -223,6 +254,7 @@ fun MailScreen(
             modifier = Modifier.testTag(MailTags.LIST),
             header = chips,
             empty = empty,
+            menu = rowMenu,
         )
     }
     if (!sidebar) SideEffect { ui.setShown(route, filtered.map { it.id }, leadingItems = 1) }
@@ -255,6 +287,7 @@ fun MailScreen(
                                     onRefresh = refresh,
                                     chips = chips,
                                     empty = empty,
+                                    menu = rowMenu,
                                 )
                             },
                             end = {
@@ -269,7 +302,7 @@ fun MailScreen(
                             dividerLabel = stringResource(R.string.list_resize),
                         )
                     },
-                    inspector = { MessageInspector(opened, mail, inspector.selectedTab, { inspector.selectedTab = it }, inspector::toggle) },
+                    inspector = { MessageInspector(opened, mail, files, inspector.selectedTab, { inspector.selectedTab = it }, inspector::toggle) },
                     minMain = 680.dp,
                     showFrom = WidthClass.Large,
                 )
@@ -361,6 +394,7 @@ private fun ListPane(
     onRefresh: () -> Unit,
     chips: @Composable () -> Unit,
     empty: @Composable () -> Unit,
+    menu: (MailMessage) -> List<MenuEntry>,
 ) {
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val table = pointer && maxWidth >= MailLayout.TABLE_FROM.dp
@@ -384,6 +418,7 @@ private fun ListPane(
                     onOpen = onOpen,
                     prefs = prefs,
                     modifier = Modifier.testTag(MailTags.LIST),
+                    menu = menu,
                 )
                 else -> MessageRows(
                     messages = shown,
@@ -392,6 +427,7 @@ private fun ListPane(
                     onOpen = onOpen,
                     contentPadding = PaddingValues(bottom = 8.dp),
                     modifier = Modifier.testTag(MailTags.LIST),
+                    menu = menu,
                 )
             }
         }
@@ -412,9 +448,9 @@ object MailTags {
     const val READER = "mail-reader"
 }
 
-/** The inspector of a large window: the open message's details, and its attachments. */
+/** The inspector of a large window: the open message's details, and its attachments (a click opens one, its menu saves or shares it). */
 @Composable
-private fun MessageInspector(message: MailMessage?, mail: MailSource, selected: Int, onSelect: (Int) -> Unit, onCollapse: () -> Unit) {
+private fun MessageInspector(message: MailMessage?, mail: MailSource, files: AttachmentHandler, selected: Int, onSelect: (Int) -> Unit, onCollapse: () -> Unit) {
     val resources = appResources()
     val context = LocalContext.current
     val dates = rememberDateLabels()
@@ -423,6 +459,9 @@ private fun MessageInspector(message: MailMessage?, mail: MailSource, selected: 
         InspectorTab("details", stringResource(R.string.inspector_details)),
         InspectorTab("attachments", stringResource(R.string.inspector_attachments), MailIcons.Attachment),
     )
+    val openLabel = stringResource(R.string.attachment_open)
+    val saveLabel = stringResource(R.string.attachment_save)
+    val shareLabel = stringResource(R.string.attachment_share)
     InspectorPane(tabs = tabs, selected = selected.coerceIn(0, tabs.lastIndex), onSelect = onSelect, onCollapse = onCollapse) { tab ->
         when {
             message == null -> NoMessageOpen()
@@ -447,6 +486,14 @@ private fun MessageInspector(message: MailMessage?, mail: MailSource, selected: 
                                 title = attachment.name,
                                 leading = MailIcons.Attachment,
                                 trailing = Formatter.formatShortFileSize(context, attachment.bytes),
+                                onClick = { files.handle(attachment, AttachmentAction.Open) },
+                                menu = {
+                                    listOf(
+                                        MenuEntry.Item(openLabel, { files.handle(attachment, AttachmentAction.Open) }),
+                                        MenuEntry.Item(saveLabel, { files.handle(attachment, AttachmentAction.Save) }),
+                                        MenuEntry.Item(shareLabel, { files.handle(attachment, AttachmentAction.Share) }, icon = MailIcons.Share),
+                                    )
+                                },
                             )
                         }
                     }

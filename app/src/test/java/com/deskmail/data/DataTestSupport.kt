@@ -132,6 +132,31 @@ class TestImapServer : ExternalResource() {
         folder(folder).setFlags(Flags(flag), value, uid, null, false)
     }
 
+    /** The UIDs of the messages a folder holds, ascending. */
+    fun uids(folder: String = "INBOX"): List<Long> = folder(folder).messageUids.sorted()
+
+    /** Whether a message carries a mark on the server; false for a message the folder does not hold. */
+    fun has(uid: Long, flag: Flags.Flag, folder: String = "INBOX"): Boolean = folder(folder).getMessage(uid)?.flags?.contains(flag) == true
+
+    /** Puts a message with a file attached into the inbox; returns its UID. */
+    fun deliverWithFile(subject: String, text: String, fileName: String, mimeType: String, content: ByteArray, received: Instant): Long {
+        val id = ++counter
+        val raw = "From: " + word("Ayşe Yılmaz") + " <ayse@example.org>\r\n" +
+            "To: " + word("Deniz Aksoy") + " <" + ADDRESS + ">\r\n" +
+            "Subject: " + word(subject) + "\r\n" +
+            "Date: " + RFC_822.format(received.atOffset(ZoneOffset.UTC)) + "\r\n" +
+            "Message-ID: <test-" + id + "@example.org>\r\n" +
+            "MIME-Version: 1.0\r\n" +
+            "Content-Type: multipart/mixed; boundary=\"dis\"\r\n\r\n" +
+            "--dis\r\nContent-Type: text/plain; charset=UTF-8\r\nContent-Transfer-Encoding: base64\r\n\r\n" + encoded(text) +
+            "--dis\r\nContent-Type: " + mimeType + "; name=\"" + fileName + "\"\r\nContent-Transfer-Encoding: base64\r\n" +
+            "Content-Disposition: attachment; filename=\"" + fileName + "\"\r\n\r\n" +
+            Base64.getMimeEncoder(76, "\r\n".toByteArray()).encodeToString(content) + "\r\n" +
+            "--dis--\r\n"
+        val message = GreenMailUtil.newMimeMessage(ByteArrayInputStream(raw.toByteArray(Charsets.US_ASCII)))
+        return folder("INBOX").appendMessage(message, Flags(), Date.from(received))
+    }
+
     companion object {
         const val LOCALHOST = "127.0.0.1"
         const val ADDRESS = "deniz@example.org"

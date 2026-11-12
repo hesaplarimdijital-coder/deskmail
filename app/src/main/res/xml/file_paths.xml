@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- What the app may hand to another app as a file: only what it has put under cache/share for that
-     purpose (the exported log). Nothing of the mail, the database or the settings. -->
+<!-- What the app may hand to another app as a file: what it has put under cache/share for that
+     purpose (the exported log), and the files of messages the user asked to open or share
+     (cache/files). Nothing else of the mail, and nothing of the database or the settings. -->
 <paths>
     <cache-path name="share" path="share/" />
+    <cache-path name="files" path="files/" />
 </paths>
