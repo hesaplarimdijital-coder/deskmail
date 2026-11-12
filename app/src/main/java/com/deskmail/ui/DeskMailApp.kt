@@ -30,10 +30,12 @@ import com.deskmail.ui.mail.LocalMailClock
 import com.deskmail.ui.mail.MailClock
 import com.deskmail.ui.mail.MailScreen
 import com.deskmail.ui.mail.MailUiState
+import com.deskmail.ui.mail.WebBodyPresence
 import com.deskmail.ui.mail.WebMessageBody
 import com.deskmail.ui.mail.counterpart
 import com.deskmail.ui.mail.openMessage
 import com.deskmail.ui.mail.rememberDateLabels
+import com.deskmail.ui.mail.shellGlass
 import com.deskmail.ui.settings.SettingsPage
 import com.deskmail.ui.settings.SettingsScreen
 import com.deskmail.ui.settings.SettingsUiState
@@ -143,6 +145,8 @@ fun DeskMailApp(
     // a tapped link is never followed inside a message: its real address is shown instead
     val showLink: (String) -> Unit = { url -> scope.launch { toasts.show(url.take(LINK_LENGTH), duration = ToastDuration.Long) } }
     val body: @Composable (MailContent.Ready, Boolean, Modifier) -> Unit = messageBody ?: { content, showImages, modifier ->
+        // counted while it is on screen: the bars are not blurred over a message (shellGlass)
+        WebBodyPresence(ui)
         WebMessageBody(content, modifier, showImages = showImages, darken = settings.darkenMessages, layer = settings.webLayer, onLink = showLink)
     }
     val starLabel = stringResource(R.string.action_toggle_star)
@@ -279,7 +283,7 @@ fun DeskMailApp(
                 searchHint = stringResource(R.string.palette_hint),
                 transitions = transitions,
                 moreActions = listOf(ActionGroup(stringResource(R.string.settings_experiments), experiments)),
-                glass = settings.glass,
+                glass = shellGlass(settings.glass, messageOpen, ui.webBodies),
                 toasts = toasts,
                 overlays = {
                     // Ctrl+K: screens and folders, the messages, and every command of the shortcut table

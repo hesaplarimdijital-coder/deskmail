@@ -4,6 +4,7 @@ import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -98,6 +99,21 @@ class MailUiState(private val settings: AppSettings? = null) {
 
     fun close(route: String) {
         opened.remove(route)
+    }
+
+    /**
+     * How many message bodies this window is drawing with a WebView right now. Until the last of
+     * them has left the screen the shell's bars are not blurred glass ([shellGlass]).
+     */
+    var webBodies by mutableIntStateOf(0)
+        private set
+
+    fun webBodyShown() {
+        webBodies++
+    }
+
+    fun webBodyGone() {
+        if (webBodies > 0) webBodies--
     }
 
     /** Whether the images a message asks for from the network are loaded: only after the reader said so, and until the window closes. */

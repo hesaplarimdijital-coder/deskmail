@@ -111,6 +111,35 @@ fun WebMessageBody(
     }
 }
 
+/**
+ * Says, for as long as it is composed, that this window draws a message with a WebView
+ * ([MailUiState.webBodies]). The app puts it beside every [WebMessageBody].
+ */
+@Composable
+fun WebBodyPresence(ui: MailUiState) {
+    DisposableEffect(ui) {
+        ui.webBodyShown()
+        onDispose { ui.webBodyGone() }
+    }
+}
+
+/**
+ * Whether the shell's bars, sheets and menus are the kit's blurred glass: where the user wants
+ * them so ([wanted]), and only while the window shows no message.
+ *
+ * The kit blurs what is under a bar by drawing the screen's content again, smaller, once for each
+ * bar, in every frame. A WebView cannot be drawn that way. While a message was scrolled under the
+ * bars its content came and went tile by tile, many times a second: in half of the frames a part
+ * of the message or all of it was missing (Galaxy S24, 0.1.0-alpha.1, seen frame by frame in a
+ * screen recording; docs/KIT-ISTEKLERI.md, 20). Without the blur nothing is drawn twice, so while
+ * a message is on screen the bars are the kit's solid surfaces. Everywhere else the glass stays.
+ *
+ * The glass goes with the tap that opens a message ([messageOpen]), not a frame into the slide
+ * that brings its page in, and comes back when the message's WebView has left the screen
+ * ([webBodies]), not while its page is still sliding out.
+ */
+fun shellGlass(wanted: Boolean, messageOpen: Boolean, webBodies: Int): Boolean = wanted && !messageOpen && webBodies == 0
+
 /** Notes in the log, once per run, which WebView draws the mail: the first thing to know when a message looks wrong. */
 private fun logWebViewOnce(context: Context) {
     if (webViewLogged) return

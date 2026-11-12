@@ -3,11 +3,13 @@ package com.deskmail
 import android.content.Context
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
 import androidx.test.core.app.ApplicationProvider
 import com.deskmail.core.log.AppLog
 import com.deskmail.demo.DemoMail
 import com.deskmail.mail.AccountActions
 import com.deskmail.mail.AccountDraft
+import com.deskmail.mail.MailContent
 import com.deskmail.mail.MailSource
 import com.deskmail.mail.SetupPlan
 import com.deskmail.mail.SetupResult
@@ -67,6 +69,7 @@ fun TestApp(
     log: AppLog = remember { AppLog() },
     accounts: AccountActions? = null,
     settingsUi: SettingsUiState = remember { SettingsUiState() },
+    messageBody: @Composable (MailContent.Ready, Boolean, Modifier) -> Unit = { content, _, modifier -> PlainMessageBody(content, modifier) },
 ) {
     DeskMailApp(
         mail = mail,
@@ -79,7 +82,7 @@ fun TestApp(
         prefs = prefs,
         clock = TEST_CLOCK,
         transitions = ShellTransitions.None,
-        messageBody = { content, _, modifier -> PlainMessageBody(content, modifier) },
+        messageBody = messageBody,
     )
 }
 

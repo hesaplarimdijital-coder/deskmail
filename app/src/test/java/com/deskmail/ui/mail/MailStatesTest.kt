@@ -1,6 +1,7 @@
 package com.deskmail.ui.mail
 
 import androidx.activity.ComponentActivity
+import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -25,6 +26,8 @@ import com.deskmail.ui.Routes
 import com.deskmail.ui.settings.AccountTags
 import com.deskmail.ui.settings.SettingsPage
 import com.deskmail.ui.settings.SettingsUiState
+import desktopkit.theme.GlassMode
+import desktopkit.theme.LocalGlassMode
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -72,6 +75,55 @@ class MailStatesTest {
         // Settings, with "Add an account" open at the address
         assertEquals(SettingsPage.AddAccount, settingsUi.page)
         compose.onNodeWithTag(AccountTags.ADDRESS).assertExists()
+    }
+
+    @Test
+    fun theBarsAreNotBlurredWhileAMessageIsOnScreen() {
+        // the glass the shell hands to what is inside it, as the list's chips and a message's body see it
+        val seen = ArrayList<GlassMode?>()
+        val prefs = testPrefs()
+        val settings = testSettings()
+        assertTrue(settings.glass)
+        compose.setContent {
+            TestApp(mail, prefs, settings, ui, accounts = accounts, settingsUi = settingsUi, messageBody = { content, _, modifier ->
+                // what the app puts beside its WebView; the body itself is plain text here
+                WebBodyPresence(ui)
+                val mode = LocalGlassMode.current
+                SideEffect { seen += mode }
+                PlainMessageBody(content, modifier)
+            })
+        }
+        compose.waitForIdle()
+        assertEquals(0, ui.webBodies)
+
+        compose.runOnUiThread { openMessage(mail, ui, Routes.INBOX, message("Cumartesi kahvaltı?")) }
+        compose.waitForIdle()
+        assertEquals(1, ui.webBodies)
+        // solid from the first time the body was drawn: nothing of the screen is drawn a second time for a blur
+        assertEquals(listOf<GlassMode?>(GlassMode.Solid), seen.distinct())
+
+        // the message is closed and its body gone: the glass is the user's choice again
+        compose.runOnUiThread { ui.close(Routes.INBOX) }
+        compose.waitForIdle()
+        assertEquals(0, ui.webBodies)
+    }
+
+    @Test
+    fun theGlassIsTheUsersChoiceWhereNoMessageIsShown() {
+        assertTrue(shellGlass(wanted = true, messageOpen = false, webBodies = 0))
+        // from the tap that opens a message
+        assertFalse(shellGlass(wanted = true, messageOpen = true, webBodies = 0))
+        assertFalse(shellGlass(wanted = true, messageOpen = true, webBodies = 1))
+        // until its WebView has left the screen, the page that slides out included
+        assertFalse(shellGlass(wanted = true, messageOpen = false, webBodies = 1))
+        // glass the user turned off stays off
+        assertFalse(shellGlass(wanted = false, messageOpen = false, webBodies = 0))
+        // a body that goes is counted out once, and never below nothing
+        val window = MailUiState()
+        window.webBodyShown()
+        window.webBodyGone()
+        window.webBodyGone()
+        assertEquals(0, window.webBodies)
     }
 
     @Test
