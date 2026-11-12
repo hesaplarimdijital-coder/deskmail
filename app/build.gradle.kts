@@ -1,6 +1,8 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.room)
 }
 
 // The fixed signing key. CI decodes it from the repository's secrets and points these variables at
@@ -62,6 +64,14 @@ android {
         checkReleaseBuilds = false
     }
 
+    packaging {
+        resources {
+            // The mail libraries (Jakarta Mail and Activation, Angus) each bring their licence and
+            // notice under the same name: all of them go into the APK, one after the other.
+            merges += setOf("META-INF/LICENSE.md", "META-INF/NOTICE.md")
+        }
+    }
+
     testOptions {
         unitTests {
             // Robolectric draws the real screens: it needs the app's resources and manifest
@@ -83,6 +93,12 @@ android {
     }
 }
 
+// The database's schema is written to app/schemas, one file per version, and kept in the
+// repository: a migration is tested against the schema it starts from.
+room3 {
+    schemaDirectory("$projectDir/schemas")
+}
+
 dependencies {
     implementation(project(":core"))
     // Brings Compose (BOM 2026.09.00), Navigation and Haze at the versions it was built with.
@@ -90,6 +106,10 @@ dependencies {
     implementation(libs.activity.compose)
     // FileProvider, to share the log as a file
     implementation(libs.androidx.core)
+    // The database, on the SQLite the device has
+    implementation(libs.room.runtime)
+    implementation(libs.sqlite.framework)
+    ksp(libs.room.compiler)
 
     testImplementation(libs.junit)
     testImplementation(libs.robolectric)

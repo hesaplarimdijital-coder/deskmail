@@ -72,6 +72,16 @@ jobs:
           python3 tools/annotate_gradle_errors.py build.log
           python3 tools/annotate_test_failures.py core/build/test-results app/build/test-results
 
+      - name: Check the database schema
+        if: success()
+        run: |
+          # Room writes the schema of the database's current version to app/schemas. What is in the
+          # repository must be what the build writes: a release is made from the repository.
+          changed=$(git status --porcelain -- app/schemas)
+          if [ -n "$changed" ]; then
+            echo "::warning title=Database::app/schemas is not what this build wrote; commit the schema before a release. $(echo "$changed" | tr '\n' ' ')"
+          fi
+
       - name: Check the APK's signature
         if: success() && steps.signing.outputs.fixed == 'true'
         run: |
@@ -100,6 +110,8 @@ jobs:
           for module in core app; do
             [ -d "$module/build/test-results" ] && mkdir -p "$out/$module" && cp -r "$module/build/test-results" "$out/$module/"
           done
+          # the database's schema as this build wrote it: what is committed to app/schemas
+          [ -d app/schemas ] && mkdir -p "$out/app" && cp -r app/schemas "$out/app/"
           echo "${HEAD_SHA}" > "$out/HEAD_SHA"
           # The branch is public and nothing masks it as the job log is masked: make sure the
           # signing password is in none of the files, whatever a tool may have printed.
