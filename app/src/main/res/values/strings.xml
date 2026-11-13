@@ -128,6 +128,8 @@
     <string name="compose_body">Message</string>
     <string name="compose_body_hint">Write your message</string>
     <string name="compose_recipients_hint">name@example.com, separated by commas</string>
+    <string name="compose_contacts">Add from contacts</string>
+    <string name="compose_contacts_failed">No address could be taken from the contacts.</string>
     <string name="compose_no_recipients">Say who it goes to.</string>
     <string name="compose_bad_addresses">Not an address: %1$s</string>
     <string name="compose_file_remove">Remove</string>
