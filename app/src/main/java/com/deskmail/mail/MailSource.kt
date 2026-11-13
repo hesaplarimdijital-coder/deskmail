@@ -1,6 +1,7 @@
 package com.deskmail.mail
 
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOf
 
 /**
  * Where the screens get the mail from and what they can ask of it: the device's copy of the
@@ -58,6 +59,13 @@ interface MailSource {
 
     /** The messages of [view] as they were last seen, to draw at once; null when they have to be read first. */
     fun cached(view: MailView): List<MailMessage>?
+
+    /**
+     * The conversation of [message], oldest first: the message it began with and those that answer
+     * it, wherever they are filed (the user's own replies too), but not in Trash or Spam. Just the
+     * message for one that is a conversation of its own.
+     */
+    fun observeThread(message: MailMessage): Flow<List<MailMessage>> = flowOf(listOf(message))
 
     /** One message, wherever it is filed; null once it is gone. */
     fun observeMessage(id: Long): Flow<MailMessage?>
