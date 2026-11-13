@@ -232,8 +232,8 @@ başlığında.
      şema 4). Tek kopya kuralı: yeni kopya konur, sonra eskisi silinir (UIDPLUS ile, klasörün UID
      damgası tutuyorsa); gönderilen ya da atılan iletinin kopyası `draft_removal` notuyla silinir. Taslaklar'da
      duran ileti "Düzenle" ile alınır (`DraftKind.Edit`): bu cihazınki Message-ID'sinden bulunur.
-   - **Kalan (ayrı PR):** alıcı önerilerinin arayüzü
-     (kit isteği 4) ve Contact Picker · DeX'te yazmanın ayrı pencerede açılması.
+   - **Sonradan (beta.1):** rehberden alıcı (Contact Picker) · DeX'te yazmanın ayrı pencerede açılması.
+     Alıcı önerilerinin arayüzü kiti bekliyor (kit isteği 4).
 6. **Arama (alpha.3):** dizin sorgusu (`SearchQuery`: yazılan katlanır, dizinin böldüğü gibi sözcüklere
    bölünür, her sözcük ön ek olarak aranır; yazılanın hiçbir parçası dizine sözdizimi olarak ulaşmaz) ·
    Ara ekranı (posta listesinin kendisi, üstünde arama alanı) · "/" kısayolu.
@@ -276,7 +276,12 @@ Her biri ayrı PR; sıra, cihazda en çok denenmesi gerekenden başlar.
    klasörü cihazda tarayan yedek yolu kullanılmaz). Sunucunun bulduğu iletiler `search_hit` tablosunda bir
    gün tutulur; o sürede eşitleme onları silmez. **Şema 4** (taslak alanları, `draft_removal`,
    `search_hit`) yayımlanmadı: beta.1 çıkana dek beta.1'in bütün şema değişiklikleri onda toplanır.
-6. DeX'te yazmanın ayrı pencerede açılması; Contact Picker (5'in kalanı).
+6. DeX'te yazmanın ayrı pencerede açılması; Contact Picker (5'in kalanı). **Yapıldı:** yazma penceresi
+   `WriteActivity` (kendi görevi; `<layout>` ile 720 × 760 dp, işi bitince son uygulamalardan kalkar);
+   ekranı `WriteWindow`, kabuksuz `DesktopKitRoot` içinde. Masaüstü penceresi mi: Samsung'un DeX bayrağı ya
+   da çoklu pencere kipinde başlık çubuğu (`DesktopWindow`). Ne olduğu açan pencereye söylenir
+   (`WriteWindows`); "Geri al" orada. Paylaşım ve `mailto:` posta penceresinde kalır (dosyaların iletiye
+   girişi o pencerenin işi). Rehber: Android 17'de `ACTION_PICK_CONTACTS`, öncesinde `ACTION_PICK`.
 7. İletinin içindeki (`cid:`) görseller; listede yanıtlandı ve iletildi işaretleri. **Yapıldı:** WebView'ın
    `shouldInterceptRequest`'i `cid:` isteğini cihazdaki (gerekirse sunucudan alınan) parçayla yanıtlar;
    başka hiçbir isteğe karışmaz. Tablonun sütun sırası `MessageColumns`'ta.
