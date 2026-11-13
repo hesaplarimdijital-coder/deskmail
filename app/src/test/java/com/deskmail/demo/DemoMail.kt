@@ -434,16 +434,20 @@ class DemoMail(private val now: Instant = Instant.now(), empty: Boolean = false)
                 thread = if (thread.isEmpty()) "" else tree.first { it.id == folder }.accountId.toString() + " " + thread,
                 globalId = "<demo-$id@${address.substringAfter('@')}>",
             )
-            // the header lines as a provider hands them on: its own word on where the message came from on top
-            val headers = listOf(
-                "Received: from mail.${address.substringAfter('@')} (mail.${address.substringAfter('@')} [203.0.113.$id]) by mx.posta.example",
-                "Authentication-Results: mx.posta.example;",
-                "        $authentication",
-                "From: $from <$address>",
-                "To: $to",
-                "Subject: $subject",
-                "Message-ID: <demo-$id@${address.substringAfter('@')}>",
-            ).joinToString("\n")
+            // the header lines as a provider hands them on: its own word on where the message came from
+            // on top, as each provider writes it (Gmail names its server; Microsoft's names none)
+            val gmail = tree.first { it.id == folder }.accountId == GMAIL
+            val results = if (gmail) listOf("Authentication-Results: mx.google.com;", "        $authentication") else listOf("Authentication-Results: $authentication")
+            val headers = (
+                listOf("Received: from mail.${address.substringAfter('@')} (mail.${address.substringAfter('@')} [203.0.113.$id]) by ${if (gmail) "mx.google.com" else "outlook.office365.com"}") +
+                    results +
+                    listOf(
+                        "From: $from <$address>",
+                        "To: $to",
+                        "Subject: $subject",
+                        "Message-ID: <demo-$id@${address.substringAfter('@')}>",
+                    )
+                ).joinToString("\n")
             contents[id] = MailContent.Ready(text, html, remoteImages, attachments, headers = headers)
         }
 

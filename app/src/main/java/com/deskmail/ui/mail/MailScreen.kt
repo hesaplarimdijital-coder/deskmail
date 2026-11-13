@@ -41,6 +41,7 @@ import androidx.compose.ui.unit.dp
 import com.deskmail.R
 import com.deskmail.core.mail.AuthResults
 import com.deskmail.core.mail.FolderRole
+import com.deskmail.core.provider.ProviderTable
 import com.deskmail.core.text.SearchQuery
 import com.deskmail.mail.AccountState
 import com.deskmail.mail.AwaitOutcome
@@ -881,7 +882,12 @@ private fun HeaderTabs(message: MailMessage, mail: MailSource, security: Boolean
             title = stringResource(if (failed) R.string.headers_failed else R.string.headers_loading),
             icon = MailIcons.Log,
         )
-        security -> SecurityTab(AuthResults.read(headers))
+        security -> {
+            // the provider's word only where its header names the provider's server: one the provider did not add came with the message
+            val server = mail.accounts.firstOrNull { it.id == message.accountId }?.server.orEmpty()
+            val results = AuthResults.read(headers)
+            SecurityTab(results, trusted = results != null && AuthResults.isProviders(results, ProviderTable.forImapHost(server)?.authServId))
+        }
         else -> RawHeaders(headers)
     }
 }
@@ -890,9 +896,13 @@ private fun HeaderTabs(message: MailMessage, mail: MailSource, security: Boolean
 @Composable
 private fun ContentNotHere() = MessageScreen(title = stringResource(R.string.headers_loading), icon = MailIcons.Log)
 
-/** The provider's word on the message: a line on the whole, then each check, then whose word it is. */
+/**
+ * The provider's word on the message: a line on the whole, then each check, then whose word it is.
+ * Results that may not be the provider's ([trusted] false: they name another server, or the provider
+ * is one the app does not know) are shown as they are, and nothing is concluded from them.
+ */
 @Composable
-private fun SecurityTab(results: AuthResults.Results?) {
+private fun SecurityTab(results: AuthResults.Results?, trusted: Boolean) {
     val dimens = DeskTheme.dimens
     val checks = results?.checks.orEmpty()
     if (checks.isEmpty()) {
@@ -903,6 +913,7 @@ private fun SecurityTab(results: AuthResults.Results?) {
         val dmarc = checks.filter { it.method == "dmarc" }.map { it.result }
         val passed = { method: String -> checks.any { it.method == method && it.result == "pass" } }
         val (tone, verdict) = when {
+            !trusted -> BannerTone.Warning to R.string.security_unknown
             "fail" in dmarc -> BannerTone.Error to R.string.security_failed
             "pass" in dmarc || (passed("spf") && passed("dkim")) -> BannerTone.Success to R.string.security_verified
             else -> BannerTone.Warning to R.string.security_mixed
@@ -922,7 +933,12 @@ private fun SecurityTab(results: AuthResults.Results?) {
         }
         val by = results?.server.orEmpty()
         Text(
-            if (by.isEmpty()) stringResource(R.string.security_by_unnamed) else stringResource(R.string.security_by, by),
+            when {
+                !trusted && by.isEmpty() -> stringResource(R.string.security_written_unnamed)
+                !trusted -> stringResource(R.string.security_written_by, by)
+                by.isEmpty() -> stringResource(R.string.security_by_unnamed)
+                else -> stringResource(R.string.security_by, by)
+            },
             style = DeskTheme.type.labelSmall,
             color = DeskTheme.colors.textTertiary,
             modifier = Modifier.padding(top = dimens.gapM),

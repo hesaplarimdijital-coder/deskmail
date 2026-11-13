@@ -1,8 +1,11 @@
 package com.deskmail.core.mail
 
 import com.deskmail.core.mail.AuthResults.Check
+import com.deskmail.core.provider.ProviderTable
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class AuthResultsTest {
@@ -56,6 +59,32 @@ class AuthResultsTest {
     fun aCommentMayHoldAnything() {
         val results = AuthResults.read("Authentication-Results: mx.example; dkim=pass (good; dkim=fail spf=fail) header.d=a.example")!!
         assertEquals(listOf(Check("dkim", "pass", "a.example")), results.checks)
+    }
+
+    /**
+     * The topmost header is the provider's word only where it names the provider's server. Where the
+     * provider added none, a header that came with the message is on top, and may say anything.
+     */
+    @Test
+    fun onlyTheProvidersOwnHeaderIsItsWord() {
+        val gmail = ProviderTable.Gmail.authServId
+        val outlook = ProviderTable.Outlook.authServId
+        val google = AuthResults.read("Authentication-Results: mx.google.com; dmarc=pass header.from=bank.example")!!
+        val microsoft = AuthResults.read("Authentication-Results: spf=pass (sender IP is 203.0.113.5) smtp.mailfrom=bank.example; dmarc=pass header.from=bank.example")!!
+        val forged = AuthResults.read("Authentication-Results: mx.google.com; spf=pass smtp.mailfrom=bank.example; dkim=pass header.d=bank.example; dmarc=pass header.from=bank.example")!!
+
+        assertTrue(AuthResults.isProviders(google, gmail))
+        assertTrue(AuthResults.isProviders(microsoft, outlook))
+        // Gmail's name on an Outlook account's message, Microsoft's form on a Gmail account's: not theirs
+        assertFalse(AuthResults.isProviders(forged, outlook))
+        assertFalse(AuthResults.isProviders(microsoft, gmail))
+        // a provider the app does not know: nobody's word can be told from anybody's
+        assertFalse(AuthResults.isProviders(google, null))
+        assertFalse(AuthResults.isProviders(microsoft, null))
+
+        assertEquals(ProviderTable.Gmail, ProviderTable.forImapHost("imap.gmail.com"))
+        assertEquals(ProviderTable.Outlook, ProviderTable.forImapHost("OUTLOOK.office365.com"))
+        assertNull(ProviderTable.forImapHost("imap.posta.example"))
     }
 
     @Test

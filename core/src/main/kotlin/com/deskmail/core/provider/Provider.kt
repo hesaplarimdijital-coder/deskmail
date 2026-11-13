@@ -39,6 +39,9 @@ data class MailSettings(
  *   (Gmail). Elsewhere a message is archived by moving it to the Archive folder.
  * @param appPasswordPage where the provider's users make a password for a mail program, when that
  *   is how they sign in.
+ * @param authServId the name the provider's own Authentication-Results header gives its server
+ *   (RFC 8601's authserv-id; empty: Microsoft's names none). Only a header that names it is the
+ *   provider's word; null for a provider whose name is not known.
  */
 data class Provider(
     val id: String,
@@ -50,6 +53,7 @@ data class Provider(
     val savesSentItself: Boolean,
     val archiveLeavesAllMail: Boolean,
     val appPasswordPage: String? = null,
+    val authServId: String? = null,
 ) {
     fun settingsFor(address: String) = MailSettings(imap, smtp, username = address, auth = auth)
 }
@@ -67,6 +71,7 @@ object ProviderTable {
         savesSentItself = true,
         archiveLeavesAllMail = true,
         appPasswordPage = "https://myaccount.google.com/apppasswords",
+        authServId = "mx.google.com",
     )
 
     /**
@@ -87,11 +92,16 @@ object ProviderTable {
         auth = AuthKind.MicrosoftOAuth,
         savesSentItself = true,
         archiveLeavesAllMail = false,
+        // Exchange Online writes its results without naming itself
+        authServId = "",
     )
 
     val all: List<Provider> = listOf(Gmail, Outlook)
 
     fun byId(id: String): Provider? = all.firstOrNull { it.id == id }
+
+    /** The provider whose IMAP server [host] is; null for one the app does not know by heart. */
+    fun forImapHost(host: String): Provider? = all.firstOrNull { it.imap.host.equals(host.trim(), ignoreCase = true) }
 
     /** The provider an address belongs to, by what follows its "@". */
     fun forAddress(address: String): Provider? {
