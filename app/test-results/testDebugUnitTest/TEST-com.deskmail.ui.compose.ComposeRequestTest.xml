@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.ui.compose.ComposeRequestTest" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-11-13T17:49:05.323Z" hostname="runnervmccnms" time="0.094">
+  <properties/>
+  <testcase name="whatTheLinkLeavesOutIsTakenFromBesideIt" classname="com.deskmail.ui.compose.ComposeRequestTest" time="0.01"/>
+  <testcase name="aPathIntoTheFileSystemOrIntoTheAppsOwnFilesIsNotAttached" classname="com.deskmail.ui.compose.ComposeRequestTest" time="0.016"/>
+  <testcase name="whatAsksForNoMessageIsNotTakenForOne" classname="com.deskmail.ui.compose.ComposeRequestTest" time="0.014"/>
+  <testcase name="sharedFilesComeAlongAndAreReadWhenTheyAreAttached" classname="com.deskmail.ui.compose.ComposeRequestTest" time="0.027"/>
+  <testcase name="aMailtoLinkBeginsAMessageToWhomItNames" classname="com.deskmail.ui.compose.ComposeRequestTest" time="0.013"/>
+  <testcase name="aSharedTextBeginsAMessageWithIt" classname="com.deskmail.ui.compose.ComposeRequestTest" time="0.013"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

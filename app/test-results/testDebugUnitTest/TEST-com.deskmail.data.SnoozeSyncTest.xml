@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.data.SnoozeSyncTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-11-13T17:48:16.396Z" hostname="runnervmccnms" time="13.111">
+  <properties/>
+  <testcase name="aSnoozedMessageWaitsOnTheServerAndComesBackUnread" classname="com.deskmail.data.SnoozeSyncTest" time="2.342"/>
+  <testcase name="aSnoozedMessageCanBeBroughtBackNow" classname="com.deskmail.data.SnoozeSyncTest" time="2.685"/>
+  <testcase name="aSearchOfTheServerLeavesTheListAlone" classname="com.deskmail.data.SnoozeSyncTest" time="1.58"/>
+  <testcase name="anotherDeviceLearnsOfTheSnoozeFromTheServer" classname="com.deskmail.data.SnoozeSyncTest" time="3.32"/>
+  <testcase name="anUnsnoozeTakenBackLateGoesOntoTheListAgain" classname="com.deskmail.data.SnoozeSyncTest" time="3.181"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

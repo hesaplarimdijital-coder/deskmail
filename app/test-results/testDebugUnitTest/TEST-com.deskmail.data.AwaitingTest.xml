@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.data.AwaitingTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-11-13T17:47:31.912Z" hostname="runnervmccnms" time="0.281">
+  <properties/>
+  <testcase name="anAnsweredMessageIsNotWaitedOn" classname="com.deskmail.data.AwaitingTest" time="0.063"/>
+  <testcase name="aSentMessageIsWaitedOnAndListedUntilTheUserStops" classname="com.deskmail.data.AwaitingTest" time="0.131"/>
+  <testcase name="theOneDueFirstIsOnTop" classname="com.deskmail.data.AwaitingTest" time="0.045"/>
+  <testcase name="aMessageWithoutMessageIdCannotBeWaitedOn" classname="com.deskmail.data.AwaitingTest" time="0.039"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
