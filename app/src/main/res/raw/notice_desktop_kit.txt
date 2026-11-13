@@ -1,0 +1,13 @@
+desktop-kit
+Copyright 2026 desktop-kit contributors
+
+This product is licensed under the Apache License, Version 2.0 (see LICENSE).
+
+It bundles the IBM Plex Sans and IBM Plex Mono typefaces (kit/src/main/res/font),
+Copyright © 2017 IBM Corp. with Reserved Font Name "Plex", licensed under the
+SIL Open Font License, Version 1.1 (see licenses/OFL-IBM-Plex.txt).
+
+It depends on Haze (dev.chrisbanes.haze:haze, haze-materials), Copyright 2023 Christopher
+Banes and the Haze project contributors, licensed under the Apache License, Version 2.0.
+
+Apps that ship the kit should list both licences on their licences / about screen.

@@ -318,6 +318,10 @@ Her biri ayrı PR; sıra, cihazda en çok denenmesi gerekenden başlar.
      konur ve beklemeden gönderilir (`sendNow`). Sistem en çok üç düğme gösterdiği için düğmeler Yanıtla,
      Okundu, Arşivle (arşivi olmayan hesapta Sil).
 9. Cilâ (9): boş ve hata durumları, erişilebilirlik, lisanslar ekranı, belgeler, bağımsız inceleme.
+   - **Lisanslar ekranı: yapıldı.** `THIRD_PARTIES` (`ui/settings/Licences.kt`) APK'daki başkalarının
+     çalışmalarıdır; metinler projelerin kendi dosyaları (`res/raw`). Kitin NOTICE'ı kitle birlikte gösterilir;
+     kitin getirdiği IBM Plex için OFL metni de (kitin NOTICE'ı bunu istiyor). Yeni bir kitaplık eklenince bu
+     listeye de eklenir.
 
 **Kiti bekleyenler** (uygulamada yamanmaz; `docs/KIT-ISTEKLERI.md`): alıcı önerilerinin arayüzü (4),
 telefonda satırı kaydırarak arşiv ve erteleme (7), fareyle çerçeve çizerek seçme (22), şablonun imlecin

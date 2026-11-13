@@ -214,6 +214,7 @@ fun SettingsScreen(
                 onCheckChosen = onCheckChosen,
                 state = ui.list,
                 onOpenLog = { ui.page = SettingsPage.Log },
+                onOpenLicences = { ui.page = SettingsPage.Licences },
                 onOpenAccount = { ui.page = SettingsPage.Account(it.id) },
                 onAddAccount = ui::addAccount,
                 templates = composer?.templates,
@@ -255,6 +256,7 @@ fun SettingsScreen(
                     onNotify(resources.getString(R.string.log_cleared))
                 },
             )
+            SettingsPage.Licences -> LicencesScreen(onClose = ui::close)
             SettingsPage.AddAccount -> if (accounts != null) {
                 AccountSetupPage(ui.setup, accounts, scope, onClose = ui::close, onAdded = onAccountAdded)
             }
@@ -305,6 +307,7 @@ private fun SettingsList(
     onCheckChosen: () -> Unit,
     state: LazyListState,
     onOpenLog: () -> Unit,
+    onOpenLicences: () -> Unit,
     onOpenAccount: (MailAccount) -> Unit,
     onAddAccount: () -> Unit,
     templates: List<MessageTemplate>?,
@@ -337,7 +340,7 @@ private fun SettingsList(
         if (onExport != null && onImport != null) item(key = "transfer") { TransferSection(onExport, onImport) }
         item(key = "experiments") { ExperimentsSection(settings) }
         item(key = "log") { LogSection(onOpenLog) }
-        item(key = "about") { AboutSection() }
+        item(key = "about") { AboutSection(onOpenLicences) }
     }
 }
 
@@ -578,9 +581,9 @@ private fun ExperimentsSection(settings: AppSettings) {
     }
 }
 
-/** The installed version: what to quote when something goes wrong. */
+/** The installed version (what to quote when something goes wrong), and the way to the licences of others' work in it. */
 @Composable
-private fun AboutSection() {
+private fun AboutSection(onOpenLicences: () -> Unit) {
     val context = LocalContext.current
     val version = remember(context) {
         val info = context.packageManager.getPackageInfo(context.packageName, 0)
@@ -589,5 +592,6 @@ private fun AboutSection() {
     SettingsSection(stringResource(R.string.settings_about)) {
         KeyValueRow(stringResource(R.string.settings_version), version, selectable = true)
         Text(stringResource(R.string.settings_about_note), style = DeskTheme.type.labelSmall, color = DeskTheme.colors.textTertiary)
+        DeskButton(stringResource(R.string.licences_title), onOpenLicences, Modifier.padding(top = DeskTheme.dimens.gapS))
     }
 }
