@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.core.sync.SyncServerTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-11-13T07:00:01.689Z" hostname="runnervmwuk1x" time="2.802">
+  <properties/>
+  <testcase name="theLogTellsTheStoryWithoutTheSecret" classname="com.deskmail.core.sync.SyncServerTest" time="0.434"/>
+  <testcase name="anOpenedFolderIsSyncedWithinTheWindow" classname="com.deskmail.core.sync.SyncServerTest" time="1.122"/>
+  <testcase name="anAccountIsBroughtToTheDeviceAndKeptUpToDate" classname="com.deskmail.core.sync.SyncServerTest" time="1.245"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
