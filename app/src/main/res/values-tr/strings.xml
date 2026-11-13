@@ -117,6 +117,8 @@
     <string name="compose_body">İleti</string>
     <string name="compose_body_hint">İletini yaz</string>
     <string name="compose_recipients_hint">ad@ornek.com, virgülle ayır</string>
+    <string name="compose_contacts">Rehberden ekle</string>
+    <string name="compose_contacts_failed">Rehberden adres alınamadı.</string>
     <string name="compose_no_recipients">Kime gideceğini yaz.</string>
     <string name="compose_bad_addresses">Adres değil: %1$s</string>
     <string name="compose_file_remove">Çıkar</string>
