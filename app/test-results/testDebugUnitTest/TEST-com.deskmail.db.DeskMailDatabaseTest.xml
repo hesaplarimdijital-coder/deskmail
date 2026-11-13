@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.db.DeskMailDatabaseTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-11-13T07:56:02.388Z" hostname="runnervmwuk1x" time="0.152">
+  <properties/>
+  <testcase name="accountsStandInTheUsersOrder" classname="com.deskmail.db.DeskMailDatabaseTest" time="0.025"/>
+  <testcase name="anAccountComesBackAsItWasStored" classname="com.deskmail.db.DeskMailDatabaseTest" time="0.025"/>
+  <testcase name="aFolderWithoutAnAccountIsRefused" classname="com.deskmail.db.DeskMailDatabaseTest" time="0.041"/>
+  <testcase name="aFolderIsListedOncePerAccount" classname="com.deskmail.db.DeskMailDatabaseTest" time="0.03"/>
+  <testcase name="anAccountTakesItsCredentialAndItsFoldersWithIt" classname="com.deskmail.db.DeskMailDatabaseTest" time="0.026"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[System.logW: A resource failed to call SQLiteConnection.close. 
+System.logW: A resource failed to call SQLiteConnectionPool.close. 
+System.logW: A resource failed to call SQLiteConnection.close. 
+System.logW: A resource failed to call SQLiteConnection.close. 
+System.logW: A resource failed to call SQLiteConnection.close. 
+System.logW: A resource failed to call SQLiteConnection.close. 
+System.logW: A resource failed to call SQLiteConnectionPool.close. 
+System.logW: A resource failed to call SQLiteConnection.close. 
+System.logW: A resource failed to call SQLiteConnection.close. 
+System.logW: A resource failed to call SQLiteConnection.close. 
+System.logW: A resource failed to call SQLiteConnectionPool.close. 
+System.logW: A resource failed to call close. 
+System.logW: A resource failed to call close. 
+System.logW: A resource failed to call close. 
+]]></system-err>
+</testsuite>

@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.screenshots.AppScreenshotTest" tests="34" skipped="0" failures="0" errors="0" timestamp="2026-11-13T07:56:09.518Z" hostname="runnervmwuk1x" time="15.793">
+  <properties/>
+  <testcase name="dexWorkstationDark" classname="com.deskmail.screenshots.AppScreenshotTest" time="5.702"/>
+  <testcase name="tabletPortraitInboxDark" classname="com.deskmail.screenshots.AppScreenshotTest" time="0.513"/>
+  <testcase name="dexWorkstationLight" classname="com.deskmail.screenshots.AppScreenshotTest" time="0.479"/>
+  <testcase name="twoPanesBesideTheRailDark" classname="com.deskmail.screenshots.AppScreenshotTest" time="0.411"/>
+  <testcase name="phoneAccountNoticeDark" classname="com.deskmail.screenshots.AppScreenshotTest" time="0.336"/>
+  <testcase name="phoneSearchDark" classname="com.deskmail.screenshots.AppScreenshotTest" time="0.307"/>
+  <testcase name="phoneComposeDark" classname="com.deskmail.screenshots.AppScreenshotTest" time="0.317"/>
+  <testcase name="dexSelectionDark" classname="com.deskmail.screenshots.AppScreenshotTest" time="0.459"/>
+  <testcase name="phoneMoreSheetDark" classname="com.deskmail.screenshots.AppScreenshotTest" time="0.415"/>
+  <testcase name="phoneLogDark" classname="com.deskmail.screenshots.AppScreenshotTest" time="0.448"/>
+  <testcase name="phoneOutboxLight" classname="com.deskmail.screenshots.AppScreenshotTest" time="0.22"/>
+  <testcase name="dexComposeLight" classname="com.deskmail.screenshots.AppScreenshotTest" time="0.334"/>
+  <testcase name="phoneReaderDark" classname="com.deskmail.screenshots.AppScreenshotTest" time="0.261"/>
+  <testcase name="tabletLandscapeInspectorLight" classname="com.deskmail.screenshots.AppScreenshotTest" time="0.401"/>
+  <testcase name="tabletPortraitServersLight" classname="com.deskmail.screenshots.AppScreenshotTest" time="0.277"/>
+  <testcase name="phonePaletteDark" classname="com.deskmail.screenshots.AppScreenshotTest" time="0.348"/>
+  <testcase name="phoneWelcomeLight" classname="com.deskmail.screenshots.AppScreenshotTest" time="0.156"/>
+  <testcase name="phoneFoldersDark" classname="com.deskmail.screenshots.AppScreenshotTest" time="0.2"/>
+  <testcase name="phoneReaderLight" classname="com.deskmail.screenshots.AppScreenshotTest" time="0.226"/>
+  <testcase name="dexSettingsDark" classname="com.deskmail.screenshots.AppScreenshotTest" time="0.288"/>
+  <testcase name="dexSearchLight" classname="com.deskmail.screenshots.AppScreenshotTest" time="0.267"/>
+  <testcase name="tabletLandscapeWithAMouseDark" classname="com.deskmail.screenshots.AppScreenshotTest" time="0.342"/>
+  <testcase name="tabletLandscapeDark" classname="com.deskmail.screenshots.AppScreenshotTest" time="0.31"/>
+  <testcase name="dexFolderOled" classname="com.deskmail.screenshots.AppScreenshotTest" time="0.241"/>
+  <testcase name="phoneAddAccountDark" classname="com.deskmail.screenshots.AppScreenshotTest" time="0.348"/>
+  <testcase name="dexAccountLight" classname="com.deskmail.screenshots.AppScreenshotTest" time="0.25"/>
+  <testcase name="dexPaletteDark" classname="com.deskmail.screenshots.AppScreenshotTest" time="0.335"/>
+  <testcase name="phoneInboxDark" classname="com.deskmail.screenshots.AppScreenshotTest" time="0.268"/>
+  <testcase name="phoneInboxOled" classname="com.deskmail.screenshots.AppScreenshotTest" time="0.223"/>
+  <testcase name="phoneSettingsLight" classname="com.deskmail.screenshots.AppScreenshotTest" time="0.188"/>
+  <testcase name="phoneInboxLight" classname="com.deskmail.screenshots.AppScreenshotTest" time="0.2"/>
+  <testcase name="phoneReaderFailedLight" classname="com.deskmail.screenshots.AppScreenshotTest" time="0.18"/>
+  <testcase name="phoneSelectionLight" classname="com.deskmail.screenshots.AppScreenshotTest" time="0.204"/>
+  <testcase name="tabletPortraitReaderLight" classname="com.deskmail.screenshots.AppScreenshotTest" time="0.226"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[System.logW: A resource failed to call SQLiteConnection.close. 
+System.logW: A resource failed to call SQLiteConnection.close. 
+System.logW: A resource failed to call SQLiteConnection.close. 
+System.logW: A resource failed to call SQLiteConnection.close. 
+System.logW: A resource failed to call SQLiteConnectionPool.close. 
+System.logW: A resource failed to call SQLiteConnection.close. 
+System.logW: A resource failed to call SQLiteConnection.close. 
+System.logW: A resource failed to call SQLiteConnection.close. 
+System.logW: A resource failed to call SQLiteConnection.close. 
+System.logW: A resource failed to call SQLiteConnectionPool.close. 
+System.logW: A resource failed to call SQLiteConnection.close. 
+System.logW: A resource failed to call SQLiteConnection.close. 
+System.logW: A resource failed to call SQLiteConnection.close. 
+System.logW: A resource failed to call SQLiteConnection.close. 
+System.logW: A resource failed to call SQLiteConnectionPool.close. 
+]]></system-err>
+</testsuite>

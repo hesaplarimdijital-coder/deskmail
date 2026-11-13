@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.core.imap.ImapWatchServerTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-11-13T07:54:17.682Z" hostname="runnervmwuk1x" time="1.544">
+  <properties/>
+  <testcase name="aMessageThatIsRemovedSomewhereElseIsToldOfToo" classname="com.deskmail.core.imap.ImapWatchServerTest" time="0.277"/>
+  <testcase name="aWaitThatIsBegunAnewGoesOnTellingOfMail" classname="com.deskmail.core.imap.ImapWatchServerTest" time="0.443"/>
+  <testcase name="closingEndsTheWait" classname="com.deskmail.core.imap.ImapWatchServerTest" time="0.283"/>
+  <testcase name="aServerThatGoesAwayEndsTheWaitWithAFailure" classname="com.deskmail.core.imap.ImapWatchServerTest" time="0.271"/>
+  <testcase name="aMessageThatComesIsToldOfWhileTheFolderIsWaitedOn" classname="com.deskmail.core.imap.ImapWatchServerTest" time="0.27"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
