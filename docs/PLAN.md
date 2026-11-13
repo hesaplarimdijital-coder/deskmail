@@ -214,9 +214,10 @@ o ön sürümün ilk PR'ında artar, sonraki PR'lar CHANGELOG'da aynı başlığ
    Ara ekranı (posta listesinin kendisi, üstünde arama alanı) · "/" kısayolu.
    - **Kalan (ayrı PR):** sunucu araması (cihazda olmayan eski posta) · alan süzgeçleri ("kimden:",
      "konu:") · palette "iletilerde ara".
-   - **Açık nokta:** "/" imleci arama alanına koyar (testli). Ekrana alt çubuktan ya da kenar çubuğundan
-     girilince alan odağı ister, ama test ortamında (Robolectric) almadı ve nedeni bulunamadı; cihazda ne
-     olduğuna bakılacak, sonra ya düzeltilecek ya da "alana dokun" davranışı olarak bırakılacak.
+   - **Odak (çözüldü):** alan, pencerede yerini aldıktan sonra odağı ister ve odak birkaç kare kendisinde
+     kalana dek (en çok bir saniye) istemeyi sürdürür. İlk karelerde bir kez istemek, ekran yerleşmeden
+     karşılıksız kalıyordu; "/" isteği ikinci kez tetiklediği için çalışıyordu. Cihazda bakılacak tek şey:
+     her girişte klavyenin açılması istenir mi.
 7. **Bildirimler**
    - **7a (alpha.3):** periyodik yedek yol (WorkManager, 15/30/60 dk ya da elle) · yeni posta bildirimi
      (hesap başına kanal ve grup, BigTextStyle, InboxStyle özet) · Okundu, Arşivle, Sil düğmeleri ·
