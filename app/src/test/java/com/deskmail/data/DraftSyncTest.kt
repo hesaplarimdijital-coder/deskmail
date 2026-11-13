@@ -106,11 +106,15 @@ class DraftSyncTest {
         db.close()
     }
 
-    /** An account whose folders are known on the device, a Drafts folder among them unless [withDrafts] says otherwise. */
+    /**
+     * An account whose folders are known on the device, a Drafts folder among them unless
+     * [withDrafts] says otherwise; that folder was looked at once, so the device keeps its list.
+     */
     private suspend fun account(withDrafts: Boolean = true): Long {
         if (withDrafts) server.createFolder(DRAFTS)
         val id = accounts.add(TestImapServer.ADDRESS, "Posta", "", server.settings, TestImapServer.PASSWORD)
         assertEquals(MailSync.Outcome.Done, sync.account(id))
+        if (withDrafts) assertEquals(MailSync.Outcome.Done, sync.folder(draftsFolder(id).id))
         return id
     }
 
