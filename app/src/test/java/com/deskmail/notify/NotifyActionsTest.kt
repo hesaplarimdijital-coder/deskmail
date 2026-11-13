@@ -7,16 +7,21 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.deskmail.core.log.AppLog
 import com.deskmail.data.AccountStore
+import com.deskmail.data.ComposeWords
+import com.deskmail.data.LiveComposer
 import com.deskmail.data.LiveMail
 import com.deskmail.data.MailSync
 import com.deskmail.data.TestImapServer
 import com.deskmail.data.endAndWait
+import com.deskmail.data.eventually
 import com.deskmail.data.testBox
 import com.deskmail.db.DeskMailDatabase
+import com.deskmail.db.OutboxEntity
 import jakarta.mail.Flags
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -31,6 +36,7 @@ import org.robolectric.annotation.Config
 import java.io.File
 import java.time.Duration
 import java.time.Instant
+import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
 
@@ -60,7 +66,22 @@ class NotifyActionsTest {
     private lateinit var sync: MailSync
     private lateinit var mail: LiveMail
     private lateinit var notifier: MailNotifier
+    private lateinit var composer: LiveComposer
     private lateinit var actions: NotifyActions
+
+    /** When the outbox was asked to be looked at, as delays from the moment of asking. */
+    private val scheduled = CopyOnWriteArrayList<Long>()
+
+    private val words = ComposeWords(
+        wrote = { date, who -> "$date tarihinde $who yazdı:" },
+        forwarded = "---------- İletilen ileti ----------",
+        from = "Kimden",
+        sent = "Tarih",
+        subject = "Konu",
+        to = "Kime",
+        cc = "Bilgi",
+        date = { it.toString() },
+    )
 
     @Before
     fun open() {
@@ -71,7 +92,18 @@ class NotifyActionsTest {
         notifier = MailNotifier(context, db, NotifyStore(context.getSharedPreferences("notify-actions-test", Context.MODE_PRIVATE)), FrontViews(), log)
         // as the app has it: whoever has an account synced, new mail is told of afterwards
         sync.onSynced = { notifier.check(it) }
-        actions = NotifyActions(mail, notifier, log, tellServers = { asked.incrementAndGet() })
+        composer = LiveComposer(
+            db = db,
+            sync = sync,
+            scope = scope,
+            files = File(context.cacheDir, "notify-outbox-" + System.nanoTime()),
+            scheduler = { delay -> scheduled += delay },
+            fetchFile = { mail.fetch(it) },
+            words = { words },
+            log = log,
+            now = { clock.get() },
+        )
+        actions = NotifyActions(mail, notifier, log, composer, tellServers = { asked.incrementAndGet() })
     }
 
     @After
@@ -156,6 +188,68 @@ class NotifyActionsTest {
         assertEquals(2, server.uids().size)
         assertTrue(db.pending().all().isEmpty())
         assertFalse(mail.tellAll())
+    }
+
+    /** Three buttons, as many as the system shows: "Reply" with a field to type into, "Read", and a way to put the message away. */
+    @Test
+    fun aNotificationOffersToReplyFromWhereItIs() = runBlocking {
+        server.deliver("Eski", "Bunu biliyorsun.", hoursAgo(5))
+        val id = account()
+        assertEquals(MailSync.Outcome.Done, sync.account(id))
+        server.deliver("Cumartesi kahvaltı?", "Selam Deniz, kahvaltıya ne dersin?", hoursAgo(1))
+        assertEquals(MailSync.Outcome.Done, sync.account(id))
+
+        val buttons = manager.activeNotifications.single { it.tag == MailNotifier.MESSAGE }.notification.actions
+        // an account without an archive deletes
+        assertEquals(listOf("Yanıtla", "Okundu", "Sil"), buttons.map { it.title.toString() })
+        assertEquals(NotifyActionReceiver.REPLY_TEXT, buttons[0].remoteInputs.single().resultKey)
+        assertEquals(Notification.Action.SEMANTIC_ACTION_REPLY, buttons[0].semanticAction)
+    }
+
+    /** What is typed into a notification is a reply as "Reply" begins it, with the text on top, and it goes at once. */
+    @Test
+    fun aReplyTypedIntoANotificationIsSentAtOnce() = runBlocking {
+        server.deliver("Eski", "Bunu biliyorsun.", hoursAgo(5))
+        val id = account()
+        assertEquals(MailSync.Outcome.Done, sync.account(id))
+        server.deliver("Cumartesi kahvaltı?", "Selam Deniz, kahvaltıya ne dersin?", hoursAgo(1))
+        assertEquals(MailSync.Outcome.Done, sync.account(id))
+        val message = db.idOf(id, "Cumartesi kahvaltı?")
+
+        assertTrue(actions.reply(message, "  Olur, geliyorum.  "))
+
+        // the notification is gone, and an answered message counts as read
+        assertTrue(shownMessages().isEmpty())
+        assertTrue(db.messages().byId(message)!!.seen)
+        assertEquals(1, asked.get())
+        // handed over, and nothing waits out a time to be taken back
+        eventually("the reply is due now") { scheduled.contains(0L) }
+        val reply = db.outbox().observeAll().first().single()
+        assertEquals(OutboxEntity.QUEUED, reply.state)
+        assertTrue(reply.sendAfter <= clock.get())
+        assertEquals("Re: Cumartesi kahvaltı?", reply.subject)
+        assertTrue(reply.toText, reply.toText.contains("ayse@example.org"))
+        assertTrue(reply.body, reply.body.startsWith("Olur, geliyorum.\n"))
+        assertTrue(reply.body, reply.body.contains("> Selam Deniz, kahvaltıya ne dersin?"))
+        assertEquals(message, reply.sourceId)
+    }
+
+    /** Nothing typed, or a message that went meanwhile: nothing is written, nothing is sent. */
+    @Test
+    fun anEmptyReplyOrOneToAMessageThatWentSendsNothing() = runBlocking {
+        server.deliver("Eski", "Bunu biliyorsun.", hoursAgo(5))
+        val id = account()
+        assertEquals(MailSync.Outcome.Done, sync.account(id))
+        server.deliver("Cumartesi kahvaltı?", "Selam Deniz, kahvaltıya ne dersin?", hoursAgo(1))
+        assertEquals(MailSync.Outcome.Done, sync.account(id))
+        val message = db.idOf(id, "Cumartesi kahvaltı?")
+
+        assertFalse(actions.reply(message, "   "))
+        assertFalse(actions.reply(404, "Olur."))
+
+        assertTrue(db.outbox().observeAll().first().isEmpty())
+        assertFalse(db.messages().byId(message)!!.seen)
+        assertEquals(0, asked.get())
     }
 
     /** Swept away: nothing is done to the message, and nothing is told to anybody. */

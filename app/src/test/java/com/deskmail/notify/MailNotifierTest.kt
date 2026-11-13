@@ -107,7 +107,8 @@ class MailNotifierTest {
         assertEquals("Posta", one.text(Notification.EXTRA_SUB_TEXT))
         assertEquals(MailNotifier.channelId(account), one.channelId)
         assertEquals(MailNotifier.group(account), one.group)
-        assertEquals(listOf("Okundu", "Arşivle", "Sil"), one.actions.map { it.title.toString() })
+        // three buttons, as many as the system shows: the account has an archive, so no "Delete"
+        assertEquals(listOf("Yanıtla", "Okundu", "Arşivle"), one.actions.map { it.title.toString() })
 
         // the account's line over its messages
         val summary = shown(MailNotifier.SUMMARY).single()
@@ -147,7 +148,7 @@ class MailNotifierTest {
         assertNull(OpenRequest.from(Intent(tapped).putExtra("token", "guessed"), store.token))
         assertNull(OpenRequest.from(tapped, "another installation's"))
         val buttons = one.actions.map { shadowOf(it.actionIntent).savedIntent }
-        assertEquals(listOf(NotifyActionReceiver.READ, NotifyActionReceiver.ARCHIVE, NotifyActionReceiver.DELETE), buttons.map { it.action })
+        assertEquals(listOf(NotifyActionReceiver.REPLY, NotifyActionReceiver.READ, NotifyActionReceiver.ARCHIVE), buttons.map { it.action })
         assertTrue(buttons.all { it.getLongExtra(NotifyActionReceiver.EXTRA_MESSAGE, 0) == id })
         assertTrue(buttons.all { it.component?.className == NotifyActionReceiver::class.java.name })
         // swept away, the receiver hears of it
@@ -158,7 +159,7 @@ class MailNotifierTest {
         assertEquals(OpenRequest(0), OpenRequest.from(shadowOf(shown(MailNotifier.SUMMARY).single().notification.contentIntent).savedIntent, store.token))
     }
 
-    /** An account without an archive offers none. */
+    /** An account without an archive offers none: "Delete" takes its place. */
     @Test
     fun withoutAnArchiveThereIsNoButtonForIt() = runBlocking {
         val other = db.accounts().insert(testAccount("elif@example.org", name = "İş", position = 1))
@@ -168,7 +169,7 @@ class MailNotifierTest {
 
         notifier.check(other)
 
-        assertEquals(listOf("Okundu", "Sil"), shown(MailNotifier.MESSAGE).single().notification.actions.map { it.title.toString() })
+        assertEquals(listOf("Yanıtla", "Okundu", "Sil"), shown(MailNotifier.MESSAGE).single().notification.actions.map { it.title.toString() })
         assertEquals(other.toInt(), shown(MailNotifier.SUMMARY).single().id)
     }
 

@@ -4,6 +4,7 @@ import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
+import android.app.RemoteInput
 import android.content.Context
 import android.content.Intent
 import android.graphics.drawable.Icon
@@ -39,9 +40,10 @@ import kotlinx.coroutines.withContext
  *   shows it.
  * - A notification goes when its message is read, moved or deleted, here or on another device.
  *
- * Every notification offers "Read", "Archive" (where the account has an archive) and "Delete"
- * ([NotifyActionReceiver]); tapping it opens the message. The account's line counts the
- * notifications that are shown of its mail, and goes with the last of them.
+ * Every notification offers "Reply" (typed into the notification itself), "Read", and "Archive"
+ * where the account has an archive, else "Delete" ([NotifyActionReceiver]): the system shows three
+ * buttons at most. Tapping it opens the message. The account's line counts the notifications that
+ * are shown of its mail, and goes with the last of them.
  */
 class MailNotifier(
     private val context: Context,
@@ -165,10 +167,32 @@ class MailNotifier(
             .setContentIntent(open(message.id))
             // swept away: the account's line is to count one less
             .setDeleteIntent(broadcast(NotifyActionReceiver.DISMISSED, message.id))
+            .addAction(replyAction(message.id))
             .addAction(action(R.string.notify_read, NotifyActionReceiver.READ, message.id))
-        if (archive) builder.addAction(action(R.string.action_archive, NotifyActionReceiver.ARCHIVE, message.id))
-        builder.addAction(action(R.string.action_delete, NotifyActionReceiver.DELETE, message.id))
+            // three buttons are all the system shows: the account's way of putting a message away
+            .addAction(
+                if (archive) action(R.string.action_archive, NotifyActionReceiver.ARCHIVE, message.id)
+                else action(R.string.action_delete, NotifyActionReceiver.DELETE, message.id),
+            )
         return builder.build()
+    }
+
+    /**
+     * A reply typed into a notification could not be sent (nobody to send it to, as the message's
+     * sender has no address): said in a notification of its own, which opens the message.
+     */
+    fun replyFailed(messageId: Long) {
+        val message = Notification.Builder(context, FAILED_CHANNEL)
+            .setSmallIcon(R.drawable.ic_stat_mail)
+            .setContentTitle(context.getString(R.string.notify_reply_failed))
+            .setContentText(context.getString(R.string.notify_reply_kept))
+            .setCategory(Notification.CATEGORY_ERROR)
+            .setAutoCancel(true)
+            .setContentIntent(open(messageId))
+            .build()
+        val channel = NotificationChannel(FAILED_CHANNEL, context.getString(R.string.notify_failed_channel), NotificationManager.IMPORTANCE_DEFAULT)
+        manager.createNotificationChannel(channel)
+        manager.notify(FAILED, messageId.toInt(), message)
     }
 
     /**
@@ -244,6 +268,24 @@ class MailNotifier(
     private fun action(label: Int, what: String, messageId: Long): Notification.Action =
         Notification.Action.Builder(null as Icon?, context.getString(label), broadcast(what, messageId)).build()
 
+    /**
+     * "Reply", with a field in the notification to type it into. The system puts what was typed into
+     * the intent, so this one intent is mutable; it names the app's own receiver.
+     */
+    private fun replyAction(messageId: Long): Notification.Action {
+        val input = RemoteInput.Builder(NotifyActionReceiver.REPLY_TEXT).setLabel(context.getString(R.string.notify_reply_hint)).build()
+        val intent = Intent(context, NotifyActionReceiver::class.java)
+            .setAction(NotifyActionReceiver.REPLY)
+            .setData(Uri.parse("deskmail://message/$messageId"))
+            .putExtra(NotifyActionReceiver.EXTRA_MESSAGE, messageId)
+        val pending = PendingIntent.getBroadcast(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE)
+        return Notification.Action.Builder(null as Icon?, context.getString(R.string.action_reply), pending)
+            .addRemoteInput(input)
+            .setAllowGeneratedReplies(false)
+            .setSemanticAction(Notification.Action.SEMANTIC_ACTION_REPLY)
+            .build()
+    }
+
     /** Has the app's receiver told [what] happened to the notification of the message [messageId]. */
     private fun broadcast(what: String, messageId: Long): PendingIntent {
         val intent = Intent(context, NotifyActionReceiver::class.java)
@@ -260,6 +302,10 @@ class MailNotifier(
         /** The tags the app's notifications are posted under: one for each message, one for an account's summary. */
         const val MESSAGE = "message"
         const val SUMMARY = "account"
+
+        /** A reply typed into a notification that could not be sent, and the channel such news is told on. */
+        const val FAILED = "reply-failed"
+        private const val FAILED_CHANNEL = "failed"
 
         /** More new messages than this at once are not each told of: the newest are. */
         const val MAX_TOLD = 12

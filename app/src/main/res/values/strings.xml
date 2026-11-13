@@ -334,6 +334,10 @@
 
     <!-- New mail: the notifications, and Settings › Notifications -->
     <string name="notify_read">Read</string>
+    <string name="notify_reply_hint">Your reply</string>
+    <string name="notify_reply_failed">The reply was not sent</string>
+    <string name="notify_reply_kept">What you wrote is in the Outbox.</string>
+    <string name="notify_failed_channel">Replies not sent</string>
     <string name="notify_unknown_sender">Unknown sender</string>
     <string name="notify_channel_description">New mail of %1$s</string>
     <plurals name="notify_new_mail">

@@ -303,6 +303,10 @@
     <string name="settings_undo_send_seconds">%1$d sn</string>
 
     <string name="notify_read">Okundu</string>
+    <string name="notify_reply_hint">Yanıtın</string>
+    <string name="notify_reply_failed">Yanıt gönderilemedi</string>
+    <string name="notify_reply_kept">Yazdığın Giden kutusu\'nda duruyor.</string>
+    <string name="notify_failed_channel">Gönderilemeyen yanıtlar</string>
     <string name="notify_unknown_sender">Bilinmeyen gönderen</string>
     <string name="notify_channel_description">%1$s hesabının yeni iletileri</string>
     <plurals name="notify_new_mail">
