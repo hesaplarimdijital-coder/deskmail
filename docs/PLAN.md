@@ -225,6 +225,9 @@ o ön sürümün ilk PR'ında artar, sonraki PR'lar CHANGELOG'da aynı başlığ
    - **7b (kalan, ayrı PR):** IDLE döngüsü · `specialUse` ön plan hizmeti ve kalıcı bildirimi · alarm,
      uyandırma kilidi, ağ değişimi · açılışta ve güncellemeden sonra başlatma · "Anlık" seçeneği ve hesap
      başına sıklık · pil ayarlarına yönlendirme. Cihazda denenmeden birleştirilmemeli.
+   - **Küçük sağlamlaştırma (7b ile):** "iletiyi aç" isteği (`OpenRequest`) dışa açık etkinliğe geldiği için
+     başka bir uygulama da gönderebilir (en kötüsü: bir ileti açılır ve okundu olur). İsteğe, yalnızca
+     uygulamanın bildiği bir belirteç eklenecek; okunamayan ekler de `ComposeRequest`'teki gibi yok sayılacak.
 8. **Outlook OAuth2:** PKCE ve jeton istemcisi · XOAUTH2 ile IMAP/SMTP girişi · tarayıcı
    akışı ve jeton saklama · hesap eklemede Microsoft yolu · Outlook farkları ve hata yönlendirmeleri.
    Azure uygulama kaydını bekler (Barış'ın tarayıcısında yapılacak); o yüzden sırası sona alındı.
