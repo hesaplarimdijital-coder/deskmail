@@ -101,6 +101,21 @@ class AppSettings(private val prefs: SharedPreferences, private val log: AppLog?
         prefs.edit().putInt(KEY_UNDO_SEND, undoSendSeconds).apply()
     }
 
+    // ------------------------------------------------------------------ new mail
+
+    /**
+     * How often, in minutes, the mail is looked for while no window of the app is open; 0 for
+     * never (only by hand). One of [CHECK_CHOICES].
+     */
+    var checkMinutes by mutableIntStateOf(prefs.getInt(KEY_CHECK_MINUTES, DEFAULT_CHECK_MINUTES).let { stored -> if (stored in CHECK_CHOICES) stored else DEFAULT_CHECK_MINUTES })
+        private set
+
+    fun updateCheckMinutes(value: Int) {
+        checkMinutes = if (value in CHECK_CHOICES) value else DEFAULT_CHECK_MINUTES
+        log?.info("settings", "checkMinutes = $checkMinutes")
+        prefs.edit().putInt(KEY_CHECK_MINUTES, checkMinutes).apply()
+    }
+
     // ------------------------------------------------------------------ the panes of a large window
 
     /** The inspector beside the reader starts closed: it leaves little room on anything but a monitor. */
@@ -137,6 +152,10 @@ class AppSettings(private val prefs: SharedPreferences, private val log: AppLog?
         val UNDO_SEND_CHOICES = listOf(5, 10, 15)
         const val DEFAULT_UNDO_SEND = 10
 
+        /** How often the mail is looked for in the background, in minutes; 0 is "by hand". The system allows nothing shorter than a quarter of an hour. */
+        val CHECK_CHOICES = listOf(15, 30, 60, 0)
+        const val DEFAULT_CHECK_MINUTES = 15
+
         /** The list takes a little under half of the room until the divider is dragged. */
         const val DEFAULT_LIST_SHARE = 0.45f
 
@@ -150,6 +169,7 @@ class AppSettings(private val prefs: SharedPreferences, private val log: AppLog?
         private const val KEY_DARKEN_MESSAGES = "experiment_darken_messages"
         private const val KEY_WEB_LAYER = "experiment_web_layer"
         private const val KEY_UNDO_SEND = "undo_send_seconds"
+        private const val KEY_CHECK_MINUTES = "check_minutes"
         private const val KEY_INSPECTOR_COLLAPSED = "inspector_collapsed"
         private const val KEY_INSPECTOR_WIDTH = "inspector_width"
         private const val KEY_LIST_SHARE = "list_share"

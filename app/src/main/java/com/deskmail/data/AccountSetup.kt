@@ -34,7 +34,7 @@ import kotlinx.coroutines.withContext
  *   hands that to the one place that keeps track of the syncs under way ([LiveMail.sync]).
  */
 class AccountSetup(
-    db: DeskMailDatabase,
+    private val db: DeskMailDatabase,
     private val accounts: AccountStore,
     private val sync: MailSync,
     private val autoconfig: Autoconfig,
@@ -43,6 +43,7 @@ class AccountSetup(
     private val connect: (ServerAddress, Credentials) -> RemoteAccount = { server, credentials -> ImapConnection.open(server, credentials, log) },
     private val io: CoroutineDispatcher = Dispatchers.IO,
     private val startSync: (accountId: Long) -> Unit = { accountId -> scope.launch { sync.account(accountId) } },
+    private val onRemoved: (accountId: Long, folderIds: List<Long>) -> Unit = { _, _ -> },
 ) : AccountActions {
     private val store = RoomSyncStore(db)
 
@@ -102,9 +103,11 @@ class AccountSetup(
     }
 
     override suspend fun remove(accountId: Long) = withContext(io) {
+        val folders = db.folders().ofAccount(accountId).map { it.id }
         accounts.remove(accountId)
         // the index has no ties to the messages
         store.forget()
+        onRemoved(accountId, folders)
     }
 
     /**

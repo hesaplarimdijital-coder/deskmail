@@ -9,6 +9,7 @@ import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.deskmail.mail.MailMessage
+import com.deskmail.notify.OpenRequest
 import com.deskmail.settings.AppSettings
 import com.deskmail.ui.compose.Writing
 import desktopkit.components.InspectorState
@@ -113,6 +114,9 @@ class MailUiState(private val settings: AppSettings? = null) {
 
     /** The message being written over [route], if that is where one is being written. */
     fun writingOver(route: String): Writing? = writing?.takeIf { it.route == route }
+
+    /** A message a notification asked to be opened; taken up, and cleared, by the window's shell. */
+    var openRequest by mutableStateOf<OpenRequest?>(null)
 
     /** What is typed into the search field. */
     var searchText by mutableStateOf("")

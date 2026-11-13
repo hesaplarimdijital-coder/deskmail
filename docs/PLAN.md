@@ -32,6 +32,9 @@ kitten istenenler `docs/KIT-ISTEKLERI.md`'de durur.
 | Gönderilenin kopyası | Sağlayıcı tablosu söyler (`savesSentItself`): Gmail ve Outlook kendileri kaydeder, uygulama yazmaz. Ötekilerde gönderilen ileti, gizli alıcılarıyla, Gönderilmiş klasörüne APPEND edilir. |
 | İletinin yazılması | Gönderilen ileti uygulamanın kendi yazıcısıyla yazılır (`MessageWriter`: RFC 5322 başlıkları, RFC 2047 sözcükleri, quoted-printable metin, base64 ekler, RFC 2231 dosya adları) ve SMTP'ye dosyadan akıtılır. Angus Mail'in `MimeMessage` kurucuları içerik işleyici tablosuna dayanır; o tablo jar içindeki kaynak dosyalarıdır ve Android paketlemesine güvenilmez. Yalnızca düz metin; biçimli yazma Aşama 2'de. |
 | Arama | Ara ekranı ayrı bir ekran değil, posta listesinin bir görünümüdür (`MailView.Search`): bulunanlar canlı bir sorgudur, liste, okuma bölmesi, süzgeçler, ileti işlemleri ve kısayollar aynen çalışır. Dizin FTS4'tür (katlanmış konu, kişiler, metin); sorguyu `SearchQuery` kurar. Yalnızca cihazdaki iletiler aranır; "Tüm postalar"daki kopyalar tek gösterilir. |
+| Bildirim: önce yedek yol | Brifin iki yolundan (ön plan hizmetinde IMAP IDLE; WorkManager ile periyodik denetim) önce ikincisi kuruldu: cihazsız sınanabilen ve tek başına işe yarayan o. Yeni posta her eşitlemenin sonunda aranır (`MailSync.onSynced` → `MailNotifier.check`), kim eşitlerse eşitlesin; IDLE geldiğinde aynı kancaya bağlanır. Bir iletinin "yeni" olması, gelen kutusunun UID işaretinin üstünde olmasıdır (`NotifyStore`, `UIDVALIDITY` ile); işaret ilk bakışta kurulur, o yüzden eski posta bildirilmez. |
+| Bildirim: sıklık | Şimdilik tek ayar (`AppSettings.checkMinutes`: 15, 30, 60, 0 = elle). Şemadaki hesap başına `notifyMode` alanı "Anlık" geldiğinde kullanılacak. |
+| Bildirimden yapılanlar | Okundu, Arşivle, Sil: alıcı (`NotifyActionReceiver`) cihazda hemen yapar ve `pending_op`'a yazar (geri alma beklemesi yok), sunucuya ayrı bir WorkManager işi söyler (`SyncWorker.tellServers`). Bildirime dokunmak iletiyi birleşik Gelen'de açar: o ekran her düzende ve klasörler okunmadan da vardır. |
 | Kit eksikleri | Kite yazılır; uygulamada yamanmaz (`docs/KIT-ISTEKLERI.md`). |
 | GitHub | PR'ları CI yeşilken Claude birleştirir. Etiketi ve sürümü Barış açar (Releases'ta `main` üzerinde): Claude'un oturumu etiket ve sürüm açamıyor (12 Kasım 2026'da denendi, ikisi de reddedildi). Force-push ve geçmişi yeniden yazma yok. |
 
@@ -208,9 +211,14 @@ o ön sürümün ilk PR'ında artar, sonraki PR'lar CHANGELOG'da aynı başlığ
    Ara ekranı (posta listesinin kendisi, üstünde arama alanı) · "/" kısayolu.
    - **Kalan (ayrı PR):** sunucu araması (cihazda olmayan eski posta) · alan süzgeçleri ("kimden:",
      "konu:") · palette "iletilerde ara".
-7. **Bildirimler:** IDLE döngüsü · ön plan hizmeti · alarm, uyandırma kilidi, ağ değişimi ·
-   açılışta ve güncellemeden sonra başlatma · yeni posta bildirimi ve düğmeleri · periyodik yedek yol ·
-   pil yönlendirmesi.
+7. **Bildirimler**
+   - **7a (alpha.3):** periyodik yedek yol (WorkManager, 15/30/60 dk ya da elle) · yeni posta bildirimi
+     (hesap başına kanal ve grup, BigTextStyle, InboxStyle özet) · Okundu, Arşivle, Sil düğmeleri ·
+     bildirime dokununca iletinin açılması · liste ekrandayken bildirim çıkmaması · okunan iletinin
+     bildiriminin kalkması · bildirim izni ve Ayarlar › Bildirimler.
+   - **7b (kalan, ayrı PR):** IDLE döngüsü · `specialUse` ön plan hizmeti ve kalıcı bildirimi · alarm,
+     uyandırma kilidi, ağ değişimi · açılışta ve güncellemeden sonra başlatma · "Anlık" seçeneği ve hesap
+     başına sıklık · pil ayarlarına yönlendirme. Cihazda denenmeden birleştirilmemeli.
 8. **Outlook OAuth2:** PKCE ve jeton istemcisi · XOAUTH2 ile IMAP/SMTP girişi · tarayıcı
    akışı ve jeton saklama · hesap eklemede Microsoft yolu · Outlook farkları ve hata yönlendirmeleri.
    Azure uygulama kaydını bekler (Barış'ın tarayıcısında yapılacak); o yüzden sırası sona alındı.

@@ -297,6 +297,45 @@ class LiveMail(
         }
     }
 
+    // What a notification's buttons ask for. Written down before the call returns, and due at
+    // once: there is nobody to take it back, and the process may not live much longer. Telling
+    // the server is the caller's to arrange. True when something was done.
+
+    /** Marks the message read, for good. */
+    suspend fun readNow(id: Long): Boolean = db.pending().mark(id, seen = true, flagged = null, now = now()) != null
+
+    /** Archives the message, for good. */
+    suspend fun archiveNow(id: Long): Boolean = standNow(archive(listOf(id)))
+
+    /** Deletes the message (to the trash; from the trash, for good), for good. */
+    suspend fun deleteNow(id: Long): Boolean = standNow(delete(listOf(id)))
+
+    private suspend fun standNow(undo: MailUndo?): Boolean {
+        if (undo == null) return false
+        db.pending().bringForward(undo.changes.map { it.id }, now())
+        return true
+    }
+
+    /** Tells every server that has something waiting for it what is due; true when one of them could not be reached. */
+    suspend fun tellAll(): Boolean {
+        var unreachable = false
+        for (accountId in db.pending().accounts()) {
+            val outcome = sync.changes(accountId)
+            if (outcome is MailSync.Outcome.Failed && outcome.kind == MailException.Kind.Network) unreachable = true
+        }
+        return unreachable
+    }
+
+    /** Brings every account's inbox up to date, as the app does in the background; true when a server could not be reached. */
+    suspend fun syncAll(): Boolean {
+        var unreachable = false
+        for (account in db.accounts().all()) {
+            val outcome = sync.account(account.id)
+            if (outcome is MailSync.Outcome.Failed && outcome.kind == MailException.Kind.Network) unreachable = true
+        }
+        return unreachable
+    }
+
     // ------------------------------------------------------------------ files
 
     override suspend fun fetch(attachment: MailAttachment): FetchedFile {

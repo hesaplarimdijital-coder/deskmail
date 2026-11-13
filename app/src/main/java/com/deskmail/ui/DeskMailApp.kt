@@ -27,6 +27,7 @@ import com.deskmail.mail.MailComposer
 import com.deskmail.mail.MailContent
 import com.deskmail.mail.MailSource
 import com.deskmail.mail.MailView
+import com.deskmail.notify.NotifyGate
 import com.deskmail.settings.AppSettings
 import com.deskmail.ui.compose.ComposeActions
 import com.deskmail.ui.compose.ComposeScreen
@@ -93,6 +94,11 @@ import kotlinx.coroutines.launch
  * @param commands where the activity finds the window's commands, for the keys it routes.
  * @param messageBody draws a message's body instead of the WebView: the plain text where there is no
  *   WebView to draw with (the screenshot tests). The flag says whether its remote images are shown.
+ * @param notifications the system's leave to show notifications, and the way to ask for it; null
+ *   where there is nobody to ask (the tests).
+ * @param onFrontList told which list of mail the window shows (null for none): new mail that
+ *   arrives in it needs no notification.
+ * @param onCheckChosen the user chose how often the mail is looked for in the background.
  */
 @Composable
 fun DeskMailApp(
@@ -111,6 +117,9 @@ fun DeskMailApp(
     palette: CommandPaletteState = remember { CommandPaletteState() },
     commands: CommandHost? = null,
     messageBody: (@Composable (MailContent.Ready, Boolean, Modifier) -> Unit)? = null,
+    notifications: NotifyGate? = null,
+    onFrontList: ((MailView?) -> Unit)? = null,
+    onCheckChosen: () -> Unit = {},
 ) {
     val navController = rememberNavController()
     val navigator = remember(navController) { ShellNavigator(navController) }
@@ -180,6 +189,23 @@ fun DeskMailApp(
     val openAccount: (Long) -> Unit = { id ->
         settingsUi.page = SettingsPage.Account(id)
         navigator.navigate(Routes.SETTINGS)
+    }
+    // A notification was tapped: its message opens in the inbox, in front of whatever the window showed.
+    val request = ui.openRequest
+    LaunchedEffect(request) {
+        if (request != null) {
+            ui.openRequest = null
+            if (ui.writingOver(Routes.INBOX) != null) compose?.close()
+            val here = navController.currentBackStackEntry?.destination?.route
+            if (here != null && here != Routes.INBOX) navigator.navigate(Routes.INBOX)
+            if (request.messageId > 0) openMessage(mail, ui, Routes.INBOX, request.messageId)
+        }
+    }
+    // New mail can only be told of with the user's leave. It is asked for once, unasked: when
+    // there is an account whose mail could arrive.
+    val hasAccounts = mail.loaded && mail.accounts.isNotEmpty()
+    LaunchedEffect(hasAccounts, notifications) {
+        if (hasAccounts && notifications != null && !notifications.allowed && !notifications.asked) notifications.ask()
     }
     // What the divider between list and reader was dragged to outlives the window: once a drag
     // has rested, the window's state takes it as the list's share and stores it.
@@ -298,6 +324,9 @@ fun DeskMailApp(
     // being written in front, the list and the open message behind it are out of reach.
     val writingInFront = compose != null && ui.writingOver(currentRoute) != null
     val listInFront = !writingInFront && mailView(currentRoute, ui.searchQuery) != null
+    // which list the window shows, for whoever tells of new mail
+    val frontList = if (writingInFront) null else mailView(currentRoute, ui.searchQuery)
+    LaunchedEffect(frontList) { onFrontList?.invoke(frontList) }
     val messageOpen = !writingInFront && ui.openedId(currentRoute) != null
     val menus = shortcuts.menus(
         resources = resources,
@@ -446,6 +475,8 @@ fun DeskMailApp(
                         ui = settingsUi,
                         scope = scope,
                         onNotify = notify,
+                        notifications = notifications,
+                        onCheckChosen = onCheckChosen,
                         onAccountAdded = { address ->
                             // To the inbox, where its mail is arriving. Said to the route keeper as
                             // well: the account's folders are about to change the set of routes, and
