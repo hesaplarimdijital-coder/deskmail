@@ -5,8 +5,12 @@ import kotlinx.coroutines.flow.Flow
 import java.io.InputStream
 import java.time.Instant
 
-/** How a message that is being written came about. */
-enum class DraftKind { New, Reply, ReplyAll, Forward }
+/**
+ * How a message that is being written came about. [Edit]: it is a draft that lies in its
+ * account's Drafts folder (put there by this device, or written elsewhere) and is taken up to be
+ * written on.
+ */
+enum class DraftKind { New, Reply, ReplyAll, Forward, Edit }
 
 /** Where a message of the user's own stands. */
 enum class DraftState {

@@ -74,7 +74,10 @@ class DemoComposer(private val mail: DemoMail, private val now: Instant = Instan
         } else {
             val text = (mail.observeContent(source.id).first() as? MailContent.Ready)?.text.orEmpty()
             val sender = AddressList.format(listOf(MailAddress(source.fromName, source.fromAddress)))
-            if (kind == DraftKind.Forward) {
+            if (kind == DraftKind.Edit) {
+                // the draft as it lies in its folder
+                Draft(id, account.id, to = source.to, subject = source.subject, body = text)
+            } else if (kind == DraftKind.Forward) {
                 val details = listOf("Kimden: $sender", "Konu: ${source.subject}", "Kime: ${source.to}")
                 Draft(
                     id, account.id,

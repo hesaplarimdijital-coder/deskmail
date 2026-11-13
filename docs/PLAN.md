@@ -228,7 +228,11 @@ başlığında.
    hesabın adı ve imzası · R, A, F ve Ctrl+Enter.
    - **Sonradan (alpha.3):** `mailto:` bağlantıları ve paylaşım (`MailtoLink`, `ComposeRequest`): başka
      uygulamanın istediği ileti, öndeki ekranın üstünde yeni bir ileti olarak başlar.
-   - **Kalan (ayrı PR):** taslakların sunucudaki Taslaklar klasörüne kaydı · alıcı önerilerinin arayüzü
+   - **Sonradan (beta.1):** taslakların sunucudaki Taslaklar klasörüne kaydı (`DraftSync`, `DraftWorker`;
+     şema 4). Tek kopya kuralı: yeni kopya konur, sonra eskisi silinir (UIDPLUS ile, klasörün UID
+     damgası tutuyorsa); gönderilen ya da atılan iletinin kopyası `draft_removal` notuyla silinir. Taslaklar'da
+     duran ileti "Düzenle" ile alınır (`DraftKind.Edit`): bu cihazınki Message-ID'sinden bulunur.
+   - **Kalan (ayrı PR):** alıcı önerilerinin arayüzü
      (kit isteği 4) ve Contact Picker · DeX'te yazmanın ayrı pencerede açılması.
 6. **Arama (alpha.3):** dizin sorgusu (`SearchQuery`: yazılan katlanır, dizinin böldüğü gibi sözcüklere
    bölünür, her sözcük ön ek olarak aranır; yazılanın hiçbir parçası dizine sözdizimi olarak ulaşmaz) ·
@@ -266,7 +270,7 @@ Her biri ayrı PR; sıra, cihazda en çok denenmesi gerekenden başlar.
    cihaz denemesinden). **Yapıldı.**
 2. Anlık bildirim (7b). **Yapıldı.**
 3. Çoklu seçim, toplu işlem, klasöre sürükle bırak (4'ün kalanı). **Yapıldı.**
-4. Taslakların sunucuya kaydı (5'in kalanı).
+4. Taslakların sunucuya kaydı (5'in kalanı). **Yapıldı.**
 5. Sunucu araması, alan süzgeçleri, palette arama (6'nın kalanı).
 6. DeX'te yazmanın ayrı pencerede açılması; Contact Picker (5'in kalanı).
 7. İletinin içindeki (`cid:`) görseller; listede yanıtlandı ve iletildi işaretleri.

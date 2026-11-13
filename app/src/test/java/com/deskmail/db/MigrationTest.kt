@@ -133,6 +133,37 @@ class MigrationTest {
         }
     }
 
+    /** Version 3 (0.1.0-alpha.3): a draft that was put away is still there, and has no copy on its server yet. */
+    @Test
+    fun version3BecomesTheCurrentVersionAndKeepsWhatWasBeingWritten() = runBlocking {
+        create(3) { connection ->
+            anAccountWithItsInbox(connection)
+            connection.runSql(
+                "INSERT INTO outbox (accountId, state, toText, ccText, bccText, subject, body, messageId, inReplyTo, refs, sourceId, sourceKind, " +
+                    "draftFolderId, draftUid, sendAfter, error, createdAt, updatedAt) VALUES " +
+                    "(1, 'Draft', 'ayse@example.org', '', '', 'Yarım kalan', 'Devamı gelecek.', '<yarim@example.org>', '', '', 0, '', 0, 0, 0, '', 1000, 2000)",
+            )
+        }
+
+        val db = open(*DeskMailDatabase.MIGRATIONS)
+        try {
+            val draft = db.outbox().observeAll().first().single()
+            assertEquals("Yarım kalan", draft.subject)
+            assertEquals(0L, draft.draftSavedAt)
+            assertEquals(0L, draft.draftUidValidity)
+            // never put on its server: it is due to be
+            assertEquals(listOf(draft.id), db.outbox().draftsToSave().map { it.id })
+            assertEquals(1, db.outbox().setDraftCopy(draft.id, folderId = 1, uid = 9, uidValidity = 7, savedAt = draft.updatedAt))
+            assertTrue(db.outbox().draftsToSave().isEmpty())
+            // thrown away, its copy is noted for removal
+            assertEquals(1, db.outbox().discardWithCopy(draft.id))
+            val note = db.outbox().removals().single()
+            assertEquals(listOf(1L, 9L, 7L), listOf(note.folderId, note.uid, note.uidValidity))
+        } finally {
+            db.close()
+        }
+    }
+
     /** What version 3 added: the outbox and its files. */
     private suspend fun aMessageIsWrittenAndHandedOver(db: DeskMailDatabase) {
         val id = db.outbox().insert(testOutbox(accountId = 1))

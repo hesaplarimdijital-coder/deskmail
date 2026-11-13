@@ -23,6 +23,13 @@ Sürümler [SemVer](https://semver.org/lang/tr/) kuralına uyar; 0.1.0'a kadar o
 - Listeden çıkan ileti (taşındı, silindi; burada ya da başka bir cihazda) seçimden de çıkar.
 - **Fareyle çerçeve çizerek seçme yok:** kitte böyle bir seçim yok; kite istek olarak yazıldı (`docs/KIT-ISTEKLERI.md`, 22), kit çıkınca gelecek.
 
+### Taslaklar sunucuda
+- **Yazılan ileti sunucudaki Taslaklar klasörüne de kaydedilir.** Yazma durduktan yaklaşık 20 saniye sonra (ve bir dosya eklenip çıkarılınca) taslağın bir kopyası hesabın Taslaklar klasörüne konur; yeniden yazılınca yenisi konur, eskisi silinir. Sunucuda her zaman tek kopya olur; başka bir cihaz ya da web postası taslağı orada görür. Gizli alıcılar kopyada durur.
+- **Gönderilen ya da silinen taslağın sunucudaki kopyası da silinir** (ağ yoksa ağ gelince).
+- **Sunucudaki taslağa devam etmek:** Taslaklar klasöründe bir taslağı açınca "Yanıtla" yerine **Düzenle** ve altta **Yazmaya devam et** çıkar. Bu cihazda başlanmış taslak kaldığı yerden açılır; başka bir cihazda başlanmışsa yeni bir ileti olarak açılır ve sunucudaki kopyası artık onundur.
+- Hiçbir şey yazılmamış boş ileti sunucuya gitmez. Hesabın Taslaklar klasörü yoksa, ya da sunucu iletinin nereye konduğunu söylemiyorsa (UIDPLUS; Gmail ve Outlook söylüyor), taslak yalnızca cihazda kalır.
+- **Veritabanı sürüm 4:** güncellemede kendiliğinden taşınır.
+
 ### Düzeltmeler
 - **Paylaşılan dosyayla yazma ekranı hemen açılır.** Başka bir uygulamadan dosya paylaşınca yazma ekranı, dosya uygulamaya kopyalanana dek açılmıyordu; büyük bir videoda o süre boyunca yalnızca Gelen görünüyordu. Ekran artık hemen açılır ve dosya arkada eklenir: ekran "Dosya ekleniyor…" der, dosya iletiye girmeden Gönder çalışmaz (ekranı kapatıp taslağı Giden kutusu'ndan yeniden açsan da). Yazma ekranındaki ataşla eklenen büyük dosyalarda da böyle.
 - **Yazma ekranı kendiliğinden kapanmaz.** Bir ileti yazarken başka bir ekrana bakıp geri dönünce yazma ekranı "Taslak Giden kutusu'nda duruyor" diyerek kapanıyordu (taslak kaybolmuyordu, Giden kutusu'ndan açmak gerekiyordu). Yazılan ileti artık ekranına dönüldüğünde bırakıldığı gibi durur.

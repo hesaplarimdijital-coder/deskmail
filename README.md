@@ -8,7 +8,8 @@ ile çizilir. Play'de değildir; APK olarak kurulur.
 > şifreyle), klasörler ve iletiler eşitlenir, iletiler güvenli biçimde gösterilir; okundu ve yıldız
 > sunucuya yazılır, iletiler arşivlenir, taşınır, silinir (hepsi geri alınır; birden çok ileti seçilip
 > birlikte de), ekler açılır ve kaydedilir;
-> ileti yazılır, yanıtlanır, iletilir ve gönderilir (gönderi geri alınabilir, çevrimdışıyken sıraya girer);
+> ileti yazılır, yanıtlanır, iletilir ve gönderilir (gönderi geri alınabilir, çevrimdışıyken sıraya girer;
+> taslaklar sunucunun Taslaklar klasöründe de durur);
 > cihazdaki iletilerde aranır; gelen posta geldiği anda bildirilir (sunucuya açık bir hat tutulur; istenirse
 > 15, 30 ya da 60 dakikada bir bakılır). Sunucuda arama henüz yok; Outlook hesapları Microsoft girişini
 > bekliyor. Sıradaki adımlar `docs/PLAN.md`'de, yapılanlar `CHANGELOG.md`'de.

@@ -63,6 +63,8 @@ class ComposeWords(
  * @param fetchFile fetches a file of a received message: what a forwarded message takes along.
  * @param recover sees to what an earlier run of the app left half sent ([MailSend.recover]), before the outbox is shown.
  * @param undoMs how long a message waits after "Send" before it leaves: the time to take it back.
+ * @param saveDrafts has what is being written brought to the servers' Drafts folders in so many
+ *   milliseconds ([DraftSync]); asked whenever a draft was touched or its copy is of no use any more.
  */
 @Stable
 class LiveComposer(
@@ -78,6 +80,7 @@ class LiveComposer(
     private val now: () -> Long = System::currentTimeMillis,
     private val undoMs: () -> Long = { UNDO_SEND_MS },
     private val io: CoroutineDispatcher = Dispatchers.IO,
+    private val saveDrafts: (delayMs: Long) -> Unit = {},
 ) : MailComposer {
 
     override var outbox: List<Draft> by mutableStateOf(emptyList())
@@ -109,6 +112,8 @@ class LiveComposer(
     override suspend fun start(kind: DraftKind, accountId: Long?, sourceId: Long?, seed: DraftSeed): Long? {
         val time = now()
         val source = if (kind == DraftKind.New || sourceId == null) null else (db.messages().byId(sourceId) ?: return null)
+        // a draft of this device's own is taken up where it was left: every copy of it carries its Message-ID
+        if (kind == DraftKind.Edit && source != null && source.globalId.isNotBlank()) db.outbox().writtenUnder(source.globalId)?.let { return it.id }
         val account = (source?.accountId ?: accountId)?.let { db.accounts().byId(it) } ?: db.accounts().all().firstOrNull() ?: return null
         var row = OutboxEntity(
             accountId = account.id,
@@ -129,10 +134,14 @@ class LiveComposer(
             error = "",
             createdAt = time,
             updatedAt = time,
+            // Nothing of it is worth a place on the server before something is written into it; what
+            // another app asked for (a link's recipient, something shared) is worth one as it stands.
+            draftSavedAt = if (seed == DraftSeed()) time else 0,
         )
         if (source != null) row = from(row, kind, source, account)
         val id = db.outbox().insert(row)
-        if (source != null && kind == DraftKind.Forward) takeFilesAlong(id, source)
+        if (source != null && (kind == DraftKind.Forward || kind == DraftKind.Edit)) takeFilesAlong(id, source)
+        if (row.draftSavedAt < row.updatedAt) saveDrafts(DraftSync.SAVE_AFTER_MS)
         return id
     }
 
@@ -145,6 +154,25 @@ class LiveComposer(
         val from = MailAddress.decode(source.fromList)
         val to = MailAddress.decode(source.toList)
         val cc = MailAddress.decode(source.ccList)
+        if (kind == DraftKind.Edit) {
+            // The draft as it lies on the server: what it says, whom it is for, and its place in a
+            // thread. Its copy there is this message's copy from now on, and up to date.
+            val folder = db.folders().byId(source.folderId)
+            return row.copy(
+                toText = AddressList.format(to),
+                ccText = AddressList.format(cc),
+                bccText = AddressList.format(MailAddress.decode(source.bccList)),
+                subject = source.subject,
+                body = text,
+                messageId = source.globalId.ifBlank { row.messageId },
+                inReplyTo = source.inReplyTo,
+                refs = source.refs,
+                draftFolderId = source.folderId,
+                draftUid = source.uid,
+                draftUidValidity = folder?.uidValidity ?: 0,
+                draftSavedAt = row.updatedAt,
+            )
+        }
         val writer = from.firstOrNull()?.toString().orEmpty()
         val written = words.date(Instant.ofEpochMilli(if (source.sentAt != 0L) source.sentAt else source.date))
         if (kind == DraftKind.Forward) {
@@ -206,7 +234,7 @@ class LiveComposer(
             row.messageId.substringBefore('@') + "@" + domain + ">"
         }
         // only while it is being written on: what waits to be sent, or is on its way, stays as it was handed over
-        db.outbox().write(id, accountId, to, cc, bcc, subject, body, messageId, now())
+        if (db.outbox().write(id, accountId, to, cc, bcc, subject, body, messageId, now()) > 0) saveDrafts(DraftSync.SAVE_AFTER_MS)
     }
 
     override fun keep(id: Long, accountId: Long, to: String, cc: String, bcc: String, subject: String, body: String) {
@@ -223,6 +251,7 @@ class LiveComposer(
             target.parentFile?.mkdirs()
             source.use { input -> target.outputStream().use { input.copyTo(it) } }
             db.outbox().addFile(OutboxFileEntity(outboxId = id, name = safeFileName(name), mimeType = mimeType.ifBlank { "application/octet-stream" }, size = target.length(), path = target.path))
+            touched(id)
             true
         } catch (e: Exception) {
             log?.warn(TAG, "a file could not be attached: $e")
@@ -234,7 +263,14 @@ class LiveComposer(
     override suspend fun detach(fileId: Long) {
         val file = db.outbox().file(fileId) ?: return
         db.outbox().removeFile(fileId)
+        touched(file.outboxId)
         withContext(io) { File(file.path).parentFile?.deleteRecursively() }
+    }
+
+    /** A file came or went: the draft is ahead of its copy on the server, as after something typed. */
+    private suspend fun touched(id: Long) {
+        db.outbox().touch(id, now())
+        saveDrafts(DraftSync.SAVE_AFTER_MS)
     }
 
     override suspend fun send(id: Long): SendCheck {
@@ -264,8 +300,11 @@ class LiveComposer(
     }
 
     override suspend fun discard(id: Long): Boolean {
-        if (db.outbox().discard(id) == 0 && db.outbox().byId(id) != null) return false
+        val copied = db.outbox().byId(id)?.let { it.draftUid != 0L } == true
+        if (db.outbox().discardWithCopy(id) == 0 && db.outbox().byId(id) != null) return false
         withContext(io) { File(files, id.toString()).deleteRecursively() }
+        // the copy it had among the drafts on its server goes after it
+        if (copied) saveDrafts(0)
         return true
     }
 
