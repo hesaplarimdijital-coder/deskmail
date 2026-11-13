@@ -18,6 +18,11 @@ interface RemoteAccount : Closeable {
 
     /** Opens a folder for changing what is in it. One at a time, as with [open]. */
     fun edit(path: String): EditableMailbox
+
+    /** Makes a folder for mail at [path]; one that is there already is left as it is. */
+    fun create(path: String) {
+        throw MailException(MailException.Kind.Server, "this server makes no folders")
+    }
 }
 
 /** A [RemoteMailbox] that is closed when its reader is done. */

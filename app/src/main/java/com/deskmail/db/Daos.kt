@@ -184,13 +184,13 @@ abstract class MessageDao {
     /** Everything unread, wherever it is filed: not Spam, not Trash, and not once more from "All Mail". */
     @Query(
         "SELECT message.* FROM message JOIN folder ON folder.id = message.folderId " +
-            "WHERE message.seen = 0 AND folder.role NOT IN ('Junk', 'Trash', 'All') AND $STAYING ORDER BY message.date DESC, message.id DESC",
+            "WHERE message.seen = 0 AND folder.role NOT IN ('Junk', 'Trash', 'All', 'Snoozed') AND $STAYING ORDER BY message.date DESC, message.id DESC",
     )
     abstract fun observeUnread(): Flow<List<MessageEntity>>
 
     @Query(
         "SELECT message.* FROM message JOIN folder ON folder.id = message.folderId " +
-            "WHERE message.flagged = 1 AND folder.role NOT IN ('Trash', 'All') AND $STAYING ORDER BY message.date DESC, message.id DESC",
+            "WHERE message.flagged = 1 AND folder.role NOT IN ('Trash', 'All', 'Snoozed') AND $STAYING ORDER BY message.date DESC, message.id DESC",
     )
     abstract fun observeStarred(): Flow<List<MessageEntity>>
 
@@ -226,6 +226,18 @@ abstract class MessageDao {
             "WHERE folder.role = 'Sent' AND $STAYING ORDER BY awaiting.dueAt, message.id",
     )
     abstract fun observeAwaiting(): Flow<List<MessageEntity>>
+
+    /**
+     * The snoozed messages of every account, in their Snoozed folders: the one to come back first on
+     * top, those whose time the device does not know at the end.
+     */
+    @Query(
+        "SELECT message.* FROM message JOIN folder ON folder.id = message.folderId " +
+            "LEFT JOIN snooze ON snooze.accountId = message.accountId AND snooze.messageId = message.globalId " +
+            "WHERE folder.role = 'Snoozed' AND $STAYING " +
+            "ORDER BY snooze.wakeAt IS NULL, snooze.wakeAt, message.date DESC, message.id DESC",
+    )
+    abstract fun observeSnoozed(): Flow<List<MessageEntity>>
 
     /** Who sent the account's messages that answer the message [globalId]: by their In-Reply-To or References. */
     @Query("SELECT fromList FROM message WHERE accountId = :accountId AND (inReplyTo = :globalId OR instr(refs, :globalId) > 0)")
@@ -955,4 +967,46 @@ abstract class AwaitingDao {
     /** The user was reminded of it. */
     @Query("UPDATE awaiting SET toldAt = :at WHERE id = :id")
     abstract suspend fun told(id: Long, at: Long)
+}
+
+/** The snoozed messages ([SnoozeEntity]). */
+@Dao
+abstract class SnoozeDao {
+    @Query("SELECT * FROM snooze WHERE state != 'Removed' ORDER BY wakeAt, id")
+    abstract fun observeShown(): Flow<List<SnoozeEntity>>
+
+    @Query("SELECT * FROM snooze WHERE accountId = :accountId")
+    abstract suspend fun ofAccount(accountId: Long): List<SnoozeEntity>
+
+    @Query("SELECT * FROM snooze WHERE accountId = :accountId AND messageId = :messageId")
+    abstract suspend fun of(accountId: Long, messageId: String): SnoozeEntity?
+
+    /** The accounts that have something snoozed, or a change to write. */
+    @Query("SELECT DISTINCT accountId FROM snooze")
+    abstract suspend fun accounts(): List<Long>
+
+    /** When the next snoozed message is due, of those that are not being brought back; null for none. */
+    @Query("SELECT MIN(wakeAt) FROM snooze WHERE state != 'Removed'")
+    abstract suspend fun nextWake(): Long?
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    abstract suspend fun put(snooze: SnoozeEntity): Long
+
+    @Query("DELETE FROM snooze WHERE id = :id")
+    abstract suspend fun delete(id: Long)
+
+    /**
+     * The account's snoozes as a look at its server left them ([rows]), in the place of what the
+     * device had before [before]. A snooze changed on the device while the server was being asked
+     * is left as it is: the next look takes it up.
+     */
+    @Transaction
+    open suspend fun settle(accountId: Long, rows: List<SnoozeEntity>, before: Long) {
+        val newer = ofAccount(accountId).filter { it.changedAt > before }.mapTo(HashSet()) { it.messageId }
+        dropUntil(accountId, before)
+        for (row in rows) if (row.messageId !in newer) put(row.copy(id = 0))
+    }
+
+    @Query("DELETE FROM snooze WHERE accountId = :accountId AND changedAt <= :before")
+    protected abstract suspend fun dropUntil(accountId: Long, before: Long)
 }

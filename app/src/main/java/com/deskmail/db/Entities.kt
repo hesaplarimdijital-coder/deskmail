@@ -421,3 +421,36 @@ data class AwaitingEntity(
     val dueAt: Long,
     val toldAt: Long = 0,
 )
+
+/**
+ * A message the user snoozed ([com.deskmail.core.sync.Snooze]): as the account's list on its server
+ * says ([LISTED]), or as this device changed it and has still to write to that list.
+ *
+ * @param messageId its Message-ID; [folder] the path of the folder it goes back to; [wakeAt] when.
+ * @param state [LISTED]: on the server's list. [ADDED]: snoozed here (or given another time), to go
+ *   onto the list once the server holds the message in its Snoozed folder. [REMOVED]: brought back
+ *   here, to come off the list; nothing wakes it meanwhile.
+ * @param changedAt when this device last changed it: an addition the server never came to hold is
+ *   given up after a while.
+ */
+@Entity(
+    tableName = "snooze",
+    foreignKeys = [ForeignKey(entity = AccountEntity::class, parentColumns = ["id"], childColumns = ["accountId"], onDelete = ForeignKey.CASCADE)],
+    indices = [Index(value = ["accountId", "messageId"], unique = true)],
+)
+data class SnoozeEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val accountId: Long,
+    val messageId: String,
+    val folder: String,
+    val subject: String,
+    val wakeAt: Long,
+    val state: String,
+    val changedAt: Long,
+) {
+    companion object {
+        const val LISTED = "Listed"
+        const val ADDED = "Added"
+        const val REMOVED = "Removed"
+    }
+}

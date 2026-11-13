@@ -48,9 +48,10 @@ private fun rank(role: FolderRole): Int = when (role) {
     FolderRole.Sent -> 2
     FolderRole.Archive -> 3
     FolderRole.All -> 4
-    FolderRole.Junk -> 5
-    FolderRole.Trash -> 6
-    FolderRole.Other -> 7
+    FolderRole.Snoozed -> 5
+    FolderRole.Junk -> 6
+    FolderRole.Trash -> 7
+    FolderRole.Other -> 8
 }
 
 /**

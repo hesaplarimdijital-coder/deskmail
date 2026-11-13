@@ -188,6 +188,7 @@ fun MailScreen(
         onToggleStar = { mail.markStarred(acted.map { it.id }, starred = !acted.all { it.starred }) },
         onArchive = if (acted.any { archivable(mail, it) }) ({ actions.archive(acted.map { it.id }) }) else null,
         onMove = acted.firstOrNull { mail.moveTargets(it).isNotEmpty() }?.let { anchor -> { ui.moveSeveral(anchor, acted.map { it.id }) } },
+        onSnooze = if (acted.any { snoozable(mail, it) }) ({ ui.snoozing = acted.filter { snoozable(mail, it) }.map { it.id } }) else null,
         onDelete = { actions.delete(acted.map { it.id }) },
         onClear = { ui.clearSelection(route) },
     )
@@ -211,6 +212,8 @@ fun MailScreen(
     val forwardLabel = stringResource(R.string.action_forward)
     val selectLabel = stringResource(R.string.action_select)
     val editLabel = stringResource(R.string.action_edit_draft)
+    val snoozeLabel = stringResource(R.string.action_snooze)
+    val unsnoozeLabel = stringResource(R.string.action_unsnooze)
     // What can be done with a message from its row: a long press, a right click, the Menu key.
     val rowMenu: (MailMessage) -> List<MenuEntry> = { message ->
         if (several && message.id in chosenIds) {
@@ -221,6 +224,7 @@ fun MailScreen(
                 add(MenuEntry.Separator)
                 bulk.onArchive?.let { add(MenuEntry.Item(archiveLabel, it, shortcut = "E", icon = MailIcons.Archive)) }
                 bulk.onMove?.let { add(MenuEntry.Item(moveLabel, it, shortcut = "V", icon = MailIcons.MoveTo)) }
+                bulk.onSnooze?.let { add(MenuEntry.Item(snoozeLabel, it, icon = MailIcons.Snooze)) }
                 add(MenuEntry.Item(deleteLabel, bulk.onDelete, shortcut = "Delete", icon = DeskIcons.Delete, destructive = true))
             }
         } else buildList {
@@ -244,6 +248,8 @@ fun MailScreen(
             if (mail.moveTargets(message).isNotEmpty()) {
                 add(MenuEntry.Item(moveLabel, { if (ids.size > 1) ui.moveSeveral(message, ids) else ui.moving = message }, shortcut = "V", icon = MailIcons.MoveTo))
             }
+            if (snoozable(mail, message)) add(MenuEntry.Item(snoozeLabel, { ui.snoozing = ids }, icon = MailIcons.Snooze))
+            if (isSnoozed(mail, message)) add(MenuEntry.Item(unsnoozeLabel, { actions.unsnooze(ids) }))
             add(MenuEntry.Item(deleteLabel, { actions.delete(ids) }, shortcut = "Delete", icon = DeskIcons.Delete, destructive = true))
             add(MenuEntry.Separator)
             // from here on a tap adds or removes a row: how several are chosen with a finger
@@ -362,6 +368,13 @@ fun MailScreen(
                 modifier = Modifier.padding(top = 48.dp),
                 description = stringResource(R.string.vip_none_text),
             )
+            // nothing is snoozed: what snoozing is
+            view == MailView.Snoozed && filters.isEmpty() -> MessageScreen(
+                title = stringResource(R.string.snoozed_none_title),
+                icon = MailIcons.Snooze,
+                modifier = Modifier.padding(top = 48.dp),
+                description = stringResource(R.string.snoozed_none_text),
+            )
             // no answer is waited for: how one comes to be
             view == MailView.Awaiting && mail.awaited.isEmpty() -> MessageScreen(
                 title = stringResource(R.string.awaiting_none_title),
@@ -408,6 +421,9 @@ fun MailScreen(
                 screenScope.launch { if (mail.awaitReply(message.id, days) == AwaitOutcome.Answered) onNotify(answeredText) }
             }) else null,
             onStopAwaiting = { id -> screenScope.launch { mail.stopAwaiting(id) } },
+            snoozed = if (isSnoozed(mail, message)) SnoozeState(mail.snoozedUntil(message)) else null,
+            onSnooze = if (snoozable(mail, message)) ({ ui.snoozing = listOf(message.id) }) else null,
+            onUnsnooze = { actions.unsnooze(listOf(message.id)) },
             onAttachment = files::handle,
             onRetry = { mail.retryContent(message.id) },
             barsPadding = bars,
@@ -428,6 +444,13 @@ fun MailScreen(
         mail = mail,
         onMove = { _, folderId -> actions.move(movingIds, folderId) },
         onDismiss = { ui.moving = null },
+    )
+    // "Snooze…": until when, asked the same way; read here, as choosing clears it before the snooze is asked for
+    val snoozing = ui.snoozing
+    SnoozeChooser(
+        open = snoozing.isNotEmpty(),
+        onDismiss = { ui.snoozing = emptyList() },
+        onChoose = { wakeAt -> actions.snooze(snoozing, wakeAt) },
     )
     // The rows as a phone, a tablet held upright and a window beside a rail list them: under the
     // chips, which scroll away with them. They are what the keyboard steps through there (J, K).
@@ -670,6 +693,7 @@ class BulkActions(
     val onMove: (() -> Unit)?,
     val onDelete: () -> Unit,
     val onClear: () -> Unit,
+    val onSnooze: (() -> Unit)? = null,
 )
 
 /** The bar of a selection: how many messages, what can be done to them all, and the way out. */
@@ -694,6 +718,7 @@ private fun BulkBar(chosen: List<MailMessage>, bulk: BulkActions, modifier: Modi
         )
         bulk.onArchive?.let { DeskIconButton(MailIcons.Archive, stringResource(R.string.action_archive), it) }
         bulk.onMove?.let { DeskIconButton(MailIcons.MoveTo, stringResource(R.string.action_move), it) }
+        bulk.onSnooze?.let { DeskIconButton(MailIcons.Snooze, stringResource(R.string.action_snooze), it) }
         DeskIconButton(DeskIcons.Delete, stringResource(R.string.action_delete), bulk.onDelete)
     }
 }

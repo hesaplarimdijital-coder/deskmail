@@ -8,6 +8,7 @@
     <string name="nav_starred">Starred</string>
     <string name="nav_vip">VIPs</string>
     <string name="nav_awaiting">Awaiting replies</string>
+    <string name="nav_snoozed">Snoozed</string>
     <string name="nav_saved_searches">Saved searches</string>
     <string name="nav_folders">Folders</string>
     <string name="nav_search">Search</string>
@@ -21,6 +22,7 @@
     <string name="folder_junk">Spam</string>
     <string name="folder_trash">Trash</string>
     <string name="folder_all">All mail</string>
+    <string name="folder_snoozed">Snoozed</string>
     <!-- An account above its folders: its name and its address -->
     <string name="folders_account" translatable="false">%1$s · %2$s</string>
 
@@ -90,6 +92,14 @@
         <item quantity="one">Moved to %2$s</item>
         <item quantity="other">%1$d messages moved to %2$s</item>
     </plurals>
+    <plurals name="done_snoozed">
+        <item quantity="one">%d message snoozed</item>
+        <item quantity="other">%d messages snoozed</item>
+    </plurals>
+    <plurals name="done_unsnoozed">
+        <item quantity="one">%d message brought back</item>
+        <item quantity="other">%d messages brought back</item>
+    </plurals>
     <string name="attachment_open">Open</string>
     <string name="attachment_save">Save…</string>
     <string name="attachment_share">Share</string>
@@ -115,6 +125,19 @@
     <string name="awaiting_overdue">No answer came; the wait ended on %1$s</string>
     <string name="awaiting_stop">Stop waiting</string>
     <string name="awaiting_answered">This message was answered already.</string>
+    <string name="action_snooze">Snooze</string>
+    <string name="action_unsnooze">Bring back now</string>
+    <string name="snooze_title">Back when?</string>
+    <string name="snooze_evening">This evening</string>
+    <string name="snooze_tomorrow">Tomorrow morning</string>
+    <string name="snooze_weekend">This weekend</string>
+    <string name="snooze_next_week">Next week</string>
+    <string name="snooze_note">A snooze is kept on the server: it holds on your other devices too, and the message comes back unread with whichever looks first once its time has come.</string>
+    <string name="snooze_failed">Could not snooze: the server could not be reached.</string>
+    <string name="snoozed_until">Snoozed; back on %1$s</string>
+    <string name="snoozed_unknown">Snoozed; when it comes back is not known on this device yet.</string>
+    <string name="snoozed_none_title">Nothing is snoozed</string>
+    <string name="snoozed_none_text">Snooze a message: it is out of sight until then, and comes back unread when its time has come.</string>
     <string name="search_save">Add to saved searches</string>
     <string name="search_save_title">Save the search</string>
     <string name="search_save_text">The search for “%1$s” becomes a folder of its own in the sidebar; it is searched anew whenever it is opened.</string>

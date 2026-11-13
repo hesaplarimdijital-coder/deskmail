@@ -57,6 +57,14 @@ class ImapConnection private constructor(
         FolderRoles.assign(listed)
     }
 
+    /** Makes a folder for mail at [path], at the top of the tree; one that is there already is left as it is. */
+    override fun create(path: String): Unit = call("create $path") {
+        val folder = store.getFolder(path) as IMAPFolder
+        if (!folder.exists() && !folder.create(Folder.HOLDS_MESSAGES)) {
+            throw MailException(MailException.Kind.Server, "the server would not make the folder $path")
+        }
+    }
+
     /**
      * Opens the folder at [path] for reading. Close the mailbox before opening another: a server
      * allows an account only so many connections.

@@ -16,6 +16,9 @@ object Routes {
     /** The user's messages that answers are waited for. */
     const val AWAITING = "awaiting"
 
+    /** The snoozed messages of every account. */
+    const val SNOOZED = "snoozed"
+
     /** Every account's folders; how a phone or a tablet's rail reaches them. */
     const val FOLDERS = "folders"
     const val SEARCH = "search"

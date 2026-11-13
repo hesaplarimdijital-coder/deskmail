@@ -68,4 +68,7 @@ interface RemoteMailbox {
      * as it does (usually as a part of a word, without regard to case), not as the device's index.
      */
     fun search(terms: List<SearchTerm>): List<Long> = emptyList()
+
+    /** The UIDs of the folder's messages whose Message-ID is [messageId]: a snoozed message, found again. */
+    fun withMessageId(messageId: String): List<Long> = emptyList()
 }
