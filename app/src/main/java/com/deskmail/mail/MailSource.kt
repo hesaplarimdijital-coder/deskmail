@@ -7,7 +7,7 @@ import kotlinx.coroutines.flow.flowOf
  * Where the screens get the mail from and what they can ask of it: the device's copy of the
  * accounts' mail in the app, made-up mail in the tests and the screenshots.
  *
- * [accounts], [folders], [recent], [loaded], [syncing], [savedSearches] and [senders] are snapshot
+ * [accounts], [folders], [recent], [loaded], [syncing], [savedSearches], [senders] and [awaited] are snapshot
  * state: a screen that reads them is drawn again when they change. The lists of messages are
  * watched one view at a time.
  */
@@ -43,6 +43,22 @@ interface MailSource {
 
     /** Keeps what is said of the sender [address]: a VIP or not, whose remote images are shown or not. */
     suspend fun markSender(address: String, marks: SenderMarks)
+
+    /** The user's messages that answers are waited for, the one due first on top. */
+    val awaited: List<AwaitedReply> get() = emptyList()
+
+    /** What is waited for of [message]: an answer, should it be one of the user's that is waited on; else null. */
+    fun awaitedOf(message: MailMessage): AwaitedReply? =
+        if (message.globalId.isEmpty()) null else awaited.firstOrNull { it.accountId == message.accountId && it.messageId == message.globalId }
+
+    /**
+     * Waits [days] days for an answer to the message [id], one of the user's: should none come by
+     * then, the user is reminded of it.
+     */
+    suspend fun awaitReply(id: Long, days: Int): AwaitOutcome = AwaitOutcome.Gone
+
+    /** No longer waits for an answer ([AwaitedReply.id]). */
+    suspend fun stopAwaiting(id: Long) {}
 
     fun account(id: Long): MailAccount? = accounts.firstOrNull { it.id == id }
 

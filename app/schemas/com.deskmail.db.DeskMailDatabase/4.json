@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 4,
-    "identityHash": "38cc467370424fcdd47b4900c70c9f19",
+    "identityHash": "16e5cf651b7e5a47a4ff44fc95174c12",
     "entities": [
       {
         "tableName": "account",
@@ -807,7 +807,7 @@
       },
       {
         "tableName": "outbox",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `accountId` INTEGER NOT NULL, `state` TEXT NOT NULL, `toText` TEXT NOT NULL, `ccText` TEXT NOT NULL, `bccText` TEXT NOT NULL, `subject` TEXT NOT NULL, `body` TEXT NOT NULL, `messageId` TEXT NOT NULL, `inReplyTo` TEXT NOT NULL, `refs` TEXT NOT NULL, `sourceId` INTEGER NOT NULL, `sourceKind` TEXT NOT NULL, `draftFolderId` INTEGER NOT NULL, `draftUid` INTEGER NOT NULL, `sendAfter` INTEGER NOT NULL, `error` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, `draftSavedAt` INTEGER NOT NULL, `draftUidValidity` INTEGER NOT NULL, FOREIGN KEY(`accountId`) REFERENCES `account`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `accountId` INTEGER NOT NULL, `state` TEXT NOT NULL, `toText` TEXT NOT NULL, `ccText` TEXT NOT NULL, `bccText` TEXT NOT NULL, `subject` TEXT NOT NULL, `body` TEXT NOT NULL, `messageId` TEXT NOT NULL, `inReplyTo` TEXT NOT NULL, `refs` TEXT NOT NULL, `sourceId` INTEGER NOT NULL, `sourceKind` TEXT NOT NULL, `draftFolderId` INTEGER NOT NULL, `draftUid` INTEGER NOT NULL, `sendAfter` INTEGER NOT NULL, `error` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, `draftSavedAt` INTEGER NOT NULL, `draftUidValidity` INTEGER NOT NULL, `awaitDays` INTEGER NOT NULL, FOREIGN KEY(`accountId`) REFERENCES `account`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
         "fields": [
           {
             "fieldPath": "id",
@@ -932,6 +932,12 @@
           {
             "fieldPath": "draftUidValidity",
             "columnName": "draftUidValidity",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "awaitDays",
+            "columnName": "awaitDays",
             "affinity": "INTEGER",
             "notNull": true
           }
@@ -1276,11 +1282,96 @@
             "address"
           ]
         }
+      },
+      {
+        "tableName": "awaiting",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `accountId` INTEGER NOT NULL, `messageId` TEXT NOT NULL, `subject` TEXT NOT NULL, `recipients` TEXT NOT NULL, `sentAt` INTEGER NOT NULL, `dueAt` INTEGER NOT NULL, `toldAt` INTEGER NOT NULL, FOREIGN KEY(`accountId`) REFERENCES `account`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "accountId",
+            "columnName": "accountId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "messageId",
+            "columnName": "messageId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "subject",
+            "columnName": "subject",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "recipients",
+            "columnName": "recipients",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sentAt",
+            "columnName": "sentAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "dueAt",
+            "columnName": "dueAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "toldAt",
+            "columnName": "toldAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_awaiting_accountId_messageId",
+            "unique": true,
+            "columnNames": [
+              "accountId",
+              "messageId"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_awaiting_accountId_messageId` ON `${TABLE_NAME}` (`accountId`, `messageId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "account",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "accountId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
       }
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '38cc467370424fcdd47b4900c70c9f19')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '16e5cf651b7e5a47a4ff44fc95174c12')"
     ]
   }
 }
