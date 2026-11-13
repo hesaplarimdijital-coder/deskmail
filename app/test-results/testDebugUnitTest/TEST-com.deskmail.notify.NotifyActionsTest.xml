@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.notify.NotifyActionsTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-11-13T08:13:04.040Z" hostname="runnervmwuk1x" time="4.949">
+  <properties/>
+  <testcase name="mailThatArrivesIsToldOfByTheSyncThatBringsIt" classname="com.deskmail.notify.NotifyActionsTest" time="1.2"/>
+  <testcase name="aNotificationThatWasSweptAwayLeavesItsMessageAsItIs" classname="com.deskmail.notify.NotifyActionsTest" time="0.86"/>
+  <testcase name="aButtonForAMessageThatIsNoLongerThereDoesNothing" classname="com.deskmail.notify.NotifyActionsTest" time="0.041"/>
+  <testcase name="aNotificationsButtonsAreCarriedOutOnTheDeviceAtOnceAndToldToTheServer" classname="com.deskmail.notify.NotifyActionsTest" time="1.967"/>
+  <testcase name="aServerThatCannotBeReachedKeepsWhatWasDoneWaiting" classname="com.deskmail.notify.NotifyActionsTest" time="0.878"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[System.logW: A resource failed to call SQLiteConnection.close. 
+System.logW: A resource failed to call SQLiteConnectionPool.close. 
+]]></system-err>
+</testsuite>

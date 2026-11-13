@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.data.DraftSyncTest" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-11-13T08:12:24.123Z" hostname="runnervmwuk1x" time="11.234">
+  <properties/>
+  <testcase name="withTheServerOutOfReachTheDraftWaitsOnTheDevice" classname="com.deskmail.data.DraftSyncTest" time="0.657"/>
+  <testcase name="aDraftThatIsWrittenOnHasItsCopyReplaced" classname="com.deskmail.data.DraftSyncTest" time="1.941"/>
+  <testcase name="aDraftThatIsThrownAwayLosesItsCopy" classname="com.deskmail.data.DraftSyncTest" time="1.724"/>
+  <testcase name="anAccountWithoutADraftsFolderKeepsItsDraftsOnTheDevice" classname="com.deskmail.data.DraftSyncTest" time="0.309"/>
+  <testcase name="aDraftThatWasWrittenElsewhereIsTakenUpAndItsCopyReplaced" classname="com.deskmail.data.DraftSyncTest" time="1.69"/>
+  <testcase name="aFileThatComesPutsTheDraftOnTheServerAnewWithIt" classname="com.deskmail.data.DraftSyncTest" time="1.948"/>
+  <testcase name="whatIsWrittenIsKeptAmongTheDraftsOnTheServer" classname="com.deskmail.data.DraftSyncTest" time="1.184"/>
+  <testcase name="aMessageThatIsSentLosesItsCopyAmongTheDrafts" classname="com.deskmail.data.DraftSyncTest" time="1.775"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[System.logW: A resource failed to call close. 
+System.logW: A resource failed to call SQLiteConnection.close. 
+System.logW: A resource failed to call SQLiteConnection.close. 
+System.logW: A resource failed to call SQLiteConnection.close. 
+System.logW: A resource failed to call SQLiteConnectionPool.close. 
+System.logW: A resource failed to call close. 
+System.logW: A resource failed to call SQLiteConnection.close. 
+System.logW: A resource failed to call close. 
+]]></system-err>
+</testsuite>
