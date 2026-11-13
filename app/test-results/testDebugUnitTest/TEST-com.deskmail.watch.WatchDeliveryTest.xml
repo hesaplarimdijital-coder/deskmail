@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.watch.WatchDeliveryTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-11-13T09:17:53.438Z" hostname="runnervmwuk1x" time="3.936">
+  <properties/>
+  <testcase name="aMessageThatIsRemovedSomewhereElseLosesItsNotification" classname="com.deskmail.watch.WatchDeliveryTest" time="1.628"/>
+  <testcase name="theWaitGoesOnAfterItWasBegunAnew" classname="com.deskmail.watch.WatchDeliveryTest" time="0.861"/>
+  <testcase name="aServerThatGoesAwayIsTriedAgain" classname="com.deskmail.watch.WatchDeliveryTest" time="0.424"/>
+  <testcase name="mailThatComesIsToldOfWithNobodyLookingForIt" classname="com.deskmail.watch.WatchDeliveryTest" time="1.021"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

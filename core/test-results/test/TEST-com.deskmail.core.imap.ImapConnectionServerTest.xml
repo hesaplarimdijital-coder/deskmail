@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.core.imap.ImapConnectionServerTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-11-13T09:15:24.540Z" hostname="runnervmwuk1x" time="1.047">
+  <properties/>
+  <testcase name="aServerWithoutStartTlsIsNotSpokenToInTheClear" classname="com.deskmail.core.imap.ImapConnectionServerTest" time="0.423"/>
+  <testcase name="aPortNobodyListensOnIsANetworkFailure" classname="com.deskmail.core.imap.ImapConnectionServerTest" time="0.029"/>
+  <testcase name="aWrongPasswordIsAnAuthenticationFailureAndStaysOutOfTheLog" classname="com.deskmail.core.imap.ImapConnectionServerTest" time="0.067"/>
+  <testcase name="aCertificateNobodyVouchesForIsRefused" classname="com.deskmail.core.imap.ImapConnectionServerTest" time="0.363"/>
+  <testcase name="signsInAndListsTheFoldersWithTheirRoles" classname="com.deskmail.core.imap.ImapConnectionServerTest" time="0.165"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[SLF4J: Failed to load class "org.slf4j.impl.StaticLoggerBinder".
+SLF4J: Defaulting to no-operation (NOP) logger implementation
+SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further details.
+]]></system-err>
+</testsuite>
