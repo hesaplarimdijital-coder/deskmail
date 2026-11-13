@@ -283,6 +283,14 @@ class LiveMailTest {
         assertEquals("Metin $count.", ready.text)
         assertNull(ready.html)
         assertTrue(ready.attachments.isEmpty())
+        // its header lines came with it, as they arrived
+        assertTrue(ready.headers, ready.headers.lines().any { it.startsWith("Subject:") })
+
+        // one whose text came before its header lines were kept with it has them fetched when they are asked for
+        db.messages().setHeaders(newest.id, "")
+        assertEquals("", (withTimeout(15_000) { mail.observeContent(newest.id).first { (it as? MailContent.Ready)?.headers == "" } } as MailContent.Ready).headers)
+        assertTrue(mail.fetchHeaders(newest.id))
+        assertTrue((withTimeout(15_000) { mail.observeContent(newest.id).first { (it as? MailContent.Ready)?.headers?.isNotEmpty() == true } } as MailContent.Ready).headers.contains("Subject:"))
 
         // one whose text nobody has fetched yet (the app's own background run may get to it first: either way it arrives)
         val oldest = db.messages().observeFolder(inbox).first().last()

@@ -182,6 +182,15 @@ object MailIcons {
         )
     }
 
+    /** A shield: what the provider found of where a message came from. */
+    val Shield: ImageVector by lazy {
+        DeskIcons.build(
+            "Shield",
+            DeskIcons.stroke("M8 2.3 13 4v4c0 3-2.2 5-5 5.8C5.2 13 3 11 3 8V4z"),
+            DeskIcons.stroke("m5.8 8 1.5 1.5 3-3"),
+        )
+    }
+
     val Copy: ImageVector by lazy {
         DeskIcons.build(
             "Copy",

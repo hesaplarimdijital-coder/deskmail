@@ -342,6 +342,7 @@ class DemoMail(private val now: Instant = Instant.now(), empty: Boolean = false)
             outgoing: Boolean = false,
             answered: Boolean = false,
             forwarded: Boolean = false,
+            authentication: String = "dkim=pass header.i=@${address.substringAfter('@')} header.s=s1; spf=pass smtp.mailfrom=$address; dmarc=pass header.from=${address.substringAfter('@')}",
         ) {
             val id = nextId++
             list += MailMessage(
@@ -361,7 +362,17 @@ class DemoMail(private val now: Instant = Instant.now(), empty: Boolean = false)
                 answered = answered,
                 forwarded = forwarded,
             )
-            contents[id] = MailContent.Ready(text, html, remoteImages, attachments)
+            // the header lines as a provider hands them on: its own word on where the message came from on top
+            val headers = listOf(
+                "Received: from mail.${address.substringAfter('@')} (mail.${address.substringAfter('@')} [203.0.113.$id]) by mx.posta.example",
+                "Authentication-Results: mx.posta.example;",
+                "        $authentication",
+                "From: $from <$address>",
+                "To: $to",
+                "Subject: $subject",
+                "Message-ID: <demo-$id@${address.substringAfter('@')}>",
+            ).joinToString("\n")
+            contents[id] = MailContent.Ready(text, html, remoteImages, attachments, headers = headers)
         }
 
         // Outlook · Inbox
@@ -454,6 +465,8 @@ class DemoMail(private val now: Instant = Instant.now(), empty: Boolean = false)
             15, "ÖDÜL MERKEZİ", "kazandiniz@odul.example", "TEBRİKLER! Ödülünüz sizi bekliyor", Duration.ofHours(30),
             "Tebrikler! Ödülünüz hazır. Ödülünüzü almak için 24 saat içinde bilgilerinizi doğrulayın.",
             html = DemoBodies.junk, unread = true, remoteImages = true,
+            // a stranger's server, signing for nobody and claiming somebody else's name
+            authentication = "spf=softfail smtp.mailfrom=kazandiniz@odul.example; dkim=none; dmarc=fail header.from=banka.example",
         )
         add(
             17, "Elektrik Dağıtım", "fatura@elektrik.example", "Ekim 2026 faturanız hazır", Duration.ofDays(33),
