@@ -93,6 +93,10 @@ Sürümler [SemVer](https://semver.org/lang/tr/) kuralına uyar; 0.1.0'a kadar o
 ### Lisanslar
 - **Açık kaynak lisansları.** Ayarlar › Hakkında'da yeni düğme: DeskMail'in içinde gelen başkalarının çalışmaları (desktop-kit, IBM Plex yazı tipleri, Haze, Jetpack Compose ve AndroidX, Kotlin ve kotlinx.coroutines, Angus Mail ve Jakarta Mail, Angus ve Jakarta Activation, jsoup), kimin oldukları ve hangi lisansla. Birine dokununca lisansın metni açılır; seçilip kopyalanabilir.
 
+### Belgeler
+- **Yıllık bakım listesi** (`docs/BAKIM.md`): yılda bir güncellemede sırayla bakılacaklar (imza anahtarı, günlük, kitaplıklar, Android sürümü, sağlayıcılar).
+- **Gmail için yedek giriş planı** (`docs/GOOGLE-OAUTH.md`): Google uygulama şifrelerini kapatırsa ne yapılacağı. Bugün yapılacak bir şey yok.
+
 ### Düzeltmeler
 - **Paylaşılan dosyayla yazma ekranı hemen açılır.** Başka bir uygulamadan dosya paylaşınca yazma ekranı, dosya uygulamaya kopyalanana dek açılmıyordu; büyük bir videoda o süre boyunca yalnızca Gelen görünüyordu. Ekran artık hemen açılır ve dosya arkada eklenir: ekran "Dosya ekleniyor…" der, dosya iletiye girmeden Gönder çalışmaz (ekranı kapatıp taslağı Giden kutusu'ndan yeniden açsan da). Yazma ekranındaki ataşla eklenen büyük dosyalarda da böyle.
 - **Yazma ekranı kendiliğinden kapanmaz.** Bir ileti yazarken başka bir ekrana bakıp geri dönünce yazma ekranı "Taslak Giden kutusu'nda duruyor" diyerek kapanıyordu (taslak kaybolmuyordu, Giden kutusu'ndan açmak gerekiyordu). Yazılan ileti artık ekranına dönüldüğünde bırakıldığı gibi durur.
