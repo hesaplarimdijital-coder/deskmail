@@ -10,6 +10,7 @@ import com.deskmail.db.OutboxEntity
 import com.deskmail.mail.Draft
 import com.deskmail.mail.DraftKind
 import com.deskmail.mail.DraftState
+import com.deskmail.mail.MailView
 import com.deskmail.mail.SendCheck
 import jakarta.mail.Flags
 import jakarta.mail.Message
@@ -19,6 +20,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import org.junit.After
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
@@ -238,6 +240,44 @@ class MailSendTest {
         assertTrue(server.has(uid, Flags.Flag.SEEN, "Sent"))
         // the same message as the one that was sent
         assertEquals(server.inboxOf("ayse@example.org").single().messageID, filed.messageID)
+    }
+
+    /** Asked for while it was written: once it was sent, its answer is waited for, and its copy under Sent is listed. */
+    @Test
+    fun anAnswerIsWaitedForOnceTheMessageWasSent() = runBlocking {
+        server.createFolder("Sent")
+        val account = account()
+        assertEquals(MailSync.Outcome.Done, sync.account(account))
+        val id = composer.start()!!
+        composer.save(id, account, "Ayşe Yılmaz <ayse@example.org>", "elif@example.org", "", "Kitap", "Ayırtır mısınız?")
+        composer.awaitReply(id, 3)
+        assertEquals(3, draft(id)!!.awaitDays)
+        val messageId = db.outbox().byId(id)!!.messageId
+        // not before it was sent
+        composer.send(id)
+        assertTrue(db.awaiting().all().isEmpty())
+
+        sendWhatIsDue()
+
+        val waited = db.awaiting().all().single()
+        assertEquals(messageId, waited.messageId)
+        assertEquals("Kitap", waited.subject)
+        assertEquals("Ayşe Yılmaz, elif@example.org", waited.recipients)
+        assertEquals(clock.get(), waited.sentAt)
+        assertEquals(clock.get() + 3 * DAY_MS, waited.dueAt)
+        // the copy under Sent is fetched to be listed, though the device kept no Sent folder before
+        assertEquals(listOf("Kitap"), withTimeout(15_000) { mail.observe(MailView.Awaiting).first { it.isNotEmpty() } }.map { it.subject })
+    }
+
+    @Test
+    fun aMessageNobodyWaitsOnLeavesNothingWaiting() = runBlocking {
+        val account = account()
+        val id = composer.start()!!
+        composer.save(id, account, "ayse@example.org", "", "", "Bilgi", "Yanıt gerekmez.")
+        composer.send(id)
+        sendWhatIsDue()
+
+        assertTrue(db.awaiting().all().isEmpty())
     }
 
     @Test

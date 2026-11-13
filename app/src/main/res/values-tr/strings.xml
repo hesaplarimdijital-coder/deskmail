@@ -4,6 +4,7 @@
     <string name="nav_unread">Okunmamış</string>
     <string name="nav_starred">Yıldızlı</string>
     <string name="nav_vip">VIP</string>
+    <string name="nav_awaiting">Yanıt bekleyenler</string>
     <string name="nav_saved_searches">Kayıtlı aramalar</string>
     <string name="nav_folders">Klasörler</string>
     <string name="nav_search">Ara</string>
@@ -98,6 +99,12 @@
     <string name="reader_remote_always">Bu göndericinin görsellerini hep göster</string>
     <string name="vip_none_title">Henüz VIP yok</string>
     <string name="vip_none_text">Bir iletiyi açıp taç simgesine bas: göndericisinin gelen kutularındaki postası burada toplanır.</string>
+    <string name="awaiting_none_title">Yanıt beklenen ileti yok</string>
+    <string name="awaiting_none_text">Yazarken ya da gönderdiğin bir iletiyi açınca “Yanıt bekle”den bir süre seç: o sürede yanıt gelmezse DeskMail hatırlatır.</string>
+    <string name="awaiting_until">Yanıt bekleniyor; gelmezse hatırlatma: %1$s</string>
+    <string name="awaiting_overdue">Yanıt gelmedi; bekleme süresi doldu: %1$s</string>
+    <string name="awaiting_stop">Beklemeyi bırak</string>
+    <string name="awaiting_answered">Bu iletiye yanıt gelmiş.</string>
     <string name="search_save">Kayıtlı aramalara ekle</string>
     <string name="search_save_title">Aramayı kaydet</string>
     <string name="search_save_text">“%1$s” araması kenar çubuğunda kendi klasörü olur; her açılışta yeniden aranır.</string>
@@ -155,6 +162,16 @@
     <string name="compose_contacts_failed">Rehberden adres alınamadı.</string>
     <string name="compose_templates">Şablon</string>
     <string name="compose_template_keep">Yazdığını şablon olarak kaydet</string>
+    <string name="compose_await">Yanıt bekle</string>
+    <plurals name="compose_await_days">
+        <item quantity="one">Yanıt bekle: %d gün</item>
+        <item quantity="other">Yanıt bekle: %d gün</item>
+    </plurals>
+    <string name="await_none">Yok</string>
+    <plurals name="await_days">
+        <item quantity="one">%d gün</item>
+        <item quantity="other">%d gün</item>
+    </plurals>
     <string name="template_kept">Şablon kaydedildi.</string>
     <string name="template_name">Adı</string>
     <string name="template_name_hint">ör. Toplantı daveti</string>
@@ -384,6 +401,14 @@
     <string name="notify_reply_failed">Yanıt gönderilemedi</string>
     <string name="notify_reply_kept">Yazdığın Giden kutusu\'nda duruyor.</string>
     <string name="notify_failed_channel">Gönderilemeyen yanıtlar</string>
+    <string name="notify_awaiting_title">Yanıt gelmedi</string>
+    <string name="notify_awaiting_to">Kime: %1$s</string>
+    <plurals name="notify_awaiting_sent">
+        <item quantity="one">%d gün önce gönderildi</item>
+        <item quantity="other">%d gün önce gönderildi</item>
+    </plurals>
+    <string name="notify_awaiting_channel">Yanıt bekleyenler</string>
+    <string name="notify_awaiting_channel_description">Gönderdiğin bir iletiye seçtiğin sürede yanıt gelmeyince</string>
     <string name="notify_unknown_sender">Bilinmeyen gönderen</string>
     <string name="notify_channel_description">%1$s hesabının yeni iletileri</string>
     <plurals name="notify_new_mail">

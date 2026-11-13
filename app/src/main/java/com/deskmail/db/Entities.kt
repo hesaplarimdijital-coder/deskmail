@@ -257,6 +257,7 @@ data class PendingOpEntity(
  *   since is ahead of its copy.
  * @param draftUidValidity the server's stamp on the folder's UIDs when the copy was put there:
  *   under another stamp [draftUid] names some other message, and is not acted on.
+ * @param awaitDays how many days an answer is waited for once it was sent ([AwaitingEntity]); 0 for none.
  */
 @Entity(
     tableName = "outbox",
@@ -285,6 +286,7 @@ data class OutboxEntity(
     val updatedAt: Long,
     val draftSavedAt: Long = 0,
     val draftUidValidity: Long = 0,
+    val awaitDays: Int = 0,
 ) {
     companion object {
         const val DRAFT = "Draft"
@@ -394,4 +396,28 @@ data class SenderEntity(
     @PrimaryKey val address: String,
     val vip: Boolean,
     val images: Boolean,
+)
+
+/**
+ * A message of the user's that an answer is waited for ("Awaiting replies"): sent from the account
+ * [accountId] under [messageId], its Message-ID. It is remembered until a message that answers it
+ * arrives (by its In-Reply-To or References, from somebody else); when [dueAt] passes without one,
+ * the user is reminded of it once, at [toldAt].
+ *
+ * @param recipients whom it went to, as one line, for the reminder to name.
+ */
+@Entity(
+    tableName = "awaiting",
+    foreignKeys = [ForeignKey(entity = AccountEntity::class, parentColumns = ["id"], childColumns = ["accountId"], onDelete = ForeignKey.CASCADE)],
+    indices = [Index(value = ["accountId", "messageId"], unique = true)],
+)
+data class AwaitingEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val accountId: Long,
+    val messageId: String,
+    val subject: String,
+    val recipients: String,
+    val sentAt: Long,
+    val dueAt: Long,
+    val toldAt: Long = 0,
 )

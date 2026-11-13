@@ -45,6 +45,8 @@ data class Draft(
     val state: DraftState = DraftState.Writing,
     val error: String = "",
     val updatedAt: Instant = Instant.EPOCH,
+    /** How many days an answer is to be waited for once it was sent ([MailComposer.awaitReply]); 0 for none. */
+    val awaitDays: Int = 0,
 ) {
     companion object {
         /**
@@ -54,6 +56,9 @@ data class Draft(
         const val INTERRUPTED = "interrupted"
     }
 }
+
+/** How many days an answer to a message can be waited for: what there is to choose from. */
+val AWAIT_DAYS = listOf(1, 2, 3, 7)
 
 /** What a new message starts with when something outside asked for it: a mailto link, something shared. */
 data class DraftSeed(val to: String = "", val cc: String = "", val subject: String = "", val body: String = "", val bcc: String = "")
@@ -121,6 +126,12 @@ interface MailComposer {
 
     /** The addresses the user has had mail with that begin like [typed], the most recent first. */
     fun suggest(typed: String, limit: Int = 5): List<MailAddress>
+
+    /**
+     * Has an answer to the message waited for [days] days once it was sent (0: not at all): should
+     * none come by then, the user is reminded of it ("Awaiting replies").
+     */
+    suspend fun awaitReply(id: Long, days: Int) {}
 
     /** The texts the user keeps to put into a message, in the user's order. Snapshot state. */
     val templates: List<MessageTemplate>

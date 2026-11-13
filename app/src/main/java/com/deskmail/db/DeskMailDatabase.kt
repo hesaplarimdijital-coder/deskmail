@@ -34,6 +34,7 @@ import kotlinx.coroutines.Dispatchers
         TemplateEntity::class,
         SavedSearchEntity::class,
         SenderEntity::class,
+        AwaitingEntity::class,
     ],
     version = 4,
     exportSchema = true,
@@ -51,6 +52,9 @@ abstract class DeskMailDatabase : RoomDatabase() {
 
     /** What the user keeps for himself: texts, searches, and what he said of senders. */
     abstract fun lists(): ListDao
+
+    /** The user's messages that answers are waited for. */
+    abstract fun awaiting(): AwaitingDao
 
     companion object {
         /** The database's file among the app's databases. */
@@ -100,8 +104,9 @@ abstract class DeskMailDatabase : RoomDatabase() {
          * is behind it, and the copy of a message that was sent or thrown away is noted until the
          * server was told to remove it. What a search of the server found is remembered for a while.
          * The user's own lists: texts to put into a message, searches kept as folders, and what was
-         * said of senders (VIPs, and whose remote images are shown).
-         * A message's header lines are kept with its text.
+         * said of senders (VIPs, and whose remote images are shown). A message's header lines are
+         * kept with its text. The user's messages that answers are waited for, and how long a
+         * message that is being written is to wait for its answer.
          */
         val MIGRATION_3_4: Migration = object : Migration(3, 4) {
             override suspend fun migrate(connection: SQLiteConnection) {
@@ -133,6 +138,14 @@ abstract class DeskMailDatabase : RoomDatabase() {
                         "PRIMARY KEY(`address`))",
                 )
                 connection.runSql("ALTER TABLE `body` ADD COLUMN `headers` TEXT NOT NULL DEFAULT ''")
+                connection.runSql("ALTER TABLE `outbox` ADD COLUMN `awaitDays` INTEGER NOT NULL DEFAULT 0")
+                connection.runSql(
+                    "CREATE TABLE IF NOT EXISTS `awaiting` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `accountId` INTEGER NOT NULL, " +
+                        "`messageId` TEXT NOT NULL, `subject` TEXT NOT NULL, `recipients` TEXT NOT NULL, `sentAt` INTEGER NOT NULL, " +
+                        "`dueAt` INTEGER NOT NULL, `toldAt` INTEGER NOT NULL, " +
+                        "FOREIGN KEY(`accountId`) REFERENCES `account`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+                )
+                connection.runSql("CREATE UNIQUE INDEX IF NOT EXISTS `index_awaiting_accountId_messageId` ON `awaiting` (`accountId`, `messageId`)")
             }
         }
 

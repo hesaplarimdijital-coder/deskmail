@@ -7,6 +7,7 @@
     <string name="nav_unread">Unread</string>
     <string name="nav_starred">Starred</string>
     <string name="nav_vip">VIPs</string>
+    <string name="nav_awaiting">Awaiting replies</string>
     <string name="nav_saved_searches">Saved searches</string>
     <string name="nav_folders">Folders</string>
     <string name="nav_search">Search</string>
@@ -108,6 +109,12 @@
     <string name="reader_remote_always">Always show this sender\'s pictures</string>
     <string name="vip_none_title">No VIPs yet</string>
     <string name="vip_none_text">Open a message and press the crown: its sender\'s mail in the inboxes gathers here.</string>
+    <string name="awaiting_none_title">No message awaits a reply</string>
+    <string name="awaiting_none_text">While writing, or on a message you sent, choose a time under “Await reply”: should no answer come by then, DeskMail reminds you.</string>
+    <string name="awaiting_until">An answer is awaited; if none comes, a reminder on %1$s</string>
+    <string name="awaiting_overdue">No answer came; the wait ended on %1$s</string>
+    <string name="awaiting_stop">Stop waiting</string>
+    <string name="awaiting_answered">This message was answered already.</string>
     <string name="search_save">Add to saved searches</string>
     <string name="search_save_title">Save the search</string>
     <string name="search_save_text">The search for “%1$s” becomes a folder of its own in the sidebar; it is searched anew whenever it is opened.</string>
@@ -166,6 +173,16 @@
     <string name="compose_contacts_failed">No address could be taken from the contacts.</string>
     <string name="compose_templates">Template</string>
     <string name="compose_template_keep">Keep what you wrote as a template</string>
+    <string name="compose_await">Await reply</string>
+    <plurals name="compose_await_days">
+        <item quantity="one">Await reply: %d day</item>
+        <item quantity="other">Await reply: %d days</item>
+    </plurals>
+    <string name="await_none">None</string>
+    <plurals name="await_days">
+        <item quantity="one">%d day</item>
+        <item quantity="other">%d days</item>
+    </plurals>
     <string name="template_kept">The template was kept.</string>
     <string name="template_name">Name</string>
     <string name="template_name_hint">e.g. Meeting invitation</string>
@@ -415,6 +432,14 @@
     <string name="notify_reply_failed">The reply was not sent</string>
     <string name="notify_reply_kept">What you wrote is in the Outbox.</string>
     <string name="notify_failed_channel">Replies not sent</string>
+    <string name="notify_awaiting_title">No answer yet</string>
+    <string name="notify_awaiting_to">To: %1$s</string>
+    <plurals name="notify_awaiting_sent">
+        <item quantity="one">sent %d day ago</item>
+        <item quantity="other">sent %d days ago</item>
+    </plurals>
+    <string name="notify_awaiting_channel">Awaiting replies</string>
+    <string name="notify_awaiting_channel_description">When a message you sent got no answer in the time you chose</string>
     <string name="notify_unknown_sender">Unknown sender</string>
     <string name="notify_channel_description">New mail of %1$s</string>
     <plurals name="notify_new_mail">
