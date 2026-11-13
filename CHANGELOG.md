@@ -16,6 +16,11 @@ Sürümler [SemVer](https://semver.org/lang/tr/) kuralına uyar; 0.1.0'a kadar o
 - **Günlük:** hattın her kuruluşu, yenilenmesi, kopması ve yeniden denenmesi zamanıyla yazılır (Ayarlar › Günlük, "watch" satırları). Bir gecelik deneme için bakılacak yer orası.
 - **Yeni izinler** (hepsi kurulumda kendiliğinden verilir, soru çıkmaz): ön plan hizmeti (özel kullanım), cihazı uyanık tutma, ağ durumunu görme, açılışta başlama, pil kısıtlaması sorusunu sorabilme.
 
+### Bildirimden yanıt
+- **Bildirimden yanıtla.** Yeni ileti bildiriminde **Yanıtla** düğmesi var: yanıtı bildirimin içine yazıp gönderirsin, uygulama açılmaz. Yanıt, uygulamadaki "Yanıtla" gibi hazırlanır (kime, konu, imzan ve alıntı); yazdığın en üstte durur ve hemen gönderilir (bildirimde geri alma yok). Yanıtlanan ileti okundu sayılır.
+- **Bildirimde üç düğme.** Android bir bildirimde en çok üç düğme gösteriyor: artık **Yanıtla**, **Okundu** ve **Arşivle** (arşiv klasörü olmayan hesapta **Sil**). Arşivi olan hesaplarda Sil düğmesi bildirimden kalktı; ileti uygulamadan silinir.
+- Yanıt gönderilemezse (ör. iletinin yanıtlanacak bir adresi yoksa) bunu ayrı bir bildirim söyler; yazdığın Giden kutusu'nda durur.
+
 ### Birden çok ileti
 - **Seçme.** Telefonda bir satıra uzun bas → menüde **Seç**; bundan sonra dokunduğun satırlar seçime girer ya da çıkar (dokunmak iletiyi açmaz). Geri tuşu, çubuktaki ✕ ya da son satırı çıkarmak seçimi bitirir. Geniş pencerede fareyle tablo gibi: Ctrl+tık ekler ya da çıkarır, Shift+tık aradakileri alır, Ctrl+A hepsini, Esc hiçbirini.
 - **Seçim çubuğu.** Birden çok satır seçiliyken listenin altında "N ileti seçili" ve düğmeler: okundu / okunmadı, yıldız, arşivle, taşı, sil. Okundu düğmesi, aralarında okunmamış varsa hepsini okundu yapar, hepsi okunmuşsa okunmadı. Seçili bir satırın menüsü ve kısayollar (U, S, E, V, Delete) da hepsine uygulanır; geri alma bildirimi hepsini birden geri alır ("3 ileti arşivlendi · Geri al").

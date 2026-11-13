@@ -1,5 +1,6 @@
 package com.deskmail.notify
 
+import android.app.RemoteInput
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -7,10 +8,10 @@ import com.deskmail.deskMail
 import kotlinx.coroutines.launch
 
 /**
- * The buttons of a new-mail notification: "Read", "Archive", "Delete". What was asked for is
- * done on the device at once and written down before this returns; the server is told by
- * background work that waits for a network if it has to. The app need not be open. A
- * notification that was swept away is heard of here as well.
+ * The buttons of a new-mail notification: "Reply" (with what was typed into it), "Read",
+ * "Archive", "Delete". What was asked for is done on the device at once and written down before
+ * this returns; the server is told by background work that waits for a network if it has to. The
+ * app need not be open. A notification that was swept away is heard of here as well.
  */
 class NotifyActionReceiver : BroadcastReceiver() {
 
@@ -23,7 +24,12 @@ class NotifyActionReceiver : BroadcastReceiver() {
         val waiting = goAsync()
         app.background.launch {
             try {
-                app.notifyActions.act(what, messageId)
+                if (what == REPLY) {
+                    val text = RemoteInput.getResultsFromIntent(intent)?.getCharSequence(REPLY_TEXT)?.toString().orEmpty()
+                    app.notifyActions.reply(messageId, text)
+                } else {
+                    app.notifyActions.act(what, messageId)
+                }
             } catch (e: Exception) {
                 app.log.error("notify", "a notification's button could not be carried out", e)
             } finally {
@@ -33,6 +39,7 @@ class NotifyActionReceiver : BroadcastReceiver() {
     }
 
     companion object {
+        const val REPLY = "com.deskmail.notify.REPLY"
         const val READ = "com.deskmail.notify.READ"
         const val ARCHIVE = "com.deskmail.notify.ARCHIVE"
         const val DELETE = "com.deskmail.notify.DELETE"
@@ -41,6 +48,9 @@ class NotifyActionReceiver : BroadcastReceiver() {
         const val DISMISSED = "com.deskmail.notify.DISMISSED"
         const val EXTRA_MESSAGE = "message"
 
-        private val ACTIONS = setOf(READ, ARCHIVE, DELETE, DISMISSED)
+        /** Where the system puts what was typed into "Reply". */
+        const val REPLY_TEXT = "reply"
+
+        private val ACTIONS = setOf(REPLY, READ, ARCHIVE, DELETE, DISMISSED)
     }
 }
