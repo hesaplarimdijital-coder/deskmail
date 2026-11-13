@@ -3,6 +3,7 @@ package com.deskmail.core.imap
 import com.deskmail.core.mail.MailAddress
 import com.deskmail.core.mail.MailException
 import com.deskmail.core.mail.MessageFlags
+import com.deskmail.core.text.SearchQuery
 import jakarta.mail.Flags
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -27,6 +28,35 @@ class ImapMailboxServerTest {
 
     private fun <T> inbox(block: (ImapMailbox) -> T): T =
         ImapConnection.open(server.imap, server.credentials).use { connection -> connection.open("INBOX").use(block) }
+
+    /** The server is asked, and only the server: by its subject, its people, its text; every term must hold. */
+    @Test
+    fun theServerFindsMessagesByWhatTheySay() {
+        val newsletter = server.deliver("newsletter", tuesday)
+        val plan = server.deliver("plan", monday)
+        val breakfast = server.deliver("breakfast", thursday)
+        // The server of the tests compares FROM and TO with whole addresses; Gmail and Outlook, as
+        // IMAP has it, with any part of them ("kimden:sahaf"). Whole addresses hold for both.
+        inbox { mailbox ->
+            assertEquals(listOf(plan), mailbox.search(SearchQuery.terms("Proje")))
+            assertEquals(listOf(newsletter), mailbox.search(SearchQuery.terms("kimden:bulten@sahaf.example")))
+            assertEquals(listOf(plan), mailbox.search(SearchQuery.terms("from:mehmet.demir@example.org konu:proje")))
+            // everybody wrote to Deniz
+            assertEquals(listOf(newsletter, plan, breakfast).sorted(), mailbox.search(SearchQuery.terms("kime:deniz@example.org")))
+            assertTrue(mailbox.search(SearchQuery.terms("kimden:bulten@sahaf.example konu:proje")).isEmpty())
+            assertTrue(mailbox.search(emptyList()).isEmpty())
+        }
+    }
+
+    /** What is not plain ASCII reaches the server as UTF-8. */
+    @Test
+    fun theServerIsAskedInUtf8() {
+        val newsletter = server.deliver("newsletter", tuesday)
+        server.deliver("plan", monday)
+        inbox { mailbox ->
+            assertEquals(listOf(newsletter), mailbox.search(SearchQuery.terms("konu:Kasım")))
+        }
+    }
 
     @Test
     fun theFolderSaysWhatItHoldsAndWhichMessagesAreRecent() {
