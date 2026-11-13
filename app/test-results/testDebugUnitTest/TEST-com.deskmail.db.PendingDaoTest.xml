@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.db.PendingDaoTest" tests="17" skipped="0" failures="0" errors="0" timestamp="2026-11-13T00:13:25.449Z" hostname="runnervmwuk1x" time="0.483">
+  <properties/>
+  <testcase name="aMessageThatWasAnsweredOrSentOnSaysSoAtOnce" classname="com.deskmail.db.PendingDaoTest" time="0.024"/>
+  <testcase name="aMarkOnAMessageThatIsLeavingDoesNotCountTwice" classname="com.deskmail.db.PendingDaoTest" time="0.025"/>
+  <testcase name="aMarkShowsAtOnceAndWaitsForTheServer" classname="com.deskmail.db.PendingDaoTest" time="0.027"/>
+  <testcase name="aMarkThatWasReplacedWhileItWasSentLeavesTheNewOneWaiting" classname="com.deskmail.db.PendingDaoTest" time="0.026"/>
+  <testcase name="aMessageThatGoesTakesWhatWaitedForItAlong" classname="com.deskmail.db.PendingDaoTest" time="0.028"/>
+  <testcase name="aMoveTheServerSaysNothingMoreOfTakesTheMessageOffTheDevice" classname="com.deskmail.db.PendingDaoTest" time="0.034"/>
+  <testcase name="aMoveThatIsTakenBackLeavesNothingBehind" classname="com.deskmail.db.PendingDaoTest" time="0.028"/>
+  <testcase name="whatCannotBeMovedIsPassedOver" classname="com.deskmail.db.PendingDaoTest" time="0.025"/>
+  <testcase name="whatIsAlreadySoIsNoChange" classname="com.deskmail.db.PendingDaoTest" time="0.025"/>
+  <testcase name="theLastWordOnAMarkCounts" classname="com.deskmail.db.PendingDaoTest" time="0.027"/>
+  <testcase name="aMessageDoesNotArriveInAFolderWhoseUidsMeanSomethingElse" classname="com.deskmail.db.PendingDaoTest" time="0.024"/>
+  <testcase name="aRefusedMoveBringsTheMessageBack" classname="com.deskmail.db.PendingDaoTest" time="0.028"/>
+  <testcase name="aMessageASyncAlreadyBroughtIsNotThereTwice" classname="com.deskmail.db.PendingDaoTest" time="0.041"/>
+  <testcase name="aRemovalWaitsAndThenTakesTheMessageAway" classname="com.deskmail.db.PendingDaoTest" time="0.025"/>
+  <testcase name="theMarksThatWaitAreKnownByUid" classname="com.deskmail.db.PendingDaoTest" time="0.024"/>
+  <testcase name="aMessageThatIsMovedIsOffEveryListAtOnce" classname="com.deskmail.db.PendingDaoTest" time="0.032"/>
+  <testcase name="aMovedMessageArrivesWhereTheServerSaysItIs" classname="com.deskmail.db.PendingDaoTest" time="0.033"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
