@@ -114,7 +114,7 @@ class ShellNavigationTest {
         compose.onNodeWithTag("counter").assertTextEquals("folder/17: 2")
 
         // a folder more: back at the start screen
-        folders = folders + MailFolder(28, DemoMail.OUTLOOK, listOf("Yeni klasör"), FolderRole.Other)
+        folders = folders + MailFolder(folders.maxOf { it.id } + 1, DemoMail.OUTLOOK, listOf("Yeni klasör"), FolderRole.Other)
         compose.waitForIdle()
         compose.onNodeWithTag("counter").assertTextEquals("inbox: 0")
 
