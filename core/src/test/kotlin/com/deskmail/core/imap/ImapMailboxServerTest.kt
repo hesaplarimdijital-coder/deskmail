@@ -35,13 +35,15 @@ class ImapMailboxServerTest {
         val newsletter = server.deliver("newsletter", tuesday)
         val plan = server.deliver("plan", monday)
         val breakfast = server.deliver("breakfast", thursday)
+        // The server of the tests compares FROM and TO with whole addresses; Gmail and Outlook, as
+        // IMAP has it, with any part of them ("kimden:sahaf"). Whole addresses hold for both.
         inbox { mailbox ->
             assertEquals(listOf(plan), mailbox.search(SearchQuery.terms("Proje")))
-            assertEquals(listOf(newsletter), mailbox.search(SearchQuery.terms("kimden:sahaf")))
-            assertEquals(listOf(plan), mailbox.search(SearchQuery.terms("from:mehmet konu:proje")))
+            assertEquals(listOf(newsletter), mailbox.search(SearchQuery.terms("kimden:bulten@sahaf.example")))
+            assertEquals(listOf(plan), mailbox.search(SearchQuery.terms("from:mehmet.demir@example.org konu:proje")))
             // everybody wrote to Deniz
-            assertEquals(listOf(newsletter, plan, breakfast).sorted(), mailbox.search(SearchQuery.terms("kime:deniz")))
-            assertTrue(mailbox.search(SearchQuery.terms("kimden:sahaf konu:proje")).isEmpty())
+            assertEquals(listOf(newsletter, plan, breakfast).sorted(), mailbox.search(SearchQuery.terms("kime:deniz@example.org")))
+            assertTrue(mailbox.search(SearchQuery.terms("kimden:bulten@sahaf.example konu:proje")).isEmpty())
             assertTrue(mailbox.search(emptyList()).isEmpty())
         }
     }
