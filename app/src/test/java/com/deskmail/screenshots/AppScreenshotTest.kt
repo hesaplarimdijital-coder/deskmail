@@ -30,6 +30,7 @@ import com.deskmail.mail.MailMessage
 import com.deskmail.mail.MailSource
 import com.deskmail.mail.SetupPlan
 import com.deskmail.noMail
+import com.deskmail.notify.NotifyGate
 import com.deskmail.settings.AppSettings
 import com.deskmail.testComposer
 import com.deskmail.testMail
@@ -106,6 +107,7 @@ class AppScreenshotTest {
         startRoute: String? = null,
         source: MailSource = mail,
         accounts: AccountActions = FakeAccounts(),
+        notifications: NotifyGate? = null,
     ) {
         val prefs = testPrefs(theme, density)
         settings = testSettings()
@@ -126,9 +128,16 @@ class AppScreenshotTest {
                 transitions = ShellTransitions.None,
                 palette = palette,
                 messageBody = { content, _, modifier -> PlainMessageBody(content, modifier) },
+                notifications = notifications,
             )
         }
         compose.waitForIdle()
+    }
+
+    /** The leave to show notifications as the system has it; nobody is asked while a picture is taken. */
+    private fun gate(allowed: Boolean) = NotifyGate(ask = {}, openSystemSettings = {}).apply {
+        this.allowed = allowed
+        asked = true
     }
 
     private fun capture(name: String) {
@@ -192,7 +201,7 @@ class AppScreenshotTest {
 
     @Test @Config(qualifiers = PHONE)
     fun phoneSettingsLight() {
-        launch(ThemeMode.Light, startRoute = Routes.SETTINGS)
+        launch(ThemeMode.Light, startRoute = Routes.SETTINGS, notifications = gate(allowed = true))
         capture("phone-settings-light")
     }
 
@@ -402,7 +411,8 @@ class AppScreenshotTest {
 
     @Test @Config(qualifiers = DEX)
     fun dexSettingsDark() {
-        launch(ThemeMode.Dark, DensityPreference.Pointer, startRoute = Routes.SETTINGS)
+        // notifications not allowed yet: Settings says so and offers to ask
+        launch(ThemeMode.Dark, DensityPreference.Pointer, startRoute = Routes.SETTINGS, notifications = gate(allowed = false))
         capture("dex-settings-dark")
     }
 

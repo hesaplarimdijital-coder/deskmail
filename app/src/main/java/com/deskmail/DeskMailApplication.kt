@@ -19,13 +19,19 @@ import com.deskmail.log.LogFile
 import com.deskmail.mail.AccountActions
 import com.deskmail.net.DnsLookup
 import com.deskmail.net.HttpsText
+import com.deskmail.notify.FrontViews
+import com.deskmail.notify.MailNotifier
+import com.deskmail.notify.NotifyActions
+import com.deskmail.notify.NotifyStore
 import com.deskmail.settings.AppSettings
 import com.deskmail.ui.mail.WebViewWarmUp
 import com.deskmail.work.SendWorker
+import com.deskmail.work.SyncWorker
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import java.io.File
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -59,7 +65,22 @@ class DeskMailApplication : Application(), Configuration.Provider {
 
     private val accountStore: AccountStore by lazy { AccountStore(database, DeviceSecretBox(), log) }
 
-    private val sync: MailSync by lazy { MailSync(database, accountStore, log, background) }
+    private val sync: MailSync by lazy {
+        // whoever has an account synced, new mail is told of afterwards
+        MailSync(database, accountStore, log, background).also { it.onSynced = { accountId -> notifier.check(accountId) } }
+    }
+
+    /** Which lists of mail the windows have in front: new mail in one of them needs no notification. */
+    val front = FrontViews()
+
+    /** How far each inbox's new mail has been told of, and whether the user was asked to allow notifications. */
+    val notifyStore: NotifyStore by lazy { NotifyStore(getSharedPreferences(NotifyStore.FILE, Context.MODE_PRIVATE)) }
+
+    /** Tells of new mail with the system's notifications, and takes them down as the mail is read. */
+    val notifier: MailNotifier by lazy { MailNotifier(this, database, notifyStore, front, log).also { it.watch(background) } }
+
+    /** What the buttons of a notification do. */
+    val notifyActions: NotifyActions by lazy { NotifyActions(mail, notifier, log, tellServers = { SyncWorker.tellServers(this) }) }
 
     /** The mail as the windows show it. */
     val mail: LiveMail by lazy { LiveMail(database, sync, background, File(cacheDir, FILES_DIRECTORY)) }
@@ -67,7 +88,43 @@ class DeskMailApplication : Application(), Configuration.Provider {
     /** Adding, reconnecting and removing accounts. */
     val accounts: AccountActions by lazy {
         val autoconfig = Autoconfig(fetch = HttpsText::get, mailHosts = DnsLookup::mailHosts, services = DnsLookup::services, log = log)
-        AccountSetup(database, accountStore, sync, autoconfig, log, background, startSync = { mail.sync(it) })
+        AccountSetup(
+            database, accountStore, sync, autoconfig, log, background,
+            startSync = { accountId ->
+                mail.sync(accountId)
+                // from now on there is mail to look for in the background
+                lookForMail(restart = false)
+            },
+            onRemoved = { accountId, folderIds ->
+                notifier.forget(accountId, folderIds)
+                // the last account gone, there is nothing left to look for
+                lookForMail(restart = false)
+            },
+        )
+    }
+
+    /**
+     * Has the mail looked for in the background as often as the settings say, or not at all.
+     * Nothing is scheduled while there is no account: there is nothing to look for. And while
+     * nothing is scheduled and nothing is wanted, the scheduler is left alone.
+     *
+     * @param restart the interval was just chosen: it counts from now.
+     */
+    fun lookForMail(restart: Boolean) {
+        background.launch {
+            try {
+                val wanted = if (database.accounts().all().isEmpty()) 0 else settings.checkMinutes
+                val scheduled = notifyStore.scheduledMinutes
+                if (wanted == 0 && scheduled == 0) return@launch
+                SyncWorker.schedule(this@DeskMailApplication, wanted, restart = restart || wanted != scheduled)
+                notifyStore.scheduledMinutes = wanted
+                if (wanted != scheduled) {
+                    log.info("app", if (wanted > 0) "new mail is looked for every $wanted minutes" else "new mail is not looked for in the background")
+                }
+            } catch (e: Exception) {
+                log.error("app", "the background look for mail could not be scheduled", e)
+            }
+        }
     }
 
     /** Where the files attached to messages that have not left yet are kept. */

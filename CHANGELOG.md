@@ -4,7 +4,7 @@ Sürümler [SemVer](https://semver.org/lang/tr/) kuralına uyar; 0.1.0'a kadar o
 
 ## 0.1.0-alpha.3 (13 Kasım 2026)
 
-Posta artık yalnızca okunmuyor: okundu ve yıldız sunucuya yazılır, iletiler arşivlenir, taşınır ve silinir, ekler açılır; ileti yazılır, yanıtlanır, iletilir ve gönderilir; cihazdaki iletilerde aranır. Cam, açık iletinin üstünde de kalır. Bildirim henüz yok.
+Posta artık yalnızca okunmuyor: okundu ve yıldız sunucuya yazılır, iletiler arşivlenir, taşınır ve silinir, ekler açılır; ileti yazılır, yanıtlanır, iletilir ve gönderilir; cihazdaki iletilerde aranır; uygulama kapalıyken gelen posta bildirilir. Cam, açık iletinin üstünde de kalır.
 
 ### Yazma ve gönderme
 - **Yeni ileti, Yanıtla, Tümünü yanıtla, İlet.** Düz metin yazılır.
@@ -23,6 +23,15 @@ Posta artık yalnızca okunmuyor: okundu ve yıldız sunucuya yazılır, iletile
 - Yanıtlanan ileti sunucuda "yanıtlandı", iletilen "iletildi" olarak işaretlenir; öteki posta programları bunu gösterir. ("İletildi" işaretini yalnızca etiket tutan sunucular saklar: Gmail saklar, Outlook.com saklamaz.)
 - **Ad ve imza:** Ayarlar › Hesaplar › hesabın sayfası › Yazarken. Ad, yazdığın kişilerin adresinin yanında gördüğü addır; boşsa yalnızca adres görünür. İmza yeni iletinin sonuna, yanıtta ve iletmede alıntının üstüne eklenir.
 - Gönderim yarıda kesilirse (ileti sunucuya verilirken uygulama kapanırsa) ileti kendiliğinden ikinci kez gönderilmez: "Gönderilemedi" olarak durur ve yeniden göndermeden önce Gönderilmiş'e bakmanı söyler.
+
+### Bildirimler ve arka planda denetim
+- **Uygulama kapalıyken de yeni iletilere bakılır:** Ayarlar › Bildirimler'den 15, 30 ya da 60 dakikada bir, ya da "Elle" (hiç). Varsayılan 15 dakika. Ağ varken çalışır; sistem pil için biraz geciktirebilir (uykudaki cihazda daha seyrek). **Anlık bildirim (IMAP IDLE ve ön plan hizmeti) bu sürümde yok**, sonraki ön sürümle gelecek.
+- **Yeni ileti bildirimi:** gelen kutusuna düşen her okunmamış ileti için bir bildirim: gönderen, konu ve açınca ilk satırlar. Aynı hesabın iletileri hesabın adı altında toplanır ("3 yeni ileti"). Her hesabın kendi bildirim kanalı var: sesini, titreşimini ya da sessizliğini sistem ayarlarından hesap hesap seçersin.
+- **Bildirimdeki düğmeler:** Okundu, Arşivle (hesabın arşivi varsa), Sil. Uygulamayı açmadan çalışır; cihazda hemen yapılır, sunucuya ağ varken (yoksa gelince) söylenir. Bildirimdeki işlemin geri alması yoktur. Bildirime dokununca ileti Gelen'de açılır.
+- **Bildirim gereksizse çıkmaz, işi bitince gider:** iletinin düşeceği liste (Gelen, Okunmamış ya da hesabın gelen kutusu) ekrandaysa bildirim gösterilmez, liste ve sayılar güncellenir. İleti okununca, taşınınca ya da silinince (uygulamada ya da başka bir cihazda; bir sonraki eşitlemede öğrenilir) bildirimi kalkar. Hesap adı altındaki sayı kalanları gösterir.
+- Hesap ilk eklendiğinde ve bu sürüme güncellenince gelen kutusundaki eski iletiler bildirilmez; yalnızca sonradan gelenler.
+- **İzin:** bildirim izni, bir hesabın olduğu ilk açılışta bir kez sorulur. Ayarlar › Bildirimler iznin durumunu gösterir; "İzin ver" sistemi yeniden sorar, sistem artık sormuyorsa uygulamanın sistem ayarlarını açar.
+- Bir seferde 12'den çok ileti gelirse en yeni 12'si bildirilir.
 
 ### Arama
 - **Ara ekranı** (telefonda alt çubukta, kenar çubuğunda; klavyede "/"): yazılan, iletilerin konusunda, kişilerinde (ad ve adres) ve metninde aranır; bütün hesaplarda ve Spam dışındaki bütün klasörlerde.
@@ -57,14 +66,16 @@ Posta artık yalnızca okunmuyor: okundu ve yıldız sunucuya yazılır, iletile
 - Çoklu seçim ve klasöre sürükle bırak (ileti işlemlerinin ikinci adımı).
 - Yazmada: biçimli (HTML) yazma; taslakların sunucudaki Taslaklar klasörüne kaydı; yazarken alıcı önerisi ve rehberden alıcı seçme; `mailto:` bağlantısıyla ve paylaşılan dosyayla yeni ileti; DeX'te yazmanın ayrı pencerede açılması. Yazma ekranı şimdilik pencerenin içinde, başlatıldığı ekranın yerinde açılır; başka bir ekrana geçip geri dönünce yazılan yerinde durur.
 - Sunucuda arama; aramada alan süzgeçleri ("kimden:", "konu:").
-- Bildirim ve arka planda eşitleme, Outlook girişi.
+- Anlık bildirim (IMAP IDLE, ön plan hizmeti, pil ayarlarına yönlendirme); gelen kutusu dışındaki klasörler için bildirim; hesap başına bildirim sıklığı.
+- Outlook girişi.
 - İletinin içine gömülü resimler (`cid:`) henüz görünmez.
 
 ### Altyapı
 - Veritabanı şeması 3: bekleyen işlemler tablosu (`pending_op`, şema 2) ve giden kutusu (`outbox`, `outbox_file`, şema 3). 1 → 2 ve 2 → 3 göçleri testleriyle var: alpha.2'nin üstüne kurulunca hesaplar ve posta yerinde kalır.
 - IMAP: bayrak yazma, MOVE (yoksa kopyala ve sil), yalnızca adı verilen iletileri silen UID EXPUNGE, APPEND; ek parçaları okundukça sunucudan akar.
 - Gönderilen ileti uygulamanın kendi yazıcısıyla bayt bayt yazılır (başlıklar, quoted-printable metin, base64 ekler, Türkçe dosya adları) ve SMTP sunucusuna dosyadan akıtılır; posta kitaplığının Android'de eksik paketlenebilen içerik işleyicilerine dayanmaz. Başlığa satır sokuşturma (header injection) denemeleri testlidir.
-- Yeni bağımlılık: WorkManager (`androidx.work:work-runtime` 2.12.0). Gönderimi ağ gelince ve uygulama kapalıyken de yapmak için; brifin istediği yol. Uygulama açılışında değil, ilk gerektiğinde kurulur.
+- Yeni bağımlılık: WorkManager (`androidx.work:work-runtime` 2.12.0). Gönderimi ağ gelince ve uygulama kapalıyken de yapmak, yeni iletilere arka planda bakmak ve bildirimden yapılanı sunucuya söylemek için; brifin istediği yol. Uygulama açılışında değil, ilk gerektiğinde kurulur.
+- Yeni izin: `POST_NOTIFICATIONS`. Kendi sunucumuz, FCM ya da başka bir itme hizmeti yok: cihaz, posta sunucularına kendisi bakar.
 - Yeni kısayollar: E, V, Delete, Ctrl+Z; R, A, F, Ctrl+Enter. Tek tuşlar ve Ctrl+Z yazı alanındayken alanın kendisine kalır; Ctrl+Enter yazı alanında da çalışır.
 
 ## 0.1.0-alpha.2 (12 Kasım 2026)

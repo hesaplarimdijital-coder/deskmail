@@ -21,6 +21,7 @@ import com.deskmail.deskMail
 import com.deskmail.mail.AccountActions
 import com.deskmail.mail.MailAccount
 import com.deskmail.mail.MailSource
+import com.deskmail.notify.NotifyGate
 import com.deskmail.settings.AppSettings
 import com.deskmail.settings.WebLayer
 import com.deskmail.ui.MailIcons
@@ -60,6 +61,9 @@ import java.io.File
  * @param scope where the servers are asked; it outlives this screen.
  * @param onNotify shows a short notice (what was copied, what could not be shared).
  * @param onAccountAdded an account was added, by its address: its mail is about to arrive.
+ * @param notifications the system's leave to show notifications, and the way to ask for it; null
+ *   where there is nobody to ask.
+ * @param onCheckChosen the user chose how often the mail is looked for in the background.
  */
 @Composable
 fun SettingsScreen(
@@ -72,6 +76,8 @@ fun SettingsScreen(
     scope: CoroutineScope,
     onNotify: (String) -> Unit,
     onAccountAdded: (String) -> Unit,
+    notifications: NotifyGate? = null,
+    onCheckChosen: () -> Unit = {},
 ) {
     val context = LocalContext.current
     val resources = appResources()
@@ -86,6 +92,8 @@ fun SettingsScreen(
                 settings = settings,
                 accounts = mail.accounts,
                 canAdd = accounts != null,
+                notifications = notifications,
+                onCheckChosen = onCheckChosen,
                 state = ui.list,
                 onOpenLog = { ui.page = SettingsPage.Log },
                 onOpenAccount = { ui.page = SettingsPage.Account(it.id) },
@@ -167,6 +175,8 @@ private fun SettingsList(
     settings: AppSettings,
     accounts: List<MailAccount>,
     canAdd: Boolean,
+    notifications: NotifyGate?,
+    onCheckChosen: () -> Unit,
     state: LazyListState,
     onOpenLog: () -> Unit,
     onOpenAccount: (MailAccount) -> Unit,
@@ -176,6 +186,7 @@ private fun SettingsList(
     LazyColumn(Modifier.fillMaxSize(), state = state, contentPadding = rememberShellContentPadding()) {
         item(key = "header") { PageHeader(stringResource(desktopkit.R.string.dk_settings)) }
         item(key = "accounts") { AccountsSection(accounts, canAdd, onOpenAccount, onAddAccount) }
+        item(key = "notifications") { NotificationsSection(settings, notifications, onCheckChosen) }
         item(key = "writing") { WritingSection(settings) }
         item(key = "appearance") { AppearanceSection(prefs) }
         item(key = "input") { InputSection(prefs) }
@@ -205,6 +216,40 @@ private fun AccountsSection(accounts: List<MailAccount>, canAdd: Boolean, onOpen
         }
         if (canAdd) {
             DeskButton(stringResource(R.string.account_add), onAdd, Modifier.padding(top = DeskTheme.dimens.gapS), icon = DeskIcons.Plus, primary = accounts.isEmpty())
+        }
+    }
+}
+
+/**
+ * New mail: whether the system lets the app tell of it, with the way to its settings (the
+ * switch, and each account's sound), and how often the inboxes are looked at while no window is
+ * open.
+ */
+@Composable
+private fun NotificationsSection(settings: AppSettings, gate: NotifyGate?, onCheckChosen: () -> Unit) {
+    SettingsSection(stringResource(R.string.settings_notifications)) {
+        if (gate != null) {
+            if (gate.allowed) {
+                SettingRow(stringResource(R.string.settings_notify_on), subtitle = stringResource(R.string.settings_notify_on_note)) {
+                    DeskButton(stringResource(R.string.settings_notify_system), gate.openSystemSettings)
+                }
+            } else {
+                SettingRow(stringResource(R.string.settings_notify_off), subtitle = stringResource(R.string.settings_notify_off_note)) {
+                    DeskButton(stringResource(R.string.settings_notify_allow), gate.ask, primary = true)
+                }
+            }
+        }
+        SettingRow(stringResource(R.string.settings_check), subtitle = stringResource(R.string.settings_check_note)) {
+            SegmentedChoice(
+                options = AppSettings.CHECK_CHOICES.map { minutes ->
+                    minutes to if (minutes == 0) stringResource(R.string.settings_check_manual) else stringResource(R.string.settings_check_minutes, minutes)
+                },
+                selected = settings.checkMinutes,
+                onSelect = { minutes ->
+                    settings.updateCheckMinutes(minutes)
+                    onCheckChosen()
+                },
+            )
         }
     }
 }

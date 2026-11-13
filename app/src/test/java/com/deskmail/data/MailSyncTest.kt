@@ -229,4 +229,26 @@ class MailSyncTest {
         assertEquals(MailException.Kind.Authentication, (outcome as MailSync.Outcome.Failed).kind)
         assertEquals(AccountState.NeedsLogin, accounts.byId(id)!!.accountState())
     }
+
+    /** What tells of new mail hangs on every sync of an account that worked; what it does is not the sync's. */
+    @Test
+    fun whatFollowsASyncIsToldOnceItWorkedAndCannotFailIt() = runBlocking {
+        server.deliver("ilk", "Birinci ileti.", hoursAgo(2))
+        val id = account()
+        val told = ArrayList<Long>()
+        sync.onSynced = { told += it }
+
+        assertEquals(MailSync.Outcome.Done, sync.account(id))
+        assertEquals(listOf(id), told)
+
+        // what follows breaks: the sync itself still worked
+        sync.onSynced = { error("the notifier broke") }
+        assertEquals(MailSync.Outcome.Done, sync.account(id))
+
+        // a sync that did not work is followed by nothing
+        sync.onSynced = { told += it }
+        server.stop()
+        assertTrue(sync.account(id) is MailSync.Outcome.Failed)
+        assertEquals(listOf(id), told)
+    }
 }
