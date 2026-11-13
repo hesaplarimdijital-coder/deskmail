@@ -4,6 +4,10 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -23,6 +27,7 @@ import com.deskmail.mail.MailAccount
 import com.deskmail.mail.MailSource
 import com.deskmail.notify.NotifyGate
 import com.deskmail.settings.AppSettings
+import com.deskmail.settings.SettingsFile
 import com.deskmail.settings.WebLayer
 import com.deskmail.ui.MailIcons
 import com.deskmail.ui.MailScope
@@ -49,6 +54,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.time.Instant
 
 /**
  * Settings: the accounts, writing, the kit's own sections (theme and accent, density, the
@@ -83,6 +89,49 @@ fun SettingsScreen(
     val resources = appResources()
     // an account's page only while the account is there: removed (here or in another window), its page closes
     val page = ui.page?.takeIf { it !is SettingsPage.Account || mail.account(it.id) != null }
+    // The settings to another device: written to a file the user picks a place for, and read from
+    // one picked on the other device. The work is the screen's scope's: the screen may go meanwhile.
+    val exportTo = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument(SettingsFile.MIME_TYPE)) { uri ->
+        if (uri != null && accounts != null) {
+            scope.launch {
+                val written = try {
+                    val contents = SettingsFile.Contents(accounts.portable(), settings.portable(), SettingsFile.lookOf(prefs))
+                    val text = SettingsFile.write(contents, Instant.now())
+                    withContext(Dispatchers.IO) { context.contentResolver.openOutputStream(uri, "wt")?.use { it.write(text.encodeToByteArray()) } } != null
+                } catch (e: Exception) {
+                    log.warn("settings", "the settings could not be written to a file", e)
+                    false
+                }
+                if (written) log.info("settings", "the settings were written to a file")
+                onNotify(resources.getString(if (written) R.string.transfer_exported else R.string.transfer_export_failed))
+            }
+        }
+    }
+    val importFrom = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null && accounts != null) {
+            scope.launch {
+                val contents = try {
+                    withContext(Dispatchers.IO) { context.contentResolver.openInputStream(uri)?.use { SettingsFile.read(it) } }
+                } catch (e: Exception) {
+                    log.warn("settings", "a settings file could not be read", e)
+                    null
+                }
+                if (contents == null) {
+                    onNotify(resources.getString(R.string.transfer_not_a_file))
+                    return@launch
+                }
+                val added = accounts.adopt(contents.accounts)
+                if (settings.adopt(contents.settings)) onCheckChosen()
+                contents.look?.let { SettingsFile.applyLook(prefs, it) }
+                log.info("settings", "a settings file was read: $added of its ${contents.accounts.size} accounts were added")
+                onNotify(
+                    if (added > 0) resources.getQuantityString(R.plurals.transfer_imported, added, added)
+                    else resources.getString(R.string.transfer_imported_none),
+                )
+            }
+        }
+    }
+    val fileName = stringResource(R.string.transfer_file_name)
     DetailTransition(
         detail = page,
         onBack = ui::close,
@@ -98,6 +147,8 @@ fun SettingsScreen(
                 onOpenLog = { ui.page = SettingsPage.Log },
                 onOpenAccount = { ui.page = SettingsPage.Account(it.id) },
                 onAddAccount = ui::addAccount,
+                onExport = if (accounts == null) null else ({ exportTo.launch(fileName) }),
+                onImport = if (accounts == null) null else ({ importFrom.launch(SettingsFile.OPEN_TYPES) }),
             )
         },
         sharedElements = false,
@@ -181,6 +232,8 @@ private fun SettingsList(
     onOpenLog: () -> Unit,
     onOpenAccount: (MailAccount) -> Unit,
     onAddAccount: () -> Unit,
+    onExport: (() -> Unit)?,
+    onImport: (() -> Unit)?,
 ) {
     val keyboard = showShortcutHints()
     LazyColumn(Modifier.fillMaxSize(), state = state, contentPadding = rememberShellContentPadding()) {
@@ -196,6 +249,7 @@ private fun SettingsList(
                 ShortcutListSection(shortcuts, scopeLabel = { scope -> if (scope == MailScope) stringResource(R.string.shortcut_scope_mail) else null })
             }
         }
+        if (onExport != null && onImport != null) item(key = "transfer") { TransferSection(onExport, onImport) }
         item(key = "experiments") { ExperimentsSection(settings) }
         item(key = "log") { LogSection(onOpenLog) }
         item(key = "about") { AboutSection() }
@@ -281,6 +335,18 @@ private fun WritingSection(settings: AppSettings) {
                 selected = settings.undoSendSeconds,
                 onSelect = settings::updateUndoSendSeconds,
             )
+        }
+    }
+}
+
+/** The settings to another device: what goes into the file, and the two ways, out and in. */
+@Composable
+private fun TransferSection(onExport: () -> Unit, onImport: () -> Unit) {
+    SettingsSection(stringResource(R.string.transfer_title)) {
+        Text(stringResource(R.string.transfer_note), style = DeskTheme.type.labelSmall, color = DeskTheme.colors.textTertiary)
+        Row(Modifier.padding(top = DeskTheme.dimens.gapS), horizontalArrangement = Arrangement.spacedBy(DeskTheme.dimens.gapS)) {
+            DeskButton(stringResource(R.string.transfer_export), onExport, icon = MailIcons.Share)
+            DeskButton(stringResource(R.string.transfer_import), onImport, icon = MailIcons.Import)
         }
     }
 }

@@ -8,6 +8,7 @@ import com.deskmail.core.provider.MailSettings
 import com.deskmail.core.provider.ProviderTable
 import com.deskmail.mail.AccountActions
 import com.deskmail.mail.AccountDraft
+import com.deskmail.mail.PortableAccount
 import com.deskmail.mail.SetupPlan
 import com.deskmail.mail.SetupResult
 import kotlinx.coroutines.runBlocking
@@ -41,6 +42,10 @@ class AccountSetupFormTest {
         override suspend fun saveWriting(accountId: Long, senderName: String, signature: String) = Unit
 
         override suspend fun remove(accountId: Long) = Unit
+
+        override suspend fun portable(): List<PortableAccount> = emptyList()
+
+        override suspend fun adopt(accounts: List<PortableAccount>): Int = 0
     }
 
     private val posta = MailSettings(

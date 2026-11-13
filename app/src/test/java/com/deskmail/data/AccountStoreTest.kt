@@ -12,6 +12,7 @@ import com.deskmail.core.provider.ProviderTable
 import com.deskmail.db.DeskMailDatabase
 import com.deskmail.db.testFolder
 import com.deskmail.mail.AccountState
+import com.deskmail.mail.PortableAccount
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -128,5 +129,43 @@ class AccountStoreTest {
         assertTrue(db.folders().ofAccount(id).isEmpty())
         assertNotNull(accounts.byId(kept))
         assertNotNull(accounts.credentials(accounts.byId(kept)!!))
+    }
+
+    /** An account from a settings file: there with its servers and its name, and nothing to sign in with until it is given its password. */
+    @Test
+    fun anAccountFromAnotherDeviceWaitsForItsPassword() = runBlocking {
+        val first = accounts.add("deniz@example.org", "example.org", "", gmail, "parola")
+        val portable = PortableAccount(
+            address = " deniz@gmail.com ",
+            name = "Gmail\nkişisel",
+            senderName = "Deniz Aksoy",
+            provider = "gmail",
+            settings = gmail,
+            syncDays = 90,
+            notifyMode = "push",
+            signature = "Deniz\r\nİstanbul",
+        )
+
+        val id = accounts.addWaiting(portable)!!
+
+        val stored = accounts.byId(id)!!
+        assertEquals("deniz@gmail.com", stored.address)
+        assertEquals("Gmail kişisel", stored.name)
+        assertEquals("Deniz Aksoy", stored.senderName)
+        assertEquals(ServerAddress("imap.gmail.com", 993, Security.Tls), stored.imapServer())
+        assertEquals(AuthKind.AppPassword, stored.auth())
+        assertEquals(90, stored.syncDays)
+        assertEquals("Deniz\nİstanbul", stored.signature)
+        // it waits for its password; it comes after the accounts there were
+        assertEquals(AccountState.NeedsLogin, stored.accountState())
+        assertNull(accounts.credentials(stored))
+        assertTrue(stored.position > accounts.byId(first)!!.position)
+
+        // the device has it now: a second file adds nothing, whatever capitals it writes the address in
+        assertNull(accounts.addWaiting(portable.copy(address = "Deniz@Gmail.com")))
+        // nor does what is no address, or has no servers
+        assertNull(accounts.addWaiting(portable.copy(address = "deniz")))
+        assertNull(accounts.addWaiting(portable.copy(address = "ayse@posta.example", settings = gmail.copy(imap = ServerAddress(" ", 993, Security.Tls)))))
+        assertEquals(2, accounts.all().size)
     }
 }
