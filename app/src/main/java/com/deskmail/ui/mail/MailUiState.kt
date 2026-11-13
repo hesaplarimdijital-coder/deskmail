@@ -2,6 +2,7 @@ package com.deskmail.ui.mail
 
 import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -9,6 +10,7 @@ import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.deskmail.mail.MailMessage
+import com.deskmail.mail.ServerSearch
 import com.deskmail.notify.OpenRequest
 import com.deskmail.settings.AppSettings
 import com.deskmail.ui.compose.ComposeRequest
@@ -187,6 +189,9 @@ class MailUiState(private val settings: AppSettings? = null) {
     /** What the search screen is looking for: what is typed, a moment after the typing pauses. */
     var searchQuery by mutableStateOf("")
 
+    /** The last search of the servers: for what (its key, [com.deskmail.core.text.SearchQuery.key]) and what it came to; null while it runs. */
+    var serverSearch by mutableStateOf<ServerSearchState?>(null)
+
     /** "/" asked for the search field: it takes the focus when its screen is drawn. */
     var searchFocusAsked by mutableStateOf(false)
 
@@ -335,3 +340,7 @@ fun sortMessages(messages: List<MailMessage>, sort: TableSort): List<MailMessage
 
 /** Who a message is with: its sender, or its recipients for one the user wrote. */
 fun counterpart(message: MailMessage): String = if (message.outgoing) message.to else message.fromName
+
+/** A search of the servers for what was typed ([key]); [result] is null while it runs. */
+@Immutable
+class ServerSearchState(val key: String, val result: ServerSearch?)

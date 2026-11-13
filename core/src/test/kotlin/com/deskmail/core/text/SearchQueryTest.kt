@@ -27,8 +27,38 @@ class SearchQueryTest {
     fun nothingOfWhatIsTypedIsSyntaxToTheIndex() {
         assertEquals("fatura* or* kasim*", SearchQuery.match("fatura OR kasım"))
         assertEquals("fatura* kasim*", SearchQuery.match("\"fatura\" -kasım*"))
-        assertEquals("near* 2* subject* x*", SearchQuery.match("NEAR/2 subject:x"))
+        assertEquals("near* 2* title* x*", SearchQuery.match("NEAR/2 title:x"))
+        // a column of the index is chosen only by the app's own words, and only with the app's own names
+        assertEquals("people* x*", SearchQuery.match("people:x"))
         assertEquals("a* b*", SearchQuery.match("(a) ^b"))
+    }
+
+    /** "kimden:", "kime:", "konu:" (and their English names) say where a piece is looked for. */
+    @Test
+    fun aPieceCanBeToldWhereToBeLookedFor() {
+        assertEquals("people:ayse* fatura*", SearchQuery.match("Kimden:Ayşe fatura"))
+        assertEquals("subject:kasim* subject:faturasi*", SearchQuery.match("konu:\"Kasım faturası\""))
+        assertEquals("people:elif*", SearchQuery.match("KİME:elif"))
+        assertEquals("people:ayse* people:posta* people:example*", SearchQuery.match("from:ayse@posta.example"))
+        // with a space after the colon
+        assertEquals("subject:fatura*", SearchQuery.match("konu: fatura"))
+        // a prefix with nothing after it looks for nothing
+        assertNull(SearchQuery.match("kimden:"))
+
+        val terms = SearchQuery.terms("kimden: Ayşe konu:Kasım faturası")
+        assertEquals(listOf(SearchField.From, SearchField.Subject, SearchField.Any), terms.map { it.field })
+        // what a server is asked for is what was typed
+        assertEquals(listOf("Ayşe", "Kasım", "faturası"), terms.map { it.typed })
+        assertEquals(listOf(listOf("ayse"), listOf("kasim"), listOf("faturasi")), terms.map { it.words })
+    }
+
+    /** One name for every way of typing the same thing: what the server found for it is kept under it. */
+    @Test
+    fun whatWasTypedHasOneKey() {
+        assertEquals(SearchQuery.key("Kimden:Ayşe  fatura"), SearchQuery.key("from:ayse FATURA"))
+        assertEquals("from:ayse any:fatura", SearchQuery.key("Kimden:Ayşe fatura"))
+        assertTrue(SearchQuery.key("fatura") != SearchQuery.key("konu:fatura"))
+        assertNull(SearchQuery.key("a"))
     }
 
     @Test

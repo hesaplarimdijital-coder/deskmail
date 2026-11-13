@@ -1,5 +1,6 @@
 package com.deskmail.core.mail
 
+import com.deskmail.core.text.SearchTerm
 import java.io.OutputStream
 import java.time.LocalDate
 
@@ -48,4 +49,11 @@ interface RemoteMailbox {
      * message no such part.
      */
     fun attachment(uid: Long, part: String, into: OutputStream): Boolean
+
+    /**
+     * The UIDs of the messages the server finds for [terms], ascending: every term must hold. A
+     * term for anything is looked for in the message's headers and its text; the server compares
+     * as it does (usually as a part of a word, without regard to case), not as the device's index.
+     */
+    fun search(terms: List<SearchTerm>): List<Long> = emptyList()
 }
