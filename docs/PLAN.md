@@ -188,6 +188,11 @@ birkaç PR'dan sonra çıkar (13 Kasım 2026'dan beri her PR'dan sonra beklenmiy
 o ön sürümün ilk PR'ında artar, sonraki PR'lar CHANGELOG'da aynı başlığın altına yazar. Barış Releases'ta
 `main` üzerinde etiketi açar (README, "Sürüm çıkarma"); iş akışı imzalı APK'yı ve sürüm notlarını ekler.
 
+**13 Kasım 2026, Barış'ın kararı:** alpha.4 çıkmıyor. Aşağıda "kalan" diye duran her şey ve Aşama 2'nin
+tamamı `0.1.0-beta.1`'de toplanır; dışarıda kalan yalnızca Outlook girişidir, o `0.1.0-beta.2`'de gelir
+(Azure kaydını Barış yapıyor; adımlar aşağıda, "Azure kaydı"). beta.1'in iş sırası "beta.1'e kalanlar"
+başlığında.
+
 1. **İskelet ve erken denemeler (alpha.1):** Gradle iskeleti ve CI · imza ve etiket iş akışı · kit
    kabuğu · sahte veriyle liste ve okuma · WebView deneme ekranı · kısayollar, menü çubuğu, palet ·
    günlük · ekran görüntüsü testleri ve kenar çubuğu testi.
@@ -234,9 +239,29 @@ o ön sürümün ilk PR'ında artar, sonraki PR'lar CHANGELOG'da aynı başlığ
    lisanslar ekranı · belgeler (mimari, yıllık bakım listesi, Google OAuth yedek planı) · bağımsız
    inceleme bulguları · 0.1.0.
 
-Aşama 2 ve sonrası brifteki sırayla: konuşma dizileri, erteleme, şablonlar, kayıtlı aramalar, yanıt
-bekleyenler, VIP ve gönderen başına uzak görsel izni, ayrıntı paneli sekmeleri, biçimli yazma, ayarları
-taşıma, bildirimden hızlı yanıt, satırı kaydırma.
+### beta.1'e kalanlar
+
+Her biri ayrı PR; sıra, cihazda en çok denenmesi gerekenden başlar.
+
+1. Paylaşılan dosyayla yazma ekranının hemen açılması; yazma ekranının kendiliğinden kapanmaması (alpha.3'ün
+   cihaz denemesinden).
+2. Anlık bildirim (7b).
+3. Çoklu seçim, toplu işlem, klasöre sürükle bırak (4'ün kalanı).
+4. Taslakların sunucuya kaydı (5'in kalanı).
+5. Sunucu araması, alan süzgeçleri, palette arama (6'nın kalanı).
+6. DeX'te yazmanın ayrı pencerede açılması; Contact Picker (5'in kalanı).
+7. İletinin içindeki (`cid:`) görseller; listede yanıtlandı ve iletildi işaretleri.
+8. Aşama 2, brifteki sırayla: konuşma dizileri · erteleme · şablonlar · kayıtlı aramalar · yanıt
+   bekleyenler · VIP ve gönderen başına uzak görsel izni · ayrıntı paneli sekmeleri (Ayrıntılar, Ekler,
+   Güvenlik, Ham başlıklar) · biçimli yazma · ayarları taşıma · bildirimden hızlı yanıt.
+9. Cilâ (9): boş ve hata durumları, erişilebilirlik, lisanslar ekranı, belgeler, bağımsız inceleme.
+
+**Kiti bekleyenler** (uygulamada yamanmaz; `docs/KIT-ISTEKLERI.md`): alıcı önerilerinin arayüzü (4),
+telefonda satırı kaydırarak arşiv ve erteleme (7), fareyle çerçeve çizerek seçme (22). Kit bunları
+yayımlayınca sürümü yükseltilir ve uygulamaya bağlanır; beta.1 bunları beklemez.
+
+"Sonra, her biri ayrı karar" başlığındakiler (OpenPGP/S/MIME, çeviri, Handoff, Thunderbird QR, okundu
+bilgisi) beta'ya girmez; her biri ayrıca sorulur.
 
 ## Riskler ve erken denenecekler
 
@@ -292,7 +317,28 @@ Yıllık güncellemede bakılacaklar; 0.1.0'la birlikte ayrı bir belgeye taşı
 
 ## Azure kaydı (Outlook için)
 
-İmza anahtarından sonra, PR 3'ten önce; sahibinin tarayıcısında yapılır. "DeskMail" adıyla, "Personal
-accounts only" türünde, istemci sırrı olmayan bir genel istemci. Yönlendirme adresi önce "Mobile and
-desktop applications" altında `com.deskmail://oauth2redirect`; portal kabul etmezse "Android" platformu
-ve imza özetiyle `msauth://com.deskmail/…`. İstemci kimliği gizli değildir, depoda durur.
+Barış kendi tarayıcısında yapar (13 Kasım 2026'da adımlar sohbette verildi; Microsoft'un belgelerine göre,
+portal burada denenmedi). "DeskMail" adıyla, "Personal accounts only" türünde, istemci sırrı olmayan bir
+genel istemci. İstemci kimliği gizli değildir, depoda durur.
+
+1. **Dizin.** Kişisel Microsoft hesapları Haziran 2024'ten beri yeni kayıt için bir dizin (tenant) ister.
+   `entra.microsoft.com` › Entra ID › App registrations › New registration açılmıyorsa ücretsiz Azure
+   hesabı açılır (`azure.microsoft.com/free`); kimlik doğrulaması için kart ister, ücret almaz. Kartsız
+   resmi bir yol bulunamadı.
+2. **Kayıt.** Name `DeskMail` · Supported account types: Personal accounts only · Redirect URI: platform
+   "Public client/native (mobile & desktop)", değer `com.deskmail://oauth2redirect`.
+3. **Yönlendirme adresi.** Authentication'da "Mobile and desktop applications" altında durmalı ("Web" ya
+   da "Single-page application" altında değil). Portal adresi kabul etmezse "Android" platformu: paket
+   `com.deskmail`, imza özeti `6S4i+iP1XZO3GIRA49nml7NnavU=` (imza sertifikasının SHA-1'i, Base64;
+   yayımlanan APK'dan hesaplandı, gizli değil). Adres o zaman
+   `msauth://com.deskmail/6S4i%2BiP1XZO3GIRA49nml7NnavU%3D` olur. "Allow public client flows" kapalı kalır.
+4. **İzinler.** API permissions › Microsoft Graph › Delegated: `IMAP.AccessAsUser.All`, `SMTP.Send`,
+   `offline_access`. Yönetici onayı gerekmez. İstemci sırrı oluşturulmaz.
+5. **Outlook.com.** Settings › Mail › Forwarding and IMAP › "Let devices and apps use IMAP" açılır
+   (varsayılan kapalı).
+
+Uygulamanın kullanacakları: yetkilendirme `https://login.microsoftonline.com/consumers/oauth2/v2.0/authorize`,
+jeton `…/consumers/oauth2/v2.0/token` ("Personal accounts only" kaydı `common` ile çalışmaz) · kapsamlar
+`https://outlook.office.com/IMAP.AccessAsUser.All`, `https://outlook.office.com/SMTP.Send`,
+`offline_access` · IMAP `outlook.office365.com:993` (TLS), SMTP `smtp-mail.outlook.com:587` (STARTTLS) ·
+giriş SASL XOAUTH2.

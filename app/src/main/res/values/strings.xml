@@ -123,6 +123,11 @@
     <string name="compose_bad_addresses">Not an address: %1$s</string>
     <string name="compose_file_remove">Remove</string>
     <string name="compose_attach_failed">The file could not be attached.</string>
+    <plurals name="compose_attaching">
+        <item quantity="one">Attaching a file…</item>
+        <item quantity="other">Attaching %d files…</item>
+    </plurals>
+    <string name="compose_wait_files">It can be sent once its files are attached.</string>
     <string name="compose_sending">Sending…</string>
     <string name="compose_too_late">Could not be undone: the message has left.</string>
     <string name="compose_discarded">The draft was deleted.</string>

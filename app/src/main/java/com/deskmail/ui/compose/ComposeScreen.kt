@@ -32,6 +32,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -40,6 +41,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -55,6 +57,7 @@ import com.deskmail.mail.SendCheck
 import com.deskmail.ui.MailIcons
 import desktopkit.appResources
 import desktopkit.components.ActionGroup
+import desktopkit.components.BannerTone
 import desktopkit.components.DeskButton
 import desktopkit.components.DeskChip
 import desktopkit.components.DeskIconButton
@@ -64,6 +67,7 @@ import desktopkit.components.MenuEntry
 import desktopkit.components.MoreSheet
 import desktopkit.components.SegmentedChoice
 import desktopkit.components.SettingRow
+import desktopkit.components.StatusBanner
 import desktopkit.screens.PageHeader
 import desktopkit.shell.CompactTopBar
 import desktopkit.shell.TopBarAction
@@ -75,6 +79,7 @@ import desktopkit.shell.rememberShellContentPadding
 import desktopkit.theme.DeskTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 /**
@@ -118,6 +123,10 @@ class ComposeFields {
     private var asRead: List<Any> = emptyList()
     private var filesChanged = false
 
+    /** The message was thrown away: what is still being done for it has nothing to report. */
+    var thrownAway = false
+        private set
+
     /** Whether anything was written, attached or taken out since the message was read. */
     val touched: Boolean get() = loaded && (filesChanged || typed() != asRead)
 
@@ -143,13 +152,37 @@ class ComposeFields {
     /** The message was thrown away: there is nothing here to keep any more. */
     fun discarded() {
         loaded = false
+        thrownAway = true
     }
 }
 
-/** What a window's compose screen can be asked from outside: Ctrl+Enter sends. */
+/**
+ * What a window's compose screen can be asked from outside (Ctrl+Enter sends), and what the window
+ * knows of its messages apart from their screens: the files that are still on their way into them.
+ *
+ * A file is copied into its message behind the screen, and a large one takes its time. The count
+ * is kept here, by message, rather than by the screen: a message that is put away and taken up
+ * again while its file is still being copied is not sent without it.
+ */
 @Stable
 class ComposeHost {
     var send: (() -> Unit)? = null
+
+    private val arriving = mutableStateMapOf<Long, Int>()
+
+    /** How many files are still being copied into the message [draftId]: it is not sent before they are in it. */
+    fun arriving(draftId: Long): Int = arriving[draftId] ?: 0
+
+    /** [count] files are about to be copied into the message. */
+    fun filesBegun(draftId: Long, count: Int) {
+        if (count > 0) arriving[draftId] = arriving(draftId) + count
+    }
+
+    /** One of them is done with: in the message, or not. */
+    fun fileEnded(draftId: Long) {
+        val left = arriving(draftId) - 1
+        if (left > 0) arriving[draftId] = left else arriving.remove(draftId)
+    }
 }
 
 /** Names the tests find the fields by. */
@@ -159,6 +192,7 @@ object ComposeTags {
     const val BCC = "compose-bcc"
     const val SUBJECT = "compose-subject"
     const val BODY = "compose-body"
+    const val ATTACHING = "compose-attaching"
 }
 
 /**
@@ -199,16 +233,22 @@ fun ComposeScreen(
     val fields = writing.fields
     // what the phone's bars cover: asked for here, so the page scrolls beneath them
     val barsPadding = rememberShellContentPadding()
-    val draft by remember(composer, draftId) { composer.observe(draftId) }.collectAsState(initial = null)
+    // What is kept of the message: not heard of yet, or the draft itself (none once it is gone).
+    // The two are told apart: a screen that is drawn anew over a message that is being written
+    // (another screen was looked at in between) has not heard yet, and is not to take that for
+    // the message being gone.
+    val kept by remember(composer, draftId) { composer.observe(draftId).map { Kept(it) } }.collectAsState(initial = null)
+    val draft = kept?.draft
 
     // read once; after that the screen is what is typed, and the draft follows it
-    LaunchedEffect(draft) {
-        val kept = draft
+    LaunchedEffect(kept) {
+        val heard = kept ?: return@LaunchedEffect
+        val known = heard.draft
         when {
             // sent from another window, or thrown away: there is nothing left to write on
-            kept == null -> if (fields.loaded) onClose()
-            !kept.canBeWrittenOn() -> onClose()
-            !fields.loaded -> fields.load(kept)
+            known == null -> onClose()
+            !known.canBeWrittenOn() -> onClose()
+            !fields.loaded -> fields.load(known)
         }
     }
     // kept a moment after the typing pauses
@@ -223,9 +263,17 @@ fun ComposeScreen(
         }
     }
 
+    // the files that are still being copied into this message, whichever screen began them
+    val arriving = host.arriving(draftId)
+    val waitForFiles = stringResource(R.string.compose_wait_files)
     val send: () -> Unit = {
         scope.launch {
             if (!fields.loaded) return@launch
+            // a file that is still being copied would be left behind
+            if (host.arriving(draftId) > 0) {
+                onNotify(waitForFiles)
+                return@launch
+            }
             // what is typed first, and waited for: the message goes as it stands on the screen
             composer.save(draftId, fields.accountId, fields.to, fields.cc, fields.bcc, fields.subject, fields.body)
             when (val check = composer.send(draftId)) {
@@ -250,9 +298,12 @@ fun ComposeScreen(
         if (chosen.isNotEmpty()) {
             scope.launch {
                 var failed = false
+                host.filesBegun(draftId, chosen.size)
                 for (uri in chosen) {
                     val (name, type) = describe(context, uri)
-                    if (composer.attach(draftId, name, type) { context.contentResolver.openInputStream(uri) }) fields.fileChanged() else failed = true
+                    val added = composer.attach(draftId, name, type) { context.contentResolver.openInputStream(uri) }
+                    host.fileEnded(draftId)
+                    if (added) fields.fileChanged() else failed = true
                 }
                 if (failed) onNotify(resources.getString(R.string.compose_attach_failed))
             }
@@ -281,7 +332,7 @@ fun ComposeScreen(
         onBack = onClose,
         backIcon = TopBarBackIcon.Close,
         actions = listOf(
-            TopBarAction(MailIcons.Sent, sendLabel, send, primary = true),
+            TopBarAction(MailIcons.Sent, sendLabel, send, enabled = arriving == 0, primary = true),
             TopBarAction(MailIcons.Attachment, attachLabel, attach),
             TopBarAction(DeskIcons.Delete, discardLabel, onDiscard),
         ),
@@ -306,7 +357,7 @@ fun ComposeScreen(
         ) {
             if (!compact) {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(dimens.gapS), verticalAlignment = Alignment.CenterVertically) {
-                    DeskButton(sendLabel, send, Modifier.keepsKeyboardOpen(), icon = MailIcons.Sent, primary = true)
+                    DeskButton(sendLabel, send, Modifier.keepsKeyboardOpen(), icon = MailIcons.Sent, primary = true, enabled = arriving == 0)
                     DeskButton(attachLabel, attach, icon = MailIcons.Attachment)
                     Spacer(Modifier.weight(1f))
                     DeskIconButton(DeskIcons.Delete, discardLabel, onDiscard)
@@ -381,6 +432,14 @@ fun ComposeScreen(
                     scope.launch { composer.detach(file.id) }
                 }
             }
+            // a large file takes its time: said here, and the message is not sent before it is in
+            if (arriving > 0) {
+                StatusBanner(
+                    tone = BannerTone.Info,
+                    text = pluralStringResource(R.plurals.compose_attaching, arriving, arriving),
+                    modifier = Modifier.testTag(ComposeTags.ATTACHING),
+                )
+            }
             DeskTextField(
                 value = fields.body,
                 onValueChange = { fields.body = it },
@@ -445,6 +504,9 @@ internal fun describe(context: Context, uri: Uri): Pair<String, String> {
 
 /** A draft that is still being written, or that failed: what the compose screen can take up. */
 fun Draft.canBeWrittenOn(): Boolean = state == DraftState.Writing || state == DraftState.Failed
+
+/** What the composer has said of a message: its draft, or that there is none (any more). */
+private class Kept(val draft: Draft?)
 
 /** What was typed is kept once the typing has paused this long. */
 private const val KEEP_AFTER_MS = 600L

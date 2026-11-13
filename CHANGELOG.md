@@ -1,6 +1,14 @@
 # Değişiklikler
 
-Sürümler [SemVer](https://semver.org/lang/tr/) kuralına uyar; 0.1.0'a kadar olanlar ön sürümdür (`0.1.0-alpha.N`). Her sürümün imzalı APK'sı GitHub'daki sürüm sayfasına eklenir.
+Sürümler [SemVer](https://semver.org/lang/tr/) kuralına uyar; 0.1.0'a kadar olanlar ön sürümdür (`0.1.0-alpha.N`, ardından `0.1.0-beta.N`). Her sürümün imzalı APK'sı GitHub'daki sürüm sayfasına eklenir.
+
+## 0.1.0-beta.1 (hazırlanıyor)
+
+İlk beta: Outlook girişi dışında planlanan bütün özellikler (ilk aşamanın kalanı ve ikinci aşama). Outlook `0.1.0-beta.2`'de gelir.
+
+### Düzeltmeler
+- **Paylaşılan dosyayla yazma ekranı hemen açılır.** Başka bir uygulamadan dosya paylaşınca yazma ekranı, dosya uygulamaya kopyalanana dek açılmıyordu; büyük bir videoda o süre boyunca yalnızca Gelen görünüyordu. Ekran artık hemen açılır ve dosya arkada eklenir: ekran "Dosya ekleniyor…" der, dosya iletiye girmeden Gönder çalışmaz (ekranı kapatıp taslağı Giden kutusu'ndan yeniden açsan da). Yazma ekranındaki ataşla eklenen büyük dosyalarda da böyle.
+- **Yazma ekranı kendiliğinden kapanmaz.** Bir ileti yazarken başka bir ekrana bakıp geri dönünce yazma ekranı "Taslak Giden kutusu'nda duruyor" diyerek kapanıyordu (taslak kaybolmuyordu, Giden kutusu'ndan açmak gerekiyordu). Yazılan ileti artık ekranına dönüldüğünde bırakıldığı gibi durur.
 
 ## 0.1.0-alpha.3 (13 Kasım 2026)
 
