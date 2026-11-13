@@ -50,6 +50,7 @@ import desktopkit.components.StatusBanner
 import desktopkit.screens.PageHeader
 import desktopkit.settings.SettingsSection
 import desktopkit.shell.CompactTopBar
+import desktopkit.shell.HideBottomNavigation
 import desktopkit.shell.LocalNavKind
 import desktopkit.shell.NavKind
 import desktopkit.shell.rememberShellContentPadding
@@ -86,10 +87,11 @@ internal fun SettingsPageFrame(title: String, onClose: () -> Unit, content: @Com
 
 /**
  * "Add an account": the address, then what the search for its servers calls for, then the
- * sign-in ([form] holds where the user stands and what was typed).
+ * sign-in ([form] holds where the user stands and what was typed). On a phone the bottom
+ * navigation is away while it is open.
  *
- * @param scope where the servers are asked; it must outlive this page, which the shell takes
- *   away the moment the new account's folders arrive.
+ * @param scope where the servers are asked; it must outlive this page, which closes the moment the
+ *   account is added.
  * @param onAdded the account was added, by its address.
  */
 @Composable
@@ -100,6 +102,9 @@ fun AccountSetupPage(form: AccountSetupForm, actions: AccountActions, scope: Cor
             if (form.add(actions) != null) onAdded(form.address.trim())
         }
     }
+    // a set-up of its own on a phone: no tabs to leave it by half-way, and no bar under its buttons
+    // (desktop-kit 2.9.0)
+    HideBottomNavigation()
     SettingsPageFrame(stringResource(R.string.account_add), onClose) {
         when (val step = form.step) {
             AccountSetupForm.Step.Address -> AddressStep(form, lookUp)

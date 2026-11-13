@@ -10,6 +10,10 @@ Her maddenin "2.8.0" satırı kitin ne getirdiğini ve DeskMail'in onunla ne yap
 "Bugün" satırları 2.4.0'ı anlatır. **Açık olanlar:** 4 (çipli alıcı alanı: 26'yı bekliyor), 24 (biçimli
 metin düzenleyici), 25 (tarih ve saat seçici), 26 (çipli alanda bitirilmemiş yazı).
 
+**desktop-kit 2.9.0 (13 Kasım 2026)** bir isteğe karşılık değil: camın telefonun alt kenarındaki hatasını
+düzeltir ve `HideBottomNavigation()`'ı getirir. DeskMail 2.9.0'a geçti (`0.1.0-beta.3`); telefonda hesap
+eklerken alt gezinme çubuğu yok (yazma ekranı çubuğu tutar). Açık maddeler aynı.
+
 Nereden geldikleri: 12, 13, 18 ve 20 istek değil, hata. 14–17 alpha.2'de (gerçek posta ve hesap ekranları)
 eklendi; 18–20 alpha.1'in Galaxy S24'teki iki ekran kaydından (12 Kasım 2026), kare kare
 bakılarak; 21 ve 4. maddenin eki alpha.3'te, yazma ekranıyla; 22 Barış'ın isteğiyle (13 Kasım 2026); 23
