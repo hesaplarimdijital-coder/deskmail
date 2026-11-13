@@ -9,7 +9,11 @@ kaldırılır.
 2 (tablo), 9 (liste durumu), 1 (rozetler), 10 (klavye düzeni), 13 (bölücü), 14 (çekerek yenileme);
 kalanlar ilgili PR'a kadar bekleyebilir. 12, 13, 18 ve 20 istek değil, hata. 14–17 alpha.2'de (gerçek
 posta ve hesap ekranları) eklendi; 18–20 alpha.1'in Galaxy S24'teki iki ekran kaydından (12 Kasım 2026),
-kare kare bakılarak yazıldı; 21 ve 4. maddenin eki alpha.3'te, yazma ekranıyla.
+kare kare bakılarak yazıldı; 21 ve 4. maddenin eki alpha.3'te, yazma ekranıyla; 22 Barış'ın isteğiyle
+(13 Kasım 2026).
+
+**beta.1'in beklediği üç madde:** 4 (alıcı önerileri), 7 (satırı kaydırma), 22 (çerçeveyle seçme). Kit
+bunları yayımlayınca uygulamaya bağlanır.
 
 Satır ve dosya adları kitin 2.4.0 etiketine göredir.
 
@@ -284,3 +288,24 @@ Koddan okundu, cihazda denenmedi.
   bildirim giderse ileti gider.
 - **Şimdilik:** bildirim `Indefinite` gösterilir ve uygulama onu süre dolunca kendisi kapatır
   (`withTimeoutOrNull`). TalkBack kullanan biri için süre uzamaz; 15 saniyeyi seçebilir.
+
+## 22. Tabloda fareyle çerçeve çizerek seçme
+
+- **Bugün:** `DenseTable` çoklu seçimde Ctrl+tık, Shift+tık, Ctrl+A, Shift+↑/↓ ve dokunmada uzun basmayı
+  bilir (`components/DenseTable.kt`, `TableSelection`). Fareyle sol düğme basılıyken sürükleyince çizilen
+  seçim çerçevesi yok; satır `dragSource` ise sürükleme satırı taşır.
+- **İstek:** çoklu seçim açıkken `DenseTable(marqueeSelection = true)` (ya da kendiliğinden):
+  - fareyle (dokunmayla ve kalemle değil) başlayan sürükleme bir çerçeve çizer; çerçevenin değdiği
+    satırlar seçilir, çerçeve daralınca seçimden çıkar; Ctrl basılıyken var olan seçime eklenir ya da
+    ondan çıkarılır, Shift ekler;
+  - çerçeve tablonun üst ya da alt kenarına gelince liste kendiliğinden kayar; çerçeve içerikle birlikte
+    kayar (başladığı satıra bağlı kalır);
+  - Esc sürüklemeyi bırakır ve seçimi sürükleme öncesine döndürür;
+  - sürüklenebilir satırlarla kural (kit karar verip belgelesin; dosya yöneticilerindeki alışkanlık):
+    seçili bir satırdan başlayan sürükleme seçileni taşır, seçili olmayan satırdan ya da boşluktan
+    başlayan sürükleme çerçeve çizer;
+  - çerçeve vurgu renginde ince çizgi ve yarı saydam dolgu; `onSelectionChange` her değişimde çağrılır;
+  - aynı davranış `DeskListRow` listeleri ve `Grid` için de düşünülebilir.
+- **Neden:** DeX'te ve tablette fareyle çalışırken dosya yöneticilerinden alışılan yol. Barış: "sol klik
+  ile mouse'u sürüklediğimde bir kare çıkıyor, o karenin içindekiler seçili oluyor ya, ondan olsun."
+- **Şimdilik:** fareyle seçim Ctrl+tık ve Shift+tık ile; çerçeve yok.
