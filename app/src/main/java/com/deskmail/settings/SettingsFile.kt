@@ -4,7 +4,10 @@ import com.deskmail.core.net.Security
 import com.deskmail.core.net.ServerAddress
 import com.deskmail.core.provider.AuthKind
 import com.deskmail.core.provider.MailSettings
+import com.deskmail.mail.MessageTemplate
 import com.deskmail.mail.PortableAccount
+import com.deskmail.mail.SavedSearch
+import com.deskmail.mail.SenderMarks
 import desktopkit.settings.DeskPreferences
 import desktopkit.theme.DensityPreference
 import desktopkit.theme.ThemeMode
@@ -16,8 +19,9 @@ import java.time.Instant
 
 /**
  * The app's settings in a file of their own, to take to another device ("Move settings"): the
- * accounts as [PortableAccount] has them, the app's own settings ([AppSettings.portable]) and the
- * look (theme, accent, density). Never a password or a token: the file has no place for one.
+ * accounts as [PortableAccount] has them, the app's own settings ([AppSettings.portable]), the
+ * look (theme, accent, density), and the user's own lists: the templates, the saved searches and
+ * what was said of senders. Never a password or a token: the file has no place for one.
  *
  * Of the kind [KIND], written as version [FORMAT]. A later version may add to it; what this one
  * does not know it passes over.
@@ -38,6 +42,9 @@ object SettingsFile {
         val accounts: List<PortableAccount>,
         val settings: Map<String, Any?> = emptyMap(),
         val look: Look? = null,
+        val templates: List<MessageTemplate> = emptyList(),
+        val searches: List<SavedSearch> = emptyList(),
+        val senders: Map<String, SenderMarks> = emptyMap(),
     )
 
     /** The kit's look, by name: what the other device does not know is passed over there. */
@@ -51,6 +58,9 @@ object SettingsFile {
             .put("accounts", JSONArray(contents.accounts.map { it.toJson() }))
             .put("settings", JSONObject(contents.settings))
         contents.look?.let { look -> root.put("look", JSONObject().put("theme", look.theme).put("accent", look.accent).put("density", look.density)) }
+        root.put("templates", JSONArray(contents.templates.map { JSONObject().put("name", it.name).put("body", it.body) }))
+        root.put("searches", JSONArray(contents.searches.map { JSONObject().put("name", it.name).put("query", it.query) }))
+        root.put("senders", JSONArray(contents.senders.map { (address, marks) -> JSONObject().put("address", address).put("vip", marks.vip).put("images", marks.images) }))
         return root.toString(2)
     }
 
@@ -66,7 +76,28 @@ object SettingsFile {
         val accounts = if (list == null) emptyList() else (0 until list.length()).mapNotNull { list.optJSONObject(it)?.toAccount() }
         val settings = root.optJSONObject("settings")?.let { values -> values.keys().asSequence().associateWith { values.opt(it) } }.orEmpty()
         val look = root.optJSONObject("look")?.let { Look(it.optString("theme"), it.optString("accent"), it.optString("density")) }
-        return Contents(accounts, settings, look)
+        // the ids are this device's to give: a template, a search is known by what it is
+        val templates = objects(root, "templates").mapNotNull { item ->
+            val name = item.optString("name").trim()
+            val body = item.optString("body")
+            if (name.isEmpty() || body.isBlank()) null else MessageTemplate(0, name, body)
+        }
+        val searches = objects(root, "searches").mapNotNull { item ->
+            val query = item.optString("query").trim()
+            if (query.isEmpty()) null else SavedSearch(0, item.optString("name").trim().ifEmpty { query }, query)
+        }
+        val senders = objects(root, "senders").mapNotNull { item ->
+            val address = item.optString("address").trim().lowercase()
+            val marks = SenderMarks(vip = item.optBoolean("vip"), images = item.optBoolean("images"))
+            if (address.isEmpty() || '@' !in address || marks == SenderMarks()) null else address to marks
+        }.toMap()
+        return Contents(accounts, settings, look, templates, searches, senders)
+    }
+
+    /** The objects of the list [name] in [root]; what is not an object is passed over. */
+    private fun objects(root: JSONObject, name: String): List<JSONObject> {
+        val list = root.optJSONArray(name) ?: return emptyList()
+        return (0 until list.length()).mapNotNull { list.optJSONObject(it) }
     }
 
     /** [input] read as a settings file, up to [MAX_BYTES]; null when it is no settings file, or a larger file. */

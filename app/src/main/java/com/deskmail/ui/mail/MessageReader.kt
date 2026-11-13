@@ -112,6 +112,9 @@ fun MessageReader(
     fetchingFile: Boolean = false,
     draft: Boolean = false,
     trailingActions: @Composable RowScope.() -> Unit = {},
+    onAlwaysShowImages: (() -> Unit)? = null,
+    vip: Boolean? = null,
+    onToggleVip: () -> Unit = {},
 ) {
     val colors = DeskTheme.colors
     val dimens = DeskTheme.dimens
@@ -125,6 +128,8 @@ fun MessageReader(
     val replyAllLabel = stringResource(R.string.action_reply_all)
     val forwardLabel = stringResource(R.string.action_forward)
     val editLabel = stringResource(R.string.action_edit_draft)
+    val vipLabel = stringResource(if (vip == true) R.string.action_vip_remove else R.string.action_vip_add)
+    val vipIcon = if (vip == true) MailIcons.VipFilled else MailIcons.Vip
     // what there is to write from here: on with the draft itself, or an answer to the message
     val answers = onWrite?.takeIf { !draft }
     val edit: (() -> Unit)? = onWrite?.takeIf { draft }?.let { write -> { write(DraftKind.Edit) } }
@@ -141,6 +146,7 @@ fun MessageReader(
                 answers?.let { write -> TopBarAction(MailIcons.ForwardMail, forwardLabel, { write(DraftKind.Forward) }) },
                 TopBarAction(unreadIcon, unreadLabel, onToggleUnread),
                 onMove?.let { TopBarAction(MailIcons.MoveTo, moveLabel, it) },
+                vip?.let { TopBarAction(vipIcon, vipLabel, onToggleVip) },
             ),
         )
     }
@@ -174,6 +180,7 @@ fun MessageReader(
                 DeskIconButton(DeskIcons.Delete, deleteLabel, onDelete)
                 if (onMove != null) DeskIconButton(MailIcons.MoveTo, moveLabel, onMove)
                 DeskIconButton(unreadIcon, unreadLabel, onToggleUnread)
+                if (vip != null) DeskIconButton(vipIcon, vipLabel, onToggleVip)
                 trailingActions()
             }
         }
@@ -191,6 +198,14 @@ fun MessageReader(
                         actionLabel = stringResource(R.string.reader_remote_show),
                         onAction = onShowRemoteImages,
                     )
+                    // the sender's pictures every time, without being asked again
+                    if (onAlwaysShowImages != null) {
+                        DeskButton(
+                            stringResource(R.string.reader_remote_always),
+                            onAlwaysShowImages,
+                            Modifier.padding(horizontal = dimens.pagePadding).padding(bottom = dimens.gapM),
+                        )
+                    }
                 }
                 // a view of its own for every message
                 key(message.id) { body(content, showImages, Modifier.fillMaxWidth()) }

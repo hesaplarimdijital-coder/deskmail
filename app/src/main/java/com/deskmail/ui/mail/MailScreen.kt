@@ -23,6 +23,7 @@ import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -48,11 +49,13 @@ import com.deskmail.ui.folderPathLabel
 import desktopkit.appResources
 import desktopkit.components.BannerTone
 import desktopkit.components.DeskButton
+import desktopkit.components.DeskDialog
 import desktopkit.components.DeskDragPayload
 import desktopkit.components.DeskIconButton
 import desktopkit.components.DeskIcons
 import desktopkit.components.DeskListRow
 import desktopkit.components.DeskProgressBar
+import desktopkit.components.DeskTextField
 import desktopkit.components.HorizontalSplitPane
 import desktopkit.components.InspectorPane
 import desktopkit.components.InspectorTab
@@ -126,6 +129,7 @@ fun MailScreen(
     readerUnderBars: Boolean,
     body: @Composable (MailContent.Ready, Boolean, Modifier) -> Unit,
     resumes: Int = 0,
+    onNotify: (String) -> Unit = {},
 ) {
     val sidebar = LocalNavKind.current == NavKind.Sidebar
     val compact = currentWidthClass() == WidthClass.Compact
@@ -238,6 +242,24 @@ fun MailScreen(
         else -> mail.accounts
     }.filter { it.state != AccountState.Ok }
 
+    // what is typed, kept as a folder of its own in the sidebar ("saved search")
+    var savingSearch by remember { mutableStateOf(false) }
+    val typedQuery = searching?.query
+    if (savingSearch && typedQuery != null) {
+        val savedNotice = stringResource(R.string.search_saved)
+        SaveSearchDialog(
+            query = typedQuery,
+            onDismiss = { savingSearch = false },
+            onSave = { name ->
+                savingSearch = false
+                screenScope.launch {
+                    mail.saveSearch(0, name, typedQuery)
+                    onNotify(savedNotice)
+                }
+            },
+        )
+    }
+
     // "Search the server too": for what is typed now; what an earlier search of the servers came to stays for its own query
     val serverKey = searching?.let { SearchQuery.key(it.query) }
     val searchServers: () -> Unit = {
@@ -258,7 +280,7 @@ fun MailScreen(
     val chips: @Composable () -> Unit = {
         Column {
             if (searching != null) SearchBox(ui)
-            if (serverKey != null && !noAccount) ServerSearchRow(ui.serverSearch?.takeIf { it.key == serverKey }, searchServers)
+            if (serverKey != null && !noAccount) ServerSearchRow(ui.serverSearch?.takeIf { it.key == serverKey }, searchServers, onSave = { savingSearch = true })
             if (mail.syncing) {
                 DeskProgressBar(
                     fraction = null,
@@ -310,6 +332,13 @@ fun MailScreen(
                 modifier = Modifier.padding(top = 48.dp),
                 description = stringResource(R.string.search_scope),
             )
+            // nobody is a VIP yet: how somebody becomes one
+            view == MailView.Vip && mail.senders.values.none { it.vip } -> MessageScreen(
+                title = stringResource(R.string.vip_none_title),
+                icon = MailIcons.Vip,
+                modifier = Modifier.padding(top = 48.dp),
+                description = stringResource(R.string.vip_none_text),
+            )
             else -> MessageScreen(
                 title = stringResource(if (filters.isEmpty()) R.string.list_empty_title else R.string.list_empty_filtered),
                 icon = MailIcons.Mail,
@@ -318,11 +347,13 @@ fun MailScreen(
         }
     }
     val reader: @Composable (MailMessage, (() -> Unit)?, @Composable () -> Unit) -> Unit = { message, onClose, trailing ->
+        // what the user said of its sender: a VIP, whose remote images are shown without being asked
+        val marks = mail.sender(message.fromAddress)
         MessageReader(
             message = message,
             // watched here, by the reader that shows it: a message that is being closed keeps its text while it leaves
             content = watchedContent(mail, message.id),
-            showImages = ui.showsImages(message.id),
+            showImages = ui.showsImages(message.id) || marks.images,
             onToggleStar = { mail.toggleStarred(message.id) },
             onToggleUnread = { mail.toggleUnread(message.id) },
             onWrite = onWrite?.let { write -> { kind -> write(kind, message) } },
@@ -331,6 +362,13 @@ fun MailScreen(
             onMove = if (mail.moveTargets(message).isNotEmpty()) ({ ui.moving = message }) else null,
             onClose = onClose,
             onShowRemoteImages = { ui.showImages(message.id) },
+            onAlwaysShowImages = if (message.fromAddress.isBlank()) null else ({
+                screenScope.launch { mail.markSender(message.fromAddress, marks.copy(images = true)) }
+            }),
+            vip = if (message.fromAddress.isBlank()) null else marks.vip,
+            onToggleVip = {
+                screenScope.launch { mail.markSender(message.fromAddress, marks.copy(vip = !marks.vip)) }
+            },
             onAttachment = files::handle,
             onRetry = { mail.retryContent(message.id) },
             barsPadding = bars,
@@ -626,7 +664,7 @@ private val BULK_BAR_HEIGHT = 58.dp
 
 /** "Search the server too", and what the last search of the servers for what is typed came to. */
 @Composable
-private fun ServerSearchRow(state: ServerSearchState?, onSearch: () -> Unit) {
+private fun ServerSearchRow(state: ServerSearchState?, onSearch: () -> Unit, onSave: () -> Unit) {
     val dimens = DeskTheme.dimens
     val running = state != null && state.result == null
     val result = state?.result
@@ -643,9 +681,29 @@ private fun ServerSearchRow(state: ServerSearchState?, onSearch: () -> Unit) {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         DeskButton(stringResource(R.string.search_server), onSearch, icon = DeskIcons.Search, enabled = !running)
+        DeskButton(stringResource(R.string.search_save), onSave, icon = MailIcons.SavedSearch)
         if (note != null) {
             Text(note, style = DeskTheme.type.labelSmall, color = DeskTheme.colors.textSecondary, modifier = Modifier.weight(1f).semantics { liveRegion = LiveRegionMode.Polite })
         }
+    }
+}
+
+/** What a search kept as a folder is to be called; what it looks for is what was typed. */
+@Composable
+private fun SaveSearchDialog(query: String, onDismiss: () -> Unit, onSave: (String) -> Unit) {
+    var name by remember { mutableStateOf(query.trim()) }
+    DeskDialog(
+        onDismiss = onDismiss,
+        title = stringResource(R.string.search_save_title),
+        actions = { DeskButton(stringResource(R.string.search_save_action), { onSave(name.trim()) }, primary = true, enabled = name.isNotBlank()) },
+    ) {
+        Text(stringResource(R.string.search_save_text, query.trim()), style = DeskTheme.type.body, color = DeskTheme.colors.textSecondary)
+        DeskTextField(
+            value = name,
+            onValueChange = { name = it },
+            modifier = Modifier.fillMaxWidth().testTag(MailTags.SAVE_SEARCH_NAME),
+            label = stringResource(R.string.search_save_name),
+        )
     }
 }
 
@@ -666,6 +724,7 @@ fun openMessage(mail: MailSource, ui: MailUiState, route: String, message: MailM
 /** Names the tests find the screen's two parts by. */
 object MailTags {
     const val LIST = "mail-list"
+    const val SAVE_SEARCH_NAME = "save-search-name"
     const val READER = "mail-reader"
     const val SELECTION = "mail-selection"
     const val SERVER_SEARCH = "mail-server-search"

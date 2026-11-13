@@ -19,10 +19,14 @@ import com.deskmail.core.net.Security
 import com.deskmail.core.net.ServerAddress
 import com.deskmail.core.provider.AuthKind
 import com.deskmail.core.provider.MailSettings
+import com.deskmail.mail.MessageTemplate
 import com.deskmail.mail.PortableAccount
+import com.deskmail.mail.SavedSearch
+import com.deskmail.mail.SenderMarks
 import com.deskmail.notify.NotifyGate
 import com.deskmail.settings.AppSettings
 import com.deskmail.settings.SettingsFile
+import com.deskmail.testComposer
 import com.deskmail.testMail
 import com.deskmail.testPrefs
 import com.deskmail.testSettings
@@ -231,9 +235,21 @@ class SettingsScreenTest {
         val prefs = testPrefs()
         val settings = testSettings()
         val accounts = FakeAccounts()
+        val mail = testMail()
+        val composer = testComposer(mail)
         var chosen = 0
-        compose.setContent { TestApp(testMail(), prefs, settings, startRoute = Routes.SETTINGS, accounts = accounts, onCheckChosen = { chosen++ }) }
-        val text = SettingsFile.write(SettingsFile.Contents(listOf(ayse), mapOf("check_minutes" to 60), SettingsFile.Look("Oled", prefs.accent.name, "Pointer")), Instant.EPOCH)
+        compose.setContent { TestApp(mail, prefs, settings, startRoute = Routes.SETTINGS, accounts = accounts, composer = composer, onCheckChosen = { chosen++ }) }
+        val text = SettingsFile.write(
+            SettingsFile.Contents(
+                accounts = listOf(ayse),
+                settings = mapOf("check_minutes" to 60),
+                look = SettingsFile.Look("Oled", prefs.accent.name, "Pointer"),
+                templates = listOf(MessageTemplate(0, "Teşekkür", "Çok teşekkürler.")),
+                searches = listOf(SavedSearch(0, "Faturalar", "fatura")),
+                senders = mapOf("bulten@sahaf.example" to SenderMarks(images = true)),
+            ),
+            Instant.EPOCH,
+        )
         val picked = Uri.parse("content://com.deskmail.test/from-elsewhere.json")
         shadowOf(compose.activity.contentResolver).registerInputStream(picked, ByteArrayInputStream(text.encodeToByteArray()))
 
@@ -248,6 +264,10 @@ class SettingsScreenTest {
         assertEquals(1, chosen)
         assertEquals(ThemeMode.Oled, prefs.themeMode)
         assertEquals(DensityPreference.Pointer, prefs.density)
+        // and the user's own lists
+        assertEquals(listOf("Teşekkür"), composer.templates.map { it.name })
+        assertEquals(listOf("fatura"), mail.savedSearches.map { it.query })
+        assertTrue(mail.sender("bulten@sahaf.example").images)
     }
 
     @Test

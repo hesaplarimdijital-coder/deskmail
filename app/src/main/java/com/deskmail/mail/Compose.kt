@@ -121,4 +121,15 @@ interface MailComposer {
 
     /** The addresses the user has had mail with that begin like [typed], the most recent first. */
     fun suggest(typed: String, limit: Int = 5): List<MailAddress>
+
+    /** The texts the user keeps to put into a message, in the user's order. Snapshot state. */
+    val templates: List<MessageTemplate>
+
+    /** Keeps a text: a new one for [id] 0, else that one changed. Its id. */
+    suspend fun saveTemplate(id: Long, name: String, body: String): Long
+
+    suspend fun removeTemplate(id: Long)
 }
+
+/** A text the user keeps to put into a message ("quick text"): [name] is what the menu offers it as. */
+data class MessageTemplate(val id: Long, val name: String, val body: String)

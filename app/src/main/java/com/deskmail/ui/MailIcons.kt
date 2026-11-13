@@ -134,6 +134,45 @@ object MailIcons {
         )
     }
 
+    /** A page with its corner turned and two lines: a kept text to put into a message. */
+    val Template: ImageVector by lazy {
+        DeskIcons.build(
+            "Template",
+            DeskIcons.stroke("M4.5 2.5h5l3 3v7a1 1 0 0 1-1 1h-7a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1z"),
+            DeskIcons.stroke("M9.5 2.5v3h3"),
+            DeskIcons.stroke("M6 8.5h4M6 11h2.5"),
+        )
+    }
+
+    /** A crown: the senders the user called VIPs. */
+    val Vip: ImageVector by lazy {
+        DeskIcons.build(
+            "Vip",
+            DeskIcons.stroke("M3 12.5h10"),
+            DeskIcons.stroke("M3.2 10.5 2.5 4.8l3.3 2.4L8 3.5l2.2 3.7 3.3-2.4-.7 5.7z"),
+        )
+    }
+
+    /** A crown filled: a sender who is a VIP. */
+    val VipFilled: ImageVector by lazy {
+        DeskIcons.build(
+            "VipFilled",
+            DeskIcons.stroke("M3 12.5h10"),
+            DeskIcons.fill("M3.2 10.5 2.5 4.8l3.3 2.4L8 3.5l2.2 3.7 3.3-2.4-.7 5.7z"),
+            DeskIcons.stroke("M3.2 10.5 2.5 4.8l3.3 2.4L8 3.5l2.2 3.7 3.3-2.4-.7 5.7z"),
+        )
+    }
+
+    /** A magnifier over a line: a search kept as a folder. */
+    val SavedSearch: ImageVector by lazy {
+        DeskIcons.build(
+            "SavedSearch",
+            DeskIcons.stroke("M7 2.8a3.7 3.7 0 1 0 0 7.4 3.7 3.7 0 0 0 0-7.4z"),
+            DeskIcons.stroke("M9.7 9.2l2.3 2.3"),
+            DeskIcons.stroke("M3 13.5h10"),
+        )
+    }
+
     /** An arrow into a tray: take something in from a file. */
     val Import: ImageVector by lazy {
         DeskIcons.build(

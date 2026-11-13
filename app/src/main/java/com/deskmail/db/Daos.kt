@@ -143,6 +143,15 @@ private const val STAYING = "NOT EXISTS (SELECT 1 FROM pending_op WHERE pending_
 /** A message no search of the server found lately ([SearchHitEntity]): the sync may remove it. */
 private const val NOT_FOUND = "NOT EXISTS (SELECT 1 FROM search_hit WHERE search_hit.messageId = message.id)"
 
+/**
+ * The message's sender is a VIP: its first sender's address, between the tab after the name and
+ * the end of the line, is one of the VIPs' (kept in lower case). Compared as text, not as a pattern:
+ * an address may have a "_" in it.
+ */
+private const val FROM_VIP =
+    "EXISTS (SELECT 1 FROM sender WHERE sender.vip = 1 AND " +
+        "instr(LOWER(substr(message.fromList, 1, instr(message.fromList || char(10), char(10)) - 1)) || char(10), char(9) || sender.address || char(10)) > 0)"
+
 /** A message's UID and marks, for comparing with the server's. */
 data class FlagRow(
     val uid: Long,
@@ -184,6 +193,16 @@ abstract class MessageDao {
             "WHERE message.flagged = 1 AND folder.role NOT IN ('Trash', 'All') AND $STAYING ORDER BY message.date DESC, message.id DESC",
     )
     abstract fun observeStarred(): Flow<List<MessageEntity>>
+
+    /**
+     * The mail of the VIPs in every account's inbox: messages whose sender (the first of [MessageEntity.fromList],
+     * "name<TAB>address" on a line) is a sender the user called a VIP.
+     */
+    @Query(
+        "SELECT message.* FROM message JOIN folder ON folder.id = message.folderId " +
+            "WHERE folder.role = 'Inbox' AND $STAYING AND $FROM_VIP ORDER BY message.date DESC, message.id DESC",
+    )
+    abstract fun observeVip(): Flow<List<MessageEntity>>
 
     /** The newest messages of every account, each once: "All Mail" holds the same messages once more. */
     @Query(
@@ -803,4 +822,65 @@ abstract class OutboxDao {
 
     @Query("DELETE FROM outbox_file WHERE id = :id")
     abstract suspend fun removeFile(id: Long)
+}
+
+/** What the user keeps for himself: texts to put into a message, searches kept as folders, and what was said of senders. */
+@Dao
+abstract class ListDao {
+    @Query("SELECT * FROM template ORDER BY position, id")
+    abstract fun observeTemplates(): Flow<List<TemplateEntity>>
+
+    @Query("SELECT * FROM template ORDER BY position, id")
+    abstract suspend fun templates(): List<TemplateEntity>
+
+    @Query("SELECT COALESCE(MAX(position), -1) + 1 FROM template")
+    abstract suspend fun nextTemplatePosition(): Int
+
+    @Insert
+    abstract suspend fun insertTemplate(template: TemplateEntity): Long
+
+    @Query("UPDATE template SET name = :name, body = :body WHERE id = :id")
+    abstract suspend fun updateTemplate(id: Long, name: String, body: String): Int
+
+    @Query("DELETE FROM template WHERE id = :id")
+    abstract suspend fun deleteTemplate(id: Long)
+
+    @Query("SELECT * FROM saved_search ORDER BY position, id")
+    abstract fun observeSearches(): Flow<List<SavedSearchEntity>>
+
+    @Query("SELECT * FROM saved_search ORDER BY position, id")
+    abstract suspend fun searches(): List<SavedSearchEntity>
+
+    @Query("SELECT COALESCE(MAX(position), -1) + 1 FROM saved_search")
+    abstract suspend fun nextSearchPosition(): Int
+
+    @Insert
+    abstract suspend fun insertSearch(search: SavedSearchEntity): Long
+
+    @Query("UPDATE saved_search SET name = :name, `query` = :query WHERE id = :id")
+    abstract suspend fun updateSearch(id: Long, name: String, query: String): Int
+
+    @Query("DELETE FROM saved_search WHERE id = :id")
+    abstract suspend fun deleteSearch(id: Long)
+
+    @Query("SELECT * FROM sender ORDER BY address")
+    abstract fun observeSenders(): Flow<List<SenderEntity>>
+
+    @Query("SELECT * FROM sender ORDER BY address")
+    abstract suspend fun senders(): List<SenderEntity>
+
+    @Query("SELECT * FROM sender WHERE address = :address")
+    abstract suspend fun sender(address: String): SenderEntity?
+
+    @Upsert
+    abstract suspend fun saveSender(sender: SenderEntity)
+
+    @Query("DELETE FROM sender WHERE address = :address")
+    abstract suspend fun deleteSender(address: String)
+
+    /** Keeps what was said of the sender [address] (in lower case); one with nothing said of him any more is not kept. */
+    @Transaction
+    open suspend fun setSender(address: String, vip: Boolean, images: Boolean) {
+        if (!vip && !images) deleteSender(address) else saveSender(SenderEntity(address, vip, images))
+    }
 }

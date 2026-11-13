@@ -5,7 +5,10 @@ import com.deskmail.core.net.Security
 import com.deskmail.core.net.ServerAddress
 import com.deskmail.core.provider.AuthKind
 import com.deskmail.core.provider.MailSettings
+import com.deskmail.mail.MessageTemplate
 import com.deskmail.mail.PortableAccount
+import com.deskmail.mail.SavedSearch
+import com.deskmail.mail.SenderMarks
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -42,6 +45,10 @@ class SettingsFileTest {
         accounts = listOf(gmail, work),
         settings = mapOf("undo_send_seconds" to 20, "experiment_glass" to false, "experiment_web_layer" to "Software"),
         look = SettingsFile.Look("Oled", "Blue", "Pointer"),
+        // the ids are each device's own: they do not travel
+        templates = listOf(MessageTemplate(0, "Teşekkür", "Çok teşekkürler,\nDeniz")),
+        searches = listOf(SavedSearch(0, "Faturalar", "konu:fatura")),
+        senders = mapOf("mehmet.demir@isyeri.example" to SenderMarks(vip = true), "bulten@sahaf.example" to SenderMarks(images = true)),
     )
 
     @Test
