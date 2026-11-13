@@ -425,8 +425,8 @@ class MailSync(
                     val have = store.uids(folder.id).toHashSet()
                     val missing = matched.filter { it !in have }.sortedDescending().take(left.coerceAtLeast(0))
                     if (missing.isNotEmpty()) {
-                        // marked for deletion and not yet removed: as good as gone
-                        val headers = box.headers(missing).filter { !it.flags.deleted }
+                        // marked for deletion and not yet removed: as good as gone; and the list of snoozes is no mail to show
+                        val headers = box.headers(missing).filter { !it.flags.deleted && !SnoozeList.isList(it.globalId) }
                         store.insert(folder.id, headers)
                         added += headers.size
                         left -= headers.size
@@ -485,8 +485,8 @@ class MailSync(
         /** How many texts the backlog fetches before it looks again at what is waiting. */
         const val BACKLOG_BODIES = 50
 
-        /** The folders a search of the server does not look through. */
-        private val UNSEARCHED = setOf(FolderRole.Drafts, FolderRole.Trash, FolderRole.Junk)
+        /** The folders a search of the server does not look through; the snoozed lie apart, with their list, until they come back. */
+        private val UNSEARCHED = setOf(FolderRole.Drafts, FolderRole.Trash, FolderRole.Junk, FolderRole.Snoozed)
 
         /** Of what a search of the server finds in a folder, the newest so many are kept in mind. */
         private const val MATCHES_KEPT = 500

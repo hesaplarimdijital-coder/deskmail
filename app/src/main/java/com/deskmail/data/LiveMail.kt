@@ -484,7 +484,10 @@ class LiveMail(
         snoozedBefore.remove(undo)?.let { rows ->
             for ((key, was) in rows) {
                 if (was != null) {
-                    db.snoozes().put(was.copy(changedAt = now()))
+                    // One that stood on the server's list is put onto it again by this device: the
+                    // list may have been written without it meanwhile (taken back after the notice).
+                    val state = if (was.state == SnoozeEntity.LISTED) SnoozeEntity.ADDED else was.state
+                    db.snoozes().put(was.copy(state = state, changedAt = now()))
                 } else {
                     db.snoozes().of(key.first, key.second)?.let { db.snoozes().delete(it.id) }
                 }

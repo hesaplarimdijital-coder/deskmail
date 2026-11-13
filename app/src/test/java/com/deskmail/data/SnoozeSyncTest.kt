@@ -174,6 +174,55 @@ class SnoozeSyncTest {
         assertTrue(phone.db.snoozes().ofAccount(phone.account).isEmpty())
     }
 
+    /**
+     * Brought back now, the notice gone and the server told, then taken back after all (Ctrl+Z): the
+     * message is snoozed again, and on the list again at its time, though the list was written
+     * without it meanwhile.
+     */
+    @Test
+    fun anUnsnoozeTakenBackLateGoesOntoTheListAgain() = runBlocking {
+        server.deliver("Kasım faturası", "Ödenecek tutar: 893,52 TL", start.minusSeconds(3600))
+        phone.signIn()
+        val wakeAt = start.plusSeconds(24 * 3600)
+        phone.mail.commit(phone.mail.snooze(listOf(phone.message("Kasım faturası")), wakeAt)!!)
+        eventually("moved on the server") { server.uids(SnoozeList.FOLDER).size == 1 }
+        phone.snoozes.run(phone.account)
+        val snoozed = phone.db.folders().ofAccount(phone.account).first { it.path == SnoozeList.FOLDER }
+        assertEquals(MailSync.Outcome.Done, phone.sync.folder(snoozed.id))
+        val there = withTimeout(15_000) { phone.mail.observe(MailView.Snoozed).first { it.isNotEmpty() } }.single()
+
+        val back = phone.mail.unsnooze(listOf(there.id))!!
+        phone.mail.commit(back)
+        eventually("home again") { server.uids("INBOX").size == 1 }
+        phone.snoozes.run(phone.account)
+        assertTrue(serverList().isEmpty())
+
+        assertEquals(1, phone.mail.undo(back))
+        eventually("snoozed again on the server") { server.uids("INBOX").isEmpty() && server.uids(SnoozeList.FOLDER).size == 2 }
+        phone.snoozes.run(phone.account)
+        assertEquals(mapOf("<test-1@example.org>" to wakeAt), serverList())
+        assertEquals(SnoozeEntity.LISTED, phone.db.snoozes().ofAccount(phone.account).single().state)
+    }
+
+    /** A search of the server for what the list names does not bring the list onto the device. */
+    @Test
+    fun aSearchOfTheServerLeavesTheListAlone() = runBlocking {
+        server.deliver("Kasım faturası", "Ödenecek tutar: 893,52 TL", start.minusSeconds(3600))
+        phone.signIn()
+        phone.mail.commit(phone.mail.snooze(listOf(phone.message("Kasım faturası")), start.plusSeconds(3600))!!)
+        eventually("moved on the server") { server.uids(SnoozeList.FOLDER).size == 1 }
+        phone.snoozes.run(phone.account)
+        assertEquals(1, serverList().size)
+
+        phone.mail.searchServers("ertelemeleri")
+        phone.mail.searchServers("faturası")
+
+        assertTrue(phone.mail.observe(MailView.Search("ertelemeleri")).first().isEmpty())
+        for (folder in phone.db.folders().ofAccount(phone.account)) {
+            assertTrue(folder.path, phone.db.messages().observeFolder(folder.id).first().none { SnoozeList.isList(it.globalId) })
+        }
+    }
+
     private fun <T : Any> eventuallyValue(read: () -> T?): T {
         var value: T? = null
         eventually("it is there") { read().also { value = it } != null }

@@ -86,7 +86,8 @@ class SnoozeSync(
             val inbox = folders.firstOrNull { folderRole(it.role) == FolderRole.Inbox }?.path ?: INBOX
             for (snooze in standing.values.filter { it.wakeAt.toEpochMilli() <= time }) {
                 val home = folders.firstOrNull { it.path == snooze.folder && it.selectable && folderRole(it.role) != FolderRole.Snoozed }
-                if (SnoozeWork.wake(remote, folder.path, snooze.messageId, home?.path ?: inbox)) woke++
+                // where the look found it: what has left the folder since is brought back by whoever moved it
+                if (SnoozeWork.wake(remote, folder.path, listed.uids[snooze.messageId].orEmpty(), home?.path ?: inbox)) woke++
                 standing.remove(snooze.messageId)
             }
             val list = standing.values.toList()

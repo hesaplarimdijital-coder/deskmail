@@ -62,7 +62,8 @@ object SnoozeList {
             }
             val messageId = fields[1].trim()
             val folder = fields[2].trim()
-            if (!messageId.startsWith("<") || !messageId.endsWith(">") || folder.isEmpty() || !seen.add(messageId)) return@mapNotNull null
+            // whatever the message's Message-ID is, as it was written ("<a@b>", or with a comment after it)
+            if (messageId.isEmpty() || folder.isEmpty() || !seen.add(messageId)) return@mapNotNull null
             Snooze(messageId, wakeAt, folder, fields.getOrNull(3)?.trim().orEmpty())
         }
     }
