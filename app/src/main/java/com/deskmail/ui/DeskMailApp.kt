@@ -537,7 +537,7 @@ fun DeskMailApp(
                         mail = mail,
                         ui = ui,
                         prefs = prefs,
-                        onCompose = { perform(Commands.NEW_MESSAGE) },
+                        onCompose = if (compose == null) null else ({ perform(Commands.NEW_MESSAGE) }),
                         onWrite = compose?.let { writer -> { kind, message -> writer.begin(route, kind, message.id) } },
                         actions = actions,
                         files = files,

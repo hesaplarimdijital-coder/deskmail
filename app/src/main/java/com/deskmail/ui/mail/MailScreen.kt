@@ -83,6 +83,7 @@ import desktopkit.shell.CompactTopBar
 import desktopkit.shell.DetailTransition
 import desktopkit.shell.LocalNavKind
 import desktopkit.shell.NavKind
+import desktopkit.shell.ShellPrimaryAction
 import desktopkit.shell.TopBarAction
 import desktopkit.shell.WidthClass
 import desktopkit.shell.currentWidthClass
@@ -110,7 +111,8 @@ import kotlinx.coroutines.launch
  * what is found, and what is found is listed, opened and acted on like any other mail.
  *
  * @param title the view's name, for the header of a large window.
- * @param onCompose "New message"; the phone shows it as the accent icon of the top bar.
+ * @param onCompose "New message": the screen's main action, which the shell shows where each layout keeps
+ *   it (a phone's floating button, the top of the rail and of the sidebar); null where nothing can be written.
  * @param onWrite begins a reply to a message, or sends it on; null where nothing can be written.
  * @param actions archives, moves and deletes messages, and says what came of it.
  * @param files opens, saves and shares the files of messages.
@@ -127,7 +129,7 @@ fun MailScreen(
     mail: MailSource,
     ui: MailUiState,
     prefs: DeskPreferences,
-    onCompose: () -> Unit,
+    onCompose: (() -> Unit)?,
     onWrite: ((DraftKind, MailMessage) -> Unit)?,
     actions: MailActions,
     files: AttachmentHandler,
@@ -262,6 +264,13 @@ fun MailScreen(
     // down: asked for from inside the BoxWithConstraints below, the shell does not notice and pads
     // the screen as well, so everything stands a bar's height too low (docs/KIT-ISTEKLERI.md, 12).
     val bars = rememberShellContentPadding()
+    // "New message": a phone's floating button (not over an open message or a selection's bar), an
+    // accent button atop the rail and the sidebar (desktop-kit 2.8.0; docs/KIT-ISTEKLERI.md, 5).
+    // Not before there is an account to write from.
+    val phone = LocalNavKind.current == NavKind.BottomBar
+    if (onCompose != null && mail.accounts.isNotEmpty() && !(phone && (opened != null || several))) {
+        ShellPrimaryAction(composeLabel, MailIcons.Compose, onCompose)
+    }
 
     // In front (again), or with other accounts than before: what the screen shows may be out of date.
     val accountIds = mail.accounts.map { it.id }
@@ -457,13 +466,10 @@ fun MailScreen(
     // The rows as a phone, a tablet held upright and a window beside a rail list them: under the
     // chips, which scroll away with them. They are what the keyboard steps through there (J, K).
     val rows: @Composable () -> Unit = {
-        // A phone's top bar: the view's name, "New message" and "Sync". A folder opened from the Folders
-        // screen is a page of it, and the kit gives the bar its Back button.
+        // A phone's top bar: the view's name and "Sync". A folder opened from the Folders screen is a page
+        // of it, and the kit gives the bar its Back button.
         CompactTopBar(
-            actions = listOf(
-                TopBarAction(MailIcons.Compose, composeLabel, onCompose, primary = true),
-                TopBarAction(MailIcons.Refresh, refreshLabel, refresh),
-            ),
+            actions = listOf(TopBarAction(MailIcons.Refresh, refreshLabel, refresh)),
             // the search screen has its own field; the bar's magnifier would open the palette beside it
             showSearch = searching == null,
         )

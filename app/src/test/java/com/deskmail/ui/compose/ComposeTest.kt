@@ -23,7 +23,9 @@ import com.deskmail.demo.DemoMail
 import com.deskmail.mail.Draft
 import com.deskmail.mail.DraftSeed
 import com.deskmail.mail.DraftState
+import com.deskmail.newMessageButton
 import com.deskmail.noMail
+import com.deskmail.pressNewMessage
 import com.deskmail.testComposer
 import com.deskmail.testMail
 import com.deskmail.testPrefs
@@ -79,7 +81,7 @@ class ComposeTest {
 
     /** Begins a message from the list and writes it. */
     private fun write(to: String = "ayse.yilmaz@posta.example", subject: String = "Cumartesi", body: String = "Olur, geliyorum.") {
-        press("Yeni ileti")
+        compose.pressNewMessage()
         type(ComposeTags.TO, to)
         type(ComposeTags.SUBJECT, subject)
         type(ComposeTags.BODY, body)
@@ -157,7 +159,7 @@ class ComposeTest {
     @Test
     fun sendSaysWhatIsWrongWithWhoItGoesTo() {
         launch()
-        press("Yeni ileti")
+        compose.pressNewMessage()
         type(ComposeTags.SUBJECT, "Alıcısız")
 
         press("Gönder")
@@ -189,13 +191,13 @@ class ComposeTest {
         assertTrue(kept.id in composer.keptOnTheWayOut)
         compose.onNodeWithText("Taslak Giden kutusu'nda duruyor.").assertIsDisplayed()
         // the list is back
-        compose.onNodeWithContentDescription("Yeni ileti").assertExists()
+        compose.onNode(newMessageButton()).assertExists()
     }
 
     @Test
     fun aMessageThatWasBegunAndLeftEmptyIsNotKept() {
         launch()
-        press("Yeni ileti")
+        compose.pressNewMessage()
         assertNotNull(ui.writing)
         assertEquals(1, composer.outbox.size)
 
@@ -472,7 +474,7 @@ class ComposeTest {
     @Test
     fun recipientsCanBeTakenFromTheContacts() {
         launch()
-        press("Yeni ileti")
+        compose.pressNewMessage()
         compose.onNodeWithContentDescription("Rehberden ekle").assertExists()
     }
 
