@@ -31,6 +31,9 @@ import kotlinx.coroutines.Dispatchers
         OutboxFileEntity::class,
         DraftRemovalEntity::class,
         SearchHitEntity::class,
+        TemplateEntity::class,
+        SavedSearchEntity::class,
+        SenderEntity::class,
     ],
     version = 4,
     exportSchema = true,
@@ -45,6 +48,9 @@ abstract class DeskMailDatabase : RoomDatabase() {
     abstract fun pending(): PendingDao
 
     abstract fun outbox(): OutboxDao
+
+    /** What the user keeps for himself: texts, searches, and what he said of senders. */
+    abstract fun lists(): ListDao
 
     companion object {
         /** The database's file among the app's databases. */
@@ -93,6 +99,8 @@ abstract class DeskMailDatabase : RoomDatabase() {
          * 0.1.0-beta.1: drafts are kept on the server as well. A draft knows how far its copy there
          * is behind it, and the copy of a message that was sent or thrown away is noted until the
          * server was told to remove it. What a search of the server found is remembered for a while.
+         * The user's own lists: texts to put into a message, searches kept as folders, and what was
+         * said of senders (VIPs, and whose remote images are shown).
          */
         val MIGRATION_3_4: Migration = object : Migration(3, 4) {
             override suspend fun migrate(connection: SQLiteConnection) {
@@ -111,6 +119,18 @@ abstract class DeskMailDatabase : RoomDatabase() {
                 )
                 connection.runSql("CREATE INDEX IF NOT EXISTS `index_search_hit_messageId` ON `search_hit` (`messageId`)")
                 connection.runSql("CREATE UNIQUE INDEX IF NOT EXISTS `index_search_hit_query_messageId` ON `search_hit` (`query`, `messageId`)")
+                connection.runSql(
+                    "CREATE TABLE IF NOT EXISTS `template` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, " +
+                        "`body` TEXT NOT NULL, `position` INTEGER NOT NULL)",
+                )
+                connection.runSql(
+                    "CREATE TABLE IF NOT EXISTS `saved_search` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, " +
+                        "`query` TEXT NOT NULL, `position` INTEGER NOT NULL)",
+                )
+                connection.runSql(
+                    "CREATE TABLE IF NOT EXISTS `sender` (`address` TEXT NOT NULL, `vip` INTEGER NOT NULL, `images` INTEGER NOT NULL, " +
+                        "PRIMARY KEY(`address`))",
+                )
             }
         }
 

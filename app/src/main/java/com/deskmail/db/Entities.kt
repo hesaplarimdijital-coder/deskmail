@@ -363,3 +363,33 @@ data class MessageFts(
     val people: String,
     val body: String,
 )
+
+/** A text the user keeps to put into a message ("quick text"), in the user's order. */
+@Entity(tableName = "template")
+data class TemplateEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val name: String,
+    val body: String,
+    val position: Int,
+)
+
+/** A search the user keeps as a folder of its own in the sidebar ([query] as it was typed), in the user's order. */
+@Entity(tableName = "saved_search")
+data class SavedSearchEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val name: String,
+    val query: String,
+    val position: Int,
+)
+
+/**
+ * What the user said of a sender, by [address] in lower case: a VIP ([vip]), whose mail has a folder
+ * of its own; one whose messages show their remote images without being asked ([images]). A
+ * sender with neither is not kept.
+ */
+@Entity(tableName = "sender")
+data class SenderEntity(
+    @PrimaryKey val address: String,
+    val vip: Boolean,
+    val images: Boolean,
+)

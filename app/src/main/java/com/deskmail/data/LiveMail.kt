@@ -13,6 +13,7 @@ import com.deskmail.core.text.SearchTerm
 import com.deskmail.db.DeskMailDatabase
 import com.deskmail.db.FolderEntity
 import com.deskmail.db.MessageEntity
+import com.deskmail.db.SavedSearchEntity
 import com.deskmail.mail.FetchedFile
 import com.deskmail.mail.MailAccount
 import com.deskmail.mail.MailAttachment
@@ -22,16 +23,20 @@ import com.deskmail.mail.MailMessage
 import com.deskmail.mail.MailSource
 import com.deskmail.mail.MailUndo
 import com.deskmail.mail.MailView
+import com.deskmail.mail.SavedSearch
+import com.deskmail.mail.SenderMarks
 import com.deskmail.mail.ServerSearch
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.flowOn
@@ -88,6 +93,12 @@ class LiveMail(
     override var syncing: Boolean by mutableStateOf(false)
         private set
 
+    override var savedSearches: List<SavedSearch> by mutableStateOf(emptyList())
+        private set
+
+    override var senders: Map<String, SenderMarks> by mutableStateOf(emptyMap())
+        private set
+
     /** The folders as they are stored: their paths and whose they are, for asking the sync. */
     @Volatile
     private var stored: List<FolderEntity> = emptyList()
@@ -127,20 +138,30 @@ class LiveMail(
         }
         scope.launch { shown(db.messages().observeNewest(RECENT)).collect { recent = it } }
         scope.launch { sync.syncing.collect { syncing = it.isNotEmpty() } }
+        scope.launch { db.lists().observeSearches().collect { rows -> savedSearches = rows.map { SavedSearch(it.id, it.name, it.query) } } }
+        scope.launch { db.lists().observeSenders().collect { rows -> senders = rows.associate { it.address to SenderMarks(it.vip, it.images) } } }
         // what an earlier run did and could not tell its server any more
         scope.launch { db.pending().accounts().forEach { tellSoon(it) } }
         scope.launch(Dispatchers.IO) { forgetOldFiles() }
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     override fun observe(view: MailView): Flow<List<MailMessage>> {
         val messages = db.messages()
         val rows = when (view) {
             MailView.Inbox -> messages.observeInboxes()
             MailView.Unread -> messages.observeUnread()
             MailView.Starred -> messages.observeStarred()
+            MailView.Vip -> messages.observeVip()
             is MailView.Folder -> messages.observeFolder(view.id)
             // what is typed changes with every letter: nothing of it is worth keeping for the next time
             is MailView.Search -> return found(view.query)
+            // the search as it now stands: changed, the folder follows
+            is MailView.Saved -> return db.lists().observeSearches()
+                .map { rows -> rows.firstOrNull { it.id == view.id }?.query.orEmpty() }
+                .distinctUntilChanged()
+                .flatMapLatest { query -> found(query) }
+                .onEach { keep(view, it) }
         }
         return shown(rows).onEach { keep(view, it) }
     }
@@ -167,6 +188,22 @@ class LiveMail(
         val lists = if (term.field == SearchField.From) listOf(row.fromList) else listOf(row.toList, row.ccList)
         val people = lists.flatMap { MailAddress.decode(it) }.joinToString(" ") { it.name + " " + it.address }
         return SearchQuery.matches(term.words, people)
+    }
+
+    override suspend fun saveSearch(id: Long, name: String, query: String): Long {
+        val kept = name.replace(CONTROLS, " ").trim().take(MAX_NAME).ifBlank { query.trim().take(MAX_NAME) }
+        val typed = query.replace(CONTROLS, " ").trim().take(MAX_QUERY)
+        val lists = db.lists()
+        if (id != 0L && lists.updateSearch(id, kept, typed) > 0) return id
+        return lists.insertSearch(SavedSearchEntity(name = kept, query = typed, position = lists.nextSearchPosition()))
+    }
+
+    override suspend fun removeSearch(id: Long) = db.lists().deleteSearch(id)
+
+    override suspend fun markSender(address: String, marks: SenderMarks) {
+        val key = address.trim().lowercase()
+        if (key.isEmpty()) return
+        db.lists().setSender(key, marks.vip, marks.images)
     }
 
     override suspend fun searchServers(query: String): ServerSearch? {
@@ -463,6 +500,13 @@ class LiveMail(
 
         /** How long what a search of the servers found is kept on the device, whatever the sync keeps. */
         const val HITS_KEPT_MS = 24 * 60 * 60 * 1000L
+
+        /** A saved search's name is one line of the sidebar; what it looks for, one line of the search field. */
+        const val MAX_NAME = 80
+        const val MAX_QUERY = 200
+
+        /** Line breaks, tabs and the like, however many in a row. */
+        private val CONTROLS = Regex("\\p{Cntrl}+")
 
         /** A list is handed to its screen at most once in this long. */
         const val PACE_MS = 250L
