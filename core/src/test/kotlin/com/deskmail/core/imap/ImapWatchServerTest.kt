@@ -63,6 +63,26 @@ class ImapWatchServerTest {
 
     private fun told(): Boolean = news.tryAcquire(WAIT_SECONDS, TimeUnit.SECONDS)
 
+    /**
+     * Has mail come until whoever waits is told of it; the wait is on from then.
+     *
+     * One message may not be enough: this server tells of mail that comes while it is setting a
+     * wait up only when that wait ends. (A real server says so at once; and the app looks at an
+     * inbox whenever it begins to wait on it.) The next message is told of with it.
+     */
+    private fun mailComesAndIsToldOf() {
+        repeat(TRIES) { n ->
+            server.deliver("newsletter", monday.plusSeconds(n.toLong()))
+            if (news.tryAcquire(1, TimeUnit.SECONDS)) {
+                // whatever else was said of these messages has been said by now
+                Thread.sleep(100)
+                news.drainPermits()
+                return
+            }
+        }
+        fail("mail that came was not told of")
+    }
+
     private fun eventually(what: String, check: () -> Boolean) {
         val until = System.nanoTime() + TimeUnit.SECONDS.toNanos(WAIT_SECONDS)
         while (System.nanoTime() < until) {
@@ -78,9 +98,7 @@ class ImapWatchServerTest {
         try {
             Waiter(watch)
 
-            server.deliver("plan", monday)
-
-            assertTrue("the new message was told of", told())
+            mailComesAndIsToldOf()
         } finally {
             watch.close()
         }
@@ -97,10 +115,7 @@ class ImapWatchServerTest {
         val watch = watch()
         try {
             Waiter(watch)
-            // the wait is on once news of it comes
-            server.deliver("breakfast", monday.plusSeconds(60))
-            assertTrue(told())
-            news.drainPermits()
+            mailComesAndIsToldOf()
 
             server.expunge(uid)
 
@@ -115,9 +130,7 @@ class ImapWatchServerTest {
         val watch = watch()
         try {
             val waiter = Waiter(watch)
-            server.deliver("plan", monday)
-            assertTrue(told())
-            news.drainPermits()
+            mailComesAndIsToldOf()
 
             // what the app does every so often, before the server ends a wait that was left alone
             watch.refresh()
@@ -126,8 +139,7 @@ class ImapWatchServerTest {
             eventually("and once more") { waiter.rounds.get() >= 2 }
             assertFalse(waiter.ended.isDone)
 
-            server.deliver("breakfast", monday.plusSeconds(60))
-            assertTrue("mail is still told of", told())
+            mailComesAndIsToldOf()
         } finally {
             watch.close()
         }
@@ -137,8 +149,7 @@ class ImapWatchServerTest {
     fun closingEndsTheWait() {
         val watch = watch()
         val waiter = Waiter(watch)
-        server.deliver("plan", monday)
-        assertTrue(told())
+        mailComesAndIsToldOf()
 
         watch.close()
 
@@ -159,8 +170,7 @@ class ImapWatchServerTest {
         val watch = watch()
         try {
             val waiter = Waiter(watch)
-            server.deliver("plan", monday)
-            assertTrue(told())
+            mailComesAndIsToldOf()
 
             server.stop()
 
@@ -173,5 +183,6 @@ class ImapWatchServerTest {
 
     private companion object {
         const val WAIT_SECONDS = 20L
+        const val TRIES = 10
     }
 }
