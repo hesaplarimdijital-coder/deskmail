@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.watch.MailWatchTest" tests="12" skipped="0" failures="0" errors="0" timestamp="2026-11-13T09:04:00.261Z" hostname="runnervmccnms" time="2.188">
+  <properties/>
+  <testcase name="aRefusedSignInEndsTheWatchingUntilTheAccountIsReconnected" classname="com.deskmail.watch.MailWatchTest" time="0.495"/>
+  <testcase name="aServerThatNoLongerAnswersGetsANewLineAtOnce" classname="com.deskmail.watch.MailWatchTest" time="0.101"/>
+  <testcase name="aLineThatIsLostIsMadeAnewAfterAPause" classname="com.deskmail.watch.MailWatchTest" time="0.098"/>
+  <testcase name="aChangeOfNetworkMakesTheLinesAnewAtOnce" classname="com.deskmail.watch.MailWatchTest" time="0.075"/>
+  <testcase name="newsIsOneMoreSyncAndKeepsTheDeviceAwakeFromTheMomentItComes" classname="com.deskmail.watch.MailWatchTest" time="0.054"/>
+  <testcase name="aWaitIsBegunAnewWithoutLookingAtTheMailAgain" classname="com.deskmail.watch.MailWatchTest" time="0.102"/>
+  <testcase name="theWatchingFollowsTheAccounts" classname="com.deskmail.watch.MailWatchTest" time="0.078"/>
+  <testcase name="aLineThatCannotBeMadeIsTriedAgainWithGrowingPauses" classname="com.deskmail.watch.MailWatchTest" time="0.51"/>
+  <testcase name="aServerThatCannotBeWaitedOnIsLeftAlone" classname="com.deskmail.watch.MailWatchTest" time="0.329"/>
+  <testcase name="aChangeOfNetworkEndsThePauseBeforeTheNextTry" classname="com.deskmail.watch.MailWatchTest" time="0.045"/>
+  <testcase name="anAccountsInboxIsWaitedOnAndLookedAtOnceTheLineIsMade" classname="com.deskmail.watch.MailWatchTest" time="0.049"/>
+  <testcase name="stoppingEndsEveryWaitAndNothingIsTriedAfterwards" classname="com.deskmail.watch.MailWatchTest" time="0.247"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

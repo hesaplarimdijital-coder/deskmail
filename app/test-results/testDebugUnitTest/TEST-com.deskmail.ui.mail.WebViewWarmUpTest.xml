@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.ui.mail.WebViewWarmUpTest" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-11-13T09:03:58.694Z" hostname="runnervmccnms" time="0.142">
+  <properties/>
+  <testcase name="aMessageThatWasOpenedFirstHasDoneTheWork" classname="com.deskmail.ui.mail.WebViewWarmUpTest" time="0.023"/>
+  <testcase name="theWebViewIsWarmedUpOnceARun" classname="com.deskmail.ui.mail.WebViewWarmUpTest" time="0.117"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

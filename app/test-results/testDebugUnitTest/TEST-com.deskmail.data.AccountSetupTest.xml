@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.data.AccountSetupTest" tests="9" skipped="0" failures="0" errors="0" timestamp="2026-11-13T09:02:32.394Z" hostname="runnervmccnms" time="2.978">
+  <properties/>
+  <testcase name="anAddressLeadsToItsServers" classname="com.deskmail.data.AccountSetupTest" time="0.087"/>
+  <testcase name="theFirstSyncIsStartedByWhoeverKeepsTrackOfTheSyncs" classname="com.deskmail.data.AccountSetupTest" time="0.436"/>
+  <testcase name="theNameAndTheSignatureAnAccountWritesWithAreKeptTidy" classname="com.deskmail.data.AccountSetupTest" time="0.166"/>
+  <testcase name="aRemovedAccountLeavesNothingBehind" classname="com.deskmail.data.AccountSetupTest" time="0.673"/>
+  <testcase name="anAppPasswordIsTakenWithTheSpacesItIsShownWith" classname="com.deskmail.data.AccountSetupTest" time="0.207"/>
+  <testcase name="aSignInTheDeviceCannotKeepIsSaidAndLeavesNothingBehind" classname="com.deskmail.data.AccountSetupTest" time="0.43"/>
+  <testcase name="aSecondAccountAtTheSameProviderIsNamedByItsAddress" classname="com.deskmail.data.AccountSetupTest" time="0.307"/>
+  <testcase name="whoeverKeepsSomethingOfAnAccountHearsOfItsRemoval" classname="com.deskmail.data.AccountSetupTest" time="0.438"/>
+  <testcase name="anAccountIsKeptOnlyOnceItsServerTakesTheSignIn" classname="com.deskmail.data.AccountSetupTest" time="0.223"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[SLF4J: Failed to load class "org.slf4j.impl.StaticLoggerBinder".
+SLF4J: Defaulting to no-operation (NOP) logger implementation
+SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further details.
+]]></system-err>
+</testsuite>

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.core.provider.ProviderTest" tests="9" skipped="0" failures="0" errors="0" timestamp="2026-11-13T09:01:19.195Z" hostname="runnervmccnms" time="0.072">
+  <properties/>
+  <testcase name="whatTheAppCannotUseIsNoAnswer" classname="com.deskmail.core.provider.ProviderTest" time="0.058"/>
+  <testcase name="aProvidersSettingsAreReadFromTheDatabasesFormat" classname="com.deskmail.core.provider.ProviderTest" time="0.003"/>
+  <testcase name="aDomainHostedElsewhereIsFoundThroughItsMailHost" classname="com.deskmail.core.provider.ProviderTest" time="0.004"/>
+  <testcase name="anUnknownDomainIsLookedUpByDomainOnly" classname="com.deskmail.core.provider.ProviderTest" time="0.003"/>
+  <testcase name="aFailingLookupIsNoAnswerNotAFailure" classname="com.deskmail.core.provider.ProviderTest" time="0.0"/>
+  <testcase name="aMailHostsProviderIsReadOffItsName" classname="com.deskmail.core.provider.ProviderTest" time="0.0"/>
+  <testcase name="theProvidersTheAppKnowsAreFoundByTheAddress" classname="com.deskmail.core.provider.ProviderTest" time="0.0"/>
+  <testcase name="everyKnownProviderIsReachedOverTls" classname="com.deskmail.core.provider.ProviderTest" time="0.0"/>
+  <testcase name="theKnownProvidersAreNotLookedUp" classname="com.deskmail.core.provider.ProviderTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
