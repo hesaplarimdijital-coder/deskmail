@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.ui.mail.MailScreenTest" tests="9" skipped="0" failures="0" errors="0" timestamp="2026-11-13T00:20:46.078Z" hostname="runnervmwuk1x" time="0.884">
+  <properties/>
+  <testcase name="aLargeWindowListsRowsForAFinger" classname="com.deskmail.ui.mail.MailScreenTest" time="0.086"/>
+  <testcase name="aListTooNarrowForATableShowsRows" classname="com.deskmail.ui.mail.MailScreenTest" time="0.07"/>
+  <testcase name="aPhonesListAndReaderLieUnderTheBars" classname="com.deskmail.ui.mail.MailScreenTest" time="0.078"/>
+  <testcase name="aWideReaderKeepsPlainTextToAReadableLine" classname="com.deskmail.ui.mail.MailScreenTest" time="0.067"/>
+  <testcase name="theUnreadChipLeavesReadMessagesOut" classname="com.deskmail.ui.mail.MailScreenTest" time="0.075"/>
+  <testcase name="aWideWindowBesideARailShowsListAndReaderSideBySide" classname="com.deskmail.ui.mail.MailScreenTest" time="0.072"/>
+  <testcase name="aPhoneOpensAMessageOverTheList" classname="com.deskmail.ui.mail.MailScreenTest" time="0.092"/>
+  <testcase name="aLargeWindowShowsTheTableTheReaderAndTheInspector" classname="com.deskmail.ui.mail.MailScreenTest" time="0.193"/>
+  <testcase name="theDividerSetsTheListsShareAndANarrowListShowsRows" classname="com.deskmail.ui.mail.MailScreenTest" time="0.148"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
