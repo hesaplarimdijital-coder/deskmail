@@ -39,6 +39,7 @@ Posta artık yalnızca okunmuyor: okundu ve yıldız sunucuya yazılır, iletile
 - Yazılan her sözcük iletide geçmelidir; sözcüğün başı yeter ("fat kas", "Kasım faturası"nı bulur). Türkçe harfleri ve büyük harfleri yazmak gerekmez ("sarki", "Şarkı"yı bulur).
 - Bulunanlar en yeniden eskiye sıralanır ve her posta gibi davranır: açılır, okuma bölmesinde okunur, süzgeç çipleriyle (Okunmamış, Yıldızlı, Ekli) daraltılır, arşivlenir, silinir, taşınır, yanıtlanır; J ve K aralarında gezer. Gmail'in "Tüm postalar"ındaki ikinci kopya gösterilmez; yalnızca orada duran (arşivlenmiş) ileti oradan gösterilir.
 - **Yalnızca bu cihazdaki iletilerde arar:** gelen kutularının son 30 günü ve açtığın klasörler. Bir şey bulunamazsa ekran nerede aradığını söyler. Sunucuda arama (cihazda olmayan eski posta) sonraki ön sürümlerden biriyle gelecek.
+- Ekran, hiçbir şey yazılı değilken açılınca imleç arama alanına gelir (telefonda klavye açılır); hangi yoldan açılırsa açılsın: alt çubuk, kenar çubuğu, "/". Yazılı bir aramayla geri dönülünce alan kendi hâline bırakılır, bulunanlar görünür.
 - "/" artık komut paletini değil Ara ekranını açar ve imleci arama alanına koyar; palet Ctrl+K'da.
 
 ### İleti işlemleri
