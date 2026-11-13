@@ -118,10 +118,14 @@ private fun MessageRow(message: MailMessage, selected: Boolean, date: String, on
     )
 }
 
-/** The sender, or "To: …" for a message the user wrote. */
+/** The sender, or "To: …" for a message the user wrote; with how many messages a conversation's row stands for. */
 @Composable
 private fun counterpartLabel(message: MailMessage): String =
-    if (message.outgoing) stringResource(R.string.message_to, message.to) else message.fromName
+    withCount(if (message.outgoing) stringResource(R.string.message_to, message.to) else message.fromName, message)
+
+/** [label] with the number of messages of the conversation the row stands for, where it stands for more than one. */
+private fun withCount(label: String, message: MailMessage): String =
+    if (message.threadCount > 1) "$label (${message.threadCount})" else label
 
 /** The subject and the first words of the message on one line; [noSubject] stands in for a subject the mail does not have. */
 private fun previewLine(message: MailMessage, noSubject: String): String {
@@ -209,7 +213,7 @@ fun MessageTable(
         TableColumn<MailMessage>(ANSWERED_MARK, ColumnWidth.Fixed(36.dp), id = "answered") { answeredMark(it) },
         // wide enough for a name whole, at any width of the table; the subject takes what is left
         TableColumn<MailMessage>(stringResource(R.string.column_from), ColumnWidth.Fixed(128.dp), id = "from") {
-            if (it.outgoing) toPrefix + it.to else it.fromName
+            withCount(if (it.outgoing) toPrefix + it.to else it.fromName, it)
         },
         TableColumn<MailMessage>(stringResource(R.string.column_subject), ColumnWidth.Weight(1f), id = "subject") { previewLine(it, noSubject) },
         TableColumn<MailMessage>(stringResource(R.string.column_attachments), ColumnWidth.Fixed(48.dp), alignEnd = true, mono = true, id = "attachments") {

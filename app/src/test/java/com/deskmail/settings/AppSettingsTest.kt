@@ -110,6 +110,7 @@ class AppSettingsTest {
             updateDarkenMessages(false)
             updateWebLayer(WebLayer.Software)
             updateListShare(0.6f)
+            updateConversations(false)
         }
         val portable = here.portable()
         assertFalse("list_share" in portable)
@@ -122,6 +123,7 @@ class AppSettingsTest {
         assertEquals(30, there.checkMinutes)
         assertFalse(there.darkenMessages)
         assertEquals(WebLayer.Software, there.webLayer)
+        assertFalse(there.conversations)
         assertEquals(0.45f, there.listShare, 0f)
         // kept, as any choice is
         assertEquals(15, AppSettings(elsewhere).undoSendSeconds)

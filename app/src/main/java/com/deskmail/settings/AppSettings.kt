@@ -87,6 +87,18 @@ class AppSettings(private val prefs: SharedPreferences, private val log: AppLog?
         prefs.edit().putString(KEY_WEB_LAYER, value.name).apply()
     }
 
+    // ------------------------------------------------------------------ the lists
+
+    /** A conversation is one row of a list ([com.deskmail.ui.mail.Threads]); off lists every message on its own. */
+    var conversations by mutableStateOf(prefs.getBoolean(KEY_CONVERSATIONS, true))
+        private set
+
+    fun updateConversations(value: Boolean) {
+        log?.info("settings", "conversations = $value")
+        conversations = value
+        prefs.edit().putBoolean(KEY_CONVERSATIONS, value).apply()
+    }
+
     // ------------------------------------------------------------------ writing
 
     /**
@@ -159,6 +171,7 @@ class AppSettings(private val prefs: SharedPreferences, private val log: AppLog?
         KEY_GLASS to glass,
         KEY_GLASS_OVER_MESSAGES to glassOverMessages,
         KEY_WEB_LAYER to webLayer.name,
+        KEY_CONVERSATIONS to conversations,
     )
 
     /**
@@ -175,6 +188,7 @@ class AppSettings(private val prefs: SharedPreferences, private val log: AppLog?
         (values[KEY_GLASS] as? Boolean)?.let { updateGlass(it) }
         (values[KEY_GLASS_OVER_MESSAGES] as? Boolean)?.let { updateGlassOverMessages(it) }
         (values[KEY_WEB_LAYER] as? String)?.let { name -> WebLayer.entries.firstOrNull { it.name == name } }?.let { updateWebLayer(it) }
+        (values[KEY_CONVERSATIONS] as? Boolean)?.let { updateConversations(it) }
         return checkMinutes != check
     }
 
@@ -213,5 +227,6 @@ class AppSettings(private val prefs: SharedPreferences, private val log: AppLog?
         private const val KEY_INSPECTOR_COLLAPSED = "inspector_collapsed"
         private const val KEY_INSPECTOR_WIDTH = "inspector_width"
         private const val KEY_LIST_SHARE = "list_share"
+        private const val KEY_CONVERSATIONS = "conversations"
     }
 }
