@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.DeskMailApplicationTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-11-13T01:10:01.342Z" hostname="runnervmccnms" time="7.976">
+  <properties/>
+  <testcase name="aRunStartsWithTheVersionAndTheDevice" classname="com.deskmail.DeskMailApplicationTest" time="4.075"/>
+  <testcase name="theSharedLogIsTheWholeLogWithoutSecrets" classname="com.deskmail.DeskMailApplicationTest" time="0.152"/>
+  <testcase name="clearingEmptiesTheLogInMemoryAndOnDisk" classname="com.deskmail.DeskMailApplicationTest" time="0.037"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

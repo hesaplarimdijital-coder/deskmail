@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.notify.MailNotifierTest" tests="17" skipped="0" failures="0" errors="0" timestamp="2026-11-13T01:10:41.571Z" hostname="runnervmccnms" time="1.15">
+  <properties/>
+  <testcase name="theStoreRemembersWhatItWasToldAcrossRuns" classname="com.deskmail.notify.MailNotifierTest" time="0.031"/>
+  <testcase name="aNotificationGoesWhenItsMessageIsReadAndTheAccountsLineWithTheLast" classname="com.deskmail.notify.MailNotifierTest" time="0.144"/>
+  <testcase name="whatTheWindowsShowDecidesWhatNeedsNoTelling" classname="com.deskmail.notify.MailNotifierTest" time="0.022"/>
+  <testcase name="theAccountsLineCountsWhatIsShownOfItsMail" classname="com.deskmail.notify.MailNotifierTest" time="0.036"/>
+  <testcase name="theFirstLookAtAnInboxTellsOfNothing" classname="com.deskmail.notify.MailNotifierTest" time="0.025"/>
+  <testcase name="aFloodIsCutDownToItsNewest" classname="com.deskmail.notify.MailNotifierTest" time="0.049"/>
+  <testcase name="aNotificationOpensItsMessageAndItsButtonsNameIt" classname="com.deskmail.notify.MailNotifierTest" time="0.038"/>
+  <testcase name="newMailIsToldOfOnceWithWhoItIsFromItsSubjectAndItsFirstLines" classname="com.deskmail.notify.MailNotifierTest" time="0.043"/>
+  <testcase name="theNotificationsFollowTheMailByThemselves" classname="com.deskmail.notify.MailNotifierTest" time="0.533"/>
+  <testcase name="whenTheSystemDoesNotAllowNotificationsNoneIsShown" classname="com.deskmail.notify.MailNotifierTest" time="0.029"/>
+  <testcase name="aNotificationThatIsDealtWithIsTakenDownAtOnce" classname="com.deskmail.notify.MailNotifierTest" time="0.036"/>
+  <testcase name="anInboxTheServerNumberedAnewIsLookedAtAfresh" classname="com.deskmail.notify.MailNotifierTest" time="0.024"/>
+  <testcase name="onlyTheInboxIsToldOf" classname="com.deskmail.notify.MailNotifierTest" time="0.022"/>
+  <testcase name="mailThatArrivesInAListTheUserIsLookingAtIsNotToldOf" classname="com.deskmail.notify.MailNotifierTest" time="0.033"/>
+  <testcase name="whatTheUserSweptAwayIsNoLongerCounted" classname="com.deskmail.notify.MailNotifierTest" time="0.027"/>
+  <testcase name="withoutAnArchiveThereIsNoButtonForIt" classname="com.deskmail.notify.MailNotifierTest" time="0.025"/>
+  <testcase name="anAccountThatIsRemovedTakesItsNotificationsItsChannelAndItsMarksAlong" classname="com.deskmail.notify.MailNotifierTest" time="0.024"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

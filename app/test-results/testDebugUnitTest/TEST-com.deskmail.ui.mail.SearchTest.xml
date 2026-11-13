@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.ui.mail.SearchTest" tests="7" skipped="0" failures="0" errors="0" timestamp="2026-11-13T01:11:15.609Z" hostname="runnervmccnms" time="0.965">
+  <properties/>
+  <testcase name="aWindowOpenedAtTheSearchIsReadyToBeTypedInto" classname="com.deskmail.ui.mail.SearchTest" time="0.077"/>
+  <testcase name="comeBackToWithSomethingTypedTheFieldIsLeftAlone" classname="com.deskmail.ui.mail.SearchTest" time="0.28"/>
+  <testcase name="whatIsTypedIsLookedForOnceTheTypingPauses" classname="com.deskmail.ui.mail.SearchTest" time="0.114"/>
+  <testcase name="everyWordNarrowsAndTurkishLettersNeedNotBeTyped" classname="com.deskmail.ui.mail.SearchTest" time="0.173"/>
+  <testcase name="whatIsFoundOpensAndIsReadLikeAnyOtherMail" classname="com.deskmail.ui.mail.SearchTest" time="0.135"/>
+  <testcase name="theScreenOpensReadyToBeTypedInto" classname="com.deskmail.ui.mail.SearchTest" time="0.098"/>
+  <testcase name="whenNothingIsFoundTheScreenSaysWhereItLooked" classname="com.deskmail.ui.mail.SearchTest" time="0.084"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

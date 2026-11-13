@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.ui.SearchFocusProbeTest" tests="9" skipped="0" failures="0" errors="0" timestamp="2026-11-13T01:11:07.608Z" hostname="runnervmccnms" time="1.345">
+  <properties/>
+  <testcase name="b_slashAfterAMessageWasOpened" classname="com.deskmail.ui.SearchFocusProbeTest" time="0.182"/>
+  <testcase name="e_theTabThenAskedAgain" classname="com.deskmail.ui.SearchFocusProbeTest" time="0.163"/>
+  <testcase name="i_slashThenAwayAndBackByTheTab" classname="com.deskmail.ui.SearchFocusProbeTest" time="0.25"/>
+  <testcase name="a_slashWithNothingBefore" classname="com.deskmail.ui.SearchFocusProbeTest" time="0.139"/>
+  <testcase name="c_theTabAlone" classname="com.deskmail.ui.SearchFocusProbeTest" time="0.128"/>
+  <testcase name="g_startedAtTheSearchThenAsked" classname="com.deskmail.ui.SearchFocusProbeTest" time="0.082"/>
+  <testcase name="d_theTabWithTheFlagRaisedFirst" classname="com.deskmail.ui.SearchFocusProbeTest" time="0.127"/>
+  <testcase name="h_theTabAfterAMessageWasOpened" classname="com.deskmail.ui.SearchFocusProbeTest" time="0.191"/>
+  <testcase name="f_startedAtTheSearchWithTheFlag" classname="com.deskmail.ui.SearchFocusProbeTest" time="0.079"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
