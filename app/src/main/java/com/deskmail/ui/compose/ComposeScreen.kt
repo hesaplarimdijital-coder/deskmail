@@ -77,6 +77,7 @@ import desktopkit.components.SettingRow
 import desktopkit.components.StatusBanner
 import desktopkit.screens.PageHeader
 import desktopkit.shell.CompactTopBar
+import desktopkit.shell.HideBottomNavigation
 import desktopkit.shell.TopBarAction
 import desktopkit.shell.TopBarBackIcon
 import desktopkit.shell.WidthClass
@@ -224,8 +225,9 @@ object ComposeTags {
  * subject, the files and the text. What is typed is kept as a draft while it is typed, so closing
  * the screen loses nothing; "Send" hands the message over and closes it.
  *
- * On a phone the actions are in the top bar, with a cross that closes; wider windows have them in
- * a row above the fields.
+ * On a phone the actions are in the top bar, with a cross that closes, and the screen has the
+ * height down to the system's bar: the bottom navigation is away while a message is written; wider
+ * windows have the actions in a row above the fields.
  *
  * @param writing which message, and what is typed into it; the window keeps it.
  * @param scope where the work the buttons start runs: the window's.
@@ -411,6 +413,10 @@ fun ComposeScreen(
         ),
         showSearch = false,
     )
+    // A task of its own on a phone: the bottom navigation goes for as long as it is written, so no
+    // bar slides in and out under the text, and the tabs are not there to leave it half-way
+    // (desktop-kit 2.9.0). Nothing changes on wider windows, or in a window of its own.
+    HideBottomNavigation()
     // where the top bar has no back, Back still only closes the screen
     BackHandler(enabled = !compact) { onClose() }
 
