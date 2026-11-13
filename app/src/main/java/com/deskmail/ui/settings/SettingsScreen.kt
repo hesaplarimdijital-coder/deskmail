@@ -36,7 +36,6 @@ import com.deskmail.mail.SenderMarks
 import com.deskmail.notify.NotifyGate
 import com.deskmail.settings.AppSettings
 import com.deskmail.settings.SettingsFile
-import com.deskmail.settings.WebLayer
 import com.deskmail.ui.MailIcons
 import com.deskmail.ui.MailScope
 import com.deskmail.ui.compose.TemplateDialog
@@ -566,18 +565,6 @@ private fun ExperimentsSection(settings: AppSettings) {
             onCheckedChange = settings::updateDarkenMessages,
             subtitle = stringResource(R.string.experiment_darken_note),
         )
-        SettingRow(stringResource(R.string.experiment_web_layer), subtitle = stringResource(R.string.experiment_web_layer_note)) {
-            SegmentedChoice(
-                options = listOf(
-                    WebLayer.Default to stringResource(R.string.web_layer_default),
-                    WebLayer.None to stringResource(R.string.web_layer_none),
-                    WebLayer.Hardware to stringResource(R.string.web_layer_hardware),
-                    WebLayer.Software to stringResource(R.string.web_layer_software),
-                ),
-                selected = settings.webLayer,
-                onSelect = settings::updateWebLayer,
-            )
-        }
     }
 }
 

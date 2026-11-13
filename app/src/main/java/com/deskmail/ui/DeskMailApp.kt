@@ -175,18 +175,14 @@ fun DeskMailApp(
     // a tapped link is never followed inside a message: its real address is shown instead
     val showLink: (String) -> Unit = { url -> scope.launch { toasts.show(url.take(LINK_LENGTH), duration = ToastDuration.Long) } }
     val body: @Composable (MailContent.Ready, Boolean, Modifier) -> Unit = messageBody ?: { content, showImages, modifier ->
-        // Counted while it is on screen, and whether it is too tall for a layer of its own: what
-        // the shell's glass goes by (shellGlass).
-        var tall by remember { mutableStateOf(false) }
-        WebBodyPresence(ui, tall)
+        // counted while it is on screen: what the shell's glass goes by (shellGlass)
+        WebBodyPresence(ui)
         WebMessageBody(
             content,
             modifier,
             showImages = showImages,
             darken = settings.darkenMessages,
-            layer = settings.webLayer,
             onLink = showLink,
-            onTall = { tall = it },
             // a picture of the message's own: from the device, or from its server (a WebView thread waits for it)
             picture = { part -> runBlocking { withTimeoutOrNull(PICTURE_WAIT_MS) { (mail.fetch(part) as? FetchedFile.Ready)?.file } } },
         )
@@ -444,7 +440,7 @@ fun DeskMailApp(
                 searchHint = stringResource(R.string.palette_hint),
                 transitions = transitions,
                 moreActions = listOf(ActionGroup(stringResource(R.string.settings_experiments), experiments)),
-                glass = shellGlass(settings.glass, settings.glassOverMessages, messageOpen, ui.webBodies, ui.tallWebBodies),
+                glass = shellGlass(settings.glass, settings.glassOverMessages, messageOpen, ui.webBodies),
                 toasts = toasts,
                 overlays = {
                     // Ctrl+K: screens and folders, the messages, and every command of the shortcut table
