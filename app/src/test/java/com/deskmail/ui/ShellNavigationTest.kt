@@ -18,6 +18,7 @@ import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isSelectable
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -51,7 +52,11 @@ class ShellNavigationTest {
 
     private val outlookCaption = "Outlook · deniz@outlook.example"
 
-    /** A phone reaches a folder through the Folders tab; the folder opens on top of the list and Back returns to it. */
+    /**
+     * A phone reaches a folder through the Folders tab: the folder opens on top of the list as a page
+     * of it, the tab stays marked (desktop-kit 2.8.0: it marked "⋯"), and its Back button, the
+     * system's Back too, returns to the list.
+     */
     @Test
     @Config(qualifiers = "tr-w411dp-h891dp-xxhdpi")
     fun aPhoneOpensAFolderOnTopOfTheFolderList() {
@@ -64,13 +69,24 @@ class ShellNavigationTest {
         compose.onNodeWithText("Faturalar").performClick()
         compose.waitForIdle()
         compose.onNodeWithText(outlookCaption).assertDoesNotExist()
+        compose.onNode(hasText("Klasörler") and isSelectable()).assertIsSelected()
 
+        compose.onNodeWithContentDescription("Geri").performClick()
+        compose.waitForIdle()
+        compose.onNodeWithText(outlookCaption).assertExists()
+
+        compose.onNodeWithText("Faturalar").performClick()
+        compose.waitForIdle()
         compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
         compose.waitForIdle()
         compose.onNodeWithText(outlookCaption).assertExists()
     }
 
-    /** A large window lists every account's folders in the sidebar, a folder inside another one by its path. */
+    /**
+     * A large window lists every account's folders in its sidebar, a folder inside another one
+     * under that one by its own name; the folder's title has its path. The Folders and Search
+     * screens are not in the sidebar: it has the folders, the menu bar searches.
+     */
     @Test
     @Config(qualifiers = "tr-w1280dp-h800dp-mdpi")
     fun aLargeWindowListsTheFoldersInTheSidebar() {
@@ -78,9 +94,12 @@ class ShellNavigationTest {
         val settings = testSettings()
         compose.setContent { TestApp(testMail(), prefs, settings) }
         compose.onNode(hasText("Gelen") and isSelectable()).assertIsSelected()
-        compose.onNode(hasText("Projeler / 2026") and isSelectable()).performScrollTo().performClick()
+        compose.onNode(hasText("Klasörler") and isSelectable()).assertDoesNotExist()
+        compose.onNode(hasText("Ara") and isSelectable()).assertDoesNotExist()
+        compose.onNode(hasText("2026") and isSelectable()).performScrollTo().performClick()
         compose.waitForIdle()
-        compose.onNode(hasText("Projeler / 2026") and isSelectable()).assertIsSelected()
+        compose.onNode(hasText("2026") and isSelectable()).assertIsSelected()
+        compose.onNodeWithText("Projeler / 2026").assertExists()
     }
 
     /**

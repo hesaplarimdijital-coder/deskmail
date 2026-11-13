@@ -4,6 +4,13 @@ import android.content.Context
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.hasContentDescription
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.junit4.ComposeTestRule
+import androidx.compose.ui.test.performSemanticsAction
 import androidx.test.core.app.ApplicationProvider
 import com.deskmail.core.log.AppLog
 import com.deskmail.demo.DemoComposer
@@ -60,6 +67,19 @@ fun testMail() = DemoMail(TEST_NOW)
 
 /** The made-up mail before any account was added. */
 fun noMail() = DemoMail(TEST_NOW, empty = true)
+
+/**
+ * "New message", the shell's main action (desktop-kit 2.8.0): a button with its name on it (a
+ * phone's list at its top, the sidebar), or its icon alone, named for TalkBack (the rail, a phone's
+ * list scrolled down).
+ */
+fun newMessageButton(): SemanticsMatcher = (hasText("Yeni ileti") or hasContentDescription("Yeni ileti")) and hasClickAction()
+
+/** Presses "New message" ([newMessageButton]). */
+fun ComposeTestRule.pressNewMessage() {
+    onNode(newMessageButton()).performSemanticsAction(SemanticsActions.OnClick)
+    waitForIdle()
+}
 
 /** Writing and sending made up over [mail], dated as the tests' mail is. */
 fun testComposer(mail: DemoMail) = DemoComposer(mail, TEST_NOW)

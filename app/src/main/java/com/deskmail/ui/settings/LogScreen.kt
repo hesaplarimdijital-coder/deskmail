@@ -26,9 +26,9 @@ import desktopkit.pluralString
 import desktopkit.screens.MessageScreen
 import desktopkit.screens.PageHeader
 import desktopkit.shell.CompactTopBar
+import desktopkit.shell.LocalNavKind
+import desktopkit.shell.NavKind
 import desktopkit.shell.TopBarAction
-import desktopkit.shell.WidthClass
-import desktopkit.shell.currentWidthClass
 import desktopkit.shell.rememberShellContentPadding
 import desktopkit.theme.DeskTheme
 
@@ -56,8 +56,8 @@ fun LogScreen(
     val share = stringResource(R.string.log_share)
     val copy = stringResource(R.string.log_copy)
     val clear = stringResource(R.string.log_clear)
-    val compact = currentWidthClass() == WidthClass.Compact
-    // a phone: the title, back and the actions in the top bar
+    val sidebar = LocalNavKind.current == NavKind.Sidebar
+    // a phone and a rail: the title, back and the actions in the top bar; a large window has them in the header
     CompactTopBar(
         title = title,
         onBack = onClose,
@@ -67,6 +67,7 @@ fun LogScreen(
             TopBarAction(DeskIcons.Delete, clear, onClear),
         ),
         showSearch = false,
+        showOnRail = true,
     )
     val shell = rememberShellContentPadding()
     val list = rememberLazyListState()
@@ -76,7 +77,7 @@ fun LogScreen(
     }
     Column(Modifier.fillMaxSize().padding(top = shell.calculateTopPadding())) {
         PageHeader(title, subtitle = pluralString(R.plurals.log_lines, lines.size)) {
-            if (!compact) {
+            if (sidebar) {
                 DeskButton(stringResource(desktopkit.R.string.dk_back), onClose, icon = DeskIcons.ArrowLeft)
                 DeskButton(copy, { onCopy(lines) }, icon = MailIcons.Copy)
                 DeskButton(share, onShare, icon = MailIcons.Share, primary = true)

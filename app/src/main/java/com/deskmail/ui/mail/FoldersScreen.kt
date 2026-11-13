@@ -48,6 +48,7 @@ fun FoldersScreen(accounts: List<MailAccount>, folders: List<MailFolder>, onOpen
                     description = stringResource(R.string.welcome_text),
                     actionLabel = stringResource(R.string.welcome_action),
                     onAction = onAddAccount,
+                    actionPrimary = true,
                 )
             }
         }

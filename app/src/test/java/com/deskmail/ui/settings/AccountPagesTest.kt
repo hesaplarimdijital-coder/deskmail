@@ -7,6 +7,7 @@ import androidx.compose.ui.platform.UriHandler
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasScrollToNodeAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isSelectable
@@ -216,8 +217,8 @@ class AccountPagesTest {
     fun theSettingsListLeadsToAnAccountsPage() {
         launch(FakeAccounts())
         compose.onNode(hasScrollToNodeAction()).performScrollToNode(hasText("deniz@gmail.example · Çalışıyor"))
-        // one "Manage" per account, in the accounts' order
-        compose.onAllNodes(hasText("Yönet"))[1].performSemanticsAction(SemanticsActions.OnClick)
+        // an account's whole row leads to its page
+        compose.onNode(hasText("deniz@gmail.example · Çalışıyor") and hasClickAction()).performSemanticsAction(SemanticsActions.OnClick)
         compose.waitForIdle()
         assertEquals(SettingsPage.Account(DemoMail.GMAIL), settingsUi.page)
     }

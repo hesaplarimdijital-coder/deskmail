@@ -12,6 +12,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.deskmail.TEST_NOW
 import com.deskmail.TestApp
 import com.deskmail.notify.OpenRequest
+import com.deskmail.pressNewMessage
 import com.deskmail.testComposer
 import com.deskmail.testMail
 import com.deskmail.testPrefs
@@ -69,7 +70,7 @@ class AwaitingUiTest {
     @Test
     fun howLongAnAnswerIsWaitedForIsChosenWhileWriting() {
         launch()
-        press("Yeni ileti")
+        compose.pressNewMessage()
 
         click("Yanıt bekle")
         click("3 gün")

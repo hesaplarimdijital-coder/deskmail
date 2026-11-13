@@ -44,8 +44,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.deskmail.R
@@ -118,7 +120,20 @@ class ComposeFields {
     var cc by mutableStateOf("")
     var bcc by mutableStateOf("")
     var subject by mutableStateOf("")
-    var body by mutableStateOf("")
+
+    /**
+     * The message's text with where the cursor is and what is selected in it: where a template goes
+     * in (desktop-kit 2.8.0's field says it; docs/KIT-ISTEKLERI.md, 23). A message is begun with the
+     * cursor at its start, above the signature and the quote.
+     */
+    var bodyValue by mutableStateOf(TextFieldValue(""))
+
+    /** The message's text. Set from outside (a draft read), the cursor stays where it was, as far as the text goes. */
+    var body: String
+        get() = bodyValue.text
+        set(value) {
+            if (value != bodyValue.text) bodyValue = TextFieldValue(value, TextRange(bodyValue.selection.min.coerceAtMost(value.length)))
+        }
 
     /** Cc and Bcc are shown once there is something in them, or once they were asked for. */
     var moreRecipients by mutableStateOf(false)
@@ -501,19 +516,23 @@ fun ComposeScreen(
                 )
             }
             Row(horizontalArrangement = Arrangement.spacedBy(dimens.gapS), verticalAlignment = Alignment.CenterVertically) {
-                // the kept texts: put in where the user's own writing ends; what was written, kept as one
+                // the kept texts: put in where the cursor is; what was written, kept as one
                 TemplateMenu(
                     templates = composer.templates,
                     body = fields.body,
-                    onInsert = { text -> fields.body = Templates.insert(fields.body, text) },
+                    onInsert = { text ->
+                        val value = fields.bodyValue
+                        val (body, cursor) = Templates.insertAt(value.text, value.selection.start, value.selection.end, text)
+                        fields.bodyValue = TextFieldValue(body, TextRange(cursor))
+                    },
                     onKeep = { naming = true },
                 )
                 // how long an answer is waited for once it was sent: should none come by then, a reminder
                 AwaitMenu(days = draft?.awaitDays ?: 0, onChoose = { days -> scope.launch { composer.awaitReply(draftId, days) } })
             }
             DeskTextField(
-                value = fields.body,
-                onValueChange = { fields.body = it },
+                value = fields.bodyValue,
+                onValueChange = { fields.bodyValue = it },
                 modifier = Modifier.fillMaxWidth().testTag(ComposeTags.BODY),
                 hint = stringResource(R.string.compose_body_hint),
                 label = stringResource(R.string.compose_body),
@@ -526,8 +545,8 @@ fun ComposeScreen(
 }
 
 /**
- * "Template": the kept texts, each put into the message where the user's own writing ends, and
- * "Keep what you wrote as a template" while there is something written to keep.
+ * "Template": the kept texts, each put into the message where the cursor is (in place of what is
+ * selected), and "Keep what you wrote as a template" while there is something written to keep.
  */
 @Composable
 private fun TemplateMenu(templates: List<MessageTemplate>, body: String, onInsert: (String) -> Unit, onKeep: () -> Unit) {
