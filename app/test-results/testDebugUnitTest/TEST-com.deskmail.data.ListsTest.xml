@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.data.ListsTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-11-13T09:19:11.796Z" hostname="ip-10-0-140-52" time="0.226">
+  <properties/>
+  <testcase name="theVipsMailHasAFolderOfItsOwn" classname="com.deskmail.data.ListsTest" time="0.076"/>
+  <testcase name="textsAreKeptInTheirOrderChangedAndRemoved" classname="com.deskmail.data.ListsTest" time="0.066"/>
+  <testcase name="aSavedSearchListsWhatItsSearchFinds" classname="com.deskmail.data.ListsTest" time="0.081"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
