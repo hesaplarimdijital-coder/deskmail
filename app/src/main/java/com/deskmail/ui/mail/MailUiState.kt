@@ -33,6 +33,8 @@ enum class MailFilter { Unread, Starred, Attachments }
 @Stable
 class MailUiState(private val settings: AppSettings? = null) {
     private val opened = mutableStateMapOf<String, Long>()
+    private val selections = mutableStateMapOf<String, Set<Long>>()
+    private val pickings = mutableStateMapOf<String, Boolean>()
     private val filters = mutableStateMapOf<String, Set<MailFilter>>()
     private val images = mutableStateMapOf<Long, Boolean>()
     private val lists = HashMap<String, LazyListState>()
@@ -99,15 +101,72 @@ class MailUiState(private val settings: AppSettings? = null) {
 
     fun open(route: String, id: Long) {
         opened[route] = id
+        // One selected row is the open message's row: clicked with the mouse, the table selects it
+        // itself; opened by other means (the keyboard), the selection follows. Ctrl+click and
+        // Shift+click then go on from the open message.
+        if (!picking(route) && selection(route).size <= 1) selections[route] = setOf(id)
     }
 
     fun close(route: String) {
         opened.remove(route)
+        if (!picking(route) && selection(route).size <= 1) selections.remove(route)
     }
 
-    /** Closes these messages wherever a screen has one of them open: they have left their lists. */
+    /** Closes these messages wherever a screen has one of them open, and takes them out of what is selected: they have left their lists. */
     fun closeMessages(ids: Collection<Long>) {
         opened.entries.filter { it.value in ids }.map { it.key }.forEach { opened.remove(it) }
+        for ((route, chosen) in selections.entries.toList()) {
+            if (chosen.any { it in ids }) select(route, chosen - ids.toSet())
+        }
+    }
+
+    // ------------------------------------------------------------------ several messages at once
+
+    /**
+     * The messages that are selected in [route]'s list. A row that was clicked with a mouse is
+     * selected too; several of them are what the selection bar and the row menu act on.
+     */
+    fun selection(route: String): Set<Long> = selections[route] ?: emptySet()
+
+    fun select(route: String, ids: Set<Long>) {
+        if (ids.isEmpty()) {
+            selections.remove(route)
+            pickings.remove(route)
+        } else {
+            selections[route] = ids
+        }
+    }
+
+    /**
+     * Whether rows are being picked with a finger in [route]'s list ("Select" in a row's menu):
+     * a tap then adds or removes its row instead of opening it. Ends with the last row taken out.
+     */
+    fun picking(route: String): Boolean = pickings[route] == true
+
+    /** Begins to pick rows with a finger, with this one; rows that were selected together stay selected. */
+    fun pick(route: String, id: Long) {
+        val chosen = selection(route)
+        // one selected row is only the open message's: picking begins with the row it was asked on
+        val kept = if (picking(route) || chosen.size > 1) chosen else emptySet()
+        pickings[route] = true
+        selections[route] = kept + id
+    }
+
+    /** Adds the row to what is selected, or takes it out. */
+    fun togglePicked(route: String, id: Long) {
+        val chosen = selection(route)
+        select(route, if (id in chosen) chosen - id else chosen + id)
+    }
+
+    fun clearSelection(route: String) = select(route, emptySet())
+
+    /**
+     * What an action on [route]'s list is done to: the selection when several rows are selected
+     * (or are being picked), otherwise the open message; empty when there is neither.
+     */
+    fun targets(route: String): List<Long> {
+        val chosen = selection(route)
+        return if (chosen.size > 1 || (picking(route) && chosen.isNotEmpty())) chosen.toList() else listOfNotNull(openedId(route))
     }
 
     /** The message of the user's own that is being written in this window, and over which screen; null for none. */
@@ -137,8 +196,25 @@ class MailUiState(private val settings: AppSettings? = null) {
         searchQuery = text
     }
 
-    /** The message a folder is being chosen for ("Move…"), or null. */
-    var moving by mutableStateOf<MailMessage?>(null)
+    private var movingMessage by mutableStateOf<MailMessage?>(null)
+
+    /** The message a folder is being chosen for ("Move…"), or null. Alone, unless [moveSeveral] set it. */
+    var moving: MailMessage?
+        get() = movingMessage
+        set(value) {
+            movingMessage = value
+            movingIds = emptyList()
+        }
+
+    /** Everything that moves to the folder chosen for [moving]: a selection. Empty for the one message alone. */
+    var movingIds: List<Long> = emptyList()
+        private set
+
+    /** A folder is to be chosen for several messages; [anchor], one of them, says which folders there are to choose from. */
+    fun moveSeveral(anchor: MailMessage, ids: List<Long>) {
+        movingMessage = anchor
+        movingIds = ids
+    }
 
     /**
      * How many message bodies this window is drawing with a WebView right now, and how many of

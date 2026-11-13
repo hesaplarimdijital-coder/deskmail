@@ -34,6 +34,7 @@ import com.deskmail.ui.compose.ComposeScreen
 import com.deskmail.ui.compose.OutboxScreen
 import com.deskmail.ui.mail.FoldersScreen
 import com.deskmail.ui.mail.LocalMailClock
+import com.deskmail.ui.mail.MESSAGE_DRAG
 import com.deskmail.ui.mail.MailActions
 import com.deskmail.ui.mail.MailClock
 import com.deskmail.ui.mail.MailScreen
@@ -65,6 +66,7 @@ import desktopkit.settings.rememberDeskPreferences
 import desktopkit.shell.DeskWindows
 import desktopkit.shell.DesktopShell
 import desktopkit.shell.LocalNavKind
+import desktopkit.shell.NavDrop
 import desktopkit.shell.NavKind
 import desktopkit.shell.ShellNavigator
 import desktopkit.shell.ShellTransitions
@@ -177,6 +179,23 @@ fun DeskMailApp(
     }
     // archive, move and delete, with their notices and the way back; the files of messages
     val actions = remember(mail, ui, resources) { MailActions(mail, ui, scope, toasts, resources) }
+    // Messages dragged out of a list are moved to the folder of the sidebar they are dropped on.
+    // (To a folder of their own account: what cannot go there stays where it is, and that is said.)
+    val folderDrop = remember(routes, actions) {
+        NavDrop(
+            kinds = routes.filter { Routes.folderId(it) != null }.associateWith { setOf(MESSAGE_DRAG) },
+            onDrop = { route, payload ->
+                val folderId = Routes.folderId(route)
+                val ids = payload.keys.mapNotNull { it.toLongOrNull() }
+                if (folderId == null || ids.isEmpty()) {
+                    false
+                } else {
+                    actions.move(ids, folderId)
+                    true
+                }
+            },
+        )
+    }
     val files = rememberAttachmentHandler(mail, notify)
     // writing: a new message, a reply, what the outbox holds, and "Send" with its way back
     val compose = remember(composer, mail, ui, resources) { composer?.let { ComposeActions(it, mail, ui, scope, toasts, resources) } }
@@ -241,6 +260,12 @@ fun DeskMailApp(
         if (id != null) action(id)
         id != null
     }
+    // What a command is done to: several selected messages, or the open one.
+    val withTargets: (String, (List<Long>) -> Unit) -> Boolean = { route, action ->
+        val ids = ui.targets(route)
+        if (ids.isNotEmpty()) action(ids)
+        ids.isNotEmpty()
+    }
     val step: (String, Int) -> Boolean = { route, by ->
         val id = ui.neighbour(route, by)
         if (id != null) {
@@ -302,14 +327,23 @@ fun DeskMailApp(
             else -> if (writing) false else when (id) {
                 Commands.NEXT -> step(route, 1)
                 Commands.PREVIOUS -> step(route, -1)
-                Commands.STAR -> withOpen(route) { mail.toggleStarred(it) }
-                Commands.TOGGLE_READ -> withOpen(route) { mail.toggleUnread(it) }
+                Commands.STAR -> withTargets(route) { ids ->
+                    if (ids.size == 1) mail.toggleStarred(ids.first()) else mail.markStarred(ids, starred = !ids.all { mail.cachedMessage(it)?.starred == true })
+                }
+                Commands.TOGGLE_READ -> withTargets(route) { ids ->
+                    if (ids.size == 1) mail.toggleUnread(ids.first()) else mail.markUnread(ids, unread = ids.none { mail.cachedMessage(it)?.unread == true })
+                }
                 Commands.REPLY -> compose != null && withOpen(route) { compose.begin(route, DraftKind.Reply, it) }
                 Commands.REPLY_ALL -> compose != null && withOpen(route) { compose.begin(route, DraftKind.ReplyAll, it) }
                 Commands.FORWARD -> compose != null && withOpen(route) { compose.begin(route, DraftKind.Forward, it) }
-                Commands.ARCHIVE -> withOpen(route) { actions.archive(listOf(it)) }
-                Commands.DELETE -> withOpen(route) { actions.delete(listOf(it)) }
-                Commands.MOVE -> withOpen(route) { id -> mail.cachedMessage(id)?.let { ui.moving = it } }
+                Commands.ARCHIVE -> withTargets(route) { actions.archive(it) }
+                Commands.DELETE -> withTargets(route) { actions.delete(it) }
+                Commands.MOVE -> withTargets(route) { ids ->
+                    val anchor = ids.firstNotNullOfOrNull { mail.cachedMessage(it) }
+                    if (anchor != null) {
+                        if (ids.size == 1) ui.moving = anchor else ui.moveSeveral(anchor, ids)
+                    }
+                }
                 else -> false
             }
         }
@@ -381,6 +415,7 @@ fun DeskMailApp(
                 sidebarCollapsed = prefs.sidebarCollapsed,
                 onSidebarCollapsedChange = prefs::updateSidebarCollapsed,
                 badges = badges,
+                navDrop = folderDrop,
                 menus = menus,
                 onSearch = { palette.open() },
                 searchHint = stringResource(R.string.palette_hint),

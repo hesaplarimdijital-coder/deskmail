@@ -217,7 +217,11 @@ başlığında.
 4. **İleti işlemleri ve ekler (alpha.3):** bekleyen işlem kuyruğu, şema 2 ve göç testi · okundu ve yıldız ·
    arşivle, sil, taşı, geri al · sağ tık ve uzun basma menüsü · ekleri açma, kaydetme, paylaşma · tek
    harfli kısayollar (E, V, Delete) ve Ctrl+Z.
-   - **Kalan (ayrı PR):** çoklu seçim ve toplu işlem · geniş pencerede klasöre sürükle bırak.
+   - **Sonradan (beta.1):** çoklu seçim ve toplu işlem · geniş pencerede klasöre sürükle bırak. Seçim
+     pencerenindir (`MailUiState.selection`, rota başına); tek seçili satır açık iletinin satırıdır, işlemler
+     birden çok satır seçiliyken seçime, değilse açık iletiye uygulanır (`MailUiState.targets`). Dokunmada
+     seçim "Seç" ile başlar (`picking`); kitin tablosu dokunmada uzun basmayı menüye ayırıyor. Çerçeveyle
+     seçme kitte yok (kit isteği 22).
 5. **Yazma ve gönderme (alpha.3):** iletinin yazılması ve SMTP · giden kutusu (şema 3 ve göç testi),
    gönderim işi (WorkManager), gönderiyi geri alma ve süresi · yazma ekranı · yanıtla, tümünü yanıtla, ilet ·
    dosya ekleme · cihazda taslaklar · gönderileni kaydetme kuralı · yanıtlandı ve iletildi işaretleri ·
@@ -261,7 +265,7 @@ Her biri ayrı PR; sıra, cihazda en çok denenmesi gerekenden başlar.
 1. Paylaşılan dosyayla yazma ekranının hemen açılması; yazma ekranının kendiliğinden kapanmaması (alpha.3'ün
    cihaz denemesinden). **Yapıldı.**
 2. Anlık bildirim (7b). **Yapıldı.**
-3. Çoklu seçim, toplu işlem, klasöre sürükle bırak (4'ün kalanı).
+3. Çoklu seçim, toplu işlem, klasöre sürükle bırak (4'ün kalanı). **Yapıldı.**
 4. Taslakların sunucuya kaydı (5'in kalanı).
 5. Sunucu araması, alan süzgeçleri, palette arama (6'nın kalanı).
 6. DeX'te yazmanın ayrı pencerede açılması; Contact Picker (5'in kalanı).

@@ -16,6 +16,13 @@ Sürümler [SemVer](https://semver.org/lang/tr/) kuralına uyar; 0.1.0'a kadar o
 - **Günlük:** hattın her kuruluşu, yenilenmesi, kopması ve yeniden denenmesi zamanıyla yazılır (Ayarlar › Günlük, "watch" satırları). Bir gecelik deneme için bakılacak yer orası.
 - **Yeni izinler** (hepsi kurulumda kendiliğinden verilir, soru çıkmaz): ön plan hizmeti (özel kullanım), cihazı uyanık tutma, ağ durumunu görme, açılışta başlama, pil kısıtlaması sorusunu sorabilme.
 
+### Birden çok ileti
+- **Seçme.** Telefonda bir satıra uzun bas → menüde **Seç**; bundan sonra dokunduğun satırlar seçime girer ya da çıkar (dokunmak iletiyi açmaz). Geri tuşu, çubuktaki ✕ ya da son satırı çıkarmak seçimi bitirir. Geniş pencerede fareyle tablo gibi: Ctrl+tık ekler ya da çıkarır, Shift+tık aradakileri alır, Ctrl+A hepsini, Esc hiçbirini.
+- **Seçim çubuğu.** Birden çok satır seçiliyken listenin altında "N ileti seçili" ve düğmeler: okundu / okunmadı, yıldız, arşivle, taşı, sil. Okundu düğmesi, aralarında okunmamış varsa hepsini okundu yapar, hepsi okunmuşsa okunmadı. Seçili bir satırın menüsü ve kısayollar (U, S, E, V, Delete) da hepsine uygulanır; geri alma bildirimi hepsini birden geri alır ("3 ileti arşivlendi · Geri al").
+- **Klasöre sürükle bırak.** Geniş pencerede, fareyle bir satırı (seçiliyse bütün seçimi) kenar çubuğundaki bir klasörün üstüne bırak: oraya taşınır. Başka bir hesabın klasörüne taşınamaz; öyle iletiler yerinde kalır.
+- Listeden çıkan ileti (taşındı, silindi; burada ya da başka bir cihazda) seçimden de çıkar.
+- **Fareyle çerçeve çizerek seçme yok:** kitte böyle bir seçim yok; kite istek olarak yazıldı (`docs/KIT-ISTEKLERI.md`, 22), kit çıkınca gelecek.
+
 ### Düzeltmeler
 - **Paylaşılan dosyayla yazma ekranı hemen açılır.** Başka bir uygulamadan dosya paylaşınca yazma ekranı, dosya uygulamaya kopyalanana dek açılmıyordu; büyük bir videoda o süre boyunca yalnızca Gelen görünüyordu. Ekran artık hemen açılır ve dosya arkada eklenir: ekran "Dosya ekleniyor…" der, dosya iletiye girmeden Gönder çalışmaz (ekranı kapatıp taslağı Giden kutusu'ndan yeniden açsan da). Yazma ekranındaki ataşla eklenen büyük dosyalarda da böyle.
 - **Yazma ekranı kendiliğinden kapanmaz.** Bir ileti yazarken başka bir ekrana bakıp geri dönünce yazma ekranı "Taslak Giden kutusu'nda duruyor" diyerek kapanıyordu (taslak kaybolmuyordu, Giden kutusu'ndan açmak gerekiyordu). Yazılan ileti artık ekranına dönüldüğünde bırakıldığı gibi durur.

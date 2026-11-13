@@ -163,6 +163,10 @@ class DemoMail(private val now: Instant = Instant.now(), empty: Boolean = false)
         message(id)?.let { setStarred(id, !it.starred) }
     }
 
+    override fun markUnread(ids: List<Long>, unread: Boolean) = ids.forEach { setUnread(it, unread) }
+
+    override fun markStarred(ids: List<Long>, starred: Boolean) = ids.forEach { setStarred(it, starred) }
+
     override suspend fun archive(ids: List<Long>): MailUndo? = relocate(ids, MailUndo.Action.Archived) { message ->
         folderOf(message.accountId, FolderRole.Archive) ?: folderOf(message.accountId, FolderRole.All)
     }

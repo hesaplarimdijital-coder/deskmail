@@ -277,6 +277,51 @@ class CommandsTest {
         compose.onNodeWithText("Klasöre taşı").assertExists()
     }
 
+    /** With several rows selected, the keys act on all of them. */
+    @Test
+    fun withSeveralMessagesSelectedTheKeysActOnAllOfThem() {
+        launch()
+        val inbox = mail.messages(MailView.Inbox)
+        val first = inbox[0]
+        val second = inbox.first { it.id != first.id && it.accountId == first.accountId }
+        compose.runOnUiThread { ui.select(Routes.INBOX, setOf(first.id, second.id)) }
+        compose.waitForIdle()
+        compose.onNodeWithText("2 ileti seçili").assertExists()
+
+        // starred, both: one of them was not
+        compose.runOnUiThread {
+            mail.setStarred(first.id, true)
+            mail.setStarred(second.id, false)
+        }
+        assertTrue(perform(Commands.STAR))
+        assertTrue(mail.message(first.id)!!.starred && mail.message(second.id)!!.starred)
+        // all starred: the same key takes the stars away
+        assertTrue(perform(Commands.STAR))
+        assertFalse(mail.message(first.id)!!.starred || mail.message(second.id)!!.starred)
+
+        // read, both, while one of them is unread; unread again once both were read
+        compose.runOnUiThread {
+            mail.setUnread(first.id, true)
+            mail.setUnread(second.id, false)
+        }
+        assertTrue(perform(Commands.TOGGLE_READ))
+        assertFalse(mail.message(first.id)!!.unread || mail.message(second.id)!!.unread)
+        assertTrue(perform(Commands.TOGGLE_READ))
+        assertTrue(mail.message(first.id)!!.unread && mail.message(second.id)!!.unread)
+
+        // a folder is asked for, for both
+        assertTrue(perform(Commands.MOVE))
+        assertEquals(setOf(first.id, second.id), ui.movingIds.toSet())
+        compose.runOnUiThread { ui.moving = null }
+        compose.waitForIdle()
+
+        assertTrue(perform(Commands.DELETE))
+        assertEquals(FolderRole.Trash, mail.folder(mail.message(first.id)!!.folderId)?.role)
+        assertEquals(FolderRole.Trash, mail.folder(mail.message(second.id)!!.folderId)?.role)
+        assertTrue(ui.selection(Routes.INBOX).isEmpty())
+        assertNull(ui.openedId(Routes.INBOX))
+    }
+
     @Test
     fun syncAsksTheServersWithTheScreenInFront() {
         launch()

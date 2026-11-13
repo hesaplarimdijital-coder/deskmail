@@ -28,6 +28,7 @@ import com.deskmail.mail.DraftState
 import com.deskmail.mail.MailContent
 import com.deskmail.mail.MailMessage
 import com.deskmail.mail.MailSource
+import com.deskmail.mail.MailView
 import com.deskmail.mail.SetupPlan
 import com.deskmail.noMail
 import com.deskmail.notify.NotifyGate
@@ -156,6 +157,16 @@ class AppScreenshotTest {
     fun phoneInboxLight() {
         launch(ThemeMode.Light)
         capture("phone-inbox-light")
+    }
+
+    /** Rows picked with a finger: the bar over the list's end says how many, and acts on them all. */
+    @Test @Config(qualifiers = PHONE)
+    fun phoneSelectionLight() {
+        val inbox = mail.messages(MailView.Inbox)
+        ui.pick(Routes.INBOX, inbox[0].id)
+        ui.togglePicked(Routes.INBOX, inbox[2].id)
+        launch(ThemeMode.Light)
+        capture("phone-selection-light")
     }
 
     @Test @Config(qualifiers = PHONE)
@@ -386,6 +397,16 @@ class AppScreenshotTest {
         ui.inspector.updateCollapsed(false)
         launch(ThemeMode.Dark, DensityPreference.Pointer)
         capture("dex-workstation-dark")
+    }
+
+    /** Several rows of the table selected with the mouse: the bar under the list. */
+    @Test @Config(qualifiers = DEX)
+    fun dexSelectionDark() {
+        val inbox = mail.messages(MailView.Inbox)
+        open(Routes.INBOX, inbox[0].subject)
+        ui.select(Routes.INBOX, setOf(inbox[0].id, inbox[1].id, inbox[3].id))
+        launch(ThemeMode.Dark, DensityPreference.Pointer)
+        capture("dex-selection-dark")
     }
 
     @Test @Config(qualifiers = DEX)
