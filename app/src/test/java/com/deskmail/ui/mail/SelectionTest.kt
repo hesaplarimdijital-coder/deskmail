@@ -195,7 +195,10 @@ class SelectionTest {
         pick(first)
         tap(second)
 
-        compose.onNodeWithContentDescription("Taşı…").performClick()
+        // on a phone the bar has moving under "More options", to leave room for the count
+        compose.onNode(hasContentDescription("Diğer seçenekler") and hasAnyAncestor(hasTestTag(MailTags.SELECTION))).performClick()
+        compose.waitForIdle()
+        compose.onNodeWithText("Taşı…").performClick()
         compose.waitForIdle()
         compose.onNodeWithText("Klasöre taşı").assertIsDisplayed()
         compose.onNodeWithText(target.name).performClick()

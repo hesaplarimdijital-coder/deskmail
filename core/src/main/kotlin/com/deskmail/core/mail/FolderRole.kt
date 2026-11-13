@@ -13,6 +13,13 @@ enum class FolderRole {
     Junk,
     Trash,
 
+    /**
+     * Where snoozed messages wait for their time, with the list of when each comes back
+     * ([com.deskmail.core.sync.SnoozeList]): a folder DeskMail makes on the server, shared by
+     * every device. Kept out of the unified views.
+     */
+    Snoozed,
+
     /** Gmail's "All Mail": every message once more. Kept out of the unified views. */
     All,
 

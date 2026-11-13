@@ -39,6 +39,8 @@ object FolderRoles {
                 "\\junk" -> return FolderRole.Junk
                 "\\archive" -> return FolderRole.Archive
                 "\\all" -> return FolderRole.All
+                // the attribute some servers give a folder of their own snoozing
+                "\\snoozed" -> return FolderRole.Snoozed
             }
         }
         return null
@@ -64,5 +66,6 @@ object FolderRoles {
         add(FolderRole.Junk, "Junk", "Junk Email", "Junk E-mail", "Spam", "Bulk Mail", "Önemsiz", "Önemsiz E-posta", "Gereksiz", "İstenmeyen", "İstenmeyen Posta")
         add(FolderRole.Archive, "Archive", "Archives", "Arşiv")
         add(FolderRole.All, "All Mail", "Tüm Postalar")
+        add(FolderRole.Snoozed, "Ertelenenler", "Snoozed")
     }
 }

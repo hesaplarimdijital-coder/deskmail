@@ -192,6 +192,16 @@ object MailIcons {
         )
     }
 
+    /** A clock with its bells: a message snoozed until a time. */
+    val Snooze: ImageVector by lazy {
+        DeskIcons.build(
+            "Snooze",
+            DeskIcons.stroke("M8 3.6a4.9 4.9 0 1 0 0 9.8 4.9 4.9 0 0 0 0-9.8z"),
+            DeskIcons.stroke("M8 6.2v2.5l1.7 1"),
+            DeskIcons.stroke("M2.6 4.1 4.3 2.6M13.4 4.1l-1.7-1.5"),
+        )
+    }
+
     /** A shield: what the provider found of where a message came from. */
     val Shield: ImageVector by lazy {
         DeskIcons.build(

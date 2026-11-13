@@ -76,6 +76,14 @@ class ImapMailbox internal constructor(
         found.sorted()
     }
 
+    override fun withMessageId(messageId: String): List<Long> = connection.call("search by Message-ID") {
+        val args = Argument().writeAtom("HEADER").writeString("Message-ID").writeString(messageId)
+        args.writeAtom("NOT").writeAtom("DELETED")
+        // asked of the server alone, as every search here
+        val found = folder.doCommand(IMAPFolder.ProtocolCommand { protocol -> uidSearch(protocol, "", args) }) as LongArray
+        found.sorted()
+    }
+
     override fun headers(uids: List<Long>): List<RemoteMessage> = connection.call("fetch headers") {
         val out = ArrayList<RemoteMessage>(uids.size)
         for (batch in uids.chunked(HEADER_BATCH)) {

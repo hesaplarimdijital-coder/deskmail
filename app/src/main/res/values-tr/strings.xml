@@ -5,6 +5,7 @@
     <string name="nav_starred">Yıldızlı</string>
     <string name="nav_vip">VIP</string>
     <string name="nav_awaiting">Yanıt bekleyenler</string>
+    <string name="nav_snoozed">Ertelenenler</string>
     <string name="nav_saved_searches">Kayıtlı aramalar</string>
     <string name="nav_folders">Klasörler</string>
     <string name="nav_search">Ara</string>
@@ -17,6 +18,7 @@
     <string name="folder_junk">Spam</string>
     <string name="folder_trash">Çöp</string>
     <string name="folder_all">Tüm postalar</string>
+    <string name="folder_snoozed">Ertelenenler</string>
 
     <string name="filter_all">Tümü</string>
     <string name="filter_unread">Okunmamış</string>
@@ -80,6 +82,14 @@
         <item quantity="one">Taşındı: %2$s</item>
         <item quantity="other">%1$d ileti taşındı: %2$s</item>
     </plurals>
+    <plurals name="done_snoozed">
+        <item quantity="one">%d ileti ertelendi</item>
+        <item quantity="other">%d ileti ertelendi</item>
+    </plurals>
+    <plurals name="done_unsnoozed">
+        <item quantity="one">%d ileti geri getirildi</item>
+        <item quantity="other">%d ileti geri getirildi</item>
+    </plurals>
     <string name="attachment_open">Aç</string>
     <string name="attachment_save">Kaydet…</string>
     <string name="attachment_share">Paylaş</string>
@@ -105,6 +115,20 @@
     <string name="awaiting_overdue">Yanıt gelmedi; bekleme süresi doldu: %1$s</string>
     <string name="awaiting_stop">Beklemeyi bırak</string>
     <string name="awaiting_answered">Bu iletiye yanıt gelmiş.</string>
+    <string name="action_snooze">Ertele</string>
+    <string name="action_more">Diğer seçenekler</string>
+    <string name="action_unsnooze">Şimdi geri getir</string>
+    <string name="snooze_title">Ne zaman dönsün?</string>
+    <string name="snooze_evening">Bu akşam</string>
+    <string name="snooze_tomorrow">Yarın sabah</string>
+    <string name="snooze_weekend">Hafta sonu</string>
+    <string name="snooze_next_week">Gelecek hafta</string>
+    <string name="snooze_note">Erteleme sunucuda tutulur: öbür cihazlarında da geçerli; ileti zamanı gelince hangisi önce bakarsa onunla okunmamış olarak döner.</string>
+    <string name="snooze_failed">Ertelenemedi: sunucuya ulaşılamadı.</string>
+    <string name="snoozed_until">Ertelendi; dönüş: %1$s</string>
+    <string name="snoozed_unknown">Ertelendi; ne zaman döneceği bu cihazda henüz bilinmiyor.</string>
+    <string name="snoozed_none_title">Ertelenen ileti yok</string>
+    <string name="snoozed_none_text">Bir iletiyi ertele: o zamana kadar gözden kalkar, zamanı gelince okunmamış olarak geri döner.</string>
     <string name="search_save">Kayıtlı aramalara ekle</string>
     <string name="search_save_title">Aramayı kaydet</string>
     <string name="search_save_text">“%1$s” araması kenar çubuğunda kendi klasörü olur; her açılışta yeniden aranır.</string>

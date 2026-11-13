@@ -98,6 +98,8 @@ import kotlinx.coroutines.delay
  *   with "Stop waiting" ([onStopAwaiting]).
  * @param onAwait the message is one of the user's that an answer could be waited for: "Await reply"
  *   offers how many days; null for any other message.
+ * @param snoozed the message is snoozed: a strip under its header says when it comes back, with
+ *   "Bring back now" ([onUnsnooze]). [onSnooze] asks until when to snooze it; null where it cannot be.
  */
 @Composable
 fun MessageReader(
@@ -128,6 +130,9 @@ fun MessageReader(
     awaiting: AwaitedReply? = null,
     onAwait: ((Int) -> Unit)? = null,
     onStopAwaiting: (Long) -> Unit = {},
+    snoozed: SnoozeState? = null,
+    onSnooze: (() -> Unit)? = null,
+    onUnsnooze: () -> Unit = {},
 ) {
     val colors = DeskTheme.colors
     val dimens = DeskTheme.dimens
@@ -141,6 +146,7 @@ fun MessageReader(
     val replyAllLabel = stringResource(R.string.action_reply_all)
     val forwardLabel = stringResource(R.string.action_forward)
     val editLabel = stringResource(R.string.action_edit_draft)
+    val snoozeLabel = stringResource(R.string.action_snooze)
     val vipLabel = stringResource(if (vip == true) R.string.action_vip_remove else R.string.action_vip_add)
     val vipIcon = if (vip == true) MailIcons.VipFilled else MailIcons.Vip
     // what there is to write from here: on with the draft itself, or an answer to the message
@@ -159,6 +165,7 @@ fun MessageReader(
                 answers?.let { write -> TopBarAction(MailIcons.ForwardMail, forwardLabel, { write(DraftKind.Forward) }) },
                 TopBarAction(unreadIcon, unreadLabel, onToggleUnread),
                 onMove?.let { TopBarAction(MailIcons.MoveTo, moveLabel, it) },
+                onSnooze?.let { TopBarAction(MailIcons.Snooze, snoozeLabel, it) },
                 vip?.let { TopBarAction(vipIcon, vipLabel, onToggleVip) },
             ),
         )
@@ -192,6 +199,7 @@ fun MessageReader(
                 if (onArchive != null) DeskIconButton(MailIcons.Archive, archiveLabel, onArchive)
                 DeskIconButton(DeskIcons.Delete, deleteLabel, onDelete)
                 if (onMove != null) DeskIconButton(MailIcons.MoveTo, moveLabel, onMove)
+                if (onSnooze != null) DeskIconButton(MailIcons.Snooze, snoozeLabel, onSnooze)
                 DeskIconButton(unreadIcon, unreadLabel, onToggleUnread)
                 if (vip != null) DeskIconButton(vipIcon, vipLabel, onToggleVip)
                 trailingActions()
@@ -202,6 +210,17 @@ fun MessageReader(
         val strip = Modifier.padding(horizontal = dimens.pagePadding).padding(bottom = dimens.gapM)
         // one of the user's own: the answer that is waited for, or the offer to wait for one
         AwaitStrip(awaiting, onAwait, onStopAwaiting, strip)
+        // snoozed: when it comes back, and the way to have it back now
+        if (snoozed != null) {
+            val dates = rememberDateLabels()
+            StatusBanner(
+                tone = BannerTone.Info,
+                text = snoozed.until?.let { stringResource(R.string.snoozed_until, dates.full(it)) } ?: stringResource(R.string.snoozed_unknown),
+                modifier = strip.testTag(SnoozeTags.STRIP),
+                actionLabel = stringResource(R.string.action_unsnooze),
+                onAction = onUnsnooze,
+            )
+        }
         when (content) {
             is MailContent.Ready -> {
                 if (content.attachments.isNotEmpty()) Attachments(content.attachments, fetchingFile, onAttachment)

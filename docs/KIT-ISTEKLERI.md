@@ -10,10 +10,12 @@ kaldırılır.
 kalanlar ilgili PR'a kadar bekleyebilir. 12, 13, 18 ve 20 istek değil, hata. 14–17 alpha.2'de (gerçek
 posta ve hesap ekranları) eklendi; 18–20 alpha.1'in Galaxy S24'teki iki ekran kaydından (12 Kasım 2026),
 kare kare bakılarak yazıldı; 21 ve 4. maddenin eki alpha.3'te, yazma ekranıyla; 22 Barış'ın isteğiyle
-(13 Kasım 2026); 23 beta.1'in şablonlarıyla.
+(13 Kasım 2026); 23 beta.1'in şablonlarıyla; 24 Barış'ın kararıyla (biçimli yazma kitte, 13 Kasım 2026); 25
+beta.1'in ertelemesiyle.
 
 **beta.1'in beklediği maddeler:** 4 (alıcı önerileri), 7 (satırı kaydırma), 22 (çerçeveyle seçme), 23
-(metin alanında imleç). Kit bunları yayımlayınca uygulamaya bağlanır.
+(metin alanında imleç), 24 (biçimli metin düzenleyici), 25 (tarih ve saat seçici). Kit bunları yayımlayınca
+uygulamaya bağlanır; beta.1 onları beklemeden çıkar.
 
 Satır ve dosya adları kitin 2.4.0 etiketine göredir.
 
@@ -320,3 +322,51 @@ Koddan okundu, cihazda denenmedi.
   bağlantı gibi biçimler seçili metne uygulanır; ikisi de imlecin ve seçimin bilinmesini istiyor.
 - **Şimdilik:** şablon yazılanın sonuna, imzanın ve alıntının üstüne eklenir; yer metnin kendisinden
   çıkarılır (`core/…/compose/Templates.kt`).
+
+## 24. Biçimli metin düzenleyici (HTML yazma)
+
+- **Bugün:** kitte yalnızca düz metin alanı var (`DeskTextField`, `String`); biçim, imleç ve seçim
+  uygulamaya gelmiyor (madde 23).
+- **İstek:** kitin kendi biçimli metin düzenleyicisi (adı kitin; ör. `DeskRichTextEditor` ve onun
+  durumunu tutan `RichTextState`):
+  - **Biçimler:** kalın, eğik, altı çizili, üstü çizili; madde işaretli ve numaralı liste (girinti
+    artır/azalt); alıntı bloğu; bağlantı ekle, düzenle, kaldır; biçimi temizle. Başlık düzeyleri
+    (1–3) olabilir; renk ve yazı boyutu gerekmez.
+  - **Araç çubuğu:** kitin düğmeleriyle; her düğme seçimin biçimini gösterir (açık/kapalı). Dar pencerede
+    sığmayanlar bir "Diğer" menüsünde. Telefonda klavyenin üstünde durabilmeli.
+  - **Kısayollar:** Ctrl+B, Ctrl+I, Ctrl+U, Ctrl+K (bağlantı), Ctrl+Shift+7 / Ctrl+Shift+8 (numaralı /
+    madde işaretli liste), Ctrl+Z / Ctrl+Y (geri al / yinele); Türkçe klavyede de (madde 10).
+  - **Girdi ve çıktı:** HTML'nin e-postada güvenle taşınan bir alt kümesi (`p`, `br`, `b`/`strong`,
+    `i`/`em`, `u`, `s`, `a[href]`, `ul`/`ol`/`li`, `blockquote`, `h1`–`h3`) olarak `toHtml()`, aynı içeriğin
+    düz metin karşılığı olarak `toPlainText()` (iletinin `multipart/alternative` düz metin parçası için:
+    listeler "- " ve "1. " ile, bağlantılar "metin <adres>" diye) ve `setHtml(html)` (taslağı yeniden açmak,
+    yanıtın alıntısı ve imza için). Alt kümenin dışındaki etiketler metniyle kalır, biçimi düşer.
+  - **İmleç ve seçim:** imlecin yerine metin ya da HTML koyma (`insertAtCursor`; şablonlar için), seçili
+    metni okuma, programla seçme (madde 23 ile aynı ihtiyaç).
+  - **Yapıştırma:** başka bir uygulamadan gelen HTML yukarıdaki alt kümeye indirgenir (betik, stil,
+    resim gelmez); Ctrl+Shift+V düz metin yapıştırır.
+  - **Fare ve dokunma:** DeX'te fareyle seçme ve sağ tıkta biçim menüsü; dokunmada seçim tutamaçları ve
+    sistemin kopyala/yapıştır çubuğu.
+  - **Erişilebilirlik:** TalkBack biçimi okur ("kalın", "bağlantı"); araç çubuğu düğmeleri durumlarını
+    söyler.
+  - **Uzunluk:** binlerce satırlık bir alıntıda yazarken takılmamalı.
+- **Neden:** Aşama 2'nin "Biçimli (HTML) yazma" maddesi. Barış (13 Kasım 2026): "Biçimli yazma editörü
+  kitte olsun."
+- **Şimdilik:** iletiler düz metin yazılır ve gönderilir; yanıtın alıntısı ve imza da düz metindir. Kit
+  yayımlayınca uygulamanın payı: yazma ekranına bağlamak, taslakta HTML'yi saklamak (şema), iletiyi
+  `multipart/alternative` olarak yazmak (`MessageWriter`) ve yanıtta alıntıyı HTML olarak kurmak.
+
+## 25. Tarih ve saat seçici
+
+- **Bugün:** kitte gün ya da saat seçtiren bir bileşen yok.
+- **İstek:** kitin kendi tarih ve saat seçicisi (adı kitin; ör. `DeskDateTimePicker`), kitin iletişim
+  kutusunda açılabilen:
+  - **Takvim:** ay görünümü, ayın adı ve yılı, önceki ve sonraki ay; bugün işaretli; en erken seçilebilecek
+    gün verilebilsin (geçmiş günler seçilemesin). Haftanın ilk günü ve gün adları dilden (Türkçede pazartesi).
+  - **Saat:** saat ve dakika; 24 saat ya da ÖÖ/ÖS sistemin ayarından. Klavyeyle yazılarak da girilebilsin.
+  - **Klavye ve fare:** DeX'te ok tuşlarıyla günler arasında gezinme, Enter ile seçme, Esc ile kapatma.
+  - **Dönen değer:** seçilen an, saat dilimiyle (`ZonedDateTime`).
+  - **Erişilebilirlik:** TalkBack günü tam okur ("14 Kasım Cumartesi").
+- **Neden:** ertelemede yalnızca hazır süreler var (bu akşam, yarın sabah, hafta sonu, gelecek hafta);
+  "Gün ve saat seç…" bu seçiciyi bekliyor.
+- **Şimdilik:** hazır süreler.
