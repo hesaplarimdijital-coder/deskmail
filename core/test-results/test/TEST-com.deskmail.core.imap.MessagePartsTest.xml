@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.core.imap.MessagePartsTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-11-13T08:09:14.341Z" hostname="runnervmccnms" time="0.021">
+  <properties/>
+  <testcase name="aFilesSizeIsWorkedOutFromHowItTravels" classname="com.deskmail.core.imap.MessagePartsTest" time="0.001"/>
+  <testcase name="aPlaceTheMessageDoesNotHaveIsNoFile" classname="com.deskmail.core.imap.MessagePartsTest" time="0.011"/>
+  <testcase name="aMessageOfOnePartIsThatPart" classname="com.deskmail.core.imap.MessagePartsTest" time="0.002"/>
+  <testcase name="aFileIsReadDecodedFromItsPlaceInTheMessage" classname="com.deskmail.core.imap.MessagePartsTest" time="0.007"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
