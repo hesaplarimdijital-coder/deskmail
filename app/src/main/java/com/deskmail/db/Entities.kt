@@ -298,6 +298,12 @@ data class OutboxEntity(
 
         const val REPLY = "Reply"
         const val FORWARD = "Forward"
+
+        /**
+         * Begun from a draft in the server's Drafts folder that could not be taken up whole ([sourceId]
+         * is that draft's message): its copy there is left as it is, and this one is saved beside it.
+         */
+        const val EDIT = "Edit"
     }
 }
 

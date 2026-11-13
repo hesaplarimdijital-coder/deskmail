@@ -24,22 +24,34 @@ object SnoozeWork {
      * @param snoozes what it says.
      * @param stale older lists still in the folder (a write that was cut short, two devices at once): to go with the next write.
      * @param held the Message-IDs of the snoozed messages the folder holds now.
+     * @param uids where each of them lies in the folder, by its Message-ID: what is brought back by.
      */
-    data class Listed(val uid: Long, val snoozes: List<Snooze>, val stale: List<Long>, val held: Set<String>)
+    data class Listed(val uid: Long, val snoozes: List<Snooze>, val stale: List<Long>, val held: Set<String>, val uids: Map<String, List<Long>> = emptyMap())
 
     /** The list's text is read up to this much: a few hundred snoozes. */
     private const val MAX_LIST_BYTES = 256 * 1024
 
-    /** Reads the list in [folder], and what the folder holds. */
+    /**
+     * Reads the list in [folder], and what the folder holds. The newest list is the one that stands.
+     * An older one is left over: a write that was cut short, or two devices that wrote at once. What
+     * only an older list says of a message the folder still holds stands too: the device that wrote
+     * it did not see the newest list, and took the message for listed.
+     */
     fun read(remote: RemoteAccount, folder: String): Listed = remote.open(folder).use { box ->
         val headers = box.headers(box.uids(since = null))
         val (lists, snoozed) = headers.partition { SnoozeList.isList(it.globalId) }
-        val held = snoozed.mapTo(HashSet()) { it.globalId }
-        // the newest list is the one that stands; any other is left over
+        val uids = snoozed.groupBy({ it.globalId }, { it.uid })
+        val held = uids.keys
         val ordered = lists.sortedBy { it.uid }
-        val newest = ordered.lastOrNull() ?: return@use Listed(0, emptyList(), emptyList(), held)
-        val text = box.body(newest.uid, MAX_LIST_BYTES)?.text.orEmpty()
-        Listed(newest.uid, SnoozeList.read(text), ordered.dropLast(1).map { it.uid }, held)
+        val newest = ordered.lastOrNull() ?: return@use Listed(0, emptyList(), emptyList(), held, uids)
+        val standing = LinkedHashMap<String, Snooze>()
+        for (snooze in SnoozeList.read(box.body(newest.uid, MAX_LIST_BYTES)?.text.orEmpty())) standing[snooze.messageId] = snooze
+        for (old in ordered.dropLast(1).asReversed()) {
+            for (snooze in SnoozeList.read(box.body(old.uid, MAX_LIST_BYTES)?.text.orEmpty())) {
+                if (snooze.messageId in held && snooze.messageId !in standing) standing[snooze.messageId] = snooze
+            }
+        }
+        Listed(newest.uid, standing.values.toList(), ordered.dropLast(1).map { it.uid }, held, uids)
     }
 
     /**
@@ -78,8 +90,11 @@ object SnoozeWork {
      * False when the folder no longer holds it (another device brought it back first, or the user
      * moved it elsewhere).
      */
-    fun wake(remote: RemoteAccount, folder: String, messageId: String, target: String): Boolean {
-        val uids = remote.open(folder).use { it.withMessageId(messageId) }
+    fun wake(remote: RemoteAccount, folder: String, messageId: String, target: String): Boolean =
+        wake(remote, folder, remote.open(folder).use { it.withMessageId(messageId) }, target)
+
+    /** Brings the snoozed message at [uids] in [folder] (as [read] found it) back to [target], unread. False for none. */
+    fun wake(remote: RemoteAccount, folder: String, uids: List<Long>, target: String): Boolean {
         if (uids.isEmpty()) return false
         remote.edit(folder).use { box ->
             box.mark(uids, Mark.Seen, false)

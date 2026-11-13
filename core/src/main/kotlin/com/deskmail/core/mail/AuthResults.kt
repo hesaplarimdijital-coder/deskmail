@@ -6,7 +6,9 @@ package com.deskmail.core.mail
  *
  * Only the topmost such header is read: the provider puts its own on top, as the last to handle
  * the message. One further down came with the message, from wherever it was written, and says
- * nothing that can be taken on trust.
+ * nothing that can be taken on trust. Where the provider adds none, the topmost may have come with
+ * the message too: it is the provider's word only where it names the provider's server
+ * ([isProviders]).
  */
 object AuthResults {
 
@@ -18,6 +20,15 @@ object AuthResults {
 
     /** The checks that are shown, in this order; each may be there more than once (a message may carry several DKIM signatures). */
     val METHODS = listOf("spf", "dkim", "dmarc")
+
+    /**
+     * Whether [results] are the provider's own word: they name the server its own header names
+     * ([authServId], from [com.deskmail.core.provider.Provider]; empty for Microsoft's, which names
+     * none). Nothing is known of a provider without one ([authServId] null): its results may be
+     * anybody's.
+     */
+    fun isProviders(results: Results, authServId: String?): Boolean =
+        authServId != null && results.server.equals(authServId, ignoreCase = true)
 
     /** The topmost Authentication-Results of [headers] (header lines as they travelled); null where there is none. */
     fun read(headers: String): Results? {

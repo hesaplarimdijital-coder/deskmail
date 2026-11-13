@@ -60,7 +60,7 @@ class LiveMailTest {
 
     /** The server says no to every search (and is itself otherwise): see [Refusing]. */
     private val refuseSearch = AtomicBoolean(false)
-    private val clock = AtomicLong(1_000_000)
+    private val clock = AtomicLong(now.toEpochMilli())
     private lateinit var db: DeskMailDatabase
     private lateinit var accounts: AccountStore
     private lateinit var sync: MailSync
@@ -79,7 +79,8 @@ class LiveMailTest {
                 val connection = ImapConnection.open(address, credentials, log)
                 if (refuseSearch.get()) Refusing(connection) else connection
             },
-            clock = { now },
+            // one clock for the sync and for what a screen does: a day that passes passes for both
+            clock = { Instant.ofEpochMilli(clock.get()) },
         )
         files = File(context.cacheDir, "files-" + System.nanoTime())
         mail = LiveMail(db, sync, scope, files, now = { clock.get() }, paceMs = 0, undoMs = UNDO_MS, tellAfterMs = 0)
@@ -236,9 +237,8 @@ class LiveMailTest {
         // nothing to look for: the servers are not asked
         assertNull(mail.searchServers("a"))
 
-        // a day later it is forgotten, and the sync does with it what it does with any other old message
+        // a day later it is forgotten by the sync itself, which does with it what it does with any other old message
         clock.addAndGet(LiveMail.HITS_KEPT_MS + 1)
-        mail.searchServers("olmayan")
         assertEquals(MailSync.Outcome.Done, sync.account(id))
         assertTrue(found("2025").isEmpty())
     }

@@ -484,7 +484,10 @@ class LiveMail(
         snoozedBefore.remove(undo)?.let { rows ->
             for ((key, was) in rows) {
                 if (was != null) {
-                    db.snoozes().put(was.copy(changedAt = now()))
+                    // One that stood on the server's list is put onto it again by this device: the
+                    // list may have been written without it meanwhile (taken back after the notice).
+                    val state = if (was.state == SnoozeEntity.LISTED) SnoozeEntity.ADDED else was.state
+                    db.snoozes().put(was.copy(state = state, changedAt = now()))
                 } else {
                     db.snoozes().of(key.first, key.second)?.let { db.snoozes().delete(it.id) }
                 }
@@ -644,7 +647,7 @@ class LiveMail(
         const val SERVER_FOUND_LIMIT = 100
 
         /** How long what a search of the servers found is kept on the device, whatever the sync keeps. */
-        const val HITS_KEPT_MS = 24 * 60 * 60 * 1000L
+        const val HITS_KEPT_MS = MailSync.HITS_KEPT_MS
 
         /** A saved search's name is one line of the sidebar; what it looks for, one line of the search field. */
         const val MAX_NAME = 80

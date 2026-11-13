@@ -90,6 +90,39 @@ class SnoozeWorkServerTest {
         assertTrue(SnoozeWork.read(connection, SnoozeList.FOLDER).snoozes.isEmpty())
     }
 
+    /**
+     * Two devices wrote at once, the one that had not seen the other's list last: what only the older
+     * list says of a message the folder still holds stands too; the newest list's word goes first.
+     */
+    @Test
+    fun whatOnlyAnOlderListSaysOfAHeldMessageStands() = connected { connection ->
+        connection.create(SnoozeList.FOLDER)
+        val uid = server.deliver("plan", monday)
+        connection.edit("INBOX").use { it.move(listOf(uid), SnoozeList.FOLDER) }
+        val gone = Snooze("<gone@example.org>", Instant.parse("2026-11-17T05:00:00Z"), "INBOX")
+        val first = publish(connection, listOf(plan, gone))
+        val second = publish(connection, emptyList())
+
+        val listed = SnoozeWork.read(connection, SnoozeList.FOLDER)
+
+        assertEquals(second, listed.uid)
+        // the held message as the older list has it; the one the folder no longer holds is gone
+        assertEquals(listOf(plan), listed.snoozes)
+        assertEquals(listOf(first), listed.stale)
+        assertEquals(setOf(plan.messageId), listed.uids.keys)
+
+        // a third list that names it: its word stands
+        val later = plan.copy(wakeAt = Instant.parse("2026-11-20T05:00:00Z"))
+        publish(connection, listOf(later))
+        assertEquals(listOf(later), SnoozeWork.read(connection, SnoozeList.FOLDER).snoozes)
+
+        // brought back where the look found it
+        val found = SnoozeWork.read(connection, SnoozeList.FOLDER)
+        assertTrue(SnoozeWork.wake(connection, SnoozeList.FOLDER, found.uids.getValue(plan.messageId), "INBOX"))
+        assertEquals(1, server.uids("INBOX").size)
+        assertFalse(SnoozeWork.wake(connection, SnoozeList.FOLDER, emptyList(), "INBOX"))
+    }
+
     /** Two lists in the folder (two devices wrote at once): the newer stands, the older is to go. */
     @Test
     fun anOlderListIsLeftOver() = connected { connection ->

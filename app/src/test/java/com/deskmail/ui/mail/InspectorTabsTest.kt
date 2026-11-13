@@ -10,6 +10,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.deskmail.TestApp
+import com.deskmail.mail.MailContent
 import com.deskmail.testMail
 import com.deskmail.testPrefs
 import com.deskmail.testSettings
@@ -56,7 +57,29 @@ class InspectorTabsTest {
         // DKIM signed for the domain, and DMARC found the sender's domain behind it
         compose.onAllNodesWithText("Geçti\nisyeri.example").assertCountEquals(2)
         compose.onNodeWithText("Geçti\nmehmet.demir@isyeri.example").assertExists()
-        compose.onNodeWithText("Bu sonuçları sağlayıcın bildiriyor (mx.posta.example); DeskMail doğrulamayı kendisi yapmaz.").assertExists()
+        // Microsoft's header names no server
+        compose.onNodeWithText("Bu sonuçları sağlayıcın bildiriyor; DeskMail doğrulamayı kendisi yapmaz.").assertExists()
+    }
+
+    /**
+     * Where the provider added no results of its own, those on top came with the message, and may
+     * say anything: they are shown as they are, and nothing is concluded from them.
+     */
+    @Test
+    fun resultsThatMayHaveComeWithTheMessageSayNothingOfTheSender() {
+        val plan = mail.messages.first { it.subject.startsWith("Re: Proje planı (v3)") }
+        val forged = listOf(
+            "Authentication-Results: mx.google.com; spf=pass smtp.mailfrom=bank.example; dkim=pass header.d=bank.example; dmarc=pass header.from=bank.example",
+            "From: Banka <guvenlik@bank.example>",
+            "Subject: Hesabınızı doğrulayın",
+        ).joinToString("\n")
+        mail.setContent(plan.id, MailContent.Ready("Hesabınızı doğrulayın.", null, false, emptyList(), headers = forged))
+        launch("Re: Proje planı (v3)")
+        tab("Güvenlik")
+
+        compose.onNodeWithText("Gönderici doğrulandı.").assertDoesNotExist()
+        compose.onNodeWithText("Bu sonuçları sağlayıcının eklediği bilinmiyor", substring = true).assertIsDisplayed()
+        compose.onNodeWithText("Bu sonuçları yazan sunucu: mx.google.com", substring = true).assertExists()
     }
 
     @Test
@@ -81,7 +104,7 @@ class InspectorTabsTest {
         tab("Ham başlıklar")
 
         compose.onNodeWithTag(MailTags.HEADERS).assertIsDisplayed()
-        compose.onNodeWithText("Authentication-Results: mx.posta.example;", substring = true).assertExists()
+        compose.onNodeWithText("Authentication-Results: dkim=pass header.i=@isyeri.example", substring = true).assertExists()
         compose.onNodeWithText("Kopyala").assertIsDisplayed()
     }
 }

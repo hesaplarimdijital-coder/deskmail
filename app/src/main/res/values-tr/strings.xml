@@ -74,6 +74,10 @@
         <item quantity="one">Çöpe taşındı</item>
         <item quantity="other">%1$d ileti çöpe taşındı</item>
     </plurals>
+    <plurals name="done_deleted_some_for_good">
+        <item quantity="one">Silindi</item>
+        <item quantity="other">%1$d ileti silindi: Çöp\'tekiler kalıcı olarak, öbürleri çöpe</item>
+    </plurals>
     <plurals name="done_removed">
         <item quantity="one">Kalıcı olarak silindi</item>
         <item quantity="other">%1$d ileti kalıcı olarak silindi</item>
@@ -150,6 +154,9 @@
     <string name="security_missing">Sonuç yok</string>
     <string name="security_by">Bu sonuçları sağlayıcın bildiriyor (%1$s); DeskMail doğrulamayı kendisi yapmaz.</string>
     <string name="security_by_unnamed">Bu sonuçları sağlayıcın bildiriyor; DeskMail doğrulamayı kendisi yapmaz.</string>
+    <string name="security_unknown">Bu sonuçları sağlayıcının eklediği bilinmiyor: ileti onları yanında getirmiş olabilir. Onlardan bir yargıya varılmadı.</string>
+    <string name="security_written_by">Bu sonuçları yazan sunucu: %1$s. Sağlayıcınınki olduğu bilinmiyor; DeskMail doğrulamayı kendisi yapmaz.</string>
+    <string name="security_written_unnamed">Bu sonuçları yazan sunucu adını söylemiyor. Sağlayıcınınki olduğu bilinmiyor; DeskMail doğrulamayı kendisi yapmaz.</string>
     <string name="security_pass">Geçti</string>
     <string name="security_fail">Geçmedi</string>
     <string name="security_softfail">Zayıf ret</string>

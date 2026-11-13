@@ -120,8 +120,12 @@ class LiveComposer(
     override suspend fun start(kind: DraftKind, accountId: Long?, sourceId: Long?, seed: DraftSeed): Long? {
         val time = now()
         val source = if (kind == DraftKind.New || sourceId == null) null else (db.messages().byId(sourceId) ?: return null)
-        // a draft of this device's own is taken up where it was left: every copy of it carries its Message-ID
-        if (kind == DraftKind.Edit && source != null && source.globalId.isNotBlank()) db.outbox().writtenUnder(source.globalId)?.let { return it.id }
+        if (kind == DraftKind.Edit && source != null) {
+            // a draft of this device's own is taken up where it was left: every copy of it carries its Message-ID
+            if (source.globalId.isNotBlank()) db.outbox().writtenUnder(source.globalId)?.let { return it.id }
+            // one being written beside a draft that could not be taken up whole
+            db.outbox().copiedFrom(source.id)?.let { return it.id }
+        }
         val account = (source?.accountId ?: accountId)?.let { db.accounts().byId(it) } ?: db.accounts().all().firstOrNull() ?: return null
         var row = OutboxEntity(
             accountId = account.id,
@@ -148,7 +152,10 @@ class LiveComposer(
         )
         if (source != null) row = from(row, kind, source, account)
         val id = db.outbox().insert(row)
-        if (source != null && (kind == DraftKind.Forward || kind == DraftKind.Edit)) takeFilesAlong(id, source)
+        if (source != null && (kind == DraftKind.Forward || kind == DraftKind.Edit)) {
+            val allFiles = takeFilesAlong(id, source)
+            if (kind == DraftKind.Edit) takeUp(id, source, allFiles)
+        }
         if (row.draftSavedAt < row.updatedAt) saveDrafts(DraftSync.SAVE_AFTER_MS)
         return id
     }
@@ -164,20 +171,18 @@ class LiveComposer(
         val cc = MailAddress.decode(source.ccList)
         if (kind == DraftKind.Edit) {
             // The draft as it lies on the server: what it says, whom it is for, and its place in a
-            // thread. Its copy there is this message's copy from now on, and up to date.
-            val folder = db.folders().byId(source.folderId)
+            // thread. Nothing is written into it yet that the server lacks. Whether its copy there
+            // becomes this message's is known once its files are here ([takeUp]).
             return row.copy(
                 toText = AddressList.format(to),
                 ccText = AddressList.format(cc),
                 bccText = AddressList.format(MailAddress.decode(source.bccList)),
                 subject = source.subject,
                 body = text,
-                messageId = source.globalId.ifBlank { row.messageId },
                 inReplyTo = source.inReplyTo,
                 refs = source.refs,
-                draftFolderId = source.folderId,
-                draftUid = source.uid,
-                draftUidValidity = folder?.uidValidity ?: 0,
+                sourceId = source.id,
+                sourceKind = OutboxEntity.EDIT,
                 draftSavedAt = row.updatedAt,
             )
         }
@@ -215,15 +220,41 @@ class LiveComposer(
     /** The account's signature as a message begins with it, set off the way mail programs know ("-- "). */
     private fun signed(account: AccountEntity): String = if (account.signature.isBlank()) "" else "\n\n-- \n" + account.signature.trim() + "\n"
 
-    /** A forwarded message's files go with it: each is fetched (if it has to be) and copied. One that cannot be had is left out. */
-    private suspend fun takeFilesAlong(draftId: Long, source: MessageEntity) {
+    /**
+     * A forwarded message's files go with it: each is fetched (if it has to be) and copied. One that
+     * cannot be had is left out. False when one was.
+     */
+    private suspend fun takeFilesAlong(draftId: Long, source: MessageEntity): Boolean {
+        var all = true
         for (file in db.messages().attachmentsOf(source.id).toFiles()) {
             val fetched = fetchFile(file)
-            if (fetched is FetchedFile.Ready) {
-                attach(draftId, file.name, file.mimeType) { fetched.file.inputStream() }
-            } else {
-                log?.warn(TAG, "a file of the forwarded message could not be taken along: $fetched")
-            }
+            if (fetched is FetchedFile.Ready && attach(draftId, file.name, file.mimeType) { fetched.file.inputStream() }) continue
+            all = false
+            log?.warn(TAG, "a file of the message could not be taken along: $fetched")
+        }
+        return all
+    }
+
+    /**
+     * A draft from the server's Drafts folder that is edited here: its copy there becomes this
+     * message's, to be replaced by this device's copy once something is written, only where nothing
+     * of it was lost in the taking. Its text was had; it is plain text (DeskMail writes no HTML); it
+     * has no pictures inside its text; every file came along. Otherwise the copy there is left as it
+     * is, and what is written here is saved beside it, under a Message-ID of its own. Either way
+     * nothing is put on the server before something is written.
+     */
+    private suspend fun takeUp(id: Long, source: MessageEntity, allFiles: Boolean) {
+        val messages = db.messages()
+        val whole = allFiles && source.globalId.isNotBlank() &&
+            messages.byId(source.id)?.bodyState == MessageEntity.BODY_KEPT &&
+            messages.bodyOf(source.id)?.html.isNullOrBlank() &&
+            messages.attachmentsOf(source.id).none { it.inline && it.contentId.isNotEmpty() }
+        if (whole) {
+            val folder = db.folders().byId(source.folderId)
+            db.outbox().takeUp(id, source.globalId, source.folderId, source.uid, folder?.uidValidity ?: 0)
+        } else {
+            log?.info(TAG, "a draft from the server is written as a copy of its own: its copy there is left as it is")
+            db.outbox().asItCame(id)
         }
     }
 

@@ -246,7 +246,10 @@ başlığında.
    - **Sonradan (beta.1):** taslakların sunucudaki Taslaklar klasörüne kaydı (`DraftSync`, `DraftWorker`;
      şema 4). Tek kopya kuralı: yeni kopya konur, sonra eskisi silinir (UIDPLUS ile, klasörün UID
      damgası tutuyorsa); gönderilen ya da atılan iletinin kopyası `draft_removal` notuyla silinir. Taslaklar'da
-     duran ileti "Düzenle" ile alınır (`DraftKind.Edit`): bu cihazınki Message-ID'sinden bulunur.
+     duran ileti "Düzenle" ile alınır (`DraftKind.Edit`): bu cihazınki Message-ID'sinden bulunur. Başka yerde
+     yazılmış taslağın kopyası yalnızca eksiksiz alındıysa devralınır (metni alınmış, düz metin, metninde resim
+     yok, bütün ekleri gelmiş: `LiveComposer.takeUp`); değilse kopyaya dokunulmaz, yazılan kendi Message-ID'siyle
+     yanına kaydedilir (`OutboxEntity.EDIT`).
    - **Sonradan (beta.1):** rehberden alıcı (Contact Picker) · DeX'te yazmanın ayrı pencerede açılması.
      Alıcı önerilerinin arayüzü kiti bekliyor (kit isteği 4).
 6. **Arama (alpha.3):** dizin sorgusu (`SearchQuery`: yazılan katlanır, dizinin böldüğü gibi sözcüklere
@@ -322,7 +325,9 @@ Her biri ayrı PR; sıra, cihazda en çok denenmesi gerekenden başlar.
    - **Ayrıntı paneli sekmeleri (Güvenlik, Ham başlıklar): yapıldı.** Başlık satırları iletinin metniyle
      birlikte alınır ve `body.headers`'ta durur (şema 4; en çok 64 000 karakter); daha önce gelmiş iletininki
      sekme açılınca alınır (`MailSync.headers`). Sonuçlar en üstteki `Authentication-Results` başlığından
-     okunur (`AuthResults`, core): sağlayıcınınki odur, alttakiler iletiyle gelmiştir. Doğrulamayı uygulama
+     okunur (`AuthResults`, core): sağlayıcınınki odur, alttakiler iletiyle gelmiştir. O da yalnızca
+     sağlayıcının sunucusunu adlandırıyorsa sağlayıcınınki sayılır (`Provider.authServId`: Gmail
+     `mx.google.com`, Microsoft adsız); değilse ve tanınmayan sağlayıcıda yargı yok. Doğrulamayı uygulama
      yapmaz.
    - **Şablonlar, kayıtlı aramalar, VIP ve gönderen başına uzak görsel izni: yapıldı.** Üç tablo (`template`,
      `saved_search`, `sender`; şema 4). Şablon yazılanın sonuna, imzanın ve alıntının üstüne konur
@@ -356,6 +361,16 @@ Her biri ayrı PR; sıra, cihazda en çok denenmesi gerekenden başlar.
    - **Boş ve hata durumları, erişilebilirlik.** Her görünümün boş durumu kendi sözünü söyler (hesap yok,
      arama, VIP, yanıt bekleyenler, ertelenenler, süzgeç); hesap ve ileti hataları ekranda ve günlükte.
      Simgeli düğmelerin ve listedeki işaretlerin adı var; TalkBack ile cihazda denenmedi.
+   - **Bağımsız inceleme: yapıldı (13 Kasım 2026).** beta.1'in bütün farkını (0.1.0-alpha.3'ten bu yana) tek bir
+     inceleme okudu; 13 bulgunun 12'si düzeltildi (#47): DeX yazma penceresi süreç bittikten sonra açılınca
+     taslağı atıyordu; başka yerde yazılmış biçimli taslak "Düzenle" ile kayıplı bir kopyayla değişiyordu;
+     ertelemede geç geri alma, aynı anda yazan iki cihaz, sunucu araması ve alışılmadık Message-ID listeden
+     ileti düşürüyordu; Güvenlik sekmesi iletiyle gelen bir başlığa yargı veriyordu; sunucu aramasının
+     bulduğu iletiler başka arama yapılmazsa hiç bırakılmıyordu; küçükler (izleme alarmla başlayınca,
+     konuşma satırlarında kısayollar, karma silme bildirimi, silinmeyi bekleyen taslak kopyası).
+     **Kalan (bilerek):** VIP ve gönderen başına uzak görsel izni gönderenin From adresine bakar; From'u
+     taklit eden bir ileti de VIP klasörüne düşer ve görselleri yüklenir. Sağlayıcının DMARC sonucu
+     geçtiyse saymak, Güvenlik sekmesinin güvendiği sonuca bağlanabilir; sonraki bir sürümde.
 
 **Kiti bekleyenler** (uygulamada yamanmaz; `docs/KIT-ISTEKLERI.md`): alıcı önerilerinin arayüzü (4),
 telefonda satırı kaydırarak arşiv ve erteleme (7), fareyle çerçeve çizerek seçme (22), şablonun imlecin

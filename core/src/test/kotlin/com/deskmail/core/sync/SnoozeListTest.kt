@@ -30,14 +30,20 @@ class SnoozeListTest {
             Some words a person added.
             2026-11-16T05:00:00Z	<plan@example.org>	INBOX	Proje planı
             yesterday	<old@example.org>	INBOX	not a time
-            2026-11-17T05:00:00Z	no-message-id	INBOX	not an ID
+            2026-11-17T05:00:00Z		INBOX	no ID
+            2026-11-17T06:00:00Z	<gw@example.org> (gw)	INBOX	an ID as its message has it
             2026-11-18T05:00:00Z	<empty@example.org>		no folder
             2026-11-19T05:00:00Z	<plan@example.org>	Archive	the same message once more
             2026-11-20T05:00:00Z	<short@example.org>	INBOX
         """.trimIndent().replace("\n", "\r\n")
 
         assertEquals(
-            listOf(plan, Snooze("<short@example.org>", Instant.parse("2026-11-20T05:00:00Z"), "INBOX")),
+            listOf(
+                plan,
+                // whatever the message's Message-ID is, comment and all: what is written is read
+                Snooze("<gw@example.org> (gw)", Instant.parse("2026-11-17T06:00:00Z"), "INBOX", "an ID as its message has it"),
+                Snooze("<short@example.org>", Instant.parse("2026-11-20T05:00:00Z"), "INBOX"),
+            ),
             SnoozeList.read(text),
         )
     }

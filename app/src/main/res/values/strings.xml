@@ -84,6 +84,10 @@
         <item quantity="one">Moved to the trash</item>
         <item quantity="other">%1$d messages moved to the trash</item>
     </plurals>
+    <plurals name="done_deleted_some_for_good">
+        <item quantity="one">Deleted</item>
+        <item quantity="other">%1$d messages deleted: those in the trash for good, the others to the trash</item>
+    </plurals>
     <plurals name="done_removed">
         <item quantity="one">Deleted for good</item>
         <item quantity="other">%1$d messages deleted for good</item>
@@ -160,6 +164,9 @@
     <string name="security_missing">No result</string>
     <string name="security_by">Your provider reports these results (%1$s); DeskMail checks nothing itself.</string>
     <string name="security_by_unnamed">Your provider reports these results; DeskMail checks nothing itself.</string>
+    <string name="security_unknown">Whether your provider added these results is not known: they may have come with the message. No verdict is drawn from them.</string>
+    <string name="security_written_by">The server that wrote these results: %1$s. Whether it is your provider\'s is not known; DeskMail checks nothing itself.</string>
+    <string name="security_written_unnamed">The server that wrote these results does not name itself. Whether it is your provider\'s is not known; DeskMail checks nothing itself.</string>
     <string name="security_pass">Passed</string>
     <string name="security_fail">Failed</string>
     <string name="security_softfail">Soft fail</string>

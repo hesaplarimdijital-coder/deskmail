@@ -164,11 +164,28 @@ class MailUiState(private val settings: AppSettings? = null) {
 
     /**
      * What an action on [route]'s list is done to: the selection when several rows are selected
-     * (or are being picked), otherwise the open message; empty when there is neither.
+     * (or are being picked), every message the rows stand for ([standFor]: a conversation's row
+     * stands for all of its messages in the list); otherwise the open message; empty when there is
+     * neither.
      */
     fun targets(route: String): List<Long> {
         val chosen = selection(route)
-        return if (chosen.size > 1 || (picking(route) && chosen.isNotEmpty())) chosen.toList() else listOfNotNull(openedId(route))
+        if (chosen.size > 1 || (picking(route) && chosen.isNotEmpty())) {
+            val all = standing[route]
+            return if (all != null && all.first == chosen) all.second else chosen.toList()
+        }
+        return listOfNotNull(openedId(route))
+    }
+
+    /** For each route, the selection as its screen last listed it, and every message those rows stand for. */
+    private val standing = HashMap<String, Pair<Set<Long>, List<Long>>>()
+
+    /**
+     * The screen of [route] says what its selected rows ([chosen]) stand for ([ids]): the commands of
+     * the keyboard and the menus act on all of them, as its bar does.
+     */
+    fun standFor(route: String, chosen: Set<Long>, ids: List<Long>) {
+        standing[route] = chosen to ids
     }
 
     /** The message of the user's own that is being written in this window, and over which screen; null for none. */

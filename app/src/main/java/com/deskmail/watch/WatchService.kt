@@ -89,7 +89,12 @@ class WatchService : Service() {
         scheduleRefresh()
         app.background.launch {
             try {
-                withTimeoutOrNull(REFRESH_LIMIT_MS) { app.watch.refresh() }
+                withTimeoutOrNull(REFRESH_LIMIT_MS) {
+                    // a watch begun by this alarm (the app's process was ended meanwhile) has nothing to refresh yet;
+                    // and an account whose watcher gave up is watched anew
+                    app.watch.arrange()
+                    app.watch.refresh()
+                }
             } finally {
                 app.awake.release()
             }
