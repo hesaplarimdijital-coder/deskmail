@@ -8,6 +8,7 @@ import android.service.notification.StatusBarNotification
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.deskmail.core.log.AppLog
+import com.deskmail.data.endAndWait
 import com.deskmail.data.eventually
 import com.deskmail.db.DeskMailDatabase
 import com.deskmail.db.testAccount
@@ -17,7 +18,6 @@ import com.deskmail.mail.MailView
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -63,7 +63,7 @@ class MailNotifierTest {
 
     @After
     fun close() {
-        scope.cancel()
+        endAndWait(scope)
         db.close()
     }
 
