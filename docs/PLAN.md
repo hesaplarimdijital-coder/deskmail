@@ -113,12 +113,23 @@ Room 3; şema dışa aktarılır, v1'den itibaren göç testi vardır.
 - `specialUse` ön plan hizmeti; "Anlık" seçili hesap varsa çalışır; açılışta ve uygulama güncellenince
   yeniden başlar.
 - Hesap başına Gelen'de bir IDLE; yenileme 24 dakikada, tüm hesaplar tek alarmda. Android 17'de
-  dinleyicili `setExactAndAllowWhileIdle`, 14–16'da `setAndAllowWhileIdle`. Okuma zaman aşımı yenileme
-  süresi + 2 dakika.
+  dinleyicili `setExactAndAllowWhileIdle` (izin istemez; süreç yaşadıkça geçerli, hizmet yaşatır), 14–16'da
+  `setAndAllowWhileIdle` (uykuda 15 dakikaya kadar gecikebilir).
+- **Okuma zaman aşımı (plandan sapma, beta.1):** "yenileme süresi + 2 dakika" yerine öteki bağlantılardaki
+  60 saniye. Posta kitaplığı (Angus) IDLE beklerken hiçbir şey okunmadan dolan zaman aşımını sessizlik
+  sayıp beklemeyi sürdürür; ölü bir hat beklerken anlaşılmaz. Ölü hattı yenilemedeki DONE + NOOP yakalar:
+  yanıt 60 saniyede gelmezse hat kapatılır ve hemen yeniden kurulur. Uzun zaman aşımı bu soruyu 26 dakika
+  bekletirdi.
+- Haber gelince (ileti geldi, gitti, işaretlendi) hesabın eşitlemesi kendi bağlantılarında çalışır; hat
+  yalnızca bekler. Art arda gelen haberler tek eşitlemede toplanır. Hat her kurulduğunda bir kez eşitlenir
+  (kimse beklemezken gelmiş olabilir).
 - Uyandırma kilidi yalnızca olay işlenirken tutulur. Ağ değişince hemen yeniden bağlanır.
 - Hata: 30 saniyeden 15 dakikaya üstel bekleme; kimlik hatasında durur, hesap "Yeniden bağlan"
   durumuna geçer.
-- Yedek yol: WorkManager ile 15/30/60 dakika; "Elle"de hiçbiri.
+- Yedek yol: WorkManager ile 15/30/60 dakika; "Elle"de hiçbiri. "Anlık"ta saatte bir bakılmaya devam
+  edilir; o iş, sistemin kapattığı hizmeti (izin varsa) ve vazgeçilmiş hesapların beklenmesini de yeniden
+  dener.
+- Ayar bütün hesaplar için tektir (beta.1). Hesap başına sıklık istenirse `AccountEntity.notifyMode` hazır.
 - Biçim: hesap başına kanal ve grup, ileti başına BigTextStyle, özet InboxStyle. Düğmeler Okundu,
   Arşivle, Sil (alıcı → WorkManager → `pending_op`).
 - Klasör ekrandaysa bildirim çıkmaz. İleti başka cihazda okununca bildirimi kalkar.
@@ -229,9 +240,13 @@ başlığında.
      (hesap başına kanal ve grup, BigTextStyle, InboxStyle özet) · Okundu, Arşivle, Sil düğmeleri ·
      bildirime dokununca iletinin açılması · liste ekrandayken bildirim çıkmaması · okunan iletinin
      bildiriminin kalkması · bildirim izni ve Ayarlar › Bildirimler.
-   - **7b (kalan, ayrı PR):** IDLE döngüsü · `specialUse` ön plan hizmeti ve kalıcı bildirimi · alarm,
-     uyandırma kilidi, ağ değişimi · açılışta ve güncellemeden sonra başlatma · "Anlık" seçeneği ve hesap
-     başına sıklık · pil ayarlarına yönlendirme. Cihazda denenmeden birleştirilmemeli.
+   - **7b (beta.1):** IDLE (`ImapWatch`, `MailWatch`) · `specialUse` ön plan hizmeti ve kalıcı bildirimi
+     (`WatchService`) · yenileme alarmı, uyandırma kilidi (`Awake`), ağ değişimi · açılışta ve
+     güncellemeden sonra başlatma (`StartReceiver`) · "Anlık" seçeneği (varsayılan) · pil ayarına
+     yönlendirme. JVM testleri gömülü sunucuyla; **cihazda bir gecelik deneme şart** (aşağıda, "Riskler").
+     - Test sunucusunun (GreenMail) iki sınırı testlere yansıdı: beklerken bayrak değişimini bildirmiyor
+       (silme ile denendi), ve bekleme kurulurken gelen iletiyi ancak bekleme bitince söylüyor (testler
+       bildirilene dek ileti bırakır). Gerçek sunucular ikisini de anında söyler.
 8. **Outlook OAuth2:** PKCE ve jeton istemcisi · XOAUTH2 ile IMAP/SMTP girişi · tarayıcı
    akışı ve jeton saklama · hesap eklemede Microsoft yolu · Outlook farkları ve hata yönlendirmeleri.
    Azure uygulama kaydını bekler (Barış'ın tarayıcısında yapılacak); o yüzden sırası sona alındı.
@@ -244,8 +259,8 @@ başlığında.
 Her biri ayrı PR; sıra, cihazda en çok denenmesi gerekenden başlar.
 
 1. Paylaşılan dosyayla yazma ekranının hemen açılması; yazma ekranının kendiliğinden kapanmaması (alpha.3'ün
-   cihaz denemesinden).
-2. Anlık bildirim (7b).
+   cihaz denemesinden). **Yapıldı.**
+2. Anlık bildirim (7b). **Yapıldı.**
 3. Çoklu seçim, toplu işlem, klasöre sürükle bırak (4'ün kalanı).
 4. Taslakların sunucuya kaydı (5'in kalanı).
 5. Sunucu araması, alan süzgeçleri, palette arama (6'nın kalanı).
@@ -275,7 +290,10 @@ bilgisi) beta'ya girmez; her biri ayrıca sorulur.
 - **Geniş iletiler:** sabit genişlikli bültenler (600 piksellik tablolar) telefonda ekrana sığdırılmıyor,
   sağı kesik kalıyor. Sığdırma (küçültme ya da tabloyu daraltma) okuma bölmesinin sonraki işi.
 - **IDLE'ın uykuda kalması (S24):** günlük her yenilemeyi, kopmayı ve yeniden bağlanmayı zaman
-  damgasıyla yazar; bir gecelik deneme (şarjsız, ekran kapalı) yapılır.
+  damgasıyla yazar; bir gecelik deneme (şarjsız, ekran kapalı) yapılır. Bakılacaklar: "the wait was begun
+  anew" satırları 24 dakikada bir geliyor mu (Android 17'nin kesin alarmı); sabaha kadar kaç kez "the
+  wait … ended" ve "next try" var; gece gelen iletinin bildirimi geldiği dakikada mı çıkmış. Pil
+  kısıtlaması kaldırılmadan ve "Hiç uyumayan uygulamalar"a eklenmeden deneme anlamlı değil.
 - **Microsoft:** yeni kişisel hesaplarda SMTP kapalı başlayabiliyor ve kullanıcı ayarı yok; IMAP
   varsayılan olarak kapalı (Settings › Mail › Forwarding and IMAP). Azure dizini etkinlik yokluğunda
   engellenebiliyor: istemci kimliği gelişmiş ayardan değiştirilebilir olacak.
