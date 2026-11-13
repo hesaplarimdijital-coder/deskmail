@@ -42,6 +42,8 @@ class ConversationUiTest {
 
         compose.onNodeWithTag(MailTags.CONVERSATION).performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("Bu konuşmada 3 ileti").assertIsDisplayed()
+        // the user's own message in it says whom it went to, not as if the other had written it
+        compose.onNodeWithText("Kime: Mehmet Demir").assertExists()
         // under the message: its subject is where the page begins
         assertTrue(
             compose.onNodeWithText("Re: Proje planı (v3)").getUnclippedBoundsInRoot().top <

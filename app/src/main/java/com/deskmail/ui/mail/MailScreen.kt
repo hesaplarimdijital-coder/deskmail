@@ -751,7 +751,8 @@ private fun ConversationStrip(mail: MailSource, message: MailMessage, onOpen: (M
         )
         conversation.forEach { other ->
             DeskListRow(
-                title = counterpart(other),
+                // the user's own messages say whom they went to, as the lists say it
+                title = if (other.outgoing) stringResource(R.string.message_to, other.to) else other.fromName,
                 subtitle = other.preview.ifBlank { other.subject },
                 trailing = dates.short(other.sentAt),
                 selected = other.id == message.id,
