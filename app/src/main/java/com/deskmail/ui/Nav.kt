@@ -9,6 +9,7 @@ import com.deskmail.mail.MailFolder
 import com.deskmail.mail.SavedSearch
 import desktopkit.components.DeskIcons
 import desktopkit.shell.MoreStyle
+import desktopkit.shell.NavIconBadge
 import desktopkit.shell.NavItem
 import desktopkit.shell.NavKind
 import desktopkit.shell.NavSection
@@ -98,11 +99,24 @@ private val SIDEBAR_ONLY = setOf(NavKind.Sidebar)
 fun navBadges(folders: List<MailFolder>, outbox: Int = 0): Map<String, String> = buildMap {
     // what has not left yet: drafts, and what waits or failed
     if (outbox > 0) put(Routes.OUTBOX, outbox.toString())
-    val inbox = folders.filter { it.role == FolderRole.Inbox }.sumOf { it.unread }
-    if (inbox > 0) put(Routes.INBOX, inbox.toString())
-    val unread = folders.filter { it.role != FolderRole.All && it.role != FolderRole.Junk && it.role != FolderRole.Trash && it.role != FolderRole.Snoozed }.sumOf { it.unread }
-    if (unread > 0) put(Routes.UNREAD, unread.toString())
+    unreadCounts(folders).forEach { (route, count) -> put(route, count.toString()) }
     folders.forEach { folder -> if (folder.unread > 0) put(Routes.folder(folder.id), folder.unread.toString()) }
+}
+
+/**
+ * The counts on the icons of the phone's bottom bar, the rail and a collapsed sidebar, where there
+ * is no room for the sidebar's: the unread messages on Inbox and Unread. TalkBack reads them after
+ * the entry's name ("Gelen, 4 okunmamış").
+ */
+fun navIconBadges(resources: Resources, folders: List<MailFolder>): Map<String, NavIconBadge> =
+    unreadCounts(folders).mapValues { (_, count) -> NavIconBadge(count, resources.getQuantityString(R.plurals.nav_unread_count, count, count)) }
+
+/** The unread messages of the inboxes, and of every folder but those that hold them again or hold what is not wanted. */
+private fun unreadCounts(folders: List<MailFolder>): Map<String, Int> = buildMap {
+    val inbox = folders.filter { it.role == FolderRole.Inbox }.sumOf { it.unread }
+    if (inbox > 0) put(Routes.INBOX, inbox)
+    val unread = folders.filter { it.role != FolderRole.All && it.role != FolderRole.Junk && it.role != FolderRole.Trash && it.role != FolderRole.Snoozed }.sumOf { it.unread }
+    if (unread > 0) put(Routes.UNREAD, unread)
 }
 
 /** A folder's own name: the translated name of its role, or what the user called it. */

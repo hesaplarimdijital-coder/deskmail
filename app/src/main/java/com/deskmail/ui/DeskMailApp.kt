@@ -151,6 +151,7 @@ fun DeskMailApp(
     val spec = remember(locales, named, tree, startRoute, saved) { buildShellSpec(resources, named, tree, startRoute, saved) }
     val waiting = composer?.outbox?.size ?: 0
     val badges = remember(folders, waiting) { navBadges(folders, waiting) }
+    val iconBadges = remember(folders, resources) { navIconBadges(resources, folders) }
     val entry by navController.currentBackStackEntryAsState()
     val currentRoute = entry?.destination?.route ?: spec.startRoute
 
@@ -407,6 +408,19 @@ fun DeskMailApp(
     val screenTitle: (String) -> String = { route ->
         Routes.folderId(route)?.let { mail.folder(it) }?.let { folderPathLabel(resources, it) } ?: spec.item(route)?.label.orEmpty()
     }
+    // The menu of a list's entry in the sidebar, the rail and the bottom bar (a right click, a long
+    // press, the Menu key): sync it, and where there is room for windows, open it in one of its own.
+    val syncLabel = stringResource(R.string.action_refresh)
+    val newWindowLabel = stringResource(R.string.nav_open_in_new_window)
+    val entryMenu: (String, WidthClass) -> List<MenuEntry> = { route, widthClass ->
+        val view = mailView(route)
+        if (view == null || view is MailView.Search) emptyList() else buildList {
+            add(MenuEntry.Item(syncLabel, { mail.refresh(view) }, icon = MailIcons.Refresh))
+            if (activity != null && widthClass != WidthClass.Compact) {
+                add(MenuEntry.Item(newWindowLabel, { DeskWindows.openNewWindow(activity, route = route) }))
+            }
+        }
+    }
     val screensGroup = stringResource(R.string.palette_group_screens)
     val messagesGroup = stringResource(R.string.palette_group_messages)
     val noSubject = stringResource(R.string.message_no_subject)
@@ -426,6 +440,9 @@ fun DeskMailApp(
                 sidebarCollapsed = prefs.sidebarCollapsed,
                 onSidebarCollapsedChange = prefs::updateSidebarCollapsed,
                 badges = badges,
+                // a phone has Unread under "⋯": its count would only leave a dot there for good
+                iconBadges = if (widthClass == WidthClass.Compact) iconBadges.filterKeys { it == Routes.INBOX } else iconBadges,
+                navMenu = { route -> entryMenu(route, widthClass) },
                 navDrop = folderDrop,
                 menus = menus,
                 onSearch = { palette.open() },

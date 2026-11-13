@@ -31,6 +31,13 @@
     <string name="list_empty_title">Burada ileti yok</string>
     <string name="list_empty_filtered">Süzgeçlere uyan ileti yok</string>
     <string name="list_resize">İleti listesini boyutlandır</string>
+    <!-- An entry's menu in the sidebar, the rail and the bottom bar -->
+    <string name="nav_open_in_new_window">Yeni pencerede aç</string>
+    <!-- What TalkBack reads after the name of Inbox and Unread in the bottom bar and the rail -->
+    <plurals name="nav_unread_count">
+        <item quantity="one">%d okunmamış</item>
+        <item quantity="other">%d okunmamış</item>
+    </plurals>
     <plurals name="message_count">
         <item quantity="one">%d ileti</item>
         <item quantity="other">%d ileti</item>
