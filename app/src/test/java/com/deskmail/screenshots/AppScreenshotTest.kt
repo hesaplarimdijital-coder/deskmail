@@ -208,6 +208,16 @@ class AppScreenshotTest {
         capture("phone-awaiting-light")
     }
 
+    /** A snoozed message: when it comes back, and the way to have it back now. */
+    @Test @Config(qualifiers = PHONE)
+    fun phoneSnoozedDark() {
+        val bill = message("Kasım 2026 faturanız hazır")
+        kotlinx.coroutines.runBlocking { mail.snooze(listOf(bill.id), com.deskmail.TEST_NOW.plusSeconds(20 * 3600)) }
+        openMessage(mail, ui, Routes.SNOOZED, mail.message(bill.id)!!)
+        launch(ThemeMode.Dark, startRoute = Routes.SNOOZED)
+        capture("phone-snoozed-dark")
+    }
+
     @Test @Config(qualifiers = PHONE)
     fun phoneFoldersDark() {
         launch(ThemeMode.Dark, startRoute = Routes.FOLDERS)

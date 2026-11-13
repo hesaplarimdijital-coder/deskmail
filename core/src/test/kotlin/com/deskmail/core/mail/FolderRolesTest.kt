@@ -111,4 +111,12 @@ class FolderRolesTest {
         assertEquals(listOf("Projeler", "2026"), folder("Projeler.2026", delimiter = '.').segments)
         assertEquals(listOf("a/b"), folder("a/b", delimiter = null).segments)
     }
+
+    /** DeskMail's own folder for snoozed mail, by its name or by the attribute a server may give it. */
+    @Test
+    fun theSnoozedFolderIsKnown() {
+        assertEquals(FolderRole.Snoozed, roles(folder("INBOX"), folder("Ertelenenler"))["Ertelenenler"])
+        assertEquals(FolderRole.Snoozed, roles(folder("INBOX"), folder("Later", "\\Snoozed"))["Later"])
+        assertEquals(FolderRole.Other, roles(folder("INBOX"), folder("Projeler/Ertelenenler"))["Projeler/Ertelenenler"])
+    }
 }

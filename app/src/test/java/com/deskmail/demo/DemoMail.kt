@@ -62,6 +62,7 @@ class DemoMail(private val now: Instant = Instant.now(), empty: Boolean = false)
         MailFolder(17, OUTLOOK, listOf("Faturalar"), FolderRole.Other),
         MailFolder(18, OUTLOOK, listOf("Projeler"), FolderRole.Other),
         MailFolder(19, OUTLOOK, listOf("Projeler", "2026"), FolderRole.Other),
+        MailFolder(20, OUTLOOK, listOf("Ertelenenler"), FolderRole.Snoozed),
         MailFolder(21, GMAIL, listOf("INBOX"), FolderRole.Inbox),
         MailFolder(22, GMAIL, listOf("[Gmail]", "Drafts"), FolderRole.Drafts),
         MailFolder(23, GMAIL, listOf("[Gmail]", "Sent Mail"), FolderRole.Sent),
@@ -69,6 +70,7 @@ class DemoMail(private val now: Instant = Instant.now(), empty: Boolean = false)
         MailFolder(25, GMAIL, listOf("[Gmail]", "Spam"), FolderRole.Junk),
         MailFolder(26, GMAIL, listOf("[Gmail]", "Trash"), FolderRole.Trash),
         MailFolder(27, GMAIL, listOf("Seyahat"), FolderRole.Other),
+        MailFolder(28, GMAIL, listOf("Ertelenenler"), FolderRole.Snoozed),
     )
 
     /** What each message says. */
@@ -150,6 +152,28 @@ class DemoMail(private val now: Instant = Instant.now(), empty: Boolean = false)
         waits.removeAll { it.id == id }
     }
 
+    /** When the snoozed messages come back, and where to, by account and Message-ID. */
+    private val wakes = mutableStateMapOf<Pair<Long, String>, Pair<Instant, Long>>()
+
+    override val snoozes: Map<Pair<Long, String>, Instant> get() = wakes.mapValues { it.value.first }
+
+    override suspend fun snooze(ids: List<Long>, wakeAt: Instant): MailUndo? {
+        val homes = ids.mapNotNull { message(it) }.associate { it.id to it.folderId }
+        for (message in ids.mapNotNull { message(it) }) {
+            val home = wakes[message.accountId to message.globalId]?.second ?: message.folderId
+            wakes[message.accountId to message.globalId] = wakeAt to home
+        }
+        return relocate(ids, MailUndo.Action.Snoozed) { folderOf(it.accountId, FolderRole.Snoozed) }
+            ?: MailUndo(MailUndo.Action.Snoozed, homes.keys.toList()).takeIf { homes.isNotEmpty() }
+    }
+
+    override suspend fun unsnooze(ids: List<Long>): MailUndo? {
+        val homes = ids.mapNotNull { message(it) }.associate { message ->
+            message.id to (wakes.remove(message.accountId to message.globalId)?.second ?: folderOf(message.accountId, FolderRole.Inbox)?.id)
+        }
+        return relocate(ids, MailUndo.Action.Unsnoozed) { message -> tree.firstOrNull { it.id == homes[message.id] } }
+    }
+
     /** What was taken off its place, by what would bring it back. */
     private val taken = HashMap<MailUndo, List<MailMessage>>()
 
@@ -187,6 +211,9 @@ class DemoMail(private val now: Instant = Instant.now(), empty: Boolean = false)
             MailView.Vip -> stored.filter { roles[it.folderId] == FolderRole.Inbox && senders[it.fromAddress.lowercase()]?.vip == true }
             is MailView.Saved -> searches.firstOrNull { it.id == view.id }?.let { found(it.query) }.orEmpty()
             // the copies under Sent of what answers are waited for, the one due first on top
+            // the snoozed, the one to come back first on top
+            MailView.Snoozed -> stored.filter { roles[it.folderId] == FolderRole.Snoozed }
+                .sortedBy { wakes[it.accountId to it.globalId]?.first ?: Instant.MAX }
             MailView.Awaiting -> waits.sortedBy { it.dueAt }.mapNotNull { wait ->
                 stored.firstOrNull { it.accountId == wait.accountId && it.globalId == wait.messageId && roles[it.folderId] == FolderRole.Sent }
             }
@@ -308,6 +335,8 @@ class DemoMail(private val now: Instant = Instant.now(), empty: Boolean = false)
 
     override suspend fun undo(undo: MailUndo): Int {
         val before = taken.remove(undo) ?: return 0
+        // snoozed and taken back: nothing comes back later
+        if (undo.action == MailUndo.Action.Snoozed) before.forEach { wakes.remove(it.accountId to it.globalId) }
         for (message in before) {
             val index = stored.indexOfFirst { it.id == message.id }
             if (index >= 0) {
@@ -594,7 +623,7 @@ class DemoMail(private val now: Instant = Instant.now(), empty: Boolean = false)
         private const val PLAN = "<plan-v1@isyeri.example>"
 
         /** Mail in these is not counted as unread or starred in the views over every account. */
-        private val OUTSIDE_THE_VIEWS = setOf(FolderRole.All, FolderRole.Junk, FolderRole.Trash)
+        private val OUTSIDE_THE_VIEWS = setOf(FolderRole.All, FolderRole.Junk, FolderRole.Trash, FolderRole.Snoozed)
 
         private val WHITESPACE = Regex("\\s+")
 

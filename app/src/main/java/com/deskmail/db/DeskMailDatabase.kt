@@ -35,6 +35,7 @@ import kotlinx.coroutines.Dispatchers
         SavedSearchEntity::class,
         SenderEntity::class,
         AwaitingEntity::class,
+        SnoozeEntity::class,
     ],
     version = 4,
     exportSchema = true,
@@ -55,6 +56,9 @@ abstract class DeskMailDatabase : RoomDatabase() {
 
     /** The user's messages that answers are waited for. */
     abstract fun awaiting(): AwaitingDao
+
+    /** The snoozed messages, as the accounts' lists on their servers have them. */
+    abstract fun snoozes(): SnoozeDao
 
     companion object {
         /** The database's file among the app's databases. */
@@ -106,7 +110,7 @@ abstract class DeskMailDatabase : RoomDatabase() {
          * The user's own lists: texts to put into a message, searches kept as folders, and what was
          * said of senders (VIPs, and whose remote images are shown). A message's header lines are
          * kept with its text. The user's messages that answers are waited for, and how long a
-         * message that is being written is to wait for its answer.
+         * message that is being written is to wait for its answer. The snoozed messages.
          */
         val MIGRATION_3_4: Migration = object : Migration(3, 4) {
             override suspend fun migrate(connection: SQLiteConnection) {
@@ -146,6 +150,13 @@ abstract class DeskMailDatabase : RoomDatabase() {
                         "FOREIGN KEY(`accountId`) REFERENCES `account`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
                 )
                 connection.runSql("CREATE UNIQUE INDEX IF NOT EXISTS `index_awaiting_accountId_messageId` ON `awaiting` (`accountId`, `messageId`)")
+                connection.runSql(
+                    "CREATE TABLE IF NOT EXISTS `snooze` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `accountId` INTEGER NOT NULL, " +
+                        "`messageId` TEXT NOT NULL, `folder` TEXT NOT NULL, `subject` TEXT NOT NULL, `wakeAt` INTEGER NOT NULL, " +
+                        "`state` TEXT NOT NULL, `changedAt` INTEGER NOT NULL, " +
+                        "FOREIGN KEY(`accountId`) REFERENCES `account`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+                )
+                connection.runSql("CREATE UNIQUE INDEX IF NOT EXISTS `index_snooze_accountId_messageId` ON `snooze` (`accountId`, `messageId`)")
             }
         }
 

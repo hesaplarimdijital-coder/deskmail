@@ -15,6 +15,7 @@ import com.deskmail.data.LiveComposer
 import com.deskmail.data.LiveMail
 import com.deskmail.data.MailSend
 import com.deskmail.data.MailSync
+import com.deskmail.data.SnoozeSync
 import com.deskmail.db.DeskMailDatabase
 import com.deskmail.log.LogFile
 import com.deskmail.mail.AccountActions
@@ -34,12 +35,14 @@ import com.deskmail.watch.WatchService
 import com.deskmail.work.DraftWorker
 import com.deskmail.work.RemindWorker
 import com.deskmail.work.SendWorker
+import com.deskmail.work.SnoozeWorker
 import com.deskmail.work.SyncWorker
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.io.File
 import java.time.ZoneId
@@ -75,12 +78,16 @@ class DeskMailApplication : Application(), Configuration.Provider {
     private val accountStore: AccountStore by lazy { AccountStore(database, DeviceSecretBox(), log) }
 
     private val sync: MailSync by lazy {
-        // whoever has an account synced, new mail is told of afterwards, and answers that did not come
+        // whoever has an account synced, new mail is told of afterwards, answers that did not come,
+        // and what is snoozed is looked at
         MailSync(database, accountStore, log, background).also {
             it.onSynced = { accountId ->
                 notifier.check(accountId)
                 replies.check(accountId)
+                lookAtSnoozes(accountId)
             }
+            // a message moved into the Snoozed folder (or out of it) reached the server: its list follows
+            it.onChangesTold = { accountId -> lookAtSnoozes(accountId) }
         }
     }
 
@@ -93,6 +100,18 @@ class DeskMailApplication : Application(), Configuration.Provider {
     /** Tells of new mail with the system's notifications, and takes them down as the mail is read. */
     val notifier: MailNotifier by lazy { MailNotifier(this, database, notifyStore, front, log).also { it.watch(background) } }
 
+    /** Keeps the snoozes and the lists on the servers one, and brings back what is due. */
+    val snoozes: SnoozeSync by lazy {
+        SnoozeSync(database, sync, log, File(cacheDir, OUTGOING_DIRECTORY), schedule = { dueAt -> SnoozeWorker.schedule(this, dueAt) })
+    }
+
+    /** Looks at the account's snoozes in the background; what came back has its folders synced. */
+    private fun lookAtSnoozes(accountId: Long) {
+        background.launch {
+            if (snoozes.run(accountId) > 0) mail.sync(accountId)
+        }
+    }
+
     /** Reminds of the user's messages whose answers did not come in time ("Awaiting replies"). */
     val replies: ReplyReminder by lazy { ReplyReminder(this, database, notifyStore, log, schedule = { dueAt -> RemindWorker.schedule(this, dueAt) }) }
 
@@ -100,7 +119,20 @@ class DeskMailApplication : Application(), Configuration.Provider {
     val notifyActions: NotifyActions by lazy { NotifyActions(mail, notifier, log, composer, tellServers = { SyncWorker.tellServers(this) }) }
 
     /** The mail as the windows show it. */
-    val mail: LiveMail by lazy { LiveMail(database, sync, background, File(cacheDir, FILES_DIRECTORY), awaitingChanged = { replies.arrange() }) }
+    val mail: LiveMail by lazy {
+        LiveMail(
+            database, sync, background, File(cacheDir, FILES_DIRECTORY),
+            awaitingChanged = { replies.arrange() },
+            snoozesChanged = { accountId ->
+                snoozes.arrange()
+                // snoozed once more, a message moves nowhere: its new time goes onto the list once it can no longer be taken back
+                background.launch {
+                    delay(LiveMail.UNDO_MS + SNOOZE_SETTLE_MS)
+                    lookAtSnoozes(accountId)
+                }
+            },
+        )
+    }
 
     /** Adding, reconnecting and removing accounts. */
     val accounts: AccountActions by lazy {
@@ -314,6 +346,9 @@ class DeskMailApplication : Application(), Configuration.Provider {
 
         /** How much of earlier runs the log screen shows. */
         private const val EARLIER_LINES = 1000
+
+        /** How long after a snooze can no longer be taken back its account's list is written. */
+        private const val SNOOZE_SETTLE_MS = 5_000L
 
         @Volatile
         private var current: DeskMailApplication? = null

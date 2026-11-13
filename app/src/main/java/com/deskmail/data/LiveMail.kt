@@ -15,6 +15,7 @@ import com.deskmail.db.DeskMailDatabase
 import com.deskmail.db.FolderEntity
 import com.deskmail.db.MessageEntity
 import com.deskmail.db.SavedSearchEntity
+import com.deskmail.db.SnoozeEntity
 import com.deskmail.mail.AwaitOutcome
 import com.deskmail.mail.AwaitedReply
 import com.deskmail.mail.FetchedFile
@@ -50,6 +51,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.io.File
+import java.util.Collections
+import java.util.WeakHashMap
 import java.util.concurrent.ConcurrentHashMap
 
 /**
@@ -69,6 +72,8 @@ import java.util.concurrent.ConcurrentHashMap
  * @param tellAfterMs how long a change waits for others to go along with it on one connection.
  * @param awaitingChanged something came to be waited for, or no longer is ([awaitReply], [stopAwaiting]):
  *   the reminders are arranged anew.
+ * @param snoozesChanged the account's snoozes were changed on the device ([snooze], [unsnooze], and
+ *   taking either back): the server's list is to follow once the time to take it back has passed.
  */
 @Stable
 class LiveMail(
@@ -82,6 +87,7 @@ class LiveMail(
     private val undoMs: Long = UNDO_MS,
     private val tellAfterMs: Long = TELL_AFTER_MS,
     private val awaitingChanged: suspend () -> Unit = {},
+    private val snoozesChanged: suspend (accountId: Long) -> Unit = {},
 ) : MailSource {
 
     override var accounts: List<MailAccount> by mutableStateOf(emptyList())
@@ -107,6 +113,16 @@ class LiveMail(
 
     override var awaited: List<AwaitedReply> by mutableStateOf(emptyList())
         private set
+
+    override var snoozes: Map<Pair<Long, String>, Instant> by mutableStateOf(emptyMap())
+        private set
+
+    /**
+     * What snoozing (or bringing back) changed of the device's snoozes, by what takes it back: each
+     * row as it was, null for none. Kept as long as somebody may still take it back (Ctrl+Z, after
+     * its notice too).
+     */
+    private val snoozedBefore: MutableMap<MailUndo, List<Pair<Pair<Long, String>, SnoozeEntity?>>> = Collections.synchronizedMap(WeakHashMap())
 
     /** The folders as they are stored: their paths and whose they are, for asking the sync. */
     @Volatile
@@ -150,6 +166,7 @@ class LiveMail(
         scope.launch { db.lists().observeSearches().collect { rows -> savedSearches = rows.map { SavedSearch(it.id, it.name, it.query) } } }
         scope.launch { db.lists().observeSenders().collect { rows -> senders = rows.associate { it.address to SenderMarks(it.vip, it.images) } } }
         scope.launch { db.awaiting().observeAll().collect { rows -> awaited = rows.map { it.toAwaited() } } }
+        scope.launch { db.snoozes().observeShown().collect { rows -> snoozes = rows.associate { (it.accountId to it.messageId) to Instant.ofEpochMilli(it.wakeAt) } } }
         // what an earlier run did and could not tell its server any more
         scope.launch { db.pending().accounts().forEach { tellSoon(it) } }
         scope.launch(Dispatchers.IO) { forgetOldFiles() }
@@ -164,6 +181,7 @@ class LiveMail(
             MailView.Starred -> messages.observeStarred()
             MailView.Vip -> messages.observeVip()
             MailView.Awaiting -> messages.observeAwaiting()
+            MailView.Snoozed -> messages.observeSnoozed()
             is MailView.Folder -> messages.observeFolder(view.id)
             // what is typed changes with every letter: nothing of it is worth keeping for the next time
             is MailView.Search -> return found(view.query)
@@ -396,8 +414,84 @@ class LiveMail(
         return MailUndo(if (forGood) MailUndo.Action.DeletedForGood else action, changes.map { it.messageId }, folder, changes)
     }
 
+    override suspend fun snooze(ids: List<Long>, wakeAt: Instant): MailUndo? {
+        val messages = ids.mapNotNull { db.messages().byId(it) }.filter { it.globalId.isNotBlank() }
+        // each account's folder for it; made on the server the first time, which needs a network
+        val folders = HashMap<Long, Long>()
+        for (accountId in messages.map { it.accountId }.distinct()) sync.snoozeFolder(accountId)?.let { folders[accountId] = it }
+        val snoozable = messages.filter { it.accountId in folders }
+        if (snoozable.isEmpty()) return null
+        val time = now()
+        val before = ArrayList<Pair<Pair<Long, String>, SnoozeEntity?>>()
+        for (message in snoozable) {
+            val was = db.snoozes().of(message.accountId, message.globalId)
+            before += (message.accountId to message.globalId) to was
+            val snoozedAlready = message.folderId == folders[message.accountId]
+            // back to where it lies now; one snoozed again keeps the folder it came from
+            val home = if (snoozedAlready) was?.folder ?: INBOX_PATH else db.folders().byId(message.folderId)?.path ?: INBOX_PATH
+            db.snoozes().put(
+                SnoozeEntity(
+                    id = was?.id ?: 0,
+                    accountId = message.accountId,
+                    messageId = message.globalId,
+                    folder = home,
+                    subject = message.subject,
+                    wakeAt = wakeAt.toEpochMilli(),
+                    state = SnoozeEntity.ADDED,
+                    changedAt = time,
+                ),
+            )
+        }
+        val moving = snoozable.filter { it.folderId != folders[it.accountId] }.map { it.id }
+        val undo = (if (moving.isEmpty()) null else leave(moving, MailUndo.Action.Snoozed) { message, _ -> folders[message.accountId] })
+            ?: MailUndo(MailUndo.Action.Snoozed, snoozable.map { it.id })
+        snoozedBefore[undo] = before
+        snoozable.map { it.accountId }.distinct().forEach { snoozesChanged(it) }
+        return undo
+    }
+
+    override suspend fun unsnooze(ids: List<Long>): MailUndo? {
+        val time = now()
+        val messages = ids.mapNotNull { db.messages().byId(it) }
+        val before = ArrayList<Pair<Pair<Long, String>, SnoozeEntity?>>()
+        val homes = HashMap<Long, String>()
+        for (message in messages) {
+            val was = db.snoozes().of(message.accountId, message.globalId) ?: continue
+            before += (message.accountId to message.globalId) to was
+            homes[message.id] = was.folder
+            db.snoozes().put(was.copy(state = SnoozeEntity.REMOVED, changedAt = time))
+        }
+        // back where it came from; to the inbox where that folder is gone (or the device does not know it)
+        val undo = leave(ids, MailUndo.Action.Unsnoozed) { message, own ->
+            if (own.none { it.id == message.folderId && folderRole(it.role) == FolderRole.Snoozed }) return@leave null
+            own.firstOrNull { it.path == homes[message.id] && it.selectable && folderRole(it.role) != FolderRole.Snoozed }?.id
+                ?: own.firstOrNull { folderRole(it.role) == FolderRole.Inbox }?.id
+        }
+        if (undo == null) {
+            // nothing moved: what was marked to come back stays as it was
+            for ((_, was) in before) if (was != null) db.snoozes().put(was)
+            return null
+        }
+        snoozedBefore[undo] = before
+        messages.map { it.accountId }.distinct().forEach { snoozesChanged(it) }
+        return undo
+    }
+
     override suspend fun undo(undo: MailUndo): Int {
         var back = 0
+        // what snoozing changed of the device's snoozes is as it was
+        snoozedBefore.remove(undo)?.let { rows ->
+            for ((key, was) in rows) {
+                if (was != null) {
+                    db.snoozes().put(was.copy(changedAt = now()))
+                } else {
+                    db.snoozes().of(key.first, key.second)?.let { db.snoozes().delete(it.id) }
+                }
+            }
+            rows.map { it.first.first }.distinct().forEach { snoozesChanged(it) }
+            // a message snoozed once more moved nowhere: setting its time back is all there is to it
+            if (undo.changes.isEmpty()) return undo.count
+        }
         // told to the server already: these go back the way they came
         val returning = LinkedHashMap<Long, MutableList<Long>>()
         for ((accountId, changes) in undo.changes.groupBy { it.accountId }) {
@@ -538,6 +632,9 @@ class LiveMail(
     companion object {
         /** How many of the newest messages the command palette offers. */
         const val RECENT = 300
+
+        /** Where a snoozed message goes back to when the folder it came from is not known. */
+        private const val INBOX_PATH = "INBOX"
 
         /** A search shows this many of what it finds, the newest: more than anybody reads through. */
         const val FOUND_LIMIT = 500
