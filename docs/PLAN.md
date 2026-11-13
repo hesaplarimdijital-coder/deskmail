@@ -288,6 +288,11 @@ Her biri ayrı PR; sıra, cihazda en çok denenmesi gerekenden başlar.
 8. Aşama 2, brifteki sırayla: konuşma dizileri · erteleme · şablonlar · kayıtlı aramalar · yanıt
    bekleyenler · VIP ve gönderen başına uzak görsel izni · ayrıntı paneli sekmeleri (Ayrıntılar, Ekler,
    Güvenlik, Ham başlıklar) · biçimli yazma · ayarları taşıma · bildirimden hızlı yanıt.
+   - **Ayrıntı paneli sekmeleri (Güvenlik, Ham başlıklar): yapıldı.** Başlık satırları iletinin metniyle
+     birlikte alınır ve `body.headers`'ta durur (şema 4; en çok 64 000 karakter); daha önce gelmiş iletininki
+     sekme açılınca alınır (`MailSync.headers`). Sonuçlar en üstteki `Authentication-Results` başlığından
+     okunur (`AuthResults`, core): sağlayıcınınki odur, alttakiler iletiyle gelmiştir. Doğrulamayı uygulama
+     yapmaz.
    - **Şablonlar, kayıtlı aramalar, VIP ve gönderen başına uzak görsel izni: yapıldı.** Üç tablo (`template`,
      `saved_search`, `sender`; şema 4). Şablon yazılanın sonuna, imzanın ve alıntının üstüne konur
      (`Templates.insert`); kitin metin alanı imlecin yerini vermiyor (kit isteği 23). Kayıtlı arama Ara
