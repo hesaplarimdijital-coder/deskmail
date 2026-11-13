@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.ui.settings.SettingsScreenTest" tests="9" skipped="0" failures="0" errors="0" timestamp="2026-11-13T09:22:14.924Z" hostname="runnervmwuk1x" time="0.738">
+  <properties/>
+  <testcase name="theBatterySettingIsShownWhileMailIsToldOfAsItComes" classname="com.deskmail.ui.settings.SettingsScreenTest" time="0.053"/>
+  <testcase name="theSettingsOfAnotherDeviceAreTakenFromItsFile" classname="com.deskmail.ui.settings.SettingsScreenTest" time="0.11"/>
+  <testcase name="whatIsNoSettingsFileIsSaidSo" classname="com.deskmail.ui.settings.SettingsScreenTest" time="0.062"/>
+  <testcase name="theSettingsAreWrittenToAFileToTakeToAnotherDevice" classname="com.deskmail.ui.settings.SettingsScreenTest" time="0.077"/>
+  <testcase name="theTimeToTakeAMessageBackIsChosen" classname="com.deskmail.ui.settings.SettingsScreenTest" time="0.052"/>
+  <testcase name="theExperimentSwitchesChangeTheSettings" classname="com.deskmail.ui.settings.SettingsScreenTest" time="0.09"/>
+  <testcase name="withoutAGateOnlyTheIntervalIsOffered" classname="com.deskmail.ui.settings.SettingsScreenTest" time="0.1"/>
+  <testcase name="theLeaveToNotifyIsShownAndAskedFor" classname="com.deskmail.ui.settings.SettingsScreenTest" time="0.134"/>
+  <testcase name="howTheMailIsLookedForIsChosen" classname="com.deskmail.ui.settings.SettingsScreenTest" time="0.058"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

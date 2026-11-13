@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.core.provider.DnsAnswerTest" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-11-13T09:20:12.479Z" hostname="runnervmwuk1x" time="0.009">
+  <properties/>
+  <testcase name="aDomainThatSaysNoHasNothing" classname="com.deskmail.core.provider.DnsAnswerTest" time="0.002"/>
+  <testcase name="aServiceIsReadWithItsPort" classname="com.deskmail.core.provider.DnsAnswerTest" time="0.001"/>
+  <testcase name="whatIsNoAnswerReadsAsNothing" classname="com.deskmail.core.provider.DnsAnswerTest" time="0.002"/>
+  <testcase name="aNameMayPointBackIntoTheMessage" classname="com.deskmail.core.provider.DnsAnswerTest" time="0.0"/>
+  <testcase name="aDomainsOwnServiceRecordsAreTheLastThingAsked" classname="com.deskmail.core.provider.DnsAnswerTest" time="0.003"/>
+  <testcase name="theHostsThatTakeADomainsMailComeBestFirst" classname="com.deskmail.core.provider.DnsAnswerTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
