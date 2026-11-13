@@ -146,7 +146,8 @@ fun DeskMailApp(
     // (the counts are the badges' business, how an account is doing the lists').
     val named = mail.accounts.map { MailAccount(it.id, it.name, it.address) }
     val tree = folders.map { it.copy(unread = 0, total = 0) }
-    val spec = remember(locales, named, tree, startRoute) { buildShellSpec(resources, named, tree, startRoute) }
+    val saved = mail.savedSearches
+    val spec = remember(locales, named, tree, startRoute, saved) { buildShellSpec(resources, named, tree, startRoute, saved) }
     val waiting = composer?.outbox?.size ?: 0
     val badges = remember(folders, waiting) { navBadges(folders, waiting) }
     val entry by navController.currentBackStackEntryAsState()
@@ -541,6 +542,7 @@ fun DeskMailApp(
                         readerUnderBars = settings.readerUnderBars,
                         body = body,
                         resumes = resumes,
+                        onNotify = notify,
                     )
                     route == Routes.FOLDERS -> FoldersScreen(
                         accounts = mail.accounts,
@@ -562,6 +564,7 @@ fun DeskMailApp(
                         ui = settingsUi,
                         scope = scope,
                         onNotify = notify,
+                        composer = composer,
                         notifications = notifications,
                         onCheckChosen = onCheckChosen,
                         onAccountAdded = { address ->
@@ -609,6 +612,7 @@ fun mailView(route: String, search: String = ""): MailView? = when (route) {
     Routes.INBOX -> MailView.Inbox
     Routes.UNREAD -> MailView.Unread
     Routes.STARRED -> MailView.Starred
+    Routes.VIP -> MailView.Vip
     Routes.SEARCH -> MailView.Search(search)
-    else -> Routes.folderId(route)?.let { MailView.Folder(it) }
+    else -> Routes.folderId(route)?.let { MailView.Folder(it) } ?: Routes.savedId(route)?.let { MailView.Saved(it) }
 }

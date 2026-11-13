@@ -5,12 +5,16 @@ import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -20,16 +24,23 @@ import com.deskmail.core.log.AppLog
 import com.deskmail.deskMail
 import com.deskmail.mail.AccountActions
 import com.deskmail.mail.MailAccount
+import com.deskmail.mail.MailComposer
 import com.deskmail.mail.MailSource
+import com.deskmail.mail.MessageTemplate
+import com.deskmail.mail.SavedSearch
+import com.deskmail.mail.SenderMarks
 import com.deskmail.notify.NotifyGate
 import com.deskmail.settings.AppSettings
 import com.deskmail.settings.WebLayer
 import com.deskmail.ui.MailIcons
 import com.deskmail.ui.MailScope
+import com.deskmail.ui.compose.TemplateDialog
 import com.deskmail.ui.shortcuts
 import desktopkit.appResources
 import desktopkit.components.DeskButton
+import desktopkit.components.DeskDialog
 import desktopkit.components.DeskIcons
+import desktopkit.components.DeskTextField
 import desktopkit.components.KeyValueRow
 import desktopkit.components.SegmentedChoice
 import desktopkit.components.SettingRow
@@ -78,11 +89,51 @@ fun SettingsScreen(
     onAccountAdded: (String) -> Unit,
     notifications: NotifyGate? = null,
     onCheckChosen: () -> Unit = {},
+    composer: MailComposer? = null,
 ) {
     val context = LocalContext.current
     val resources = appResources()
     // an account's page only while the account is there: removed (here or in another window), its page closes
     val page = ui.page?.takeIf { it !is SettingsPage.Account || mail.account(it.id) != null }
+    // a saved search being changed
+    var search by remember { mutableStateOf<SavedSearch?>(null) }
+    search?.let { shown ->
+        SavedSearchDialog(
+            search = shown,
+            onDismiss = { search = null },
+            onSave = { name, query ->
+                search = null
+                scope.launch { mail.saveSearch(shown.id, name, query) }
+            },
+            onDelete = {
+                search = null
+                scope.launch { mail.removeSearch(shown.id) }
+            },
+        )
+    }
+    // a kept text being changed, or a new one (id 0) being written
+    var template by remember { mutableStateOf<MessageTemplate?>(null) }
+    val shownTemplate = template
+    if (shownTemplate != null && composer != null) {
+        val removed = stringResource(R.string.template_removed)
+        TemplateDialog(
+            title = stringResource(if (shownTemplate.id == 0L) R.string.template_new else R.string.template_edit_title),
+            initialName = shownTemplate.name,
+            initialBody = shownTemplate.body,
+            onDismiss = { template = null },
+            onSave = { name, body ->
+                template = null
+                scope.launch { composer.saveTemplate(shownTemplate.id, name, body) }
+            },
+            onDelete = if (shownTemplate.id == 0L) null else ({
+                template = null
+                scope.launch {
+                    composer.removeTemplate(shownTemplate.id)
+                    onNotify(removed)
+                }
+            }),
+        )
+    }
     DetailTransition(
         detail = page,
         onBack = ui::close,
@@ -98,6 +149,12 @@ fun SettingsScreen(
                 onOpenLog = { ui.page = SettingsPage.Log },
                 onOpenAccount = { ui.page = SettingsPage.Account(it.id) },
                 onAddAccount = ui::addAccount,
+                templates = composer?.templates,
+                onTemplate = { template = it },
+                searches = mail.savedSearches,
+                onSearch = { search = it },
+                senders = mail.senders,
+                onSender = { address, marks -> scope.launch { mail.markSender(address, marks) } },
             )
         },
         sharedElements = false,
@@ -181,6 +238,12 @@ private fun SettingsList(
     onOpenLog: () -> Unit,
     onOpenAccount: (MailAccount) -> Unit,
     onAddAccount: () -> Unit,
+    templates: List<MessageTemplate>?,
+    onTemplate: (MessageTemplate) -> Unit,
+    searches: List<SavedSearch>,
+    onSearch: (SavedSearch) -> Unit,
+    senders: Map<String, SenderMarks>,
+    onSender: (String, SenderMarks) -> Unit,
 ) {
     val keyboard = showShortcutHints()
     LazyColumn(Modifier.fillMaxSize(), state = state, contentPadding = rememberShellContentPadding()) {
@@ -188,6 +251,9 @@ private fun SettingsList(
         item(key = "accounts") { AccountsSection(accounts, canAdd, onOpenAccount, onAddAccount) }
         item(key = "notifications") { NotificationsSection(settings, notifications, onCheckChosen) }
         item(key = "writing") { WritingSection(settings) }
+        if (templates != null) item(key = "templates") { TemplatesSection(templates, onTemplate) }
+        item(key = "searches") { SavedSearchesSection(searches, onSearch) }
+        item(key = "senders") { SendersSection(senders, onSender) }
         item(key = "appearance") { AppearanceSection(prefs) }
         item(key = "input") { InputSection(prefs) }
         // the list of shortcuts only where there is a keyboard to use them with
@@ -281,6 +347,79 @@ private fun WritingSection(settings: AppSettings) {
                 selected = settings.undoSendSeconds,
                 onSelect = settings::updateUndoSendSeconds,
             )
+        }
+    }
+}
+
+/** The kept texts to put into a message: each with the way to change it, and a new one. */
+@Composable
+private fun TemplatesSection(templates: List<MessageTemplate>, onOpen: (MessageTemplate) -> Unit) {
+    SettingsSection(stringResource(R.string.settings_templates)) {
+        Text(stringResource(R.string.settings_templates_note), style = DeskTheme.type.labelSmall, color = DeskTheme.colors.textTertiary)
+        templates.forEach { template ->
+            SettingRow(template.name, subtitle = template.body.lineSequence().firstOrNull { it.isNotBlank() }.orEmpty()) {
+                DeskButton(stringResource(R.string.template_edit), { onOpen(template) })
+            }
+        }
+        DeskButton(
+            stringResource(R.string.template_new),
+            { onOpen(MessageTemplate(0, "", "")) },
+            Modifier.padding(top = DeskTheme.dimens.gapS),
+            icon = DeskIcons.Plus,
+        )
+    }
+}
+
+/** The searches kept as folders of their own: each with the way to change it, or to take it off the sidebar. */
+@Composable
+private fun SavedSearchesSection(searches: List<SavedSearch>, onOpen: (SavedSearch) -> Unit) {
+    SettingsSection(stringResource(R.string.nav_saved_searches)) {
+        if (searches.isEmpty()) {
+            Text(stringResource(R.string.settings_searches_empty), style = DeskTheme.type.labelSmall, color = DeskTheme.colors.textTertiary)
+        }
+        searches.forEach { search ->
+            SettingRow(search.name, subtitle = search.query) {
+                DeskButton(stringResource(R.string.template_edit), { onOpen(search) })
+            }
+        }
+    }
+}
+
+/** A saved search's name and what it looks for, to be changed; or the search taken off the sidebar. */
+@Composable
+private fun SavedSearchDialog(search: SavedSearch, onDismiss: () -> Unit, onSave: (String, String) -> Unit, onDelete: () -> Unit) {
+    var name by remember { mutableStateOf(search.name) }
+    var query by remember { mutableStateOf(search.query) }
+    DeskDialog(
+        onDismiss = onDismiss,
+        title = stringResource(R.string.settings_search_edit),
+        actions = {
+            DeskButton(stringResource(R.string.template_delete), onDelete)
+            DeskButton(stringResource(R.string.template_save), { onSave(name.trim(), query.trim()) }, primary = true, enabled = name.isNotBlank() && query.isNotBlank())
+        },
+    ) {
+        DeskTextField(value = name, onValueChange = { name = it }, modifier = Modifier.fillMaxWidth(), label = stringResource(R.string.search_save_name))
+        DeskTextField(value = query, onValueChange = { query = it }, modifier = Modifier.fillMaxWidth(), label = stringResource(R.string.settings_search_query))
+    }
+}
+
+/**
+ * What was said of senders: the VIPs, whose mail has a folder of its own, and the senders whose
+ * remote pictures are shown without being asked; each can be taken back.
+ */
+@Composable
+private fun SendersSection(senders: Map<String, SenderMarks>, onChange: (String, SenderMarks) -> Unit) {
+    SettingsSection(stringResource(R.string.settings_senders)) {
+        Text(stringResource(R.string.settings_senders_note), style = DeskTheme.type.labelSmall, color = DeskTheme.colors.textTertiary)
+        senders.filterValues { it.vip }.forEach { (address, marks) ->
+            SettingRow(address, subtitle = stringResource(R.string.settings_sender_vip)) {
+                DeskButton(stringResource(R.string.settings_sender_unvip), { onChange(address, marks.copy(vip = false)) })
+            }
+        }
+        senders.filterValues { it.images }.forEach { (address, marks) ->
+            SettingRow(address, subtitle = stringResource(R.string.settings_sender_images)) {
+                DeskButton(stringResource(R.string.settings_sender_ask), { onChange(address, marks.copy(images = false)) })
+            }
         }
     }
 }

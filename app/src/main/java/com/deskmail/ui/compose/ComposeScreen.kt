@@ -49,11 +49,13 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.deskmail.R
+import com.deskmail.core.compose.Templates
 import com.deskmail.mail.Draft
 import com.deskmail.mail.DraftFile
 import com.deskmail.mail.DraftState
 import com.deskmail.mail.MailComposer
 import com.deskmail.mail.MailSource
+import com.deskmail.mail.MessageTemplate
 import com.deskmail.mail.SendCheck
 import com.deskmail.ui.MailIcons
 import desktopkit.appResources
@@ -64,6 +66,7 @@ import desktopkit.components.DeskChip
 import desktopkit.components.DeskIconButton
 import desktopkit.components.DeskIcons
 import desktopkit.components.DeskTextField
+import desktopkit.components.MenuButton
 import desktopkit.components.MenuEntry
 import desktopkit.components.MoreSheet
 import desktopkit.components.SegmentedChoice
@@ -196,6 +199,7 @@ object ComposeTags {
     const val SUBJECT = "compose-subject"
     const val BODY = "compose-body"
     const val ATTACHING = "compose-attaching"
+    const val TEMPLATES = "compose-templates"
 }
 
 /**
@@ -352,6 +356,27 @@ fun ComposeScreen(
         }
     }
 
+    // "Keep as a template": the words are what was written above the signature and the quote; only a name is asked
+    var naming by remember { mutableStateOf(false) }
+    if (naming) {
+        val own = fields.body.substring(0, Templates.ownEnd(fields.body)).trim()
+        val kept = stringResource(R.string.template_kept)
+        TemplateDialog(
+            title = stringResource(R.string.compose_template_keep),
+            initialName = own.lineSequence().first().take(TEMPLATE_NAME_FROM_TEXT),
+            initialBody = own,
+            onDismiss = { naming = false },
+            onSave = { name, body ->
+                naming = false
+                scope.launch {
+                    composer.saveTemplate(0, name, body)
+                    onNotify(kept)
+                }
+            },
+            editBody = false,
+        )
+    }
+
     val title = fields.subject.ifBlank { stringResource(R.string.compose_title) }
     val sendLabel = stringResource(R.string.action_send)
     val attachLabel = stringResource(R.string.action_attach)
@@ -473,6 +498,13 @@ fun ComposeScreen(
                     modifier = Modifier.testTag(ComposeTags.ATTACHING),
                 )
             }
+            // the kept texts: put in where the user's own writing ends; what was written, kept as one
+            TemplateMenu(
+                templates = composer.templates,
+                body = fields.body,
+                onInsert = { text -> fields.body = Templates.insert(fields.body, text) },
+                onKeep = { naming = true },
+            )
             DeskTextField(
                 value = fields.body,
                 onValueChange = { fields.body = it },
@@ -485,6 +517,26 @@ fun ComposeScreen(
             )
         }
     }
+}
+
+/**
+ * "Template": the kept texts, each put into the message where the user's own writing ends, and
+ * "Keep what you wrote as a template" while there is something written to keep.
+ */
+@Composable
+private fun TemplateMenu(templates: List<MessageTemplate>, body: String, onInsert: (String) -> Unit, onKeep: () -> Unit) {
+    val keepLabel = stringResource(R.string.compose_template_keep)
+    val written = body.substring(0, Templates.ownEnd(body)).isNotBlank()
+    MenuButton(
+        text = stringResource(R.string.compose_templates),
+        entries = {
+            templates.map { template -> MenuEntry.Item(template.name, { onInsert(template.body) }) } +
+                (if (templates.isEmpty()) emptyList() else listOf(MenuEntry.Separator)) +
+                MenuEntry.Item(keepLabel, onKeep, enabled = written)
+        },
+        modifier = Modifier.keepsKeyboardOpen().testTag(ComposeTags.TEMPLATES),
+        icon = MailIcons.Template,
+    )
 }
 
 /** The files that go with the message, as chips on one line that scrolls sideways; a chip offers to take its file out. */
@@ -543,6 +595,9 @@ private class Kept(val draft: Draft?)
 
 /** What was typed is kept once the typing has paused this long. */
 private const val KEEP_AFTER_MS = 600L
+
+/** A kept text is offered a name from its first line, up to this many characters. */
+private const val TEMPLATE_NAME_FROM_TEXT = 40
 
 /** The text field is this many lines tall before anything is written. */
 private const val BODY_LINES = 10
