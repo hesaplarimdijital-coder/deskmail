@@ -13,8 +13,12 @@ import com.deskmail.mail.DraftState
 import com.deskmail.mail.MailComposer
 import com.deskmail.mail.MailContent
 import com.deskmail.mail.SendCheck
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.yield
 import java.io.InputStream
 import java.time.Instant
 
@@ -96,7 +100,17 @@ class DemoComposer(private val mail: DemoMail, private val now: Instant = Instan
     /** An address for somebody the made-up mail knows by name only. */
     private fun addressOf(name: String): String = name.lowercase().replace(' ', '.').replace('ş', 's').replace('ı', 'i') + "@isyeri.example"
 
-    override fun observe(id: Long): Flow<Draft?> = snapshotFlow { draft(id) }
+    /**
+     * As the database tells it: what is kept of a message is heard of a moment after it was asked
+     * for, never at once. (A screen that is drawn anew over a message has not heard yet.)
+     */
+    override fun observe(id: Long): Flow<Draft?> = flow {
+        yield()
+        emitAll(snapshotFlow { draft(id) })
+    }
+
+    /** While this is held, a file stays on its way into its message: a large one takes its time. */
+    var filesHeld: CompletableDeferred<Unit>? = null
 
     override suspend fun save(id: Long, accountId: Long, to: String, cc: String, bcc: String, subject: String, body: String) {
         edit(id) { draft ->
@@ -112,6 +126,7 @@ class DemoComposer(private val mail: DemoMail, private val now: Instant = Instan
     }
 
     override suspend fun attach(id: Long, name: String, mimeType: String, open: () -> InputStream?): Boolean {
+        filesHeld?.await()
         val bytes = open()?.use { it.readBytes().size.toLong() } ?: return false
         edit(id) { it.copy(files = it.files + DraftFile(nextFileId++, name, bytes)) }
         return draft(id) != null
