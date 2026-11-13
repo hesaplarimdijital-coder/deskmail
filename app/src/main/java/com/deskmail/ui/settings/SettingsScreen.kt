@@ -146,7 +146,14 @@ fun SettingsScreen(
         if (uri != null && accounts != null) {
             scope.launch {
                 val written = try {
-                    val contents = SettingsFile.Contents(accounts.portable(), settings.portable(), SettingsFile.lookOf(prefs))
+                    val contents = SettingsFile.Contents(
+                        accounts = accounts.portable(),
+                        settings = settings.portable(),
+                        look = SettingsFile.lookOf(prefs),
+                        templates = composer?.templates.orEmpty(),
+                        searches = mail.savedSearches,
+                        senders = mail.senders,
+                    )
                     val text = SettingsFile.write(contents, Instant.now())
                     withContext(Dispatchers.IO) { context.contentResolver.openOutputStream(uri, "wt")?.use { it.write(text.encodeToByteArray()) } } != null
                 } catch (e: Exception) {
@@ -174,6 +181,17 @@ fun SettingsScreen(
                 val added = accounts.adopt(contents.accounts)
                 if (settings.adopt(contents.settings)) onCheckChosen()
                 contents.look?.let { SettingsFile.applyLook(prefs, it) }
+                // the user's own lists: what this device has already is not kept twice
+                if (composer != null) {
+                    val kept = composer.templates.map { it.name to it.body }.toSet()
+                    contents.templates.filter { (it.name to it.body) !in kept }.forEach { composer.saveTemplate(0, it.name, it.body) }
+                }
+                val searched = mail.savedSearches.map { it.query }.toSet()
+                contents.searches.filter { it.query !in searched }.forEach { mail.saveSearch(0, it.name, it.query) }
+                contents.senders.forEach { (address, marks) ->
+                    val known = mail.sender(address)
+                    mail.markSender(address, SenderMarks(vip = known.vip || marks.vip, images = known.images || marks.images))
+                }
                 log.info("settings", "a settings file was read: $added of its ${contents.accounts.size} accounts were added")
                 onNotify(
                     if (added > 0) resources.getQuantityString(R.plurals.transfer_imported, added, added)
