@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.ui.mail.SelectionTest" tests="7" skipped="0" failures="0" errors="0" timestamp="2026-11-13T13:29:27.737Z" hostname="runnervmccnms" time="1.23">
+  <properties/>
+  <testcase name="theWindowKnowsWhatAnActionIsDoneTo" classname="com.deskmail.ui.mail.SelectionTest" time="0.023"/>
+  <testcase name="aTapTakesAPickedRowOutAndTheLastOneEndsThePicking" classname="com.deskmail.ui.mail.SelectionTest" time="0.131"/>
+  <testcase name="starringAndArchivingActOnTheWholeSelection" classname="com.deskmail.ui.mail.SelectionTest" time="0.115"/>
+  <testcase name="aFolderIsChosenForTheWholeSelection" classname="com.deskmail.ui.mail.SelectionTest" time="0.136"/>
+  <testcase name="rowsArePickedAndWhatIsDoneIsDoneToAllOfThem" classname="com.deskmail.ui.mail.SelectionTest" time="0.305"/>
+  <testcase name="inALargeWindowTheTablesSelectedRowsAreActedOnTogether" classname="com.deskmail.ui.mail.SelectionTest" time="0.186"/>
+  <testcase name="backAndTheBarsCrossEndThePicking" classname="com.deskmail.ui.mail.SelectionTest" time="0.332"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
