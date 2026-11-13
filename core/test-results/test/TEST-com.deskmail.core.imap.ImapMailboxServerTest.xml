@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.core.imap.ImapMailboxServerTest" tests="15" skipped="0" failures="0" errors="0" timestamp="2026-11-13T11:55:50.820Z" hostname="runnervmwuk1x" time="4.844">
+  <properties/>
+  <testcase name="flagsAreReadAsTheyAreNow" classname="com.deskmail.core.imap.ImapMailboxServerTest" time="0.222"/>
+  <testcase name="aMessageInPartsGivesItsTextItsHtmlAndItsFiles" classname="com.deskmail.core.imap.ImapMailboxServerTest" time="0.392"/>
+  <testcase name="aTextLargerThanTheLimitStaysOnTheServer" classname="com.deskmail.core.imap.ImapMailboxServerTest" time="0.275"/>
+  <testcase name="foldersAreCountedWithoutOpeningThem" classname="com.deskmail.core.imap.ImapMailboxServerTest" time="0.185"/>
+  <testcase name="theServerIsAskedInUtf8" classname="com.deskmail.core.imap.ImapMailboxServerTest" time="0.234"/>
+  <testcase name="aMessageThatIsGoneHasNoBody" classname="com.deskmail.core.imap.ImapMailboxServerTest" time="0.14"/>
+  <testcase name="aFileIsFetchedDecoded" classname="com.deskmail.core.imap.ImapMailboxServerTest" time="0.895"/>
+  <testcase name="aFolderThatDoesNotExistIsTheServersNo" classname="com.deskmail.core.imap.ImapMailboxServerTest" time="0.108"/>
+  <testcase name="theFolderSaysWhatItHoldsAndWhichMessagesAreRecent" classname="com.deskmail.core.imap.ImapMailboxServerTest" time="0.376"/>
+  <testcase name="theServerFindsMessagesByWhatTheySay" classname="com.deskmail.core.imap.ImapMailboxServerTest" time="0.362"/>
+  <testcase name="plainTextIsDecodedFromItsCharset" classname="com.deskmail.core.imap.ImapMailboxServerTest" time="0.342"/>
+  <testcase name="aMessagesHeaderIsReadWithItsTurkishLetters" classname="com.deskmail.core.imap.ImapMailboxServerTest" time="0.213"/>
+  <testcase name="readingAMessageDoesNotMarkItRead" classname="com.deskmail.core.imap.ImapMailboxServerTest" time="0.549"/>
+  <testcase name="anHtmlPageIsDecodedByTheCharsetItDeclares" classname="com.deskmail.core.imap.ImapMailboxServerTest" time="0.335"/>
+  <testcase name="headersComeForTheUidsThatExist" classname="com.deskmail.core.imap.ImapMailboxServerTest" time="0.212"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

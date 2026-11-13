@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.data.MailSendTest" tests="17" skipped="0" failures="0" errors="0" timestamp="2026-11-13T11:57:38.634Z" hostname="runnervmwuk1x" time="4.209">
+  <properties/>
+  <testcase name="aReplyGoesToItsSenderQuotesTheMessageAndMarksItAnswered" classname="com.deskmail.data.MailSendTest" time="0.846"/>
+  <testcase name="aMessageThatIsToGoNowDoesNotWait" classname="com.deskmail.data.MailSendTest" time="0.101"/>
+  <testcase name="aProviderThatFilesSentMailItselfGetsNoSecondCopy" classname="com.deskmail.data.MailSendTest" time="0.422"/>
+  <testcase name="theSentMessageIsFiledUnderSentWithItsHiddenRecipients" classname="com.deskmail.data.MailSendTest" time="0.658"/>
+  <testcase name="aMessageThatWasBeingSentWhenTheAppEndedIsNotSentASecondTimeUnasked" classname="com.deskmail.data.MailSendTest" time="0.045"/>
+  <testcase name="theOutboxListsWhatHasNotLeftAndForgetsWhatIsThrownAway" classname="com.deskmail.data.MailSendTest" time="0.051"/>
+  <testcase name="aMessageThatIsTakenBackIsNotSent" classname="com.deskmail.data.MailSendTest" time="0.026"/>
+  <testcase name="aMessageWaitsOutItsTimeAndIsThenSent" classname="com.deskmail.data.MailSendTest" time="0.076"/>
+  <testcase name="aFileIsAttachedAndTakenOutAgain" classname="com.deskmail.data.MailSendTest" time="0.088"/>
+  <testcase name="whoItGoesToIsCheckedBeforeAnythingIsHandedOver" classname="com.deskmail.data.MailSendTest" time="0.028"/>
+  <testcase name="aMessageBegunWithNoAccountIsNotBegun" classname="com.deskmail.data.MailSendTest" time="0.026"/>
+  <testcase name="whatAnEarlierRunLeftIsLookedAtOnceAndBeforeAnythingIsSent" classname="com.deskmail.data.MailSendTest" time="0.029"/>
+  <testcase name="aForwardedMessageTakesItsFilesAlong" classname="com.deskmail.data.MailSendTest" time="1.125"/>
+  <testcase name="aMessageTheServerWillNotTakeIsKeptAsFailedAndCanBeTriedAgain" classname="com.deskmail.data.MailSendTest" time="0.13"/>
+  <testcase name="whatIsTypedAfterAMessageWasHandedOverDoesNotReachIt" classname="com.deskmail.data.MailSendTest" time="0.072"/>
+  <testcase name="theSignatureEndsANewMessageAndStandsAboveWhatIsQuoted" classname="com.deskmail.data.MailSendTest" time="0.45"/>
+  <testcase name="aServerThatCannotBeReachedLeavesTheMessageWaiting" classname="com.deskmail.data.MailSendTest" time="0.031"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[System.logW: A resource failed to call close. 
+System.logW: A resource failed to call close. 
+System.logW: A resource failed to call SQLiteConnection.close. 
+System.logW: A resource failed to call SQLiteConnection.close. 
+System.logW: A resource failed to call SQLiteConnection.close. 
+System.logW: A resource failed to call SQLiteConnection.close. 
+System.logW: A resource failed to call SQLiteConnectionPool.close. 
+]]></system-err>
+</testsuite>

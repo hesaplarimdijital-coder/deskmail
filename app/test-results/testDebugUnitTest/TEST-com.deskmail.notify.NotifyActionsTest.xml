@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.notify.NotifyActionsTest" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-11-13T11:57:52.285Z" hostname="runnervmwuk1x" time="8.325">
+  <properties/>
+  <testcase name="mailThatArrivesIsToldOfByTheSyncThatBringsIt" classname="com.deskmail.notify.NotifyActionsTest" time="1.284"/>
+  <testcase name="aReplyTypedIntoANotificationIsSentAtOnce" classname="com.deskmail.notify.NotifyActionsTest" time="1.082"/>
+  <testcase name="aNotificationThatWasSweptAwayLeavesItsMessageAsItIs" classname="com.deskmail.notify.NotifyActionsTest" time="0.957"/>
+  <testcase name="anEmptyReplyOrOneToAMessageThatWentSendsNothing" classname="com.deskmail.notify.NotifyActionsTest" time="0.954"/>
+  <testcase name="aButtonForAMessageThatIsNoLongerThereDoesNothing" classname="com.deskmail.notify.NotifyActionsTest" time="0.029"/>
+  <testcase name="aNotificationsButtonsAreCarriedOutOnTheDeviceAtOnceAndToldToTheServer" classname="com.deskmail.notify.NotifyActionsTest" time="2.113"/>
+  <testcase name="aServerThatCannotBeReachedKeepsWhatWasDoneWaiting" classname="com.deskmail.notify.NotifyActionsTest" time="0.955"/>
+  <testcase name="aNotificationOffersToReplyFromWhereItIs" classname="com.deskmail.notify.NotifyActionsTest" time="0.948"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[System.logW: A resource failed to call SQLiteConnection.close. 
+System.logW: A resource failed to call SQLiteConnection.close. 
+System.logW: A resource failed to call SQLiteConnection.close. 
+System.logW: A resource failed to call SQLiteConnection.close. 
+System.logW: A resource failed to call SQLiteConnectionPool.close. 
+System.logW: A resource failed to call SQLiteConnection.close. 
+System.logW: A resource failed to call SQLiteConnection.close. 
+System.logW: A resource failed to call SQLiteConnection.close. 
+System.logW: A resource failed to call SQLiteConnection.close. 
+System.logW: A resource failed to call SQLiteConnectionPool.close. 
+]]></system-err>
+</testsuite>

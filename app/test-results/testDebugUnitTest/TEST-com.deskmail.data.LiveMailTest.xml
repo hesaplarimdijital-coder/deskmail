@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.data.LiveMailTest" tests="19" skipped="0" failures="0" errors="0" timestamp="2026-11-13T11:57:20.320Z" hostname="runnervmwuk1x" time="18.309">
+  <properties/>
+  <testcase name="anAccountThatWasJustAddedIsSyncedOnce" classname="com.deskmail.data.LiveMailTest" time="0.778"/>
+  <testcase name="readingAndStarringShowAtOnceAndAreToldToTheServer" classname="com.deskmail.data.LiveMailTest" time="0.961"/>
+  <testcase name="aMoveGoesToTheFolderThatWasChosen" classname="com.deskmail.data.LiveMailTest" time="0.792"/>
+  <testcase name="aSearchFindsWhatTheDeviceHasByItsSubjectItsPeopleAndItsText" classname="com.deskmail.data.LiveMailTest" time="0.555"/>
+  <testcase name="aViewThatComesToTheFrontIsSyncedUnlessItJustWas" classname="com.deskmail.data.LiveMailTest" time="2.454"/>
+  <testcase name="theScreensSeeTheAccountsTheFoldersAndTheMail" classname="com.deskmail.data.LiveMailTest" time="0.996"/>
+  <testcase name="aSearchOfTheServerBringsWhatTheDeviceDoesNotHave" classname="com.deskmail.data.LiveMailTest" time="2.078"/>
+  <testcase name="aSearchCanBeToldWhereToLook" classname="com.deskmail.data.LiveMailTest" time="0.537"/>
+  <testcase name="aServerThatCannotBeReachedIsSaidSo" classname="com.deskmail.data.LiveMailTest" time="0.45"/>
+  <testcase name="aFilesNameCannotLeadOutOfItsDirectory" classname="com.deskmail.data.LiveMailTest" time="0.019"/>
+  <testcase name="aMessagesTextIsFetchedWhenSomebodyLooks" classname="com.deskmail.data.LiveMailTest" time="2.59"/>
+  <testcase name="aFileIsFetchedOnceAndKeptOnTheDevice" classname="com.deskmail.data.LiveMailTest" time="0.704"/>
+  <testcase name="aFolderTheServerWillNotSearchIsLeftOut" classname="com.deskmail.data.LiveMailTest" time="0.405"/>
+  <testcase name="whatStandsIsToldToTheServerAndCanStillBeBroughtBack" classname="com.deskmail.data.LiveMailTest" time="1.2"/>
+  <testcase name="anArchivedMessageIsTakenBackBeforeTheServerHearsOfIt" classname="com.deskmail.data.LiveMailTest" time="0.535"/>
+  <testcase name="deletingMovesToTheTrashAndFromThereForGood" classname="com.deskmail.data.LiveMailTest" time="0.995"/>
+  <testcase name="aTextThatCannotBeFetchedSaysSo" classname="com.deskmail.data.LiveMailTest" time="0.459"/>
+  <testcase name="whatWasDoneWhileTheServerWasAwayIsToldBeforeTheNextSyncReads" classname="com.deskmail.data.LiveMailTest" time="1.071"/>
+  <testcase name="aPictureInsideTheMessageIsKeptApartFromItsFiles" classname="com.deskmail.data.LiveMailTest" time="0.725"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
