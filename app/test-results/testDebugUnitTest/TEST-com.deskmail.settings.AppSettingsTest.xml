@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.settings.AppSettingsTest" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-11-13T08:21:38.916Z" hostname="runnervmwuk1x" time="0.179">
+  <properties/>
+  <testcase name="theTimeToTakeAMessageBackIsOneOfTheChoices" classname="com.deskmail.settings.AppSettingsTest" time="0.043"/>
+  <testcase name="aFreshInstallStartsWithGlassAndAClosedInspector" classname="com.deskmail.settings.AppSettingsTest" time="0.035"/>
+  <testcase name="aStoredShareStaysWithinBounds" classname="com.deskmail.settings.AppSettingsTest" time="0.024"/>
+  <testcase name="aValueFromANewerVersionFallsBackToTheDefault" classname="com.deskmail.settings.AppSettingsTest" time="0.03"/>
+  <testcase name="whatIsChangedIsThereAfterARestart" classname="com.deskmail.settings.AppSettingsTest" time="0.025"/>
+  <testcase name="howTheMailIsLookedForIsOneOfTheChoices" classname="com.deskmail.settings.AppSettingsTest" time="0.018"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
