@@ -29,8 +29,9 @@ import kotlinx.coroutines.Dispatchers
         PendingOpEntity::class,
         OutboxEntity::class,
         OutboxFileEntity::class,
+        DraftRemovalEntity::class,
     ],
-    version = 3,
+    version = 4,
     exportSchema = true,
 )
 abstract class DeskMailDatabase : RoomDatabase() {
@@ -87,8 +88,26 @@ abstract class DeskMailDatabase : RoomDatabase() {
             }
         }
 
+        /**
+         * 0.1.0-beta.1: drafts are kept on the server as well. A draft knows how far its copy there
+         * is behind it, and the copy of a message that was sent or thrown away is noted until the
+         * server was told to remove it.
+         */
+        val MIGRATION_3_4: Migration = object : Migration(3, 4) {
+            override suspend fun migrate(connection: SQLiteConnection) {
+                connection.runSql("ALTER TABLE `outbox` ADD COLUMN `draftSavedAt` INTEGER NOT NULL DEFAULT 0")
+                connection.runSql("ALTER TABLE `outbox` ADD COLUMN `draftUidValidity` INTEGER NOT NULL DEFAULT 0")
+                connection.runSql(
+                    "CREATE TABLE IF NOT EXISTS `draft_removal` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `accountId` INTEGER NOT NULL, " +
+                        "`folderId` INTEGER NOT NULL, `uid` INTEGER NOT NULL, `uidValidity` INTEGER NOT NULL, " +
+                        "FOREIGN KEY(`accountId`) REFERENCES `account`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+                )
+                connection.runSql("CREATE INDEX IF NOT EXISTS `index_draft_removal_accountId` ON `draft_removal` (`accountId`)")
+            }
+        }
+
         /** Every step from a version that was released to the one after it, in order. */
-        val MIGRATIONS: Array<Migration> = arrayOf(MIGRATION_1_2, MIGRATION_2_3)
+        val MIGRATIONS: Array<Migration> = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
 
         /** Runs one statement that answers nothing. */
         private suspend fun SQLiteConnection.runSql(sql: String) {

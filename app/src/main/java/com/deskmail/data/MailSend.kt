@@ -16,6 +16,7 @@ import com.deskmail.db.AccountEntity
 import com.deskmail.db.DeskMailDatabase
 import com.deskmail.db.OutboxDao
 import com.deskmail.db.OutboxEntity
+import com.deskmail.db.OutboxFileEntity
 import com.deskmail.mail.AccountState
 import com.deskmail.mail.Draft
 import kotlinx.coroutines.CoroutineDispatcher
@@ -74,6 +75,8 @@ data class SendRound(val unreachable: Boolean, val nextInMs: Long?)
  * @param work where a message is written out before it is handed over.
  * @param files where the files attached to waiting messages are kept, a directory for each message.
  * @param send hands a written message to an outgoing server; the tests look at what is handed over.
+ * @param onDraftCopies a message that was sent had a copy among the drafts on its server, which
+ *   is to be removed now ([DraftSync]).
  */
 class MailSend(
     private val db: DeskMailDatabase,
@@ -84,6 +87,7 @@ class MailSend(
     private val files: File,
     private val send: (ServerAddress, Credentials, String, List<String>, File) -> Unit =
         { server, credentials, from, recipients, message -> SmtpSender.send(server, credentials, from, recipients, message, log) },
+    private val onDraftCopies: () -> Unit = {},
     private val io: CoroutineDispatcher = Dispatchers.IO,
     private val now: () -> Long = System::currentTimeMillis,
     private val zone: () -> ZoneId = ZoneId::systemDefault,
@@ -131,8 +135,10 @@ class MailSend(
                 }
                 when {
                     failure == null -> {
-                        outbox.delete(row.id)
+                        // it leaves the outbox; the copy it had among the drafts on its server is noted, and removed in a moment
+                        outbox.deleteSent(row.id)
                         File(files, row.id.toString()).deleteRecursively()
+                        if (row.draftUid != 0L) onDraftCopies()
                     }
                     failure.kind == MailException.Kind.Network -> {
                         outbox.setState(row.id, OutboxEntity.QUEUED, row.sendAfter, failure.message.orEmpty(), now())
@@ -190,24 +196,9 @@ class MailSend(
 
     /** The message as it will travel. @throws IllegalArgumentException when it has nobody to go to. */
     private suspend fun written(account: AccountEntity, row: OutboxEntity): OutgoingMessage {
-        val to = AddressList.parse(row.toText).addresses
-        val cc = AddressList.parse(row.ccText).addresses
-        val bcc = AddressList.parse(row.bccText).addresses
-        require(to.isNotEmpty() || cc.isNotEmpty() || bcc.isNotEmpty()) { "the message has nobody to go to" }
-        val attached = db.outbox().files(row.id)
-        return OutgoingMessage(
-            from = MailAddress(account.senderName, account.address),
-            to = to,
-            cc = cc,
-            bcc = bcc,
-            subject = row.subject,
-            text = row.body,
-            messageId = row.messageId,
-            date = Instant.ofEpochMilli(now()),
-            inReplyTo = row.inReplyTo,
-            references = row.refs,
-            attachments = attached.map { kept -> OutgoingAttachment(kept.name, kept.mimeType) { File(kept.path).inputStream() } },
-        )
+        val message = outgoing(account, row, db.outbox().files(row.id), Instant.ofEpochMilli(now()))
+        require(message.recipients.isNotEmpty()) { "the message has nobody to go to" }
+        return message
     }
 
     /** Files the sent message under Sent where the provider does not, and has the Sent folder's list brought up to date. */
@@ -240,3 +231,22 @@ class MailSend(
         const val TAG = "send"
     }
 }
+
+/**
+ * A message of the user's own as it travels, from what was typed and attached: to be sent, or to
+ * be kept among the drafts on its server (where it need have nobody to go to yet).
+ */
+internal fun outgoing(account: AccountEntity, row: OutboxEntity, attached: List<OutboxFileEntity>, date: Instant): OutgoingMessage =
+    OutgoingMessage(
+        from = MailAddress(account.senderName, account.address),
+        to = AddressList.parse(row.toText).addresses,
+        cc = AddressList.parse(row.ccText).addresses,
+        bcc = AddressList.parse(row.bccText).addresses,
+        subject = row.subject,
+        text = row.body,
+        messageId = row.messageId,
+        date = date,
+        inReplyTo = row.inReplyTo,
+        references = row.refs,
+        attachments = attached.map { kept -> OutgoingAttachment(kept.name, kept.mimeType) { File(kept.path).inputStream() } },
+    )

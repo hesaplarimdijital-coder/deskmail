@@ -279,8 +279,9 @@ class MailSync(
      * What became of adding a message to a folder.
      *
      * @param uid the UID the message has there; 0 where the server does not tell, or it failed.
+     * @param uidValidity the folder's stamp on its UIDs, where [uid] was asked for.
      */
-    data class Appended(val outcome: Outcome, val uid: Long = 0)
+    data class Appended(val outcome: Outcome, val uid: Long = 0, val uidValidity: Long = 0)
 
     /**
      * Adds a message the user wrote to a folder of its account: the copy of what was sent, or a
@@ -291,6 +292,37 @@ class MailSync(
         var uid = 0L
         val outcome = connected(accountId) { _, remote -> remote.edit(folder.path).use { uid = it.append(message, seen, draft) } }
         return Appended(outcome, uid)
+    }
+
+    /**
+     * Puts a draft into a folder of its account, in place of the copy it had there ([replaces],
+     * its UID under the stamp [replacesValidity]; 0 for none). The old copy goes once the new one
+     * is in place, and only while the folder's UIDs still mean what they meant.
+     *
+     * Nothing is put on a server that does not tell where a message came to lie: the copy could
+     * never be taken away again. That is [Outcome.Done] with [Appended.uid] 0.
+     */
+    suspend fun saveDraft(accountId: Long, folderId: Long, message: File, replaces: Long, replacesValidity: Long): Appended {
+        val folder = db.folders().byId(folderId) ?: return Appended(Outcome.Gone)
+        var uid = 0L
+        var validity = 0L
+        val outcome = connected(accountId) { _, remote ->
+            remote.edit(folder.path).use { box ->
+                if (!box.appendsWithUid) return@use
+                validity = box.uidValidity
+                uid = box.append(message, seen = true, draft = true)
+                if (uid != 0L && replaces != 0L && replacesValidity == validity) box.expunge(listOf(replaces))
+            }
+        }
+        return Appended(outcome, uid, validity)
+    }
+
+    /** Removes a draft's copy from its folder on the server, while the folder's UIDs still mean what they meant ([uidValidity]). */
+    suspend fun removeDraft(accountId: Long, folderId: Long, uid: Long, uidValidity: Long): Outcome {
+        val folder = db.folders().byId(folderId) ?: return Outcome.Gone
+        return connected(accountId) { _, remote ->
+            remote.edit(folder.path).use { box -> if (box.uidValidity == uidValidity) box.expunge(listOf(uid)) }
+        }
     }
 
     /**

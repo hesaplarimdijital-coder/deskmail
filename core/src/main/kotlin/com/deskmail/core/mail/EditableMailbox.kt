@@ -38,6 +38,13 @@ interface EditableMailbox : Closeable {
     fun expunge(uids: List<Long>)
 
     /**
+     * Whether [append] tells where the message came to lie (UIDPLUS). Without that a copy that
+     * was put there cannot be taken away again by whoever put it there: nothing is kept on such a
+     * server that is meant to be replaced, as a draft is.
+     */
+    val appendsWithUid: Boolean get() = true
+
+    /**
      * Adds a message to the folder: the copy of what was sent, or a draft.
      *
      * @param message the whole message as it travels ([com.deskmail.core.mime.MessageWriter]).

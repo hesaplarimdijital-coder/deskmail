@@ -77,6 +77,8 @@ class ImapEditor internal constructor(
         if (messages.isNotEmpty()) remove(messages, connection.has("UIDPLUS"))
     }
 
+    override val appendsWithUid: Boolean get() = connection.has("UIDPLUS")
+
     override fun append(message: File, seen: Boolean, draft: Boolean): Long = connection.call("append") {
         // read from the file as it is sent: the library asks for it twice, once to count its bytes
         SharedFileInputStream(message).use { stream ->
