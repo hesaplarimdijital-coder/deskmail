@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.ui.settings.LicencesTest" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-11-13T17:10:30.254Z" hostname="runnervmccnms" time="0.292">
+  <properties/>
+  <testcase name="aLicenceIsReadFromSettings" classname="com.deskmail.ui.settings.LicencesTest" time="0.262"/>
+  <testcase name="everyLicenceIsThereToRead" classname="com.deskmail.ui.settings.LicencesTest" time="0.028"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

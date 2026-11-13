@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.settings.SettingsFileTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-11-13T17:10:07.725Z" hostname="runnervmccnms" time="0.123">
+  <properties/>
+  <testcase name="whatIsWrittenIsReadBackAsItWas" classname="com.deskmail.settings.SettingsFileTest" time="0.015"/>
+  <testcase name="whatIsNoSettingsFileOfTheAppsIsNotRead" classname="com.deskmail.settings.SettingsFileTest" time="0.057"/>
+  <testcase name="thereIsNoPlaceForWhatAnAccountSignsInWith" classname="com.deskmail.settings.SettingsFileTest" time="0.032"/>
+  <testcase name="whatIsNotKnownOrWouldNotDoIsPassedOver" classname="com.deskmail.settings.SettingsFileTest" time="0.015"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

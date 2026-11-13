@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.work.SendWorkerTest" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-11-13T17:10:38.094Z" hostname="runnervmccnms" time="0.126">
+  <properties/>
+  <testcase name="withNothingWaitingTheWorkEndsWell" classname="com.deskmail.work.SendWorkerTest" time="0.025"/>
+  <testcase name="askingForTheOutboxToBeLookedAtIsOnePieceOfWorkThatWaitsForANetwork" classname="com.deskmail.work.SendWorkerTest" time="0.099"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[System.logW: A resource failed to call close. 
+System.logW: A resource failed to call close. 
+System.logW: A resource failed to call close. 
+System.logW: A resource failed to call close. 
+System.logW: A resource failed to call close. 
+System.logW: A resource failed to call close. 
+System.logW: A resource failed to call close. 
+System.logW: A resource failed to call close. 
+System.logW: A resource failed to call close. 
+System.logW: A resource failed to call close. 
+System.logW: A resource failed to call close. 
+System.logW: A resource failed to call close. 
+System.logW: A resource failed to call close. 
+System.logW: A resource failed to call close. 
+System.logW: A resource failed to call close. 
+System.logW: A resource failed to call close. 
+System.logW: A resource failed to call close. 
+]]></system-err>
+</testsuite>

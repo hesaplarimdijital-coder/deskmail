@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.ui.mail.MailActionsTest" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-11-13T17:10:24.107Z" hostname="runnervmccnms" time="1.079">
+  <properties/>
+  <testcase name="whatIsNotTakenBackStandsOnceItsNoticeIsGone" classname="com.deskmail.ui.mail.MailActionsTest" time="0.144"/>
+  <testcase name="archivingClosesTheReaderAndOffersTheWayBack" classname="com.deskmail.ui.mail.MailActionsTest" time="0.128"/>
+  <testcase name="aFileIsFetchedAndHandedToTheAppThatOpensIt" classname="com.deskmail.ui.mail.MailActionsTest" time="0.109"/>
+  <testcase name="theStarIsBesideTheSender" classname="com.deskmail.ui.mail.MailActionsTest" time="0.185"/>
+  <testcase name="aFileThatCannotBeFetchedSaysSo" classname="com.deskmail.ui.mail.MailActionsTest" time="0.094"/>
+  <testcase name="aNewerNoticeLetsTheOlderOneStand" classname="com.deskmail.ui.mail.MailActionsTest" time="0.145"/>
+  <testcase name="aFolderIsChosenForAMessageThatIsMoved" classname="com.deskmail.ui.mail.MailActionsTest" time="0.121"/>
+  <testcase name="aRowsMenuActsOnItsMessageWithoutOpeningIt" classname="com.deskmail.ui.mail.MailActionsTest" time="0.148"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
