@@ -77,6 +77,7 @@ internal fun MessageEntity.toMessage(outgoing: Boolean): MailMessage {
         answered = answered,
         forwarded = forwarded,
         thread = threadOf(accountId, refs, inReplyTo, globalId),
+        globalId = globalId,
     )
 }
 

@@ -11,6 +11,8 @@ import com.deskmail.core.mail.FolderRole
 import com.deskmail.core.text.SearchField
 import com.deskmail.core.text.SearchQuery
 import com.deskmail.mail.AccountState
+import com.deskmail.mail.AwaitOutcome
+import com.deskmail.mail.AwaitedReply
 import com.deskmail.mail.FetchedFile
 import com.deskmail.mail.MailAccount
 import com.deskmail.mail.MailAttachment
@@ -124,6 +126,30 @@ class DemoMail(private val now: Instant = Instant.now(), empty: Boolean = false)
         senders = if (marks == SenderMarks()) senders - key else senders + (key to marks)
     }
 
+    /** The answers waited for: one to the book that was asked to be put aside, which did not come in time. */
+    private val waits = mutableStateListOf<AwaitedReply>().apply {
+        if (!empty) {
+            stored.firstOrNull { it.subject == "Kitap ayırtma" }?.let { asked ->
+                add(AwaitedReply(1, asked.accountId, asked.globalId, asked.subject, asked.to, asked.sentAt, asked.sentAt.plus(Duration.ofDays(3)), told = true))
+            }
+        }
+    }
+    private var nextWait = 2L
+
+    override val awaited: List<AwaitedReply> get() = waits
+
+    override suspend fun awaitReply(id: Long, days: Int): AwaitOutcome {
+        val message = message(id) ?: return AwaitOutcome.Gone
+        if (message.globalId.isEmpty()) return AwaitOutcome.Gone
+        waits.removeAll { it.accountId == message.accountId && it.messageId == message.globalId }
+        waits += AwaitedReply(nextWait++, message.accountId, message.globalId, message.subject, message.to, message.sentAt, now.plus(Duration.ofDays(days.toLong())))
+        return AwaitOutcome.Waiting
+    }
+
+    override suspend fun stopAwaiting(id: Long) {
+        waits.removeAll { it.id == id }
+    }
+
     /** What was taken off its place, by what would bring it back. */
     private val taken = HashMap<MailUndo, List<MailMessage>>()
 
@@ -160,6 +186,10 @@ class DemoMail(private val now: Instant = Instant.now(), empty: Boolean = false)
             is MailView.Search -> found(view.query)
             MailView.Vip -> stored.filter { roles[it.folderId] == FolderRole.Inbox && senders[it.fromAddress.lowercase()]?.vip == true }
             is MailView.Saved -> searches.firstOrNull { it.id == view.id }?.let { found(it.query) }.orEmpty()
+            // the copies under Sent of what answers are waited for, the one due first on top
+            MailView.Awaiting -> waits.sortedBy { it.dueAt }.mapNotNull { wait ->
+                stored.firstOrNull { it.accountId == wait.accountId && it.globalId == wait.messageId && roles[it.folderId] == FolderRole.Sent }
+            }
         }
     }
 
@@ -373,6 +403,7 @@ class DemoMail(private val now: Instant = Instant.now(), empty: Boolean = false)
                 answered = answered,
                 forwarded = forwarded,
                 thread = if (thread.isEmpty()) "" else tree.first { it.id == folder }.accountId.toString() + " " + thread,
+                globalId = "<demo-$id@${address.substringAfter('@')}>",
             )
             // the header lines as a provider hands them on: its own word on where the message came from on top
             val headers = listOf(

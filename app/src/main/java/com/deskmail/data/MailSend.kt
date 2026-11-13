@@ -13,6 +13,7 @@ import com.deskmail.core.net.ServerAddress
 import com.deskmail.core.provider.ProviderTable
 import com.deskmail.core.smtp.SmtpSender
 import com.deskmail.db.AccountEntity
+import com.deskmail.db.AwaitingEntity
 import com.deskmail.db.DeskMailDatabase
 import com.deskmail.db.OutboxDao
 import com.deskmail.db.OutboxEntity
@@ -64,6 +65,8 @@ data class SendRound(val unreachable: Boolean, val nextInMs: Long?)
  *   the same message is added to the account's Sent folder, with its hidden recipients.
  * - The message that was answered or sent on is marked so, on the device at once and on the
  *   server through the queue of pending changes.
+ * - Where its writer asked for that ([OutboxEntity.awaitDays]), an answer to it is waited for
+ *   ([AwaitingEntity]); its copy under Sent is then fetched to the device, to be listed there.
  *
  * A message the server cannot be reached for stays waiting. One the server will not take
  * (a recipient it refuses, a sign-in it no longer accepts) is kept as failed, with the server's
@@ -77,6 +80,7 @@ data class SendRound(val unreachable: Boolean, val nextInMs: Long?)
  * @param send hands a written message to an outgoing server; the tests look at what is handed over.
  * @param onDraftCopies a message that was sent had a copy among the drafts on its server, which
  *   is to be removed now ([DraftSync]).
+ * @param awaitingChanged a message that was sent is waited on for an answer: the reminders are arranged anew.
  */
 class MailSend(
     private val db: DeskMailDatabase,
@@ -88,6 +92,7 @@ class MailSend(
     private val send: (ServerAddress, Credentials, String, List<String>, File) -> Unit =
         { server, credentials, from, recipients, message -> SmtpSender.send(server, credentials, from, recipients, message, log) },
     private val onDraftCopies: () -> Unit = {},
+    private val awaitingChanged: suspend () -> Unit = {},
     private val io: CoroutineDispatcher = Dispatchers.IO,
     private val now: () -> Long = System::currentTimeMillis,
     private val zone: () -> ZoneId = ZoneId::systemDefault,
@@ -184,7 +189,8 @@ class MailSend(
         log.info(TAG, "account ${account.id}: a message to ${message.recipients.size} recipients was sent, ${message.attachments.size} files")
         // Sent it is, whatever becomes of the rest: nothing below may make it look unsent.
         try {
-            keepCopy(account, message, file)
+            awaitAnswer(account, row, message)
+            keepCopy(account, message, file, awaited = row.awaitDays > 0)
             markSource(row)
         } catch (e: Exception) {
             log.warn(TAG, "message ${row.id} was sent, but not everything after that worked: $e")
@@ -201,8 +207,30 @@ class MailSend(
         return message
     }
 
-    /** Files the sent message under Sent where the provider does not, and has the Sent folder's list brought up to date. */
-    private suspend fun keepCopy(account: AccountEntity, message: OutgoingMessage, file: File) {
+    /** An answer to the message is waited for, if its writer asked for that: should none come in so many days, he is reminded. */
+    private suspend fun awaitAnswer(account: AccountEntity, row: OutboxEntity, message: OutgoingMessage) {
+        if (row.awaitDays <= 0) return
+        val time = now()
+        db.awaiting().insert(
+            AwaitingEntity(
+                accountId = account.id,
+                messageId = row.messageId,
+                subject = row.subject,
+                recipients = MailAddress.labels(message.to + message.cc),
+                sentAt = time,
+                dueAt = time + row.awaitDays * DAY_MS,
+            ),
+        )
+        log.info(TAG, "account ${account.id}: an answer to the message is waited for, ${row.awaitDays} days")
+        awaitingChanged()
+    }
+
+    /**
+     * Files the sent message under Sent where the provider does not, and has the Sent folder's list
+     * brought up to date: where the device keeps that folder, or the message is to be listed among
+     * those an answer is waited for ([awaited]).
+     */
+    private suspend fun keepCopy(account: AccountEntity, message: OutgoingMessage, file: File, awaited: Boolean) {
         val sent = db.folders().ofAccount(account.id).firstOrNull { folderRole(it.role) == FolderRole.Sent }
         if (sent == null) {
             log.info(TAG, "account ${account.id}: no Sent folder to file the message under")
@@ -215,7 +243,7 @@ class MailSend(
             if (appended.outcome != MailSync.Outcome.Done) log.warn(TAG, "account ${account.id}: the sent message could not be filed under ${sent.path}: ${appended.outcome}")
         }
         // a Sent folder that is kept on the device shows the message without waiting to be opened
-        if (sent.syncedAt != 0L) sync.folder(sent.id)
+        if (sent.syncedAt != 0L || awaited) sync.folder(sent.id)
     }
 
     /** The message that was answered or sent on is marked so. */

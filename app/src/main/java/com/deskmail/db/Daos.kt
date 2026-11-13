@@ -216,6 +216,28 @@ abstract class MessageDao {
     )
     abstract fun observeThread(accountId: Long, root: String): Flow<List<MessageEntity>>
 
+    /**
+     * The copies under Sent of the messages the user waits for answers to ([AwaitingEntity]), the
+     * one that is due first on top.
+     */
+    @Query(
+        "SELECT message.* FROM message JOIN folder ON folder.id = message.folderId " +
+            "JOIN awaiting ON awaiting.accountId = message.accountId AND awaiting.messageId = message.globalId " +
+            "WHERE folder.role = 'Sent' AND $STAYING ORDER BY awaiting.dueAt, message.id",
+    )
+    abstract fun observeAwaiting(): Flow<List<MessageEntity>>
+
+    /** Who sent the account's messages that answer the message [globalId]: by their In-Reply-To or References. */
+    @Query("SELECT fromList FROM message WHERE accountId = :accountId AND (inReplyTo = :globalId OR instr(refs, :globalId) > 0)")
+    abstract suspend fun answersTo(accountId: Long, globalId: String): List<String>
+
+    /** The account's copy under Sent of the message [globalId], by the app's id; null when the device has none. */
+    @Query(
+        "SELECT message.id FROM message JOIN folder ON folder.id = message.folderId " +
+            "WHERE message.accountId = :accountId AND message.globalId = :globalId AND folder.role = 'Sent' LIMIT 1",
+    )
+    abstract suspend fun sentCopy(accountId: Long, globalId: String): Long?
+
     /** The newest messages of every account, each once: "All Mail" holds the same messages once more. */
     @Query(
         "SELECT message.* FROM message JOIN folder ON folder.id = message.folderId " +
@@ -756,6 +778,13 @@ abstract class OutboxDao {
     @Query("UPDATE outbox SET state = 'Failed', error = :error, updatedAt = :now WHERE state = 'Sending'")
     abstract suspend fun failInterrupted(error: String, now: Long): Int
 
+    /**
+     * How many days an answer to the message is to be waited for once it was sent; 0 for none.
+     * Nothing the message says changes: its copy among the drafts on the server is not behind.
+     */
+    @Query("UPDATE outbox SET awaitDays = :days WHERE id = :id AND state != 'Sending'")
+    abstract suspend fun setAwait(id: Long, days: Int): Int
+
     /** When the first of the waiting messages is to go (a moment that may have passed); null when none waits. */
     @Query("SELECT MIN(sendAfter) FROM outbox WHERE state = 'Queued'")
     abstract suspend fun earliest(): Long?
@@ -899,4 +928,31 @@ abstract class ListDao {
     open suspend fun setSender(address: String, vip: Boolean, images: Boolean) {
         if (!vip && !images) deleteSender(address) else saveSender(SenderEntity(address, vip, images))
     }
+}
+
+/** The user's messages that answers are waited for ([AwaitingEntity]). */
+@Dao
+abstract class AwaitingDao {
+    @Query("SELECT * FROM awaiting ORDER BY dueAt, id")
+    abstract fun observeAll(): Flow<List<AwaitingEntity>>
+
+    @Query("SELECT * FROM awaiting ORDER BY dueAt, id")
+    abstract suspend fun all(): List<AwaitingEntity>
+
+    @Query("SELECT * FROM awaiting WHERE accountId = :accountId ORDER BY dueAt, id")
+    abstract suspend fun ofAccount(accountId: Long): List<AwaitingEntity>
+
+    @Query("SELECT * FROM awaiting WHERE id = :id")
+    abstract suspend fun byId(id: Long): AwaitingEntity?
+
+    /** Waits for an answer to a message; the same message waited for anew takes the new time. */
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    abstract suspend fun insert(awaiting: AwaitingEntity): Long
+
+    @Query("DELETE FROM awaiting WHERE id = :id")
+    abstract suspend fun delete(id: Long)
+
+    /** The user was reminded of it. */
+    @Query("UPDATE awaiting SET toldAt = :at WHERE id = :id")
+    abstract suspend fun told(id: Long, at: Long)
 }

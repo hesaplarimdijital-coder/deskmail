@@ -196,6 +196,10 @@ class DemoComposer(private val mail: DemoMail, private val now: Instant = Instan
         kept.removeAll { it.id == id }
     }
 
+    override suspend fun awaitReply(id: Long, days: Int) {
+        edit(id) { it.copy(awaitDays = days.coerceAtLeast(0)) }
+    }
+
     private fun edit(id: Long, change: (Draft) -> Draft) {
         val index = drafts.indexOfFirst { it.id == id }
         if (index < 0) return

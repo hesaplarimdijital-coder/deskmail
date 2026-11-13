@@ -31,6 +31,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
@@ -39,6 +41,8 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.deskmail.R
 import com.deskmail.core.mail.MailException
+import com.deskmail.mail.AWAIT_DAYS
+import com.deskmail.mail.AwaitedReply
 import com.deskmail.mail.DraftKind
 import com.deskmail.mail.MailAttachment
 import com.deskmail.mail.MailContent
@@ -51,6 +55,7 @@ import desktopkit.components.DeskChip
 import desktopkit.components.DeskIconButton
 import desktopkit.components.DeskIcons
 import desktopkit.components.DeskProgressBar
+import desktopkit.components.MenuButton
 import desktopkit.components.MenuEntry
 import desktopkit.components.MoreSheet
 import desktopkit.components.SkeletonList
@@ -89,6 +94,10 @@ import kotlinx.coroutines.delay
  * @param fetchingFile a file is on its way from the server.
  * @param draft the message is a draft that lies in its account's Drafts folder: there is nothing
  *   to answer, it is taken up to be written on ([DraftKind.Edit]).
+ * @param awaiting an answer to the message is waited for: a strip under its header says until when,
+ *   with "Stop waiting" ([onStopAwaiting]).
+ * @param onAwait the message is one of the user's that an answer could be waited for: "Await reply"
+ *   offers how many days; null for any other message.
  */
 @Composable
 fun MessageReader(
@@ -116,6 +125,9 @@ fun MessageReader(
     vip: Boolean? = null,
     onToggleVip: () -> Unit = {},
     conversation: @Composable () -> Unit = {},
+    awaiting: AwaitedReply? = null,
+    onAwait: ((Int) -> Unit)? = null,
+    onStopAwaiting: (Long) -> Unit = {},
 ) {
     val colors = DeskTheme.colors
     val dimens = DeskTheme.dimens
@@ -190,6 +202,8 @@ fun MessageReader(
         // a phone has no row of actions above the subject: "Reply" is beside the sender there
         ReaderHeader(message, onToggleStar, onReply = if (compact && answers != null) ({ answers(DraftKind.Reply) }) else null)
         val strip = Modifier.padding(horizontal = dimens.pagePadding).padding(bottom = dimens.gapM)
+        // one of the user's own: the answer that is waited for, or the offer to wait for one
+        AwaitStrip(awaiting, onAwait, onStopAwaiting, strip)
         when (content) {
             is MailContent.Ready -> {
                 if (content.attachments.isNotEmpty()) Attachments(content.attachments, fetchingFile, onAttachment)
@@ -237,6 +251,35 @@ fun MessageReader(
             )
         }
     }
+}
+
+/**
+ * Under the header of one of the user's messages: until when an answer is waited for (a warning
+ * once that time has passed without one), with "Stop waiting"; or, where none is waited for yet,
+ * "Await reply" and how many days.
+ */
+@Composable
+private fun AwaitStrip(awaiting: AwaitedReply?, onAwait: ((Int) -> Unit)?, onStop: (Long) -> Unit, modifier: Modifier) {
+    if (awaiting != null) {
+        val dates = rememberDateLabels()
+        val overdue = awaiting.told || !awaiting.dueAt.isAfter(LocalMailClock.current.now())
+        StatusBanner(
+            tone = if (overdue) BannerTone.Warning else BannerTone.Info,
+            text = stringResource(if (overdue) R.string.awaiting_overdue else R.string.awaiting_until, dates.full(awaiting.dueAt)),
+            modifier = modifier.testTag(MailTags.AWAITING),
+            actionLabel = stringResource(R.string.awaiting_stop),
+            onAction = { onStop(awaiting.id) },
+        )
+        return
+    }
+    if (onAwait == null) return
+    val days = AWAIT_DAYS.map { it to pluralStringResource(R.plurals.await_days, it, it) }
+    MenuButton(
+        text = stringResource(R.string.compose_await),
+        entries = { days.map { (count, label) -> MenuEntry.Item(label, { onAwait(count) }) } },
+        modifier = modifier.testTag(MailTags.AWAIT),
+        icon = MailIcons.Awaiting,
+    )
 }
 
 /**

@@ -36,6 +36,7 @@ fun buildShellSpec(
             NavItem(Routes.UNREAD, resources.getString(R.string.nav_unread), MailIcons.Mail),
             NavItem(Routes.STARRED, resources.getString(R.string.nav_starred), MailIcons.Star),
             NavItem(Routes.VIP, resources.getString(R.string.nav_vip), MailIcons.Vip),
+            NavItem(Routes.AWAITING, resources.getString(R.string.nav_awaiting), MailIcons.Awaiting),
             NavItem(Routes.FOLDERS, resources.getString(R.string.nav_folders), DeskIcons.Folder),
             NavItem(Routes.SEARCH, resources.getString(R.string.nav_search), DeskIcons.Search),
             NavItem(Routes.OUTBOX, resources.getString(R.string.nav_outbox), MailIcons.Sent),
