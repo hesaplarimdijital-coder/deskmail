@@ -83,6 +83,9 @@ Sürümler [SemVer](https://semver.org/lang/tr/) kuralına uyar; 0.1.0'a kadar o
 - **İçe aktar** öbür cihazda o dosyayı okur: cihazda olmayan hesaplar eklenir, her biri şifresini bekler (hesabın sayfasında "Yeniden bağlan"); cihazda olan hesaplara dokunulmaz. Seçimler ve görünüm alınır; cihazda zaten olan şablon ve kayıtlı arama ikinci kez eklenmez, göndericiler için verilen kararlar cihazdakilere eklenir.
 - DeskMail'in ayar dosyası olmayan dosya ya da işe yaramayan kayıt (adressiz ya da sunucusuz hesap, olmayacak bir port) geçilir; ayar dosyasından çok büyük bir dosya bütünüyle okunmaz.
 
+### Lisanslar
+- **Açık kaynak lisansları.** Ayarlar › Hakkında'da yeni düğme: DeskMail'in içinde gelen başkalarının çalışmaları (desktop-kit, IBM Plex yazı tipleri, Haze, Jetpack Compose ve AndroidX, Kotlin ve kotlinx.coroutines, Angus Mail ve Jakarta Mail, Angus ve Jakarta Activation, jsoup), kimin oldukları ve hangi lisansla. Birine dokununca lisansın metni açılır; seçilip kopyalanabilir.
+
 ### Düzeltmeler
 - **Paylaşılan dosyayla yazma ekranı hemen açılır.** Başka bir uygulamadan dosya paylaşınca yazma ekranı, dosya uygulamaya kopyalanana dek açılmıyordu; büyük bir videoda o süre boyunca yalnızca Gelen görünüyordu. Ekran artık hemen açılır ve dosya arkada eklenir: ekran "Dosya ekleniyor…" der, dosya iletiye girmeden Gönder çalışmaz (ekranı kapatıp taslağı Giden kutusu'ndan yeniden açsan da). Yazma ekranındaki ataşla eklenen büyük dosyalarda da böyle.
 - **Yazma ekranı kendiliğinden kapanmaz.** Bir ileti yazarken başka bir ekrana bakıp geri dönünce yazma ekranı "Taslak Giden kutusu'nda duruyor" diyerek kapanıyordu (taslak kaybolmuyordu, Giden kutusu'ndan açmak gerekiyordu). Yazılan ileti artık ekranına dönüldüğünde bırakıldığı gibi durur.
