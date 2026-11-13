@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.watch.WatchServiceTest" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-11-13T12:37:59.280Z" hostname="runnervmccnms" time="0.494">
+  <properties/>
+  <testcase name="theServiceShowsASilentNotificationOfItsOwnAndSchedulesTheNextBeginning" classname="com.deskmail.watch.WatchServiceTest" time="0.181"/>
+  <testcase name="whenItsTimeHasComeTheWaitsAreBegunAnewAndTheNextTimeIsSet" classname="com.deskmail.watch.WatchServiceTest" time="0.053"/>
+  <testcase name="withoutAnAccountNothingIsStarted" classname="com.deskmail.watch.WatchServiceTest" time="0.034"/>
+  <testcase name="aDeviceThatIsSwitchedOnAndAnAppThatWasUpdatedStartTheWatch" classname="com.deskmail.watch.WatchServiceTest" time="0.118"/>
+  <testcase name="withAnAccountAndMailToBeToldOfAsItComesTheWatchIsStarted" classname="com.deskmail.watch.WatchServiceTest" time="0.041"/>
+  <testcase name="endingTheServiceEndsTheWatchAndItsAlarm" classname="com.deskmail.watch.WatchServiceTest" time="0.02"/>
+  <testcase name="theSystemStartsItAgainWhenItEndedIt" classname="com.deskmail.watch.WatchServiceTest" time="0.017"/>
+  <testcase name="aRunningWatchLooksAtTheAccountsAgainInsteadOfBeingStartedOnceMore" classname="com.deskmail.watch.WatchServiceTest" time="0.027"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[System.logW: A resource failed to call close. 
+System.logW: A resource failed to call close. 
+System.logW: A resource failed to call close. 
+System.logW: A resource failed to call close. 
+System.logW: A resource failed to call close. 
+]]></system-err>
+</testsuite>
