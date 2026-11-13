@@ -76,6 +76,16 @@ Room 3; şema dışa aktarılır, v1'den itibaren göç testi vardır.
 - `snooze` (şema 4): ertelenen iletiler, sunucudaki "DeskMail ertelemeleri" listesinin cihazdaki kopyası; hesap,
   Message-ID (hesapta tekil), döneceği klasörün yolu, konu, dönüş zamanı, durum (Listed, Added, Removed) ve bu
   cihazın değiştirdiği zaman.
+- Şema 4'te `outbox`'a taslağın sunucudaki kopyasının ne zaman kaydedildiği ve klasörünün UIDVALIDITY'si
+  (`draftSavedAt`, `draftUidValidity`; kopyanın klasörü ve UID'si şema 3'ten beri vardı), `body`'ye iletinin
+  başlık satırları (`headers`, en çok 64 000 karakter) eklendi.
+- `draft_removal` (şema 4): gönderilen ya da atılan bir taslağın sunucudaki kopyası; sunucuya silmesi
+  söylenene dek (ağ yokken sonraya kalabilir) tutulur.
+- `search_hit` (şema 4): sunucu aramasının bulduğu iletiler (sorgu, ileti, bulunduğu zaman). Bir gün
+  tutulur; o sürede eşitleme onları cihazdan silmez.
+- `template`, `saved_search`, `sender` (şema 4): hızlı metinler ve klasör gibi saklanan aramalar (kullanıcının
+  sırasıyla), gönderenler için söylenenler (VIP, uzak görseller; adres küçük harfle). Üçü de ayar dosyasıyla
+  taşınır.
 - Ayrı bir adres tablosu yok: alıcı önerileri en yeni 500 iletinin adreslerinden okunur.
 
 ## Senkron
@@ -340,6 +350,12 @@ Her biri ayrı PR; sıra, cihazda en çok denenmesi gerekenden başlar.
      çalışmalarıdır; metinler projelerin kendi dosyaları (`res/raw`). Kitin NOTICE'ı kitle birlikte gösterilir;
      kitin getirdiği IBM Plex için OFL metni de (kitin NOTICE'ı bunu istiyor). Yeni bir kitaplık eklenince bu
      listeye de eklenir.
+   - **Belgeler: yapıldı.** Yıllık bakım listesi `docs/BAKIM.md` (bu belgenin "Bakım notları" oraya taşındı),
+     Gmail için yedek giriş yolu `docs/GOOGLE-OAUTH.md`; mimari bu belgenin "Mimari" ve "Veri modeli"
+     başlıklarında. README'nin "Durum"u beta.1'e göre.
+   - **Boş ve hata durumları, erişilebilirlik.** Her görünümün boş durumu kendi sözünü söyler (hesap yok,
+     arama, VIP, yanıt bekleyenler, ertelenenler, süzgeç); hesap ve ileti hataları ekranda ve günlükte.
+     Simgeli düğmelerin ve listedeki işaretlerin adı var; TalkBack ile cihazda denenmedi.
 
 **Kiti bekleyenler** (uygulamada yamanmaz; `docs/KIT-ISTEKLERI.md`): alıcı önerilerinin arayüzü (4),
 telefonda satırı kaydırarak arşiv ve erteleme (7), fareyle çerçeve çizerek seçme (22), şablonun imlecin
@@ -387,22 +403,7 @@ bilgisi) beta'ya girmez; her biri ayrıca sorulur.
 
 ## Bakım notları
 
-Yıllık güncellemede bakılacaklar; 0.1.0'la birlikte ayrı bir belgeye taşınacak.
-
-- **`DnsResolver.getInstance()`** Android 17'de (API 37) eskidi; yerine gelen `DnsResolver(Context, Looper)`
-  yalnızca API 37'den beri var. `minSdk` 37 olunca değiştirilir (`net/DnsLookup.kt`). MX ve SRV sorguları
-  `rawQuery`'ye tür numarasıyla (15, 33) verilir; platform yalnızca A, AAAA ve HTTPS için sabit tanımlar.
-- **Angus Mail yükseltilirken** `SocketFetcher.configureSSLSocket` yeniden okunmalı: sunucu kimliği
-  denetimini uygulama `mail.imap.ssl.hostnameverifier` ile kendisi veriyor ve kitaplığınkini kapatıyor
-  (`ImapConnection.properties`). SMTP eklenince aynı iki ayar `mail.smtp.` önekiyle verilecek.
-- **Compose test kuralı:** `createAndroidComposeRule` (v1) eskidi; v2'ye geçiş testlerde açık eşzamanlama
-  isteyebilir. Kit yükseltilirken birlikte yapılır.
-- **GreenMail** bir parçanın boyutuna parçanın kendi başlık satırlarını da katıyor (gerçek sunucular
-  katmaz); ek boyutu kestirimi bu yüzden ayrı bir testte gerçek sayılarla sınanıyor.
-- **Veritabanı şeması** (`app/schemas`): CI, derlemenin yazdığı şema depodakinden farklıysa durur. Şema
-  değişikliği yeni sürüm numarası, göç ve göç testi demektir.
-- **Microsoft 365 (iş/okul) hesapları:** posta sunucusu Microsoft olan alan adları Outlook satırına
-  eşleniyor; kişisel hesaplardan farkları (SMTP sunucusu, kiracı) denenmedi.
+Yıllık güncellemede bakılacaklar ve bilinen ayrıntılar `docs/BAKIM.md`'ye taşındı.
 
 ## Azure kaydı (Outlook için)
 

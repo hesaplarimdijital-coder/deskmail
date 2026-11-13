@@ -4,15 +4,16 @@ Kişisel kullanım için Android e-posta uygulaması: telefon, tablet ve Samsung
 e-posta yapan bir istemci. Arayüzün tamamı [desktop-kit](https://github.com/hesaplarimdijital-coder/desktop-kit)
 ile çizilir. Play'de değildir; APK olarak kurulur.
 
-> **Durum:** 0.1.0'a giden ön sürümler. Hesap eklenir (Gmail uygulama şifresiyle; başka sağlayıcılar
-> şifreyle), klasörler ve iletiler eşitlenir, iletiler güvenli biçimde gösterilir; okundu ve yıldız
-> sunucuya yazılır, iletiler arşivlenir, taşınır, silinir (hepsi geri alınır; birden çok ileti seçilip
-> birlikte de), ekler açılır ve kaydedilir;
-> ileti yazılır, yanıtlanır, iletilir ve gönderilir (gönderi geri alınabilir, çevrimdışıyken sıraya girer;
-> taslaklar sunucunun Taslaklar klasöründe de durur);
-> cihazdaki iletilerde aranır; gelen posta geldiği anda bildirilir (sunucuya açık bir hat tutulur; istenirse
-> 15, 30 ya da 60 dakikada bir bakılır). Sunucuda arama henüz yok; Outlook hesapları Microsoft girişini
-> bekliyor. Sıradaki adımlar `docs/PLAN.md`'de, yapılanlar `CHANGELOG.md`'de.
+> **Durum:** 0.1.0'a giden ön sürümler; şimdiki `0.1.0-beta.1`. Hesap eklenir (Gmail uygulama şifresiyle;
+> başka sağlayıcılar şifreyle), klasörler ve iletiler eşitlenir, iletiler güvenli biçimde ve konuşmalarıyla
+> gösterilir; okundu ve yıldız sunucuya yazılır, iletiler arşivlenir, taşınır, silinir, ertelenir (hepsi geri
+> alınır; birden çok ileti seçilip birlikte de), ekler açılır ve kaydedilir; ileti yazılır, yanıtlanır,
+> iletilir ve gönderilir (gönderi geri alınabilir, çevrimdışıyken sıraya girer; taslaklar sunucunun Taslaklar
+> klasöründe de durur; yanıtı beklenip gelmezse hatırlatılır); cihazda ve sunucuda aranır, aramalar klasör
+> gibi saklanır; gelen posta geldiği anda bildirilir (sunucuya açık bir hat tutulur; istenirse 15, 30 ya da
+> 60 dakikada bir bakılır) ve bildirimden yanıtlanır; ayarlar başka bir cihaza taşınır. Outlook hesapları
+> Microsoft girişini bekliyor (`0.1.0-beta.2`). Sıradaki adımlar `docs/PLAN.md`'de, yapılanlar
+> `CHANGELOG.md`'de.
 
 ## Kurulum ve güncelleme
 
@@ -41,9 +42,9 @@ Ayarlar › Hesaplar › **Hesap ekle**. Adresi yazınca uygulama sunucuları ke
   doğrulama açıkken <https://myaccount.google.com/apppasswords> adresinde üretilir (16 harf); ekrandaki
   düğme o sayfayı açar. Gmail'de IMAP her zaman açıktır, ayrıca bir ayar gerekmez. Uygulama şifresi
   seçeneği iş ve okul hesaplarında, Gelişmiş Koruma'da ve yalnızca güvenlik anahtarıyla doğrulanan
-  hesaplarda görünmeyebilir. Google bir gün uygulama şifrelerini kapatırsa yedek yol Google OAuth'tur;
-  planı 0.1.0 belgeleriyle yazılacak.
-- **Outlook, Hotmail, Live:** Microsoft'ta tarayıcıdan giriş ister (OAuth2); henüz eklenemez, sonraki ön sürümlerden biriyle gelir.
+  hesaplarda görünmeyebilir. Google bir gün uygulama şifrelerini kapatırsa yedek yol Google OAuth'tur:
+  `docs/GOOGLE-OAUTH.md`.
+- **Outlook, Hotmail, Live:** Microsoft'ta tarayıcıdan giriş ister (OAuth2); henüz eklenemez, `0.1.0-beta.2` ile gelir.
 - **Diğerleri:** sağlayıcının verdiği şifre ya da uygulama şifresi. Sunucular Thunderbird'ün sağlayıcı
   veritabanından ya da alan adının DNS kayıtlarından bulunur; dışarıya yalnızca adresin @ işaretinden
   sonraki bölümü gider.
