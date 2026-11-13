@@ -126,6 +126,8 @@ class MailSync(
             listing.update { it + accountId }
             try {
                 connected(accountId) { account, remote ->
+                    // what a search of the server found a day ago and more is shielded no longer: the sync may take it away
+                    db.messages().forgetHits(clock().toEpochMilli() - HITS_KEPT_MS)
                     // first what the device changed, then what the server has
                     changeLock(accountId).withLock { push(accountId, remote) }
                     work(account, remote)
@@ -484,6 +486,9 @@ class MailSync(
 
         /** How many texts the backlog fetches before it looks again at what is waiting. */
         const val BACKLOG_BODIES = 50
+
+        /** How long what a search of the servers found is kept on the device, whatever the sync keeps. */
+        const val HITS_KEPT_MS = 24 * 60 * 60 * 1000L
 
         /** The folders a search of the server does not look through; the snoozed lie apart, with their list, until they come back. */
         private val UNSEARCHED = setOf(FolderRole.Drafts, FolderRole.Trash, FolderRole.Junk, FolderRole.Snoozed)

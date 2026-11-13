@@ -647,7 +647,7 @@ class LiveMail(
         const val SERVER_FOUND_LIMIT = 100
 
         /** How long what a search of the servers found is kept on the device, whatever the sync keeps. */
-        const val HITS_KEPT_MS = 24 * 60 * 60 * 1000L
+        const val HITS_KEPT_MS = MailSync.HITS_KEPT_MS
 
         /** A saved search's name is one line of the sidebar; what it looks for, one line of the search field. */
         const val MAX_NAME = 80
