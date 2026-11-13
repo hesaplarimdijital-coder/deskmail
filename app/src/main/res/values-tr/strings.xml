@@ -46,6 +46,11 @@
     <string name="action_archive">Arşivle</string>
     <string name="action_delete">Sil</string>
     <string name="action_move">Taşı…</string>
+    <string name="action_select">Seç</string>
+    <plurals name="selection_count">
+        <item quantity="one">%d ileti seçili</item>
+        <item quantity="other">%d ileti seçili</item>
+    </plurals>
     <string name="action_undo">Geri al</string>
     <string name="action_open_message">Aç</string>
     <string name="move_title">Klasöre taşı</string>

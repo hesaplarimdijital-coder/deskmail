@@ -212,6 +212,15 @@ class LiveMail(
 
     override fun toggleStarred(id: Long) = change { db.pending().toggle(id, seen = false, now = now()) }
 
+    override fun markUnread(ids: List<Long>, unread: Boolean) = changeEach(ids) { db.pending().mark(it, seen = !unread, flagged = null, now = now()) }
+
+    override fun markStarred(ids: List<Long>, starred: Boolean) = changeEach(ids) { db.pending().mark(it, seen = null, flagged = starred, now = now()) }
+
+    /** Makes a change to each of [ids] on the device; every account that has something to hear of is told once. */
+    private fun changeEach(ids: List<Long>, work: suspend (Long) -> Long?) {
+        scope.launch { ids.mapNotNull { work(it) }.toSet().forEach { tellSoon(it) } }
+    }
+
     /** Makes a change on the device; [work] answers with the account whose server is to be told of it. */
     private fun change(work: suspend () -> Long?) {
         scope.launch { work()?.let { tellSoon(it) } }

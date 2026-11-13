@@ -29,6 +29,7 @@ import com.deskmail.ui.MailIcons
 import desktopkit.components.ChipOption
 import desktopkit.components.ColumnWidth
 import desktopkit.components.DenseTable
+import desktopkit.components.DeskDragPayload
 import desktopkit.components.DeskListRow
 import desktopkit.components.FilterChips
 import desktopkit.components.MenuEntry
@@ -67,6 +68,8 @@ fun MailFilterChips(selected: Set<MailFilter>, onToggle: (MailFilter) -> Unit, o
  * for); [header], when there is one, scrolls away with the rows as the list's first item.
  *
  * @param menu what can be done with a row's message: opened by a long press, a right click or the Menu key.
+ * @param selection the rows that are selected; they are drawn as the open one is.
+ * @param onPick set while rows are being picked: a tap adds or removes its row instead of opening it.
  */
 @Composable
 fun MessageRows(
@@ -79,13 +82,22 @@ fun MessageRows(
     header: (@Composable () -> Unit)? = null,
     empty: @Composable () -> Unit = {},
     menu: ((MailMessage) -> List<MenuEntry>)? = null,
+    selection: Set<Long> = emptySet(),
+    onPick: ((MailMessage) -> Unit)? = null,
 ) {
     val dates = rememberDateLabels()
     LazyColumn(modifier.fillMaxSize(), state = state, contentPadding = contentPadding) {
         if (header != null) item(key = "header", contentType = "header") { header() }
         if (messages.isEmpty()) item(key = "empty", contentType = "empty") { empty() }
         items(messages, key = { it.id }, contentType = { "message" }) { message ->
-            MessageRow(message, selected = message.id == openedId, date = dates.short(message.sentAt), onOpen = onOpen, menu = menu)
+            MessageRow(
+                message = message,
+                // while rows are picked the open message is no row to tell apart
+                selected = if (onPick != null) message.id in selection else message.id == openedId || message.id in selection,
+                date = dates.short(message.sentAt),
+                onOpen = onPick ?: onOpen,
+                menu = menu,
+            )
         }
     }
 }
@@ -157,6 +169,11 @@ private val MARK = 14.dp
  * them ([prefs] remembers the choice). desktop-kit 2.4.0 draws a cell as text in its column's
  * style, so an unread message is marked by a dot in a column of its own, a star and the number of
  * attachments likewise (docs/KIT-ISTEKLERI.md, 2).
+ *
+ * Several rows are selected the way the kit's table has it: Ctrl+click adds or removes a row,
+ * Shift+click takes the rows in between, Ctrl+A all of them, Esc none; a plain click selects its
+ * row alone and opens it. With [picking] every click adds or removes its row. Selected rows are
+ * dragged together ([drag] says what travels).
  */
 @Composable
 fun MessageTable(
@@ -170,6 +187,10 @@ fun MessageTable(
     modifier: Modifier = Modifier,
     bottomPadding: Dp = 0.dp,
     menu: ((MailMessage) -> List<MenuEntry>)? = null,
+    selection: Set<Long> = emptySet(),
+    onSelect: ((Set<Long>) -> Unit)? = null,
+    picking: Boolean = false,
+    drag: ((MailMessage) -> DeskDragPayload?)? = null,
 ) {
     val dates = rememberDateLabels()
     val toPrefix = stringResource(R.string.message_to, "")
@@ -202,7 +223,11 @@ fun MessageTable(
         onSortChange = onSortChange,
         rowMenu = if (menu == null) null else ({ message, _ -> menu(message) }),
         contentPadding = PaddingValues(bottom = 8.dp + bottomPadding),
+        selectedKeys = if (onSelect == null) null else selection,
+        onSelectionChange = if (onSelect == null) null else ({ keys -> onSelect(keys.filterIsInstance<Long>().toSet()) }),
+        toggleOnClick = picking,
         columnsState = if (prefs == null) null else rememberTableColumnsState("messages", prefs),
+        rowDrag = if (drag == null) null else ({ message, _ -> drag(message) }),
     )
 }
 
