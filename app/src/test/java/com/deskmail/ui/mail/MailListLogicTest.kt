@@ -1,6 +1,8 @@
 package com.deskmail.ui.mail
 
 import com.deskmail.demo.DemoMail
+import com.deskmail.mail.MailAttachment
+import com.deskmail.mail.MailMessage
 import com.deskmail.mail.MailView
 import com.deskmail.ui.Routes
 import com.deskmail.ui.mailView
@@ -21,7 +23,7 @@ class MailListLogicTest {
     /** The table's narrow column: answered, sent on, or both. */
     @Test
     fun answeredAndForwardedAreMarked() {
-        val message = MailMessage(1, 1, 1, "Ayşe", "ayse@example.org", "Deniz", "Konu", java.time.Instant.EPOCH)
+        val message = MailMessage(1, 1, 1, "Ayşe", "ayse@example.org", "Deniz", "Konu", Instant.EPOCH)
         assertEquals("", answeredMark(message))
         assertEquals("↩", answeredMark(message.copy(answered = true)))
         assertEquals("→", answeredMark(message.copy(forwarded = true)))
