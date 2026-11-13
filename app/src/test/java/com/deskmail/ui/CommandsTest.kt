@@ -277,14 +277,13 @@ class CommandsTest {
         compose.onNodeWithText("Klasöre taşı").assertExists()
     }
 
-    /** With several rows selected, the keys act on all of them, whatever message is open. */
+    /** With several rows selected, the keys act on all of them. */
     @Test
     fun withSeveralMessagesSelectedTheKeysActOnAllOfThem() {
         launch()
         val inbox = mail.messages(MailView.Inbox)
         val first = inbox[0]
         val second = inbox.first { it.id != first.id && it.accountId == first.accountId }
-        perform(Commands.NEXT)
         compose.runOnUiThread { ui.select(Routes.INBOX, setOf(first.id, second.id)) }
         compose.waitForIdle()
         compose.onNodeWithText("2 ileti seçili").assertExists()
@@ -300,8 +299,13 @@ class CommandsTest {
         assertTrue(perform(Commands.STAR))
         assertFalse(mail.message(first.id)!!.starred || mail.message(second.id)!!.starred)
 
-        // unread, both: opening the first had read it
-        compose.runOnUiThread { mail.setUnread(second.id, false) }
+        // read, both, while one of them is unread; unread again once both were read
+        compose.runOnUiThread {
+            mail.setUnread(first.id, true)
+            mail.setUnread(second.id, false)
+        }
+        assertTrue(perform(Commands.TOGGLE_READ))
+        assertFalse(mail.message(first.id)!!.unread || mail.message(second.id)!!.unread)
         assertTrue(perform(Commands.TOGGLE_READ))
         assertTrue(mail.message(first.id)!!.unread && mail.message(second.id)!!.unread)
 

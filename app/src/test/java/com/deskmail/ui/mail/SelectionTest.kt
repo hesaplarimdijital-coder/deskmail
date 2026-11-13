@@ -264,15 +264,22 @@ class SelectionTest {
         state.closeMessages(listOf(5L))
         assertEquals(setOf(3L), state.selection(Routes.INBOX))
 
-        // opened by other means than a click, the open message takes the place of the one selected row
+        // opened by other means than a click, the open message's row takes the place of the one selected row
         state.open(Routes.INBOX, 9)
-        assertTrue(state.selection(Routes.INBOX).isEmpty())
+        assertEquals(setOf(9L), state.selection(Routes.INBOX))
         assertEquals(listOf(9L), state.targets(Routes.INBOX))
 
-        // picked with a finger, one row is a selection already
+        // picked with a finger, one row is a selection already; the open message is not picked along
         state.pick(Routes.INBOX, 4)
         assertEquals(listOf(4L), state.targets(Routes.INBOX))
         state.togglePicked(Routes.INBOX, 4)
         assertFalse(state.picking(Routes.INBOX))
+        assertTrue(state.selection(Routes.INBOX).isEmpty())
+
+        // closed, the message leaves no row selected behind
+        state.open(Routes.INBOX, 9)
+        state.close(Routes.INBOX)
+        assertTrue(state.selection(Routes.INBOX).isEmpty())
+        assertTrue(state.targets(Routes.INBOX).isEmpty())
     }
 }

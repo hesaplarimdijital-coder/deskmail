@@ -101,12 +101,15 @@ class MailUiState(private val settings: AppSettings? = null) {
 
     fun open(route: String, id: Long) {
         opened[route] = id
-        // one selected row is the row that was clicked: opened by other means (the keyboard), another row takes its place
-        if (selection(route).size <= 1 && !picking(route)) selections.remove(route)
+        // One selected row is the open message's row: clicked with the mouse, the table selects it
+        // itself; opened by other means (the keyboard), the selection follows. Ctrl+click and
+        // Shift+click then go on from the open message.
+        if (!picking(route) && selection(route).size <= 1) selections[route] = setOf(id)
     }
 
     fun close(route: String) {
         opened.remove(route)
+        if (!picking(route) && selection(route).size <= 1) selections.remove(route)
     }
 
     /** Closes these messages wherever a screen has one of them open, and takes them out of what is selected: they have left their lists. */
@@ -140,10 +143,13 @@ class MailUiState(private val settings: AppSettings? = null) {
      */
     fun picking(route: String): Boolean = pickings[route] == true
 
-    /** Begins to pick rows with a finger, with this one. */
+    /** Begins to pick rows with a finger, with this one; rows that were selected together stay selected. */
     fun pick(route: String, id: Long) {
+        val chosen = selection(route)
+        // one selected row is only the open message's: picking begins with the row it was asked on
+        val kept = if (picking(route) || chosen.size > 1) chosen else emptySet()
         pickings[route] = true
-        selections[route] = selection(route) + id
+        selections[route] = kept + id
     }
 
     /** Adds the row to what is selected, or takes it out. */
