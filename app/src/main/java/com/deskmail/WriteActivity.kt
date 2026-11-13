@@ -81,7 +81,7 @@ class WriteActivity : ComponentActivity() {
             true
         } ?: false
         Commands.CLOSE -> {
-            state.writing?.let { end(it.closing()) }
+            if (!ended) state.writing?.let { end(it.closing()) }
             true
         }
         else -> false

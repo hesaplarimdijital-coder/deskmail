@@ -4,7 +4,11 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -25,8 +29,10 @@ import kotlinx.coroutines.launch
  * system's caption bar names the window, the screen's own row holds its actions, and Ctrl+Enter
  * sends.
  *
- * The window goes once the message is sent, put away or thrown away; [onEnd] says which. What is
- * left to do then is not this window's: it outlives none of its own work.
+ * The window goes once the message is sent, put away or thrown away; [onEnd] says which, once. The
+ * screen goes with the first end (a message that was handed over is no longer one to write on, and
+ * would close its screen again). What is left to do then is not this window's: it outlives none of
+ * its own work.
  *
  * @param prefs the kit's look (theme, accent, density), the same in every window of the app.
  * @param onTitle what the window is to be called: the subject, once there is one.
@@ -43,25 +49,36 @@ fun WriteWindow(
 ) {
     val scope = rememberCoroutineScope()
     val toasts = rememberToastState()
+    var ended by remember { mutableStateOf(false) }
+    val end: (() -> WriteEnd) -> Unit = { how ->
+        if (!ended) {
+            ended = true
+            onEnd(how())
+        }
+    }
     val title = writing.fields.subject.ifBlank { stringResource(R.string.compose_title) }
     LaunchedEffect(title) { onTitle(title) }
     DesktopKitRoot(prefs) { _ ->
         Box(Modifier.fillMaxSize()) {
-            ComposeScreen(
-                writing = writing,
-                composer = composer,
-                mail = mail,
-                scope = scope,
-                host = host,
-                onClose = { onEnd(writing.closing()) },
-                onDiscard = {
-                    writing.fields.discarded()
-                    onEnd(WriteEnd.Discarded)
-                },
-                onSent = { check -> onEnd(WriteEnd.Sent(check)) },
-                onNotify = { text -> scope.launch { toasts.show(text) } },
-                ownWindow = true,
-            )
+            if (!ended) {
+                ComposeScreen(
+                    writing = writing,
+                    composer = composer,
+                    mail = mail,
+                    scope = scope,
+                    host = host,
+                    onClose = { end { writing.closing() } },
+                    onDiscard = {
+                        end {
+                            writing.fields.discarded()
+                            WriteEnd.Discarded
+                        }
+                    },
+                    onSent = { check -> end { WriteEnd.Sent(check) } },
+                    onNotify = { text -> scope.launch { toasts.show(text) } },
+                    ownWindow = true,
+                )
+            }
             ToastHost(toasts, Modifier.align(Alignment.BottomCenter))
         }
     }

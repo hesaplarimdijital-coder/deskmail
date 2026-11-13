@@ -124,17 +124,21 @@ class WriteWindowTest {
 
     @Test
     fun sendHandsTheMessageOverAndEndsTheWindow() {
-        launch(begun())
+        val writing = begun()
+        launch(writing)
         type(ComposeTags.TO, "ayse.yilmaz@posta.example")
         type(ComposeTags.SUBJECT, "Cumartesi")
 
         compose.onNodeWithText("Gönder").performClick()
         compose.waitForIdle()
 
+        // once: the screen goes with it, and does not close a message that is no longer to be written on
         val sent = ends.single() as WriteEnd.Sent
         assertEquals(composer.undoMs, sent.check.undoMs)
-        assertEquals(DraftState.Waiting, composer.outbox.single().state)
-        assertEquals("Cumartesi", composer.outbox.single().subject)
+        val draft = composer.draft(writing.draftId)!!
+        assertEquals(DraftState.Waiting, draft.state)
+        assertEquals("Cumartesi", draft.subject)
+        compose.onNodeWithTag(ComposeTags.TO).assertDoesNotExist()
     }
 
     @Test
