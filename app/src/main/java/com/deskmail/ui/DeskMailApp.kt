@@ -618,6 +618,7 @@ fun mailView(route: String, search: String = ""): MailView? = when (route) {
     Routes.STARRED -> MailView.Starred
     Routes.VIP -> MailView.Vip
     Routes.AWAITING -> MailView.Awaiting
+    Routes.SNOOZED -> MailView.Snoozed
     Routes.SEARCH -> MailView.Search(search)
     else -> Routes.folderId(route)?.let { MailView.Folder(it) } ?: Routes.savedId(route)?.let { MailView.Saved(it) }
 }

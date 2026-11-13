@@ -201,6 +201,9 @@ class MailUiState(private val settings: AppSettings? = null) {
         searchQuery = text
     }
 
+    /** The messages a time is being chosen for ("Snooze…"); empty while none is. */
+    var snoozing by mutableStateOf<List<Long>>(emptyList())
+
     private var movingMessage by mutableStateOf<MailMessage?>(null)
 
     /** The message a folder is being chosen for ("Move…"), or null. Alone, unless [moveSeveral] set it. */
