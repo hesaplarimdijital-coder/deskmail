@@ -138,13 +138,19 @@ private fun UnreadDot(unread: Boolean) {
     Box(Modifier.size(8.dp).then(dot))
 }
 
-/** The date over the marks: a paperclip for attachments, a star. */
+/** The date over the marks: answered or sent on, a paperclip for attachments, a star. */
 @Composable
 private fun MessageMarks(message: MailMessage, date: String) {
     val colors = DeskTheme.colors
     Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Text(date, style = DeskTheme.type.caption, color = if (message.unread) colors.accentText else colors.textTertiary, maxLines = 1)
         Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+            if (message.answered) {
+                Icon(MailIcons.Reply, contentDescription = stringResource(R.string.message_answered), tint = colors.textTertiary, modifier = Modifier.size(MARK))
+            }
+            if (message.forwarded) {
+                Icon(MailIcons.ForwardMail, contentDescription = stringResource(R.string.message_forwarded), tint = colors.textTertiary, modifier = Modifier.size(MARK))
+            }
             if (message.attachmentCount > 0) {
                 Icon(
                     MailIcons.Attachment,
@@ -199,6 +205,8 @@ fun MessageTable(
     val columns = listOf(
         TableColumn<MailMessage>(UNREAD_MARK, ColumnWidth.Fixed(36.dp), id = "unread") { if (it.unread) UNREAD_MARK else "" },
         TableColumn<MailMessage>(STAR_MARK, ColumnWidth.Fixed(36.dp), id = "star") { if (it.starred) STAR_MARK else "" },
+        // answered, sent on, or both
+        TableColumn<MailMessage>(ANSWERED_MARK, ColumnWidth.Fixed(36.dp), id = "answered") { answeredMark(it) },
         // wide enough for a name whole, at any width of the table; the subject takes what is left
         TableColumn<MailMessage>(stringResource(R.string.column_from), ColumnWidth.Fixed(128.dp), id = "from") {
             if (it.outgoing) toPrefix + it.to else it.fromName
@@ -233,3 +241,8 @@ fun MessageTable(
 
 private const val UNREAD_MARK = "●"
 private const val STAR_MARK = "★"
+private const val ANSWERED_MARK = "↩"
+private const val FORWARDED_MARK = "→"
+
+/** What the table's narrow column says of a message that was answered or sent on. */
+internal fun answeredMark(message: MailMessage): String = (if (message.answered) ANSWERED_MARK else "") + (if (message.forwarded) FORWARDED_MARK else "")

@@ -1,6 +1,8 @@
 package com.deskmail.ui.mail
 
 import com.deskmail.demo.DemoMail
+import com.deskmail.mail.MailAttachment
+import com.deskmail.mail.MailMessage
 import com.deskmail.mail.MailView
 import com.deskmail.ui.Routes
 import com.deskmail.ui.mailView
@@ -17,6 +19,31 @@ import java.time.Instant
 class MailListLogicTest {
 
     private val mail = DemoMail(Instant.parse("2026-11-12T09:30:00Z"))
+
+    /** The table's narrow column: answered, sent on, or both. */
+    @Test
+    fun answeredAndForwardedAreMarked() {
+        val message = MailMessage(1, 1, 1, "Ayşe", "ayse@example.org", "Deniz", "Konu", Instant.EPOCH)
+        assertEquals("", answeredMark(message))
+        assertEquals("↩", answeredMark(message.copy(answered = true)))
+        assertEquals("→", answeredMark(message.copy(forwarded = true)))
+        assertEquals("↩→", answeredMark(message.copy(answered = true, forwarded = true)))
+        // sorted by it, what was answered or sent on comes first
+        val sorted = sortMessages(listOf(message, message.copy(id = 2, answered = true)), TableSort(MessageColumns.ANSWERED, ascending = true))
+        assertEquals(listOf(2L, 1L), sorted.map { it.id })
+    }
+
+    /** A message's HTML asks for its pictures by name, written as its sender's program writes it. */
+    @Test
+    fun aPictureIsFoundByItsName() {
+        val logo = MailAttachment("logo.png", 10, id = 3, mimeType = "image/png")
+        val pictures = mapOf("Logo@Bulten.example" to logo)
+        assertEquals(logo, pictureNamed(pictures, "Logo@Bulten.example"))
+        assertEquals(logo, pictureNamed(pictures, "<Logo@Bulten.example>"))
+        assertEquals(logo, pictureNamed(pictures, "logo@bulten.example"))
+        assertNull(pictureNamed(pictures, "baska@bulten.example"))
+        assertNull(pictureNamed(pictures, ""))
+    }
 
     @Test
     fun theUnifiedInboxHoldsTheInboxesOfEveryAccountNewestFirst() {

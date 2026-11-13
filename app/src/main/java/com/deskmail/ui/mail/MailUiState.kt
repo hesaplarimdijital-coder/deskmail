@@ -300,10 +300,11 @@ class MailUiState(private val settings: AppSettings? = null) {
 object MessageColumns {
     const val UNREAD = 0
     const val STAR = 1
-    const val FROM = 2
-    const val SUBJECT = 3
-    const val ATTACHMENTS = 4
-    const val DATE = 5
+    const val ANSWERED = 2
+    const val FROM = 3
+    const val SUBJECT = 4
+    const val ATTACHMENTS = 5
+    const val DATE = 6
 }
 
 /** [messages] narrowed by [filters]; every filter must hold. */
@@ -323,6 +324,7 @@ fun sortMessages(messages: List<MailMessage>, sort: TableSort): List<MailMessage
     val sorted = when (sort.column) {
         MessageColumns.UNREAD -> messages.sortedBy { !it.unread }
         MessageColumns.STAR -> messages.sortedBy { !it.starred }
+        MessageColumns.ANSWERED -> messages.sortedBy { !(it.answered || it.forwarded) }
         MessageColumns.FROM -> messages.sortedBy { counterpart(it).lowercase() }
         MessageColumns.SUBJECT -> messages.sortedBy { it.subject.lowercase() }
         MessageColumns.ATTACHMENTS -> messages.sortedBy { -it.attachmentCount }

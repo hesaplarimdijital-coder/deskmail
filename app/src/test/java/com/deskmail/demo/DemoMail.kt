@@ -281,6 +281,8 @@ class DemoMail(private val now: Instant = Instant.now(), empty: Boolean = false)
             attachments: List<MailAttachment> = emptyList(),
             remoteImages: Boolean = false,
             outgoing: Boolean = false,
+            answered: Boolean = false,
+            forwarded: Boolean = false,
         ) {
             val id = nextId++
             list += MailMessage(
@@ -297,6 +299,8 @@ class DemoMail(private val now: Instant = Instant.now(), empty: Boolean = false)
                 starred = starred,
                 attachmentCount = attachments.size,
                 outgoing = outgoing,
+                answered = answered,
+                forwarded = forwarded,
             )
             contents[id] = MailContent.Ready(text, html, remoteImages, attachments)
         }
@@ -320,6 +324,7 @@ class DemoMail(private val now: Instant = Instant.now(), empty: Boolean = false)
                 "Perşembe günü üstünden geçelim mi?\n\nMehmet",
             html = DemoBodies.replyChain, starred = true, to = "$ME, Elif Şahin",
             attachments = listOf(MailAttachment("Proje planı v3.pdf", 284_000, mimeType = "application/pdf")),
+            answered = true,
         )
         add(
             11, "Derleme Sunucusu", "ci@ci.example", "[deskmail] feature/skeleton: 3 iş başarılı", Duration.ofHours(21),
@@ -337,6 +342,7 @@ class DemoMail(private val now: Instant = Instant.now(), empty: Boolean = false)
             11, "Zeynep Kaya", "zeynep.kaya@posta.example", "Kapadokya gezi notları", Duration.ofDays(3),
             TRAVEL_NOTES, starred = true,
             attachments = listOf(MailAttachment("Göreme sabahı.jpg", 2_480_000), MailAttachment("Ihlara vadisi.jpg", 3_120_000)),
+            forwarded = true,
         )
         add(
             11, "İlçe Kütüphanesi", "bilgi@kutuphane.example", "İade tarihi yaklaşıyor", Duration.ofDays(4),

@@ -2,12 +2,14 @@ package com.deskmail.ui.mail
 
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -63,6 +65,20 @@ class MailScreenTest {
         compose.waitForIdle()
         compose.onNodeWithText(subject).assertDoesNotExist()
         compose.onNodeWithText(subject, substring = true).assertIsDisplayed()
+    }
+
+    /** A message that was answered, or sent on, says so in its row. */
+    @Test
+    @Config(qualifiers = "tr-w411dp-h891dp-xxhdpi")
+    fun aRowSaysWhetherItsMessageWasAnsweredOrSentOn() {
+        val prefs = testPrefs()
+        val settings = testSettings()
+        compose.setContent { TestApp(mail, prefs, settings) }
+        compose.waitForIdle()
+
+        // one of each in the made-up inbox
+        compose.onAllNodesWithContentDescription("Yanıtlandı").assertCountEquals(1)
+        compose.onAllNodesWithContentDescription("İletildi").assertCountEquals(1)
     }
 
     /**
