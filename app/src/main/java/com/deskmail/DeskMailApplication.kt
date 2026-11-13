@@ -86,7 +86,7 @@ class DeskMailApplication : Application(), Configuration.Provider {
     val notifier: MailNotifier by lazy { MailNotifier(this, database, notifyStore, front, log).also { it.watch(background) } }
 
     /** What the buttons of a notification do. */
-    val notifyActions: NotifyActions by lazy { NotifyActions(mail, notifier, log, tellServers = { SyncWorker.tellServers(this) }) }
+    val notifyActions: NotifyActions by lazy { NotifyActions(mail, notifier, log, composer, tellServers = { SyncWorker.tellServers(this) }) }
 
     /** The mail as the windows show it. */
     val mail: LiveMail by lazy { LiveMail(database, sync, background, File(cacheDir, FILES_DIRECTORY)) }
