@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.work.SendWorkerTest" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-11-13T09:09:14.476Z" hostname="runnervmwuk1x" time="0.113">
+  <properties/>
+  <testcase name="withNothingWaitingTheWorkEndsWell" classname="com.deskmail.work.SendWorkerTest" time="0.038"/>
+  <testcase name="askingForTheOutboxToBeLookedAtIsOnePieceOfWorkThatWaitsForANetwork" classname="com.deskmail.work.SendWorkerTest" time="0.072"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
