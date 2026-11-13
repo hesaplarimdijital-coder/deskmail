@@ -84,16 +84,15 @@ class ShellNavigationTest {
     }
 
     /**
-     * What desktop-kit 2.4.0 does when the list of folders changes (docs/KIT-ISTEKLERI.md, 3). The
-     * kit builds its navigation graph from the ShellSpec. The same routes in a new spec (a renamed
-     * label, another language) keep the open screen and its state; one route more (a folder made on
-     * the server, an account added) is another graph: the shell returns to its start screen, and the
-     * state the screens saved is gone. Until the kit keeps it, the app holds what must survive
-     * outside the screens and goes back to the open folder itself.
+     * When the list of folders changes (docs/KIT-ISTEKLERI.md, 3): the kit keeps its navigation
+     * graph and adds the new routes to it (desktop-kit 2.8.0). The open screen stays open with what
+     * it saved, whether the same routes come in a new spec (a renamed label, another language) or
+     * one route more (a folder made on the server, an account added). With 2.4.0 the shell went
+     * back to its start screen, and the app back to the open folder itself.
      */
     @Test
     @Config(qualifiers = "tr-w1280dp-h800dp-mdpi")
-    fun aNewFolderSendsTheShellBackToItsStartScreen() {
+    fun aNewFolderKeepsTheOpenScreenAndWhatItSaved() {
         val mail = DemoMail()
         var folders by mutableStateOf(mail.folders)
         var relabelled by mutableIntStateOf(0)
@@ -113,15 +112,16 @@ class ShellNavigationTest {
         compose.waitForIdle()
         compose.onNodeWithTag("counter").assertTextEquals("folder/17: 2")
 
-        // a folder more: back at the start screen
-        folders = folders + MailFolder(folders.maxOf { it.id } + 1, DemoMail.OUTLOOK, listOf("Yeni klasör"), FolderRole.Other)
+        // a folder more: still the same screen, with what it saved
+        val added = folders.maxOf { it.id } + 1
+        folders = folders + MailFolder(added, DemoMail.OUTLOOK, listOf("Yeni klasör"), FolderRole.Other)
         compose.waitForIdle()
-        compose.onNodeWithTag("counter").assertTextEquals("inbox: 0")
+        compose.onNodeWithTag("counter").assertTextEquals("folder/17: 2")
 
-        // and the folder that was open has lost what it saved
-        compose.onNode(hasText("Faturalar") and isSelectable()).performScrollTo().performClick()
+        // and the new folder is there to open
+        compose.onNode(hasText("Yeni klasör") and isSelectable()).performScrollTo().performClick()
         compose.waitForIdle()
-        compose.onNodeWithTag("counter").assertTextEquals("folder/17: 0")
+        compose.onNodeWithTag("counter").assertTextEquals("folder/$added: 0")
     }
 }
 

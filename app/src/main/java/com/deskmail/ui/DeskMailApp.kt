@@ -154,22 +154,9 @@ fun DeskMailApp(
     val entry by navController.currentBackStackEntryAsState()
     val currentRoute = entry?.destination?.route ?: spec.startRoute
 
-    // A new set of routes (a folder made on the server, an account added or removed) makes the
-    // kit build a new navigation graph, and the shell is back at its start screen
-    // (docs/KIT-ISTEKLERI.md, 3). The window goes back to where it was, if that is still there.
-    // While an account is being added the start screen is where to be: its mail arrives there.
+    // A new set of routes (a folder made on the server, an account added or removed) keeps the open
+    // screen: the kit adds them to its navigation graph (desktop-kit 2.8.0; docs/KIT-ISTEKLERI.md, 3).
     val routes = remember(spec) { spec.items.map { it.route } }
-    var routesSeen by remember { mutableStateOf(routes) }
-    var at by remember { mutableStateOf(spec.startRoute) }
-    if (routesSeen == routes) SideEffect { at = currentRoute }
-    LaunchedEffect(routes) {
-        if (routesSeen != routes) {
-            val back = at
-            val here = navController.currentBackStackEntry?.destination?.route
-            if (!settingsUi.setup.busy && back != here && back in routes) navigator.navigate(back)
-            routesSeen = routes
-        }
-    }
 
     val notify: (String) -> Unit = { text -> scope.launch { toasts.show(text) } }
     // a tapped link is never followed inside a message: its real address is shown instead
