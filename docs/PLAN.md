@@ -31,6 +31,7 @@ kitten istenenler `docs/KIT-ISTEKLERI.md`'de durur.
 | Gönderiyi geri alma | Gönder, iletiyi `sendAfter = şimdi + süre` ile sıraya koyar (süre ayarlardan 5, 10, 15 sn). Pencere o süre boyunca "Geri al"lı bildirimi gösterir; geri almak sıradan çıkarmaktır. Bildirim giderse (süre doldu, kaydırıldı, yerine başka bildirim geldi) pencere iletiyi hemen gönderttirir; pencere kapanırsa ileti süresi dolunca kendiliğinden gider. |
 | Gönderilenin kopyası | Sağlayıcı tablosu söyler (`savesSentItself`): Gmail ve Outlook kendileri kaydeder, uygulama yazmaz. Ötekilerde gönderilen ileti, gizli alıcılarıyla, Gönderilmiş klasörüne APPEND edilir. |
 | İletinin yazılması | Gönderilen ileti uygulamanın kendi yazıcısıyla yazılır (`MessageWriter`: RFC 5322 başlıkları, RFC 2047 sözcükleri, quoted-printable metin, base64 ekler, RFC 2231 dosya adları) ve SMTP'ye dosyadan akıtılır. Angus Mail'in `MimeMessage` kurucuları içerik işleyici tablosuna dayanır; o tablo jar içindeki kaynak dosyalarıdır ve Android paketlemesine güvenilmez. Yalnızca düz metin; biçimli yazma Aşama 2'de. |
+| Arama | Ara ekranı ayrı bir ekran değil, posta listesinin bir görünümüdür (`MailView.Search`): bulunanlar canlı bir sorgudur, liste, okuma bölmesi, süzgeçler, ileti işlemleri ve kısayollar aynen çalışır. Dizin FTS4'tür (katlanmış konu, kişiler, metin); sorguyu `SearchQuery` kurar. Yalnızca cihazdaki iletiler aranır; "Tüm postalar"daki kopyalar tek gösterilir. |
 | Kit eksikleri | Kite yazılır; uygulamada yamanmaz (`docs/KIT-ISTEKLERI.md`). |
 | GitHub | PR'ları CI yeşilken Claude birleştirir. Etiketi ve sürümü Barış açar (Releases'ta `main` üzerinde): Claude'un oturumu etiket ve sürüm açamıyor (12 Kasım 2026'da denendi, ikisi de reddedildi). Force-push ve geçmişi yeniden yazma yok. |
 
@@ -202,7 +203,11 @@ o ön sürümün ilk PR'ında artar, sonraki PR'lar CHANGELOG'da aynı başlığ
    hesabın adı ve imzası · R, A, F ve Ctrl+Enter.
    - **Kalan (ayrı PR):** taslakların sunucudaki Taslaklar klasörüne kaydı · alıcı önerilerinin arayüzü
      (kit isteği 4) ve Contact Picker · `mailto:` ve paylaşım · DeX'te yazmanın ayrı pencerede açılması.
-6. **Arama:** FTS dizini ve Türkçe katlama · Ara ekranı · sunucu araması · palet ve "/".
+6. **Arama (alpha.3):** dizin sorgusu (`SearchQuery`: yazılan katlanır, dizinin böldüğü gibi sözcüklere
+   bölünür, her sözcük ön ek olarak aranır; yazılanın hiçbir parçası dizine sözdizimi olarak ulaşmaz) ·
+   Ara ekranı (posta listesinin kendisi, üstünde arama alanı) · "/" kısayolu.
+   - **Kalan (ayrı PR):** sunucu araması (cihazda olmayan eski posta) · alan süzgeçleri ("kimden:",
+     "konu:") · palette "iletilerde ara".
 7. **Bildirimler:** IDLE döngüsü · ön plan hizmeti · alarm, uyandırma kilidi, ağ değişimi ·
    açılışta ve güncellemeden sonra başlatma · yeni posta bildirimi ve düğmeleri · periyodik yedek yol ·
    pil yönlendirmesi.

@@ -6,6 +6,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.deskmail.core.mail.FolderRole
 import com.deskmail.core.mail.MailException
+import com.deskmail.core.text.SearchQuery
 import com.deskmail.db.DeskMailDatabase
 import com.deskmail.db.FolderEntity
 import com.deskmail.db.MessageEntity
@@ -28,7 +29,9 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -132,8 +135,16 @@ class LiveMail(
             MailView.Unread -> messages.observeUnread()
             MailView.Starred -> messages.observeStarred()
             is MailView.Folder -> messages.observeFolder(view.id)
+            // what is typed changes with every letter: nothing of it is worth keeping for the next time
+            is MailView.Search -> return found(view.query)
         }
         return shown(rows).onEach { keep(view, it) }
+    }
+
+    /** What the index finds for what was typed; nothing where there is nothing in it to look for. */
+    private fun found(typed: String): Flow<List<MailMessage>> {
+        val query = SearchQuery.match(typed) ?: return flowOf(emptyList())
+        return shown(db.messages().observeFound(query, FOUND_LIMIT).map { rows -> once(rows, stored) })
     }
 
     /** Stored messages as the screens show them, handed on at the pace a screen can use. */
@@ -142,7 +153,8 @@ class LiveMail(
             .combine(outgoing.filterNotNull()) { list, written -> list.map { it.toMessage(it.folderId in written) } }
             .flowOn(mapping)
 
-    override fun cached(view: MailView): List<MailMessage>? = lists[view]
+    override fun cached(view: MailView): List<MailMessage>? =
+        if (view is MailView.Search && SearchQuery.match(view.query) == null) emptyList() else lists[view]
 
     private fun keep(view: MailView, list: List<MailMessage>) {
         // a handful of views is all a window shows; a folder that was looked at long ago is read again
@@ -356,6 +368,9 @@ class LiveMail(
     companion object {
         /** How many of the newest messages the command palette offers. */
         const val RECENT = 300
+
+        /** A search shows this many of what it finds, the newest: more than anybody reads through. */
+        const val FOUND_LIMIT = 500
 
         /** A list is handed to its screen at most once in this long. */
         const val PACE_MS = 250L

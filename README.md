@@ -7,8 +7,9 @@ ile çizilir. Play'de değildir; APK olarak kurulur.
 > **Durum:** 0.1.0'a giden ön sürümler. Hesap eklenir (Gmail uygulama şifresiyle; başka sağlayıcılar
 > şifreyle), klasörler ve iletiler eşitlenir, iletiler güvenli biçimde gösterilir; okundu ve yıldız
 > sunucuya yazılır, iletiler arşivlenir, taşınır, silinir (hepsi geri alınır), ekler açılır ve kaydedilir;
-> ileti yazılır, yanıtlanır, iletilir ve gönderilir (gönderi geri alınabilir, çevrimdışıyken sıraya girer).
-> Arama ve bildirim henüz yok; Outlook hesapları Microsoft girişini bekliyor. Sıradaki adımlar
+> ileti yazılır, yanıtlanır, iletilir ve gönderilir (gönderi geri alınabilir, çevrimdışıyken sıraya girer);
+> cihazdaki iletilerde aranır. Bildirim ve sunucuda arama henüz yok; Outlook hesapları Microsoft girişini
+> bekliyor. Sıradaki adımlar
 > `docs/PLAN.md`'de, yapılanlar `CHANGELOG.md`'de.
 
 ## Kurulum ve güncelleme

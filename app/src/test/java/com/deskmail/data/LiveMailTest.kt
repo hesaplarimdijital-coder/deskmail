@@ -98,7 +98,10 @@ class LiveMailTest {
         val id = account()
         assertEquals(MailSync.Outcome.Done, sync.account(id, also = setOf("Sent")))
 
-        eventually("the accounts and folders are read") { mail.loaded && mail.folders.size == 4 }
+        // the lists follow the database a moment later: it is what the sync ended with that is waited for
+        eventually("the accounts and folders are read") {
+            mail.loaded && mail.folders.size == 4 && mail.folders[0].total == 2 && mail.accounts.firstOrNull()?.state == AccountState.Ok
+        }
         assertEquals(listOf("Posta"), mail.accounts.map { it.name })
         assertEquals(AccountState.Ok, mail.accounts[0].state)
         assertEquals(TestImapServer.LOCALHOST, mail.accounts[0].server)
@@ -134,6 +137,38 @@ class LiveMailTest {
         assertEquals(listOf("Re: Cumartesi kahvaltı?"), sent.map { it.subject })
         assertTrue(sent[0].outgoing)
         eventually("the newest messages are read") { mail.recent.size == 3 }
+    }
+
+    @Test
+    fun aSearchFindsWhatTheDeviceHasByItsSubjectItsPeopleAndItsText() = runBlocking {
+        server.deliver("Cumartesi kahvaltı?", "Selam Deniz, Moda'da kahvaltıya ne dersin?", hoursAgo(3))
+        server.deliver("Kasım faturası", "Ödenecek tutar 893,52 TL.", hoursAgo(2), from = "Elektrik Dağıtım")
+        val id = account()
+        assertEquals(MailSync.Outcome.Done, sync.account(id))
+
+        suspend fun found(typed: String) = mail.observe(MailView.Search(typed)).first().map { it.subject }
+
+        // without the Turkish letters, without capitals, from the beginning of a word
+        assertEquals(listOf("Cumartesi kahvaltı?"), found("kahvalti"))
+        assertEquals(listOf("Cumartesi kahvaltı?"), found("CUMA"))
+        assertEquals(listOf("Kasım faturası"), found("elektrik dagitim"))
+        // everybody has mail from this address: the newest first
+        assertEquals(listOf("Kasım faturası", "Cumartesi kahvaltı?"), found("ayse@example.org"))
+
+        // by its text, once the text is on the device
+        val inbox = db.folders().ofAccount(id).first { it.path == "INBOX" }.id
+        val breakfast = db.messages().observeFolder(inbox).first().first { it.subject == "Cumartesi kahvaltı?" }
+        withTimeout(15_000) { mail.observeContent(breakfast.id).first { it is MailContent.Ready } }
+        assertEquals(listOf("Cumartesi kahvaltı?"), found("moda"))
+
+        // nothing in it to look for: nothing found, and known at once
+        assertTrue(found("  ").isEmpty())
+        assertEquals(emptyList<Any>(), mail.cached(MailView.Search("a")))
+        assertTrue(found("olmayan sözcük").isEmpty())
+        // what was archived or deleted is no longer found where it was
+        val gone = mail.delete(listOf(breakfast.id))
+        assertTrue(gone != null)
+        assertTrue(found("kahvalti").isEmpty())
     }
 
     @Test

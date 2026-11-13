@@ -4,7 +4,7 @@ Sürümler [SemVer](https://semver.org/lang/tr/) kuralına uyar; 0.1.0'a kadar o
 
 ## 0.1.0-alpha.3 (13 Kasım 2026)
 
-Posta artık yalnızca okunmuyor: okundu ve yıldız sunucuya yazılır, iletiler arşivlenir, taşınır ve silinir, ekler açılır; ileti yazılır, yanıtlanır, iletilir ve gönderilir. Cam, açık iletinin üstünde de kalır. Arama ve bildirim henüz yok.
+Posta artık yalnızca okunmuyor: okundu ve yıldız sunucuya yazılır, iletiler arşivlenir, taşınır ve silinir, ekler açılır; ileti yazılır, yanıtlanır, iletilir ve gönderilir; cihazdaki iletilerde aranır. Cam, açık iletinin üstünde de kalır. Bildirim henüz yok.
 
 ### Yazma ve gönderme
 - **Yeni ileti, Yanıtla, Tümünü yanıtla, İlet.** Düz metin yazılır.
@@ -23,6 +23,13 @@ Posta artık yalnızca okunmuyor: okundu ve yıldız sunucuya yazılır, iletile
 - Yanıtlanan ileti sunucuda "yanıtlandı", iletilen "iletildi" olarak işaretlenir; öteki posta programları bunu gösterir. ("İletildi" işaretini yalnızca etiket tutan sunucular saklar: Gmail saklar, Outlook.com saklamaz.)
 - **Ad ve imza:** Ayarlar › Hesaplar › hesabın sayfası › Yazarken. Ad, yazdığın kişilerin adresinin yanında gördüğü addır; boşsa yalnızca adres görünür. İmza yeni iletinin sonuna, yanıtta ve iletmede alıntının üstüne eklenir.
 - Gönderim yarıda kesilirse (ileti sunucuya verilirken uygulama kapanırsa) ileti kendiliğinden ikinci kez gönderilmez: "Gönderilemedi" olarak durur ve yeniden göndermeden önce Gönderilmiş'e bakmanı söyler.
+
+### Arama
+- **Ara ekranı** (telefonda alt çubukta, kenar çubuğunda; klavyede "/"): yazılan, iletilerin konusunda, kişilerinde (ad ve adres) ve metninde aranır; bütün hesaplarda ve Spam dışındaki bütün klasörlerde.
+- Yazılan her sözcük iletide geçmelidir; sözcüğün başı yeter ("fat kas", "Kasım faturası"nı bulur). Türkçe harfleri ve büyük harfleri yazmak gerekmez ("sarki", "Şarkı"yı bulur).
+- Bulunanlar en yeniden eskiye sıralanır ve her posta gibi davranır: açılır, okuma bölmesinde okunur, süzgeç çipleriyle (Okunmamış, Yıldızlı, Ekli) daraltılır, arşivlenir, silinir, taşınır, yanıtlanır; J ve K aralarında gezer. Gmail'in "Tüm postalar"ındaki ikinci kopya gösterilmez; yalnızca orada duran (arşivlenmiş) ileti oradan gösterilir.
+- **Yalnızca bu cihazdaki iletilerde arar:** gelen kutularının son 30 günü ve açtığın klasörler. Bir şey bulunamazsa ekran nerede aradığını söyler. Sunucuda arama (cihazda olmayan eski posta) sonraki ön sürümlerden biriyle gelecek.
+- "/" artık komut paletini değil Ara ekranını açar ve imleci arama alanına koyar; palet Ctrl+K'da.
 
 ### İleti işlemleri
 - **Okundu ve yıldız:** açılan ileti okundu sayılır; okundu/okunmadı ve yıldız değiştirilir ve sunucuya yazılır, öteki cihazda da öyle görünür. Yıldız, okuma ekranında gönderenin yanında.
@@ -49,7 +56,8 @@ Posta artık yalnızca okunmuyor: okundu ve yıldız sunucuya yazılır, iletile
 ### Bu sürümde bilerek olmayanlar
 - Çoklu seçim ve klasöre sürükle bırak (ileti işlemlerinin ikinci adımı).
 - Yazmada: biçimli (HTML) yazma; taslakların sunucudaki Taslaklar klasörüne kaydı; yazarken alıcı önerisi ve rehberden alıcı seçme; `mailto:` bağlantısıyla ve paylaşılan dosyayla yeni ileti; DeX'te yazmanın ayrı pencerede açılması. Yazma ekranı şimdilik pencerenin içinde, başlatıldığı ekranın yerinde açılır; başka bir ekrana geçip geri dönünce yazılan yerinde durur.
-- Arama, bildirim ve arka planda eşitleme, Outlook girişi.
+- Sunucuda arama; aramada alan süzgeçleri ("kimden:", "konu:").
+- Bildirim ve arka planda eşitleme, Outlook girişi.
 - İletinin içine gömülü resimler (`cid:`) henüz görünmez.
 
 ### Altyapı
