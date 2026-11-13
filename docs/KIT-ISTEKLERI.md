@@ -10,10 +10,10 @@ kaldırılır.
 kalanlar ilgili PR'a kadar bekleyebilir. 12, 13, 18 ve 20 istek değil, hata. 14–17 alpha.2'de (gerçek
 posta ve hesap ekranları) eklendi; 18–20 alpha.1'in Galaxy S24'teki iki ekran kaydından (12 Kasım 2026),
 kare kare bakılarak yazıldı; 21 ve 4. maddenin eki alpha.3'te, yazma ekranıyla; 22 Barış'ın isteğiyle
-(13 Kasım 2026).
+(13 Kasım 2026); 23 beta.1'in şablonlarıyla.
 
-**beta.1'in beklediği üç madde:** 4 (alıcı önerileri), 7 (satırı kaydırma), 22 (çerçeveyle seçme). Kit
-bunları yayımlayınca uygulamaya bağlanır.
+**beta.1'in beklediği maddeler:** 4 (alıcı önerileri), 7 (satırı kaydırma), 22 (çerçeveyle seçme), 23
+(metin alanında imleç). Kit bunları yayımlayınca uygulamaya bağlanır.
 
 Satır ve dosya adları kitin 2.4.0 etiketine göredir.
 
@@ -309,3 +309,14 @@ Koddan okundu, cihazda denenmedi.
 - **Neden:** DeX'te ve tablette fareyle çalışırken dosya yöneticilerinden alışılan yol. Barış: "sol klik
   ile mouse'u sürüklediğimde bir kare çıkıyor, o karenin içindekiler seçili oluyor ya, ondan olsun."
 - **Şimdilik:** fareyle seçim Ctrl+tık ve Shift+tık ile; çerçeve yok.
+
+## 23. Metin alanında imleç ve seçim
+
+- **Bugün:** `DeskTextField` yalnızca `String` alır ve verir (`components/Forms.kt`); imlecin yeri ve
+  seçili metin uygulamaya gelmez, uygulama da imleci bir yere koyamaz ya da bir bölümü seçemez.
+- **İstek:** `TextFieldValue` (ya da `TextFieldState`) alan bir eşi: `DeskTextField(value: TextFieldValue,
+  onValueChange: (TextFieldValue) -> Unit, …)`; görünüşü ve davranışı bugünküyle aynı.
+- **Neden:** yazarken seçilen şablon imlecin olduğu yere eklenmeli; biçimli (HTML) yazmada kalın, eğik,
+  bağlantı gibi biçimler seçili metne uygulanır; ikisi de imlecin ve seçimin bilinmesini istiyor.
+- **Şimdilik:** şablon yazılanın sonuna, imzanın ve alıntının üstüne eklenir; yer metnin kendisinden
+  çıkarılır (`core/…/compose/Templates.kt`).

@@ -288,6 +288,12 @@ Her biri ayrı PR; sıra, cihazda en çok denenmesi gerekenden başlar.
 8. Aşama 2, brifteki sırayla: konuşma dizileri · erteleme · şablonlar · kayıtlı aramalar · yanıt
    bekleyenler · VIP ve gönderen başına uzak görsel izni · ayrıntı paneli sekmeleri (Ayrıntılar, Ekler,
    Güvenlik, Ham başlıklar) · biçimli yazma · ayarları taşıma · bildirimden hızlı yanıt.
+   - **Şablonlar, kayıtlı aramalar, VIP ve gönderen başına uzak görsel izni: yapıldı.** Üç tablo (`template`,
+     `saved_search`, `sender`; şema 4). Şablon yazılanın sonuna, imzanın ve alıntının üstüne konur
+     (`Templates.insert`); kitin metin alanı imlecin yerini vermiyor (kit isteği 23). Kayıtlı arama Ara
+     ekranının sorgusudur ve her açılışta yeniden aranır (`MailView.Saved`). VIP klasörü gelen kutularındaki
+     VIP postasıdır (`MessageDao.observeVip`; gönderenin adresi küçük harfe çevrilmiş olarak tutulur ve
+     öyle karşılaştırılır). Üçü de ayar dosyasıyla taşınır.
    - **Ayarları taşıma: yapıldı.** `SettingsFile` (JSON; `kind`, `format`), şifre ve jeton için yeri yok. İçe
      aktarılan hesap şifresiz eklenir (`AccountStore.addWaiting`, durumu `NeedsLogin`), "Yeniden bağlan" ile açılır.
    - **Bildirimden hızlı yanıt: yapıldı.** `RemoteInput`; yanıt `DraftKind.Reply` ile başlar, yazılan en üste
@@ -296,7 +302,8 @@ Her biri ayrı PR; sıra, cihazda en çok denenmesi gerekenden başlar.
 9. Cilâ (9): boş ve hata durumları, erişilebilirlik, lisanslar ekranı, belgeler, bağımsız inceleme.
 
 **Kiti bekleyenler** (uygulamada yamanmaz; `docs/KIT-ISTEKLERI.md`): alıcı önerilerinin arayüzü (4),
-telefonda satırı kaydırarak arşiv ve erteleme (7), fareyle çerçeve çizerek seçme (22). Kit bunları
+telefonda satırı kaydırarak arşiv ve erteleme (7), fareyle çerçeve çizerek seçme (22), şablonun imlecin
+olduğu yere eklenmesi (23). Kit bunları
 yayımlayınca sürümü yükseltilir ve uygulamaya bağlanır; beta.1 bunları beklemez.
 
 "Sonra, her biri ayrı karar" başlığındakiler (OpenPGP/S/MIME, çeviri, Handoff, Thunderbird QR, okundu
