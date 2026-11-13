@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.ui.settings.SettingsScreenTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-11-13T01:05:57.248Z" hostname="runnervmccnms" time="0.314">
+  <properties/>
+  <testcase name="theTimeToTakeAMessageBackIsChosen" classname="com.deskmail.ui.settings.SettingsScreenTest" time="0.07"/>
+  <testcase name="theExperimentSwitchesChangeTheSettings" classname="com.deskmail.ui.settings.SettingsScreenTest" time="0.076"/>
+  <testcase name="withoutAGateOnlyTheIntervalIsOffered" classname="com.deskmail.ui.settings.SettingsScreenTest" time="0.052"/>
+  <testcase name="howOftenTheMailIsLookedForIsChosen" classname="com.deskmail.ui.settings.SettingsScreenTest" time="0.06"/>
+  <testcase name="theLeaveToNotifyIsShownAndAskedFor" classname="com.deskmail.ui.settings.SettingsScreenTest" time="0.054"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

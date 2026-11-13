@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.data.MailSyncTest" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-11-13T01:05:17.036Z" hostname="runnervmccnms" time="5.919">
+  <properties/>
+  <testcase name="aRefusedSignInAsksForSigningInAgain" classname="com.deskmail.data.MailSyncTest" time="0.615"/>
+  <testcase name="aFirstSyncBringsTheFoldersTheInboxAndItsTexts" classname="com.deskmail.data.MailSyncTest" time="0.735"/>
+  <testcase name="aServerThatDoesNotAnswerIsUnreachable" classname="com.deskmail.data.MailSyncTest" time="0.278"/>
+  <testcase name="whatIsNewOrChangedElsewhereShowsAfterTheNextSync" classname="com.deskmail.data.MailSyncTest" time="0.863"/>
+  <testcase name="theTextsASyncLeavesAreFetchedAfterwards" classname="com.deskmail.data.MailSyncTest" time="1.971"/>
+  <testcase name="whatFollowsASyncIsToldOnceItWorkedAndCannotFailIt" classname="com.deskmail.data.MailSyncTest" time="0.737"/>
+  <testcase name="aFolderIsSyncedWhenItIsAskedFor" classname="com.deskmail.data.MailSyncTest" time="0.696"/>
+  <testcase name="aPasswordThisDeviceCannotOpenAsksForSigningInAgain" classname="com.deskmail.data.MailSyncTest" time="0.019"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
