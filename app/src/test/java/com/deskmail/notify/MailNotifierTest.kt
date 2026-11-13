@@ -143,7 +143,7 @@ class MailNotifierTest {
         assertNull(OpenRequest.from(Intent(tapped).addFlags(Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY), store.token))
         assertNull(OpenRequest.from(Intent(Intent.ACTION_MAIN), store.token))
         // any app can ask the window for a message; only the app's own notifications carry what they are known by
-        assertNull(OpenRequest.from(Intent(tapped).removeExtra("token"), store.token))
+        assertNull(OpenRequest.from(Intent(tapped).apply { removeExtra("token") }, store.token))
         assertNull(OpenRequest.from(Intent(tapped).putExtra("token", "guessed"), store.token))
         assertNull(OpenRequest.from(tapped, "another installation's"))
         val buttons = one.actions.map { shadowOf(it.actionIntent).savedIntent }
