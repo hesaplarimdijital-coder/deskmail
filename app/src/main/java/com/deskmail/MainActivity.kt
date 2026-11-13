@@ -1,6 +1,7 @@
 package com.deskmail
 
 import android.Manifest
+import android.app.ActivityManager
 import android.app.Application
 import android.content.Intent
 import android.net.Uri
@@ -24,8 +25,11 @@ import com.deskmail.notify.NotifyGate
 import com.deskmail.notify.OpenRequest
 import com.deskmail.ui.CommandHost
 import com.deskmail.ui.DeskMailApp
+import com.deskmail.ui.DesktopWindow
 import com.deskmail.ui.KeyRouter
+import com.deskmail.ui.compose.ComposeActions
 import com.deskmail.ui.compose.ComposeRequest
+import com.deskmail.ui.compose.WriteApart
 import com.deskmail.ui.isTyping
 import com.deskmail.ui.mail.MailUiState
 import com.deskmail.ui.settings.SettingsUiState
@@ -93,6 +97,35 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    /**
+     * On a desktop (DeX, Android's desktop windowing) a message is written in a window of its own
+     * ([WriteActivity]); this window says what came of it.
+     */
+    private val writeApart = object : WriteApart {
+        /** The writing of this window, as told by its composition. */
+        private var told: ComposeActions? = null
+
+        override fun now(): Boolean = DesktopWindow.isDesktop(this@MainActivity)
+
+        override fun open(draftId: Long, fresh: Boolean) {
+            // being written already: its window comes to the front
+            val task = deskMail.writeWindows.taskOf(draftId)
+            val existing = task?.let { id ->
+                // a task that went meanwhile says so by throwing
+                getSystemService(ActivityManager::class.java).appTasks.firstOrNull { runCatching { it.taskInfo.taskId == id }.getOrDefault(false) }
+            }
+            if (existing != null && runCatching { existing.moveToFront() }.isSuccess) return
+            DeskWindows.openNewWindow(this@MainActivity, intent = WriteActivity.intent(this@MainActivity, draftId, fresh, opener = taskId), adjacent = false)
+        }
+
+        override fun home(actions: ComposeActions?) {
+            val windows = deskMail.writeWindows
+            told?.let { windows.leave(taskId, it) }
+            told = actions
+            actions?.let { windows.home(taskId, it) }
+        }
+    }
+
     private val keys = KeyRouter(
         registry = shortcuts,
         paletteOpen = { palette.isOpen },
@@ -121,6 +154,7 @@ class MainActivity : ComponentActivity() {
                 palette = palette,
                 commands = commands,
                 notifications = gate,
+                writeApart = writeApart,
                 onFrontList = { view ->
                     listShown = view
                     tellFront()

@@ -3,6 +3,7 @@ package com.deskmail.screenshots
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import androidx.activity.ComponentActivity
+import androidx.compose.runtime.remember
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.hasScrollToNodeAction
 import androidx.compose.ui.test.hasText
@@ -39,6 +40,8 @@ import com.deskmail.testPrefs
 import com.deskmail.testSettings
 import com.deskmail.ui.DeskMailApp
 import com.deskmail.ui.Routes
+import com.deskmail.ui.compose.ComposeHost
+import com.deskmail.ui.compose.WriteWindow
 import com.deskmail.ui.compose.Writing
 import com.deskmail.ui.mail.MailUiState
 import com.deskmail.ui.mail.PlainMessageBody
@@ -450,7 +453,24 @@ class AppScreenshotTest {
     /** A new message in a DeX window: two accounts to send from, a copy to somebody, and a file. */
     @Test @Config(qualifiers = DEX)
     fun dexComposeLight() {
-        val id = runBlocking {
+        ui.writing = Writing(projectPlan(), Routes.INBOX)
+        launch(ThemeMode.Light, DensityPreference.Pointer)
+        capture("dex-compose-light")
+    }
+
+    /** The same message in a window of its own, as DeX opens it beside the window with the mail. */
+    @Test @Config(qualifiers = WRITE_WINDOW)
+    fun dexWriteWindowDark() {
+        val id = projectPlan()
+        val prefs = testPrefs(ThemeMode.Dark, DensityPreference.Pointer)
+        compose.runOnUiThread { compose.activity.actionBar?.hide() }
+        compose.setContent { WriteWindow(Writing(id, Routes.OUTBOX), composer, mail, remember { ComposeHost() }, onEnd = {}, prefs = prefs) }
+        capture("dex-write-window-dark")
+    }
+
+    /** A message that is being written, with a copy to somebody and a file: the draft's id. */
+    private fun projectPlan(): Long =
+        runBlocking {
             val id = composer.start(accountId = DemoMail.OUTLOOK)!!
             composer.save(
                 id, DemoMail.OUTLOOK,
@@ -464,10 +484,6 @@ class AppScreenshotTest {
             composer.attach(id, "Proje planı v4.pdf", "application/pdf") { ByteArray(312_000).inputStream() }
             id
         }
-        ui.writing = Writing(id, Routes.INBOX)
-        launch(ThemeMode.Light, DensityPreference.Pointer)
-        capture("dex-compose-light")
-    }
 
     /** An account's page, for one the server no longer lets in. */
     @Test @Config(qualifiers = DEX)
@@ -483,6 +499,9 @@ class AppScreenshotTest {
         private const val TABLET_PORTRAIT = "tr-w924dp-h1480dp-hdpi"
         private const val TABLET_LANDSCAPE = "tr-w1480dp-h924dp-hdpi"
         private const val DEX = "tr-w1920dp-h1080dp-mdpi"
+
+        /** A window of its own for writing, at the size it opens at on DeX. */
+        private const val WRITE_WINDOW = "tr-w720dp-h760dp-mdpi"
 
         private val directory = File(System.getProperty("deskmail.screenshotDir") ?: "build/outputs/screenshots")
     }

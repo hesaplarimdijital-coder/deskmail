@@ -69,6 +69,25 @@
                 android:value="true" />
         </activity>
 
+        <!-- A window of its own that writes one message (DeX, Android's desktop windowing). It goes
+             with its message, and leaves nothing behind among the recent apps. -->
+        <activity
+            android:name=".WriteActivity"
+            android:autoRemoveFromRecents="true"
+            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|density|keyboard|keyboardHidden|navigation|uiMode|fontScale"
+            android:exported="false"
+            android:label="@string/compose_title"
+            android:resizeableActivity="true"
+            android:windowSoftInputMode="adjustResize">
+            <!-- the size it opens at on a desktop; it can be made larger or smaller -->
+            <layout
+                android:defaultHeight="760dp"
+                android:defaultWidth="720dp"
+                android:gravity="center"
+                android:minHeight="400dp"
+                android:minWidth="360dp" />
+        </activity>
+
         <!-- WorkManager (which sends what waits in the outbox, and looks for new mail while no
              window is open) is set up when it is first asked for, by the application class, not
              at every start of the process. -->

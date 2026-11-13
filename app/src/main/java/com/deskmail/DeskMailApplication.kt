@@ -25,6 +25,7 @@ import com.deskmail.notify.MailNotifier
 import com.deskmail.notify.NotifyActions
 import com.deskmail.notify.NotifyStore
 import com.deskmail.settings.AppSettings
+import com.deskmail.ui.compose.WriteWindows
 import com.deskmail.ui.mail.WebViewWarmUp
 import com.deskmail.watch.Awake
 import com.deskmail.watch.MailWatch
@@ -233,6 +234,9 @@ class DeskMailApplication : Application(), Configuration.Provider {
 
     /** Has the device's WebView ready before the first message is opened. */
     val webWarmUp: WebViewWarmUp by lazy { WebViewWarmUp(log) }
+
+    /** The windows of their own that write a message each, and the windows with the mail they came from. */
+    val writeWindows = WriteWindows()
 
     override fun onCreate() {
         super.onCreate()

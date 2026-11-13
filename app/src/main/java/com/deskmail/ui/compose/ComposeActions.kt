@@ -36,8 +36,13 @@ import kotlinx.coroutines.withTimeoutOrNull
  * A message that was begun here and closed with nothing written into it is thrown away: the
  * outbox does not fill with empty drafts.
  *
+ * Where messages are written in windows of their own ([apart]: DeX, Android's desktop windowing),
+ * what is begun here opens in one of those, and what such a window does with its message is said
+ * here ([sentApart], [say]).
+ *
  * @param scope where the work runs: the window's, so a notice does not outlive it. A message
  *   whose window closes while it waits is sent when its time is up all the same.
+ * @param apart opens messages in windows of their own, where the window is one of a desktop's.
  */
 @Stable
 class ComposeActions(
@@ -47,6 +52,7 @@ class ComposeActions(
     private val scope: CoroutineScope,
     private val toasts: ToastState,
     private val resources: Resources,
+    private val apart: WriteApart? = null,
 ) {
     /** Where the window finds the "Send" of the compose screen in front (Ctrl+Enter). */
     val host = ComposeHost()
@@ -73,9 +79,14 @@ class ComposeActions(
                 toasts.show(resources.getString(if (mail.accounts.isEmpty()) R.string.compose_no_account else R.string.compose_gone))
                 return@launch
             }
-            putAway()
             // a draft that is taken up was worth keeping before: closed untouched, it stays
-            ui.writing = Writing(id, route, fresh = kind != DraftKind.Edit)
+            val fresh = kind != DraftKind.Edit
+            if (apart?.now() == true) {
+                apart.open(id, fresh)
+                return@launch
+            }
+            putAway()
+            ui.writing = Writing(id, route, fresh)
         }
     }
 
@@ -120,6 +131,10 @@ class ComposeActions(
         scope.launch {
             if (draft.state == DraftState.Waiting && !composer.unsend(draft.id)) {
                 toasts.show(resources.getString(R.string.compose_too_late))
+                return@launch
+            }
+            if (apart?.now() == true) {
+                apart.open(draft.id, fresh = false)
                 return@launch
             }
             if (ui.writing?.draftId != draft.id) putAway()
@@ -168,7 +183,22 @@ class ComposeActions(
      */
     fun sent(writing: Writing, check: SendCheck.Queued) {
         if (ui.writing === writing) ui.writing = null
-        val id = writing.draftId
+        offerUndo(writing.draftId, check)
+    }
+
+    /**
+     * A window of its own handed its message [draftId] over and closed: the notice that offers to
+     * take it back is shown here, as for a message that was written here.
+     */
+    fun sentApart(draftId: Long, check: SendCheck.Queued) = offerUndo(draftId, check)
+
+    /** What a window of its own has to say once it is gone ("The draft is in the outbox"). */
+    fun say(text: String) {
+        scope.launch { toasts.show(text) }
+    }
+
+    /** For as long as the message [id] waits, a notice offers to take it back; taken back, it is open to be written on again. */
+    private fun offerUndo(id: Long, check: SendCheck.Queued) {
         scope.launch {
             noticed = id
             val result = try {
@@ -189,6 +219,8 @@ class ComposeActions(
                 composer.sendNow(id)
             } else if (!composer.unsend(id)) {
                 toasts.show(resources.getString(R.string.compose_too_late))
+            } else if (apart?.now() == true) {
+                apart.open(id, fresh = false)
             } else if (ui.writing == null) {
                 ui.writing = Writing(id, front())
             } else {

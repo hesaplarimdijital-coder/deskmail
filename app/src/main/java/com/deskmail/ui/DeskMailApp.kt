@@ -3,6 +3,7 @@ package com.deskmail.ui
 import androidx.activity.compose.LocalActivity
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
@@ -34,6 +35,7 @@ import com.deskmail.settings.AppSettings
 import com.deskmail.ui.compose.ComposeActions
 import com.deskmail.ui.compose.ComposeScreen
 import com.deskmail.ui.compose.OutboxScreen
+import com.deskmail.ui.compose.WriteApart
 import com.deskmail.ui.mail.FoldersScreen
 import com.deskmail.ui.mail.LocalMailClock
 import com.deskmail.ui.mail.MESSAGE_DRAG
@@ -103,6 +105,8 @@ import kotlinx.coroutines.withTimeoutOrNull
  *   WebView to draw with (the screenshot tests). The flag says whether its remote images are shown.
  * @param notifications the system's leave to show notifications, and the way to ask for it; null
  *   where there is nobody to ask (the tests).
+ * @param writeApart writes messages in windows of their own where this window is one of a
+ *   desktop's (DeX); null where everything is written in this window.
  * @param onFrontList told which list of mail the window shows (null for none): new mail that
  *   arrives in it needs no notification.
  * @param onCheckChosen the user chose how often the mail is looked for in the background.
@@ -125,6 +129,7 @@ fun DeskMailApp(
     commands: CommandHost? = null,
     messageBody: (@Composable (MailContent.Ready, Boolean, Modifier) -> Unit)? = null,
     notifications: NotifyGate? = null,
+    writeApart: WriteApart? = null,
     onFrontList: ((MailView?) -> Unit)? = null,
     onCheckChosen: () -> Unit = {},
 ) {
@@ -205,8 +210,15 @@ fun DeskMailApp(
     }
     val files = rememberAttachmentHandler(mail, notify)
     // writing: a new message, a reply, what the outbox holds, and "Send" with its way back
-    val compose = remember(composer, mail, ui, resources) { composer?.let { ComposeActions(it, mail, ui, scope, toasts, resources) } }
+    val compose = remember(composer, mail, ui, resources, writeApart) {
+        composer?.let { ComposeActions(it, mail, ui, scope, toasts, resources, writeApart) }
+    }
     SideEffect { compose?.front = { navController.currentBackStackEntry?.destination?.route ?: spec.startRoute } }
+    // what a window of its own did with its message is told here
+    DisposableEffect(compose, writeApart) {
+        writeApart?.home(compose)
+        onDispose { writeApart?.home(null) }
+    }
     // "Add an account", from wherever it is asked for: the page in Settings, with nothing typed
     val addAccount: () -> Unit = {
         settingsUi.addAccount()

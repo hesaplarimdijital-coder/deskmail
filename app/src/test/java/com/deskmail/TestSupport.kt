@@ -19,6 +19,7 @@ import com.deskmail.mail.SetupResult
 import com.deskmail.notify.NotifyGate
 import com.deskmail.settings.AppSettings
 import com.deskmail.ui.DeskMailApp
+import com.deskmail.ui.compose.WriteApart
 import com.deskmail.ui.mail.MailClock
 import com.deskmail.ui.mail.MailUiState
 import com.deskmail.ui.mail.PlainMessageBody
@@ -80,6 +81,7 @@ fun TestApp(
     settingsUi: SettingsUiState = remember { SettingsUiState() },
     messageBody: @Composable (MailContent.Ready, Boolean, Modifier) -> Unit = { content, _, modifier -> PlainMessageBody(content, modifier) },
     notifications: NotifyGate? = null,
+    writeApart: WriteApart? = null,
     onFrontList: ((MailView?) -> Unit)? = null,
     onCheckChosen: () -> Unit = {},
 ) {
@@ -97,6 +99,7 @@ fun TestApp(
         transitions = ShellTransitions.None,
         messageBody = messageBody,
         notifications = notifications,
+        writeApart = writeApart,
         onFrontList = onFrontList,
         onCheckChosen = onCheckChosen,
     )
