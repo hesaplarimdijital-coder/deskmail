@@ -74,6 +74,10 @@
         <item quantity="one">Çöpe taşındı</item>
         <item quantity="other">%1$d ileti çöpe taşındı</item>
     </plurals>
+    <plurals name="done_deleted_some_for_good">
+        <item quantity="one">Silindi</item>
+        <item quantity="other">%1$d ileti silindi: Çöp\'tekiler kalıcı olarak, öbürleri çöpe</item>
+    </plurals>
     <plurals name="done_removed">
         <item quantity="one">Kalıcı olarak silindi</item>
         <item quantity="other">%1$d ileti kalıcı olarak silindi</item>

@@ -262,6 +262,13 @@ class SelectionTest {
         // several rows: all of them, whatever is open
         state.select(Routes.INBOX, setOf(3, 5))
         assertEquals(setOf(3L, 5L), state.targets(Routes.INBOX).toSet())
+        // a row that is a conversation stands for all of its messages in the list, for the keyboard as for the bar
+        state.standFor(Routes.INBOX, setOf(3, 5), listOf(3, 5, 6))
+        assertEquals(setOf(3L, 5L, 6L), state.targets(Routes.INBOX).toSet())
+        // what the screen said of another selection says nothing of this one
+        state.select(Routes.INBOX, setOf(3, 5, 8))
+        assertEquals(setOf(3L, 5L, 8L), state.targets(Routes.INBOX).toSet())
+        state.select(Routes.INBOX, setOf(3, 5))
 
         // a message that left its list is selected no longer
         state.closeMessages(listOf(5L))

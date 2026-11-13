@@ -84,6 +84,10 @@
         <item quantity="one">Moved to the trash</item>
         <item quantity="other">%1$d messages moved to the trash</item>
     </plurals>
+    <plurals name="done_deleted_some_for_good">
+        <item quantity="one">Deleted</item>
+        <item quantity="other">%1$d messages deleted: those in the trash for good, the others to the trash</item>
+    </plurals>
     <plurals name="done_removed">
         <item quantity="one">Deleted for good</item>
         <item quantity="other">%1$d messages deleted for good</item>

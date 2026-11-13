@@ -179,6 +179,8 @@ fun MailScreen(
         val ids = chosen.flatMapTo(HashSet()) { threads.of(it.id) }
         all.filter { it.id in ids }
     }
+    // what the keyboard's commands act on: every message the selected rows stand for, as the bar
+    SideEffect { ui.standFor(route, chosenIds, acted.map { it.id }) }
     // a message that left the list (moved or deleted, here or elsewhere) is selected no longer
     LaunchedEffect(known, chosenIds) {
         if (known != null && chosen.size != chosenIds.size) ui.select(route, chosen.mapTo(HashSet()) { it.id })

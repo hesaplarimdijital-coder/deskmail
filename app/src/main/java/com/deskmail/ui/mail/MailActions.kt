@@ -118,7 +118,12 @@ class MailActions(
         val count = undo.count
         return when (undo.action) {
             MailUndo.Action.Archived -> resources.getQuantityString(R.plurals.done_archived, count, count)
-            MailUndo.Action.Deleted -> resources.getQuantityString(R.plurals.done_deleted, count, count)
+            // the ones that were in the trash already are gone for good: not to be read as "in the trash" with the others
+            MailUndo.Action.Deleted -> if (undo.changes.any { it.to == 0L }) {
+                resources.getQuantityString(R.plurals.done_deleted_some_for_good, count, count)
+            } else {
+                resources.getQuantityString(R.plurals.done_deleted, count, count)
+            }
             MailUndo.Action.DeletedForGood -> resources.getQuantityString(R.plurals.done_removed, count, count)
             MailUndo.Action.Moved -> {
                 val folder = mail.folder(undo.folder)?.let { folderPathLabel(resources, it) }.orEmpty()
