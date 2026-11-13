@@ -20,6 +20,7 @@ import androidx.navigation.compose.rememberNavController
 import com.deskmail.R
 import com.deskmail.core.log.AppLog
 import com.deskmail.core.mail.FolderRole
+import com.deskmail.core.text.SearchQuery
 import com.deskmail.mail.AccountActions
 import com.deskmail.mail.DraftKind
 import com.deskmail.mail.FetchedFile
@@ -55,6 +56,7 @@ import desktopkit.appResources
 import desktopkit.components.ActionGroup
 import desktopkit.components.CommandPalette
 import desktopkit.components.CommandPaletteState
+import desktopkit.components.DeskIcons
 import desktopkit.components.MenuEntry
 import desktopkit.components.PaletteItem
 import desktopkit.components.ToastDuration
@@ -432,7 +434,23 @@ fun DeskMailApp(
                     // Ctrl+K: screens and folders, the messages, and every command of the shortcut table
                     CommandPalette(
                         state = palette,
-                        items = {
+                        items = { typed ->
+                            // what is typed, looked for among the messages on the search screen
+                            val wanted = typed.trim()
+                            val search = if (SearchQuery.match(wanted) == null) emptyList() else listOf(
+                                // found by what is typed, under any title that matches: the last resort, not the first
+                                PaletteItem(
+                                    id = "search",
+                                    title = resources.getString(R.string.palette_search_mail),
+                                    group = messagesGroup,
+                                    onSelect = {
+                                        navigator.navigate(Routes.SEARCH)
+                                        ui.search(wanted)
+                                    },
+                                    subtitle = "“$wanted”",
+                                    icon = DeskIcons.Search,
+                                ),
+                            )
                             val screens = spec.items.map { item ->
                                 PaletteItem(
                                     id = item.route,
@@ -466,7 +484,7 @@ fun DeskMailApp(
                                     keywords = listOf(message.fromName, message.fromAddress, message.to),
                                 )
                             }
-                            screens + messages + shortcuts.paletteItems(resources) { id -> perform(id) }
+                            search + screens + messages + shortcuts.paletteItems(resources) { id -> perform(id) }
                         },
                         filters = listOf(screensGroup, messagesGroup),
                         hint = stringResource(R.string.palette_hint),

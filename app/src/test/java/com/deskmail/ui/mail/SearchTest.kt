@@ -17,6 +17,7 @@ import androidx.compose.ui.test.performTextReplacement
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.deskmail.TestApp
 import com.deskmail.mail.MailView
+import com.deskmail.mail.ServerSearch
 import com.deskmail.testMail
 import com.deskmail.testPrefs
 import com.deskmail.testSettings
@@ -151,6 +152,45 @@ class SearchTest {
         assertEquals(listOf("Aralık 2025 dönemi faturanız"), mail.messages(MailView.Search(ui.searchQuery)).map { it.subject })
         compose.onNodeWithText("Aralık 2025 dönemi faturanız", substring = true).assertIsDisplayed()
         compose.onNodeWithText("Kasım 2026 faturanız hazır", substring = true).assertDoesNotExist()
+    }
+
+    /** Older mail is on the server: asked for, it is looked for there, and the screen says what came of it. */
+    @Test
+    fun theServersAreAskedForWhatTheDeviceDoesNotHave() {
+        launch()
+        compose.onNodeWithTag(MailTags.SERVER_SEARCH).assertDoesNotExist()
+        type("fatura")
+        mail.serverAnswer = ServerSearch(added = 2, unreachable = 0)
+
+        compose.onNodeWithText("Sunucuda da ara").performClick()
+        compose.waitForIdle()
+
+        assertEquals(listOf("fatura"), mail.askedServers)
+        compose.onNodeWithText("Sunucuda 2 ileti daha bulundu.").assertIsDisplayed()
+
+        // something else is typed: what the servers said was about what was typed before
+        type("kira")
+        compose.onNodeWithText("Sunucuda 2 ileti daha bulundu.").assertDoesNotExist()
+        mail.serverAnswer = ServerSearch(added = 0, unreachable = 1)
+        compose.onNodeWithText("Sunucuda da ara").performClick()
+        compose.waitForIdle()
+        compose.onNodeWithText("Sunucuya ulaşılamadı; cihazdakiler gösteriliyor.").assertIsDisplayed()
+
+        // back to what was typed first: what the servers said of it then is said again
+        type("fatura")
+        compose.onNodeWithText("Sunucuya ulaşılamadı", substring = true).assertDoesNotExist()
+    }
+
+    /** "kimden:", "kime:", "konu:" say where to look. */
+    @Test
+    fun aSearchCanBeToldWhereToLook() {
+        launch()
+        type("konu:fatura")
+        val found = mail.messages(MailView.Search("konu:fatura"))
+        assertEquals(3, found.size)
+        type("kimden:elektrik")
+        assertEquals(2, mail.messages(MailView.Search("kimden:elektrik")).size)
+        compose.onAllNodesWithText("Elektrik Dağıtım", substring = true).assertCountEquals(2)
     }
 
     @Test
