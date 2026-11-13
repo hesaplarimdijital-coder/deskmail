@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.core.sync.FolderSyncTest" tests="14" skipped="0" failures="0" errors="0" timestamp="2026-11-13T07:11:55.364Z" hostname="runnervmwuk1x" time="0.014">
+  <properties/>
+  <testcase name="aServerThatCountsChangesIsAskedOnlyForThem" classname="com.deskmail.core.sync.FolderSyncTest" time="0.001"/>
+  <testcase name="whatWasReadOrStarredElsewhereShowsHere" classname="com.deskmail.core.sync.FolderSyncTest" time="0.001"/>
+  <testcase name="aTextTheServerKeepsBackIsNotAskedForAgain" classname="com.deskmail.core.sync.FolderSyncTest" time="0.0"/>
+  <testcase name="aSecondSyncWithNothingNewFetchesNothing" classname="com.deskmail.core.sync.FolderSyncTest" time="0.002"/>
+  <testcase name="whatASyncLeftIsFetchedLaterWithoutAskingForTheListAgain" classname="com.deskmail.core.sync.FolderSyncTest" time="0.001"/>
+  <testcase name="aMessageMarkedDeletedIsAsGoodAsGone" classname="com.deskmail.core.sync.FolderSyncTest" time="0.001"/>
+  <testcase name="textIsFetchedANumberAtATimeNewestFirst" classname="com.deskmail.core.sync.FolderSyncTest" time="0.0"/>
+  <testcase name="mailOlderThanTheWindowLeavesTheDevice" classname="com.deskmail.core.sync.FolderSyncTest" time="0.001"/>
+  <testcase name="newMailIsFetchedAndMailThatIsGoneIsRemoved" classname="com.deskmail.core.sync.FolderSyncTest" time="0.0"/>
+  <testcase name="aSyncThatIsCutOffIsPickedUpByTheNext" classname="com.deskmail.core.sync.FolderSyncTest" time="0.003"/>
+  <testcase name="theFirstSyncBringsTheWindowNewestFirstWithItsText" classname="com.deskmail.core.sync.FolderSyncTest" time="0.001"/>
+  <testcase name="aMessageTheUserOpenedGetsItsTextAheadOfItsTurn" classname="com.deskmail.core.sync.FolderSyncTest" time="0.001"/>
+  <testcase name="noTextIsFetchedByNumbersThatMeanSomethingElseNow" classname="com.deskmail.core.sync.FolderSyncTest" time="0.001"/>
+  <testcase name="aRenumberedFolderStartsOver" classname="com.deskmail.core.sync.FolderSyncTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
