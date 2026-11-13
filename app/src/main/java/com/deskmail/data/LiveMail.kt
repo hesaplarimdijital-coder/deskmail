@@ -5,8 +5,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.deskmail.core.mail.FolderRole
+import com.deskmail.core.mail.MailAddress
 import com.deskmail.core.mail.MailException
+import com.deskmail.core.text.SearchField
 import com.deskmail.core.text.SearchQuery
+import com.deskmail.core.text.SearchTerm
 import com.deskmail.db.DeskMailDatabase
 import com.deskmail.db.FolderEntity
 import com.deskmail.db.MessageEntity
@@ -19,6 +22,7 @@ import com.deskmail.mail.MailMessage
 import com.deskmail.mail.MailSource
 import com.deskmail.mail.MailUndo
 import com.deskmail.mail.MailView
+import com.deskmail.mail.ServerSearch
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -141,10 +145,44 @@ class LiveMail(
         return shown(rows).onEach { keep(view, it) }
     }
 
-    /** What the index finds for what was typed; nothing where there is nothing in it to look for. */
+    /**
+     * What the index finds for what was typed, with what a search of the servers found for it;
+     * nothing where there is nothing in it to look for. The index has one column for everybody on
+     * a message: what is asked of the sender ("kimden:") or the recipients ("kime:") alone is
+     * looked for there and then made sure of.
+     */
     private fun found(typed: String): Flow<List<MailMessage>> {
         val query = SearchQuery.match(typed) ?: return flowOf(emptyList())
-        return shown(db.messages().observeFound(query, FOUND_LIMIT).map { rows -> once(rows, stored) })
+        val key = SearchQuery.key(typed) ?: return flowOf(emptyList())
+        val people = SearchQuery.terms(typed).filter { it.field == SearchField.From || it.field == SearchField.To }
+        val indexed = db.messages().observeFound(query, FOUND_LIMIT).map { rows -> rows.filter { row -> people.all { term -> peopleMatch(row, term) } } }
+        val rows = combine(indexed, db.messages().observeHits(key, FOUND_LIMIT)) { local, server ->
+            (local + server).distinctBy { it.id }.sortedWith(compareByDescending<MessageEntity> { it.date }.thenByDescending { it.id })
+        }
+        return shown(rows.map { once(it, stored) })
+    }
+
+    /** Whether the people [term] asks about ("kimden:", "kime:") are on the message where it asks for them. */
+    private fun peopleMatch(row: MessageEntity, term: SearchTerm): Boolean {
+        val lists = if (term.field == SearchField.From) listOf(row.fromList) else listOf(row.toList, row.ccList)
+        val people = lists.flatMap { MailAddress.decode(it) }.joinToString(" ") { it.name + " " + it.address }
+        return SearchQuery.matches(term.words, people)
+    }
+
+    override suspend fun searchServers(query: String): ServerSearch? {
+        val key = SearchQuery.key(query) ?: return null
+        val terms = SearchQuery.terms(query)
+        val time = now()
+        // what was found long ago is forgotten: the sync may take it off the device again
+        db.messages().forgetHits(time - HITS_KEPT_MS)
+        var added = 0
+        var unreachable = 0
+        for (account in db.accounts().all()) {
+            val (outcome, count) = sync.searchServer(account.id, terms, key, SERVER_FOUND_LIMIT, time)
+            added += count
+            if (outcome != MailSync.Outcome.Done) unreachable++
+        }
+        return ServerSearch(added, unreachable)
     }
 
     /** Stored messages as the screens show them, handed on at the pace a screen can use. */
@@ -419,6 +457,12 @@ class LiveMail(
 
         /** A search shows this many of what it finds, the newest: more than anybody reads through. */
         const val FOUND_LIMIT = 500
+
+        /** How many messages a search of one account's server brings onto the device at most. */
+        const val SERVER_FOUND_LIMIT = 100
+
+        /** How long what a search of the servers found is kept on the device, whatever the sync keeps. */
+        const val HITS_KEPT_MS = 24 * 60 * 60 * 1000L
 
         /** A list is handed to its screen at most once in this long. */
         const val PACE_MS = 250L

@@ -2,6 +2,7 @@ package com.deskmail.ui.mail
 
 import android.text.format.Formatter
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -12,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
@@ -20,11 +22,15 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.deskmail.R
 import com.deskmail.core.mail.FolderRole
@@ -36,10 +42,12 @@ import com.deskmail.mail.MailContent
 import com.deskmail.mail.MailMessage
 import com.deskmail.mail.MailSource
 import com.deskmail.mail.MailView
+import com.deskmail.mail.ServerSearch
 import com.deskmail.ui.MailIcons
 import com.deskmail.ui.folderPathLabel
 import desktopkit.appResources
 import desktopkit.components.BannerTone
+import desktopkit.components.DeskButton
 import desktopkit.components.DeskDragPayload
 import desktopkit.components.DeskIconButton
 import desktopkit.components.DeskIcons
@@ -69,6 +77,7 @@ import desktopkit.shell.currentWidthClass
 import desktopkit.shell.rememberShellContentPadding
 import desktopkit.theme.DeskTheme
 import desktopkit.theme.InputMode
+import kotlinx.coroutines.launch
 
 /**
  * A view over the mail (the unified inbox, a folder) in the layout its window has room for:
@@ -139,6 +148,7 @@ fun MailScreen(
     val opened = if (openedId == null) null else key(openedId) { watchedMessage(mail, openedId, all.firstOrNull { it.id == openedId }) }
     val open: (MailMessage) -> Unit = { message -> openMessage(mail, ui, route, message.id) }
     val refresh: () -> Unit = { mail.refresh(view) }
+    val screenScope = rememberCoroutineScope()
     val resources = appResources()
     // Several messages at once: rows selected with the mouse (Ctrl, Shift), or picked with a finger.
     val chosenIds = ui.selection(route)
@@ -228,9 +238,27 @@ fun MailScreen(
         else -> mail.accounts
     }.filter { it.state != AccountState.Ok }
 
+    // "Search the server too": for what is typed now; what an earlier search of the servers came to stays for its own query
+    val serverKey = searching?.let { SearchQuery.key(it.query) }
+    val searchServers: () -> Unit = {
+        val query = searching?.query
+        if (query != null && serverKey != null) {
+            ui.serverSearch = ServerSearchState(serverKey, null)
+            screenScope.launch {
+                var result: ServerSearch? = null
+                try {
+                    result = mail.searchServers(query)
+                } finally {
+                    // cut short (the screen went), it is as if it had not been asked
+                    if (ui.serverSearch?.key == serverKey) ui.serverSearch = result?.let { ServerSearchState(serverKey, it) }
+                }
+            }
+        }
+    }
     val chips: @Composable () -> Unit = {
         Column {
             if (searching != null) SearchBox(ui)
+            if (serverKey != null && !noAccount) ServerSearchRow(ui.serverSearch?.takeIf { it.key == serverKey }, searchServers)
             if (mail.syncing) {
                 DeskProgressBar(
                     fraction = null,
@@ -596,6 +624,31 @@ private fun BulkBar(chosen: List<MailMessage>, bulk: BulkActions, modifier: Modi
 /** The room the selection's bar takes over the end of a phone's list: a row of the kit's icon buttons and its rule. */
 private val BULK_BAR_HEIGHT = 58.dp
 
+/** "Search the server too", and what the last search of the servers for what is typed came to. */
+@Composable
+private fun ServerSearchRow(state: ServerSearchState?, onSearch: () -> Unit) {
+    val dimens = DeskTheme.dimens
+    val running = state != null && state.result == null
+    val result = state?.result
+    val note = when {
+        state == null -> null
+        result == null -> stringResource(R.string.search_server_running)
+        result.added > 0 -> pluralString(R.plurals.search_server_found, result.added)
+        result.unreachable > 0 -> stringResource(R.string.search_server_unreachable)
+        else -> stringResource(R.string.search_server_none)
+    }
+    Row(
+        Modifier.fillMaxWidth().padding(horizontal = dimens.pagePadding).padding(top = dimens.gapS).testTag(MailTags.SERVER_SEARCH),
+        horizontalArrangement = Arrangement.spacedBy(dimens.gapM),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        DeskButton(stringResource(R.string.search_server), onSearch, icon = DeskIcons.Search, enabled = !running)
+        if (note != null) {
+            Text(note, style = DeskTheme.type.labelSmall, color = DeskTheme.colors.textSecondary, modifier = Modifier.weight(1f).semantics { liveRegion = LiveRegionMode.Polite })
+        }
+    }
+}
+
 /** Whether the message is a draft that lies in its account's Drafts folder: one to go on writing, not one to answer. */
 fun isDraft(mail: MailSource, message: MailMessage): Boolean = mail.folder(message.folderId)?.role == FolderRole.Drafts
 
@@ -615,6 +668,7 @@ object MailTags {
     const val LIST = "mail-list"
     const val READER = "mail-reader"
     const val SELECTION = "mail-selection"
+    const val SERVER_SEARCH = "mail-server-search"
     const val SEARCH = "mail-search"
 }
 

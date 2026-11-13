@@ -85,6 +85,16 @@ class PaletteTest {
         compose.onNode(hasText("Seyahat") and isSelectable()).assertIsSelected()
     }
 
+    /** What matches nothing else is looked for among the messages: the search screen opens with it. */
+    @Test
+    fun whatIsTypedIsLookedForInTheMail() {
+        launch()
+        search("kira sözleşmesi")
+        assertFalse(palette.isOpen)
+        assertEquals("kira sözleşmesi", ui.searchQuery)
+        compose.onNode(hasText("Ara") and isSelectable()).assertIsSelected()
+    }
+
     @Test
     fun aMessageIsFoundByItsSubjectAndOpenedInItsFolder() {
         launch()

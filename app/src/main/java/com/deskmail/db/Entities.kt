@@ -298,6 +298,24 @@ data class OutboxEntity(
 }
 
 /**
+ * A message a search of the server found ([query]: [com.deskmail.core.text.SearchQuery.key] of
+ * what was typed). A message that was found is not taken off the device by the sync while it is
+ * remembered, also when it is older than what the device keeps; after a while ([foundAt]) it is
+ * forgotten, and the sync does with it what it does with any other.
+ */
+@Entity(
+    tableName = "search_hit",
+    foreignKeys = [ForeignKey(entity = MessageEntity::class, parentColumns = ["id"], childColumns = ["messageId"], onDelete = ForeignKey.CASCADE)],
+    indices = [Index(value = ["messageId"]), Index(value = ["query", "messageId"], unique = true)],
+)
+data class SearchHitEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val query: String,
+    val messageId: Long,
+    val foundAt: Long,
+)
+
+/**
  * A draft's copy on the server that is of no use any more: its message was sent or thrown away,
  * and with it the row that knew of the copy. It is noted here until the server has been told to
  * remove it, which may be later (no network) than the message went.
