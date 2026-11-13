@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.NotificationStartTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-11-13T11:24:16.227Z" hostname="runnervmwuk1x" time="0.535">
+  <properties/>
+  <testcase name="aTappedNotificationReachesTheWindowAtItsStartAndWhileItIsThere" classname="com.deskmail.NotificationStartTest" time="0.226"/>
+  <testcase name="anOrdinaryStartAsksForNothing" classname="com.deskmail.NotificationStartTest" time="0.165"/>
+  <testcase name="anotherAppsRequestToOpenAMessageIsNotHeard" classname="com.deskmail.NotificationStartTest" time="0.14"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

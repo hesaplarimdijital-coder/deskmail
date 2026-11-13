@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.data.AccountStoreTest" tests="7" skipped="0" failures="0" errors="0" timestamp="2026-11-13T11:24:19.985Z" hostname="runnervmwuk1x" time="0.242">
+  <properties/>
+  <testcase name="anAccountFromAnotherDeviceWaitsForItsPassword" classname="com.deskmail.data.AccountStoreTest" time="0.033"/>
+  <testcase name="aPasswordThisDeviceCannotOpenIsNone" classname="com.deskmail.data.AccountStoreTest" time="0.029"/>
+  <testcase name="howAnAccountIsDoingIsWrittenOnIt" classname="com.deskmail.data.AccountStoreTest" time="0.044"/>
+  <testcase name="aNewPasswordTakesTheOldOnesPlace" classname="com.deskmail.data.AccountStoreTest" time="0.037"/>
+  <testcase name="anAccountIsKeptWithItsServersAndItsSealedPassword" classname="com.deskmail.data.AccountStoreTest" time="0.026"/>
+  <testcase name="anAccountLeavesWithEverythingOfIts" classname="com.deskmail.data.AccountStoreTest" time="0.036"/>
+  <testcase name="accountsStandInTheOrderTheyWereAdded" classname="com.deskmail.data.AccountStoreTest" time="0.032"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

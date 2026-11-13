@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.ui.mail.MailLayoutTest" tests="7" skipped="0" failures="0" errors="0" timestamp="2026-11-13T11:25:41.522Z" hostname="runnervmwuk1x" time="0.092">
+  <properties/>
+  <testcase name="fittingAloneStoresNothing" classname="com.deskmail.ui.mail.MailLayoutTest" time="0.018"/>
+  <testcase name="aWindowThatIsResizedKeepsTheShare" classname="com.deskmail.ui.mail.MailLayoutTest" time="0.013"/>
+  <testcase name="aDragIsNotLostToANewLayout" classname="com.deskmail.ui.mail.MailLayoutTest" time="0.014"/>
+  <testcase name="aDraggedDividerBecomesTheStoredShare" classname="com.deskmail.ui.mail.MailLayoutTest" time="0.014"/>
+  <testcase name="bothPanesKeepTheirLeastWidth" classname="com.deskmail.ui.mail.MailLayoutTest" time="0.009"/>
+  <testcase name="aShareIsThatOfTheWidthThatWasShown" classname="com.deskmail.ui.mail.MailLayoutTest" time="0.012"/>
+  <testcase name="theListTakesItsShareOfTheRoom" classname="com.deskmail.ui.mail.MailLayoutTest" time="0.009"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
