@@ -328,9 +328,24 @@
     <string name="settings_notify_off_note">The system does not let DeskMail show notifications.</string>
     <string name="settings_notify_allow">Allow</string>
     <string name="settings_check">Look for new mail</string>
-    <string name="settings_check_note">How often the inboxes are looked at while DeskMail is closed. The system may wait longer to save the battery. Instant delivery arrives with a later pre-release.</string>
+    <string name="settings_check_note">How new mail is looked for while DeskMail is closed. Instant: a line to the mail server is kept open, and mail is announced as it arrives. With an interval the inboxes are looked at that often; the system may wait longer to save the battery.</string>
+    <string name="settings_check_instant">Instant</string>
     <string name="settings_check_minutes">%1$d min</string>
     <string name="settings_check_manual">By hand</string>
+    <string name="settings_battery_limited">Battery use is restricted</string>
+    <string name="settings_battery_limited_note">For instant delivery DeskMail must not be restricted in the background; otherwise the line is cut when the device sleeps. On Samsung also add DeskMail under Settings › Battery › Background usage limits › Never sleeping apps.</string>
+    <string name="settings_battery_allow">Lift the restriction</string>
+    <string name="settings_battery_free">Battery use is not restricted</string>
+    <string name="settings_battery_free_note">On Samsung DeskMail should also be listed under Settings › Battery › Background usage limits › Never sleeping apps.</string>
+    <string name="settings_battery_app">App settings</string>
+    <string name="battery_ask_title">A battery setting for instant delivery</string>
+    <string name="battery_ask_text">To announce mail as it arrives, DeskMail keeps a line to your mail servers open. For the system not to cut that line when the device sleeps, the battery restriction has to be lifted for DeskMail.</string>
+    <string name="battery_ask_samsung">On Samsung also add DeskMail under Settings › Battery › Background usage limits › Never sleeping apps. Both can be done later from Settings › Notifications.</string>
+    <string name="battery_ask_later">Not now</string>
+    <string name="watch_channel">Instant delivery service</string>
+    <string name="watch_channel_note">The lasting notification DeskMail shows while it waits for new mail. Turning this channel off hides the notification; the waiting goes on.</string>
+    <string name="watch_title">Waiting for new mail</string>
+    <string name="watch_text">Instant delivery is on.</string>
 
     <string name="settings_about">About</string>
     <string name="settings_version">Version</string>

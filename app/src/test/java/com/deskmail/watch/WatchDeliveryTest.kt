@@ -1,0 +1,168 @@
+package com.deskmail.watch
+
+import android.app.Notification
+import android.app.NotificationManager
+import android.content.Context
+import androidx.test.core.app.ApplicationProvider
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.deskmail.core.log.AppLog
+import com.deskmail.data.AccountStore
+import com.deskmail.data.MailSync
+import com.deskmail.data.StuckGuard
+import com.deskmail.data.TestImapServer
+import com.deskmail.data.endAndWait
+import com.deskmail.data.eventually
+import com.deskmail.data.testBox
+import com.deskmail.db.DeskMailDatabase
+import com.deskmail.notify.FrontViews
+import com.deskmail.notify.MailNotifier
+import com.deskmail.notify.NotifyStore
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.runBlocking
+import org.junit.After
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
+import org.junit.Before
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.annotation.Config
+import java.time.Duration
+import java.time.Instant
+
+/**
+ * Mail from the server to a notification with nobody looking for it: the watch waits on the
+ * inbox of an account on a mail server inside the test, the sync fetches what the server tells
+ * of, and the notifier tells the user. As the app wires them, without the service around them.
+ */
+@RunWith(AndroidJUnit4::class)
+@Config(qualifiers = "tr")
+class WatchDeliveryTest {
+
+    @get:Rule(order = 0)
+    val guard = StuckGuard()
+
+    @get:Rule(order = 1)
+    val server = TestImapServer()
+
+    private val start: Instant = Instant.parse("2026-11-13T09:30:00Z")
+    private val log = AppLog()
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    private val context = ApplicationProvider.getApplicationContext<Context>()
+    private val manager = context.getSystemService(NotificationManager::class.java)
+    private lateinit var db: DeskMailDatabase
+    private lateinit var accounts: AccountStore
+    private lateinit var sync: MailSync
+    private lateinit var store: NotifyStore
+    private lateinit var watch: MailWatch
+
+    @Before
+    fun open() {
+        db = DeskMailDatabase.inMemory(context)
+        accounts = AccountStore(db, testBox(), log)
+        sync = MailSync(db, accounts, log, scope, clock = { start })
+        store = NotifyStore(context.getSharedPreferences("watch-delivery-test", Context.MODE_PRIVATE))
+        // as the app has it: the notifications follow the mail, and whoever has an account synced, new mail is told of afterwards
+        val notifier = MailNotifier(context, db, store, FrontViews(), log).also { it.watch(scope) }
+        sync.onSynced = { notifier.check(it) }
+        watch = MailWatch(db, accounts, log, scope, onNews = { sync.account(it) })
+    }
+
+    @After
+    fun close() {
+        runBlocking { watch.stop() }
+        endAndWait(scope)
+        db.close()
+    }
+
+    private fun hoursAgo(hours: Long): Instant = start.minus(Duration.ofHours(hours))
+
+    private fun told(): List<android.service.notification.StatusBarNotification> = manager.activeNotifications.filter { it.tag == MailNotifier.MESSAGE }
+
+    /** Begins to watch the test server's account, and waits until its inbox was looked at once. */
+    private suspend fun watched(): Long {
+        val id = accounts.add(TestImapServer.ADDRESS, "Posta", "", server.settings, TestImapServer.PASSWORD)
+        watch.arrange()
+        eventually("the inbox is waited on") { watch.watched.value == setOf(id) }
+        // the first look: what is in the inbox is old mail, and how far it was told of is written down
+        eventually("the inbox was looked at") {
+            runBlocking { db.folders().ofAccount(id).firstOrNull { it.path == "INBOX" } }?.let { store.told(it.id) } != null
+        }
+        return id
+    }
+
+    /**
+     * Has a message come until it is told of, and returns what was put on the server for that.
+     *
+     * One message may not be enough: this server tells of mail that comes while it is setting a
+     * wait up only when that wait ends. (A real server says so at once.) The next message is told
+     * of together with it.
+     */
+    private fun mailComesAndIsToldOf(subject: String): List<Long> {
+        val uids = ArrayList<Long>()
+        repeat(TRIES) {
+            uids += server.deliver(subject, "Selam Deniz, kahvaltıya ne dersin?", hoursAgo(0))
+            val until = System.currentTimeMillis() + 2_000
+            while (System.currentTimeMillis() < until) {
+                if (told().isNotEmpty()) return uids
+                Thread.sleep(20)
+            }
+        }
+        throw AssertionError("mail that came was not told of")
+    }
+
+    @Test
+    fun mailThatComesIsToldOfWithNobodyLookingForIt() = runBlocking {
+        server.deliver("Eski", "Bunu biliyorsun.", hoursAgo(5))
+        watched()
+        assertTrue(told().isEmpty())
+
+        mailComesAndIsToldOf("Cumartesi kahvaltı?")
+
+        val one = told().first()
+        assertEquals("Ayşe Yılmaz", one.notification.extras.getCharSequence(Notification.EXTRA_TITLE).toString())
+        assertEquals("Cumartesi kahvaltı?", one.notification.extras.getCharSequence(Notification.EXTRA_TEXT).toString())
+    }
+
+    /**
+     * Dealt with in another mail program, a message needs no telling of any more. (Here it is
+     * removed there: the server of this test says nothing of marks to whoever waits. Gmail and
+     * Outlook do, and a message that is read elsewhere loses its notification the same way.)
+     */
+    @Test
+    fun aMessageThatIsRemovedSomewhereElseLosesItsNotification() = runBlocking {
+        watched()
+        val uids = mailComesAndIsToldOf("Cumartesi kahvaltı?")
+
+        uids.forEach { server.expunge(it) }
+
+        eventually("its notification is gone") { told().isEmpty() }
+    }
+
+    @Test
+    fun theWaitGoesOnAfterItWasBegunAnew() = runBlocking {
+        watched()
+
+        watch.refresh()
+        watch.refresh()
+
+        mailComesAndIsToldOf("Sonradan gelen")
+        assertTrue(log.lines().count { it.contains("the wait was begun anew") } == 2)
+    }
+
+    @Test
+    fun aServerThatGoesAwayIsTriedAgain() = runBlocking {
+        val id = watched()
+
+        server.stop()
+
+        eventually("the line is found lost") { log.lines().any { it.contains("account $id: the next try is in") } }
+        assertTrue(watch.watched.value.isEmpty())
+    }
+
+    private companion object {
+        const val TRIES = 8
+    }
+}

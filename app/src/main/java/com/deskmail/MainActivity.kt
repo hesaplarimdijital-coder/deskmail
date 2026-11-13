@@ -3,7 +3,9 @@ package com.deskmail
 import android.Manifest
 import android.app.Application
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
+import android.os.PowerManager
 import android.provider.Settings
 import android.view.KeyEvent
 import android.view.KeyboardShortcutGroup
@@ -73,9 +75,21 @@ class MainActivity : ComponentActivity() {
                 }
             },
             openSystemSettings = ::openNotificationSettings,
+            askBattery = {
+                store.batteryAsked = true
+                gate.batteryAsked = true
+                askForBattery()
+            },
+            skipBattery = {
+                store.batteryAsked = true
+                gate.batteryAsked = true
+            },
+            openBatterySettings = ::openAppSettings,
         ).also {
             it.asked = store.asked
             it.allowed = deskMail.notifier.allowed
+            it.batteryAsked = store.batteryAsked
+            it.unrestricted = unrestricted()
         }
     }
 
@@ -135,6 +149,7 @@ class MainActivity : ComponentActivity() {
         tellFront()
         // the system's settings may have been visited in between
         gate.allowed = deskMail.notifier.allowed
+        gate.unrestricted = unrestricted()
     }
 
     override fun onPause() {
@@ -155,6 +170,38 @@ class MainActivity : ComponentActivity() {
             startActivity(Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, packageName))
         } catch (e: Exception) {
             deskMail.log.warn("notify", "the system's notification settings could not be opened", e)
+        }
+    }
+
+    /** Whether the system leaves the app alone in the background: battery optimisation is off for it. */
+    private fun unrestricted(): Boolean =
+        try {
+            getSystemService(PowerManager::class.java).isIgnoringBatteryOptimizations(packageName)
+        } catch (e: Exception) {
+            false
+        }
+
+    /** The system's own question whether the app may run in the background unhindered; its list of apps where it does not ask. */
+    private fun askForBattery() {
+        val app = Uri.fromParts("package", packageName, null)
+        try {
+            startActivity(Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, app))
+        } catch (e: Exception) {
+            deskMail.log.warn("watch", "the system's battery question could not be asked", e)
+            try {
+                startActivity(Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS))
+            } catch (e: Exception) {
+                openAppSettings()
+            }
+        }
+    }
+
+    /** The system's page for the app: its battery use is set from there. */
+    private fun openAppSettings() {
+        try {
+            startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.fromParts("package", packageName, null)))
+        } catch (e: Exception) {
+            deskMail.log.warn("watch", "the system's page for the app could not be opened", e)
         }
     }
 

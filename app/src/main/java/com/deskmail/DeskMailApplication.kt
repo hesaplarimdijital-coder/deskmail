@@ -25,8 +25,12 @@ import com.deskmail.notify.NotifyActions
 import com.deskmail.notify.NotifyStore
 import com.deskmail.settings.AppSettings
 import com.deskmail.ui.mail.WebViewWarmUp
+import com.deskmail.watch.Awake
+import com.deskmail.watch.MailWatch
+import com.deskmail.watch.WatchService
 import com.deskmail.work.SendWorker
 import com.deskmail.work.SyncWorker
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -103,27 +107,70 @@ class DeskMailApplication : Application(), Configuration.Provider {
         )
     }
 
+    /** Keeps the device awake while something is done about news from a server. */
+    val awake: Awake by lazy { Awake(this) }
+
     /**
-     * Has the mail looked for in the background as often as the settings say, or not at all.
-     * Nothing is scheduled while there is no account: there is nothing to look for. And while
-     * nothing is scheduled and nothing is wanted, the scheduler is left alone.
+     * Waits on the accounts' inboxes for mail as it comes ([WatchService] keeps it alive). What a
+     * server tells of is fetched by the sync; the notifier hangs on that.
+     */
+    val watch: MailWatch by lazy {
+        MailWatch(
+            database, accountStore, log, background,
+            onNews = { accountId ->
+                awake.hold()
+                try {
+                    sync.account(accountId)
+                } finally {
+                    awake.release()
+                }
+            },
+            onStir = { awake.stir() },
+        )
+    }
+
+    /**
+     * Has the mail looked for in the background as the settings say: waited for as it comes,
+     * looked for every so often, or not at all. See [arrangeBackground].
      *
-     * @param restart the interval was just chosen: it counts from now.
+     * @param restart the setting was just chosen: an interval counts from now.
      */
     fun lookForMail(restart: Boolean) {
-        background.launch {
-            try {
-                val wanted = if (database.accounts().all().isEmpty()) 0 else settings.checkMinutes
-                val scheduled = notifyStore.scheduledMinutes
-                if (wanted == 0 && scheduled == 0) return@launch
-                SyncWorker.schedule(this@DeskMailApplication, wanted, restart = restart || wanted != scheduled)
+        background.launch { arrangeBackground(restart) }
+    }
+
+    /**
+     * Sets up what looks for mail while no window is open, and returns when that is done.
+     *
+     * - "Instant": the watch runs ([WatchService]), and the mail is looked for every
+     *   [INSTANT_FALLBACK_MINUTES] minutes besides: what is left should the system end the watch.
+     * - An interval: the mail is looked for that often, and the watch does not run.
+     * - "By hand", or no account: neither. While nothing is scheduled and nothing is wanted, the
+     *   scheduler is left alone.
+     */
+    suspend fun arrangeBackground(restart: Boolean) {
+        try {
+            val chosen = if (database.accounts().all().isEmpty()) 0 else settings.checkMinutes
+            val instant = chosen == AppSettings.CHECK_INSTANT
+            val wanted = if (instant) INSTANT_FALLBACK_MINUTES else chosen
+            val scheduled = notifyStore.scheduledMinutes
+            if (wanted != 0 || scheduled != 0) {
+                SyncWorker.schedule(this, wanted, restart = restart || wanted != scheduled)
                 notifyStore.scheduledMinutes = wanted
                 if (wanted != scheduled) {
                     log.info("app", if (wanted > 0) "new mail is looked for every $wanted minutes" else "new mail is not looked for in the background")
                 }
-            } catch (e: Exception) {
-                log.error("app", "the background look for mail could not be scheduled", e)
             }
+            when {
+                !instant -> WatchService.stop(this)
+                // it looks at the accounts again: one may have been added, reconnected or removed
+                WatchService.running -> watch.arrange()
+                else -> WatchService.start(this, log)
+            }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            log.error("app", "the background look for mail could not be set up", e)
         }
     }
 
@@ -227,6 +274,9 @@ class DeskMailApplication : Application(), Configuration.Provider {
 
         /** Under the app's files: what is attached to messages that have not left yet. Not a cache: it must still be there when they go. */
         private const val OUTBOX_DIRECTORY = "outbox"
+
+        /** How often the mail is looked for while it is also waited for as it comes: should the watch be ended, this is what is left. */
+        const val INSTANT_FALLBACK_MINUTES = 60
 
         /** How much of earlier runs the log screen shows. */
         private const val EARLIER_LINES = 1000
