@@ -304,7 +304,7 @@
     <string name="settings_log_note">What the app did and what went wrong. Passwords and tokens are masked before a line is kept. Share it when something breaks.</string>
     <string name="settings_log_open">Open the log</string>
     <string name="settings_templates">Templates</string>
-    <string name="settings_templates_note">Put into a message from the "Template" menu while writing: at the end of what you wrote, above the signature and the quote.</string>
+    <string name="settings_templates_note">Put into a message from the “Template” menu while writing: at the end of what you wrote, above the signature and the quote.</string>
     <string name="settings_searches_empty">“Add to saved searches” on the Search screen makes a search a folder of its own in the sidebar.</string>
     <string name="settings_search_edit">Edit the saved search</string>
     <string name="settings_search_query">Searched for</string>

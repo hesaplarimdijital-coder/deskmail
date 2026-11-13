@@ -369,7 +369,7 @@ fun MailScreen(
                 description = stringResource(R.string.vip_none_text),
             )
             // nothing is snoozed: what snoozing is
-            view == MailView.Snoozed -> MessageScreen(
+            view == MailView.Snoozed && filters.isEmpty() -> MessageScreen(
                 title = stringResource(R.string.snoozed_none_title),
                 icon = MailIcons.Snooze,
                 modifier = Modifier.padding(top = 48.dp),

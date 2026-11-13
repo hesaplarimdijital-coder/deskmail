@@ -287,7 +287,7 @@
     <string name="settings_log_note">Uygulamanın yaptıkları ve ters giden şeyler. Şifreler ve jetonlar satır saklanmadan önce maskelenir. Bir şey bozulunca paylaş.</string>
     <string name="settings_log_open">Günlüğü aç</string>
     <string name="settings_templates">Şablonlar</string>
-    <string name="settings_templates_note">Yazarken "Şablon" menüsünden iletiye eklenir: yazdığının sonuna, imzanın ve alıntının üstüne.</string>
+    <string name="settings_templates_note">Yazarken “Şablon” menüsünden iletiye eklenir: yazdığının sonuna, imzanın ve alıntının üstüne.</string>
     <string name="settings_searches_empty">Ara ekranında “Kayıtlı aramalara ekle” ile bir arama kenar çubuğunda kendi klasörü olur.</string>
     <string name="settings_search_edit">Kayıtlı aramayı düzenle</string>
     <string name="settings_search_query">Aranan</string>
