@@ -292,9 +292,10 @@ fun MailScreen(
     // the screen as well, so everything stands a bar's height too low (docs/KIT-ISTEKLERI.md, 12).
     val bars = rememberShellContentPadding()
     // "New message": a phone's floating button (not over an open message or a selection's bar), an
-    // accent button atop the rail and the sidebar (desktop-kit 2.8.0; docs/KIT-ISTEKLERI.md, 5)
+    // accent button atop the rail and the sidebar (desktop-kit 2.8.0; docs/KIT-ISTEKLERI.md, 5).
+    // Not before there is an account to write from.
     val phone = LocalNavKind.current == NavKind.BottomBar
-    if (onCompose != null && !(phone && (opened != null || several))) {
+    if (onCompose != null && mail.accounts.isNotEmpty() && !(phone && (opened != null || several))) {
         ShellPrimaryAction(composeLabel, MailIcons.Compose, onCompose)
     }
 

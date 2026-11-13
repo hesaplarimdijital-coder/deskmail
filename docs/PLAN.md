@@ -21,14 +21,14 @@ kitten istenenler `docs/KIT-ISTEKLERI.md`'de durur.
 | Senkron | Eklentisiz temel yol; CONDSTORE varsa hızlandırır; QRESYNC 0.1.0'da yok. |
 | Sunucu kimliği (TLS) | Sertifikanın bağlanılan sunucuya ait olduğunu uygulama kendisi denetler (`ServerIdentity`: RFC 6125, yalnızca SAN, joker tek etiket). Angus Mail bu denetimi platforma "LDAPS" adıyla bırakıyor; Java'nın TLS'i bu adı tanır, Android'inki tanımaz ve denetim sessizce yapılmazdı. Sertifika zincirinin güvenilir bir kökten gelmesi platformun denetimi olarak kalır. |
 | Angus Mail'in kaynak dosyaları | Kitaplığın sağlayıcı listesi, içerik işleyici tablosu ve kod çözücü bulucusu jar içindeki kaynak dosyalarıdır. Android paketlemesine güvenmemek için IMAP deposu doğrudan kurulur, çok parçalı iletinin parçaları ileti yapısından alınır, kod çözücülerin (base64, quoted-printable) sınıfı adıyla verilir (`MailLibrary`). CI, APK'ya giren bu dosyaların listesini günlük dalına yazar (`apk-resources.txt`). |
-| Okuma ve cam | Cam iletinin üstünde de kalır: kabuğun camı bulanıkken iletinin WebView'ı kendi donanım katmanına çizilir (`webLayerFor`); bir kez çizilir, pencere ve her bulanıklık hazır resmi o katmandan alır. Kit bulanıklık için içeriği her karede birkaç kez çizer; doğrudan pencereye çizen WebView buna dayanmaz ve kaydırılırken karoları gidip gelir (S24, alpha.1; `docs/KIT-ISTEKLERI.md`, 20). Katmana sığmayan uzun iletide (`LayerLimits`: cihazın en büyük dokusu, 64 MB) katman yoktur ve o ileti ekrandayken cam kapanır (`shellGlass`). alpha.2'nin yolu (ileti açıkken cam hep kapalı) Denemeler'de "İletinin üstünde cam" kapatılarak geri gelir. |
+| Okuma ve cam | Cam iletinin üstünde de kalır, ama ileti ekrandayken bulanıklaştırmaz: kitin `PauseGlassBlur()`'ı camı yarı saydam tonuna çevirir ve içeriği cam için kaydetmeyi bırakır (desktop-kit 2.8.0). Kit bulanıklık için içeriği her karede birkaç kez çizer; WebView buna dayanmaz ve kaydırılırken karoları gidip gelir (S24, alpha.1; `docs/KIT-ISTEKLERI.md`, 20). alpha.3'ün yolu (WebView'ı kendi donanım katmanına çizmek) uzun iletide çare değildi; kalktı. alpha.2'nin yolu (ileti açıkken cam hep kapalı) Denemeler'de "İletinin üstünde cam" kapatılarak geri gelir. |
 | WebView'ın hazırlanması | Uygulamanın ilk ekranı çizildikten sonra bir WebView kurulup boş bir sayfa yüklenir ve bırakılır (`WebViewWarmUp`): ilk iletinin açılışı motorun yüklenmesini beklemez. Süre günlüğe yazılır. |
 | Bekleyen işlemler | Kullanıcının yaptığı (okundu, yıldız, taşıma, silme) önce cihazda görünür ve `pending_op` tablosuna yazılır; sunucuya arka planda, klasör klasör, önce bayraklar sonra taşımalar sonra silmeler sırasıyla söylenir (`ChangeSync`). Her eşitleme önce bekleyenleri gönderir, sonra sunucuyu okur. Bayrak bekleyen iletide sunucunun eski bayrağı kullanıcınınkini ezmez. Taşınan ve silinen ileti, sunucuya söylenene kadar hiçbir listede görünmez; sunucu yeni UID'yi söylerse (UIDPLUS) satır metniyle birlikte yeni klasörüne taşınır, söylemezse silinir ve o klasörün eşitlemesi getirir. |
 | Geri alma | Taşıma ve silme sunucuya hemen söylenmez: bildirim ekrandayken (ve en çok 15 saniye) bekler; geri almak kuyruktan çıkarmaktır. Bildirim gidince söylenir. Sonradan geri alma (Ctrl+Z) ters yönde yeni bir taşımadır ve iletinin yeni UID'sinin bilinmesine bağlıdır. Kalıcı silme söylendikten sonra geri alınamaz. |
 | Arşiv | Hesabın `\Archive` klasörü; yoksa `\All` (Gmail: "Tüm postalar"a taşımak, Gelen etiketini kaldırmaktır). İkisi de yoksa arşivle düğmesi görünmez. |
 | Ekler | İstenince iner (`BODY.PEEK[parça]`, okundukça akar), önbellek dizininde bir hafta kalır. Açma ve paylaşma FileProvider ile, kaydetme Storage Access Framework ile; depolama izni yok. |
 | Giden kutusu ve gönderim | Yazılan ileti `outbox` tablosundadır: taslak, bekliyor, gönderiliyor, gönderilemedi. Yazılan metin duruma dokunmadan ve yalnızca ileti yazılabilir durumdayken kaydedilir; durum geçişleri tek sorguluk koşullu güncellemelerdir, böylece geç gelen bir kayıt, sıraya alınmış iletiyi ne değiştirir ne geri getirir. Gönderimi WorkManager yapar (tek adlı iş, ağ koşulu, yenisi eskisinin yerine geçer; iş hep en erken bekleyen iletinin zamanına kurulur). Sunucuya ulaşılamazsa ileti bekler ve iş artan aralıklarla yeniden dener; sunucu reddederse ileti "gönderilemedi" olur. Sunucuya verilmeye başlanan ileti yarıda bırakılmaz; uygulama o sırada ölürse ileti bir sonraki çalışmada "gönderilemedi (yarıda kesildi)" olur ve kendiliğinden ikinci kez gönderilmez. Bu bakış her çalışmada bir kez, o çalışma bir şey göndermeden önce yapılır. |
-| Gönderiyi geri alma | Gönder, iletiyi `sendAfter = şimdi + süre` ile sıraya koyar (süre ayarlardan 5, 10, 15 sn). Pencere o süre boyunca "Geri al"lı bildirimi gösterir; geri almak sıradan çıkarmaktır. Bildirim giderse (süre doldu, kaydırıldı, yerine başka bildirim geldi) pencere iletiyi hemen gönderttirir; pencere kapanırsa ileti süresi dolunca kendiliğinden gider. |
+| Gönderiyi geri alma | Gönder, iletiyi `sendAfter = şimdi + süre` ile sıraya koyar (süre ayarlardan 5, 10, 15 sn). Pencere o süre boyunca "Geri al"lı bildirimi gösterir; geri almak sıradan çıkarmaktır. Bildirim giderse (süre doldu, kaydırıldı, yerine başka bildirim geldi) pencere iletiyi hemen gönderttirir; pencere kapanırsa ileti süresi dolunca kendiliğinden gider. Bildirimin süresini uygulama kendisi sayar: kitin süresi (`durationMillis`) imleç, odak ve TalkBack için uzar, gönderim zamanı uzamaz (`docs/KIT-ISTEKLERI.md`, 21). |
 | Gönderilenin kopyası | Sağlayıcı tablosu söyler (`savesSentItself`): Gmail ve Outlook kendileri kaydeder, uygulama yazmaz. Ötekilerde gönderilen ileti, gizli alıcılarıyla, Gönderilmiş klasörüne APPEND edilir. |
 | İletinin yazılması | Gönderilen ileti uygulamanın kendi yazıcısıyla yazılır (`MessageWriter`: RFC 5322 başlıkları, RFC 2047 sözcükleri, quoted-printable metin, base64 ekler, RFC 2231 dosya adları) ve SMTP'ye dosyadan akıtılır. Angus Mail'in `MimeMessage` kurucuları içerik işleyici tablosuna dayanır; o tablo jar içindeki kaynak dosyalarıdır ve Android paketlemesine güvenilmez. Yalnızca düz metin; biçimli yazma Aşama 2'de. |
 | Arama | Ara ekranı ayrı bir ekran değil, posta listesinin bir görünümüdür (`MailView.Search`): bulunanlar canlı bir sorgudur, liste, okuma bölmesi, süzgeçler, ileti işlemleri ve kısayollar aynen çalışır. Dizin FTS4'tür (katlanmış konu, kişiler, metin); sorguyu `SearchQuery` kurar. Yalnızca cihazdaki iletiler aranır; "Tüm postalar"daki kopyalar tek gösterilir. |
@@ -48,7 +48,7 @@ kitten istenenler `docs/KIT-ISTEKLERI.md`'de durur.
   arayüz (yalnızca desktop-kit).
 - **Araçlar** desktop-kit ile aynı: AGP 9.4.1, Gradle 9.8.2, Kotlin 2.4.20, Robolectric 4.17 (API 36),
   Java 21; ek olarak KSP 2.3.13.
-- **Çalışma zamanı:** desktop-kit 2.4.0, Angus Mail 2.0.5, jsoup 1.24.1, Room 3.0.3, WorkManager 2.12.0,
+- **Çalışma zamanı:** desktop-kit 2.8.0, Angus Mail 2.0.5, jsoup 1.24.1, Room 3.0.3, WorkManager 2.12.0,
   activity-compose 1.13.0, lifecycle 2.11.0, coroutines 1.11.0.
 - **Test:** JUnit 4.13.2, GreenMail 2.1.15 (IDLE, MOVE, XOAUTH2 girişi var; CONDSTORE ve SPECIAL-USE
   yok, onlar için betikli sahte sunucu).
@@ -152,14 +152,17 @@ Room 3; şema dışa aktarılır, v1'den itibaren göç testi vardır.
 
 ## Düzenler
 
-- **Telefon:** alt çubukta Gelen, Klasörler, Ara ve "⋯" (`MoreStyle.Sheet`). Liste `DeskListRow`, üstte
-  `FilterChips`, yüklenirken `SkeletonList`. Çoklu seçimde `SelectionBar` kabuğun `bottomBar`
-  yuvasında. Okuma `DetailTransition` ve `CompactTopBar` ile; uzak görseller için `StatusBanner`.
-  Yeni ileti üst çubukta vurgu renkli simge. Yazma tam ekran.
+- **Telefon:** alt çubukta Gelen (okunmamış sayısıyla), Klasörler, Ara ve "⋯" (`MoreStyle.Sheet`). Klasör,
+  Klasörler'in sayfası olarak açılır (`navigator.open`). Liste `DeskListRow` (gönderen, konu, bir satır
+  önizleme; sağa kaydırmak arşivler, sola kaydırmak erteler), `PullToRefresh` ile, üstte `FilterChips`,
+  yüklenirken `SkeletonList`. Çoklu seçimde `SelectionBar` listenin altında. Okuma `DetailTransition` ve
+  `CompactTopBar` ile; uzak görseller için `StatusBanner`. Yeni ileti kabuğun yüzen düğmesi
+  (`ShellPrimaryAction`). Yazma tam ekran.
 - **Tablet (ray):** rayın yanındaki alan 880 dp'den genişse `HorizontalSplitPane` ile liste ve okuma yan
   yana, darsa `DetailTransition` (Tab S11 Ultra dik tutulunca 924 dp: liste → ileti).
-- **DeX ve büyük pencere:** menü çubuğu kısayol tablosundan; kenar çubuğunda akıllı klasörler ve hesap
-  başına bir bölüm; `badges` ve `NavDrop`. İçerik `WorkstationLayout`: liste | okuma | `InspectorPane`.
+- **DeX ve büyük pencere:** menü çubuğu kısayol tablosundan; kenar çubuğunun en üstünde "Yeni ileti",
+  altında akıllı klasörler ve hesap başına açılıp kapanan bir bölüm (iç içe klasörler girintili); `badges`,
+  `NavDrop` ve girişlerin menüsü (`navMenu`). İçerik `WorkstationLayout`: liste | okuma | `InspectorPane`.
   Yazma `DeskWindows.openNewWindow` ile ayrı pencerede. `CommandPalette` klasörleri, komutları ve ileti
   aramasını kapsar.
 - **Liste ile okuma arasındaki pay** (`MailLayout`): liste, kenar çubuğunun ya da rayın yanındaki alanın
@@ -167,7 +170,8 @@ Room 3; şema dışa aktarılır, v1'den itibaren göç testi vardır.
   sürüklenince pay değişir ve saklanır; genişlik değil pay saklandığı için pencere boyu değişince ve
   başka boyda bir pencerede bölünme aynı kalır.
 - **Tablo mu satır mı:** büyük pencerede liste, fare kullanılırken ve en az 520 dp genişken `DenseTable`
-  (başlığından sıralanır); parmakla ya da dar listede iki satırlı `DeskListRow` (hep yeniden eskiye).
+  (başlığından sıralanır; okunmamış satır kalın, yıldız hücresi yerinde değişir, fareyle çerçeve çizerek
+  seçilir); parmakla ya da dar listede `DeskListRow` (hep yeniden eskiye).
   Kitin yoğunluğu "Sistem"deyken fareden parmağa geçince liste de biçim değiştirir; Ayarlar › Giriş
   yoğunluğu sabitler.
 
@@ -204,8 +208,8 @@ açıkken çalışmaz.
 - **Tuşlar nereden geçer:** etkinlik her tuşu odaktaki görünümden önce `KeyRouter`'a sorar. Yazı
   yazılıp yazılmadığı iki yerden okunur: odaktaki görünüm bir metin düzenleyici mi
   (`View.onCheckIsTextEditor`), ve Compose'un kendi ekran tarifinde odakta bir yazı alanı var mı.
-- **Türkçe klavye:** "/" ayrı bir tuş değil (Shift+7); tek tuşlu "/" için yazılan karaktere de bakılır.
-  Kitin Ctrl+/ kısayolu Türkçe klavyede çalışmıyor (`docs/KIT-ISTEKLERI.md`, 10).
+- **Türkçe klavye:** "/" ayrı bir tuş değil (Shift+7); kitin kısayol tablosu noktalama tuşlarını yazdıkları
+  karakterle de eşler (desktop-kit 2.8.0; `docs/KIT-ISTEKLERI.md`, 10), Ctrl+/ de çalışır.
 
 ## Aşama 1: PR'lar
 
@@ -372,10 +376,20 @@ Her biri ayrı PR; sıra, cihazda en çok denenmesi gerekenden başlar.
      taklit eden bir ileti de VIP klasörüne düşer ve görselleri yüklenir. Sağlayıcının DMARC sonucu
      geçtiyse saymak, Güvenlik sekmesinin güvendiği sonuca bağlanabilir; sonraki bir sürümde.
 
-**Kiti bekleyenler** (uygulamada yamanmaz; `docs/KIT-ISTEKLERI.md`): alıcı önerilerinin arayüzü (4),
-telefonda satırı kaydırarak arşiv ve erteleme (7), fareyle çerçeve çizerek seçme (22), şablonun imlecin
-olduğu yere eklenmesi (23), biçimli metin düzenleyici (24), ertelemede gün ve saat seçmek (25). Kit bunları
-yayımlayınca sürümü yükseltilir ve uygulamaya bağlanır; beta.1 bunları beklemez.
+**desktop-kit 2.8.0 (beta.2):** kit DeskMail'in 1–23 numaralı isteklerinin hepsini getirdi; uygulama
+2.8.0'a geçti, geçici yollar kalktı, yeni bileşenler bağlandı: telefonda satırı kaydırarak arşiv ve
+erteleme, çekerek eşitleme, yüzen "Yeni ileti" düğmesi (rayda ve kenar çubuğunda en üstte), alt çubukta
+ve rayda okunmamış sayısı, satırda önizleme, tabloda kalın okunmamış ve simge hücreleri (yıldız yerinde
+değişir), fareyle çerçeve çizerek seçme, şablonun imlecin olduğu yere eklenmesi, değişen klasör listesinde
+açık ekranın korunması, klasörlerin yalnız kenar çubuğunda ve iç içe durması. Ayrıntısı
+`docs/KIT-ISTEKLERI.md`'nin "2.8.0" satırlarında.
+
+**Kiti bekleyenler** (uygulamada yamanmaz; `docs/KIT-ISTEKLERI.md`): çipli alıcı alanı ve önerileri (4;
+kitin `TokenField`'ı bitirilmemiş yazıyı uygulamaya vermiyor, 26), biçimli metin düzenleyici (24),
+ertelemede gün ve saat seçmek (25).
+
+**Sonra (uygulamada):** kenar çubuğu girişlerinin menüsünde "Tümünü okundu say" ve Çöp/Spam için "Çöpü
+boşalt" (kitin menüsü hazır; bugün menüde "Eşitle" ve "Yeni pencerede aç" var).
 
 "Sonra, her biri ayrı karar" başlığındakiler (OpenPGP/S/MIME, çeviri, Handoff, Thunderbird QR, okundu
 bilgisi) beta'ya girmez; her biri ayrıca sorulur.
@@ -384,11 +398,10 @@ bilgisi) beta'ya girmez; her biri ayrıca sorulur.
 
 - **WebView ile cam (alpha.1'de görüldü):** cam açıkken kaydırılan iletinin içeriği saniyede onlarca kez
   parça parça kaybolup geri geliyordu (S24, ekran kaydı, kare kare); cam kapalıyken titreme olmadığı
-  cihazda görüldü, alpha.2 ileti açıkken camı kapattı. alpha.3 camı geri getirir: WebView kendi donanım
-  katmanına çizilir (yukarıdaki karar). **Cihazda doğrulanacak:** camla kaydırırken titreme var mı; uzun
-  bir iletinin bir bölümü boş kalıyor mu (katmandaki WebView, ekranın dışındaki bölümünü de çizmiş
-  olmalı); bellek. Olmazsa sıradaki yol kaydırmayı WebView'ın kendisine bırakmak (bugün WebView iletinin
-  boyundadır, sayfayı Compose kaydırır); o zamana kadar Denemeler'de "İletinin üstünde cam" kapatılır.
+  cihazda görüldü, alpha.2 ileti açıkken camı kapattı, alpha.3 WebView'ı kendi donanım katmanına çizdi.
+  beta.2'de kitin `PauseGlassBlur()`'ı: ileti ekrandayken cam bulanıklaştırmaz (yukarıdaki karar).
+  **Cihazda doğrulanacak:** camla kaydırırken titreme yok mu; çubuklar yarı saydam mı; ileti kapanınca
+  bulanıklık geri geliyor mu.
 - **Geniş iletiler:** sabit genişlikli bültenler (600 piksellik tablolar) telefonda ekrana sığdırılmıyor,
   sağı kesik kalıyor. Sığdırma (küçültme ya da tabloyu daraltma) okuma bölmesinin sonraki işi.
 - **IDLE'ın uykuda kalması (S24):** günlük her yenilemeyi, kopmayı ve yeniden bağlanmayı zaman
@@ -399,12 +412,13 @@ bilgisi) beta'ya girmez; her biri ayrıca sorulur.
 - **Microsoft:** yeni kişisel hesaplarda SMTP kapalı başlayabiliyor ve kullanıcı ayarı yok; IMAP
   varsayılan olarak kapalı (Settings › Mail › Forwarding and IMAP). Azure dizini etkinlik yokluğunda
   engellenebiliyor: istemci kimliği gelişmiş ayardan değiştirilebilir olacak.
-- **Kenar çubuğunun sıfırlanması:** klasör listesi değişince gezinme grafiği yeniden kurulur ve kabuk
-  başlangıç ekranına döner (testle doğrulandı; `docs/KIT-ISTEKLERI.md`, madde 3). Pencerenin gösterdiği
-  her şey bu yüzden ekranların dışında tutulur (`MailUiState`, `SettingsUiState`); alpha.2'den beri
-  klasör listesi değişince pencere kaldığı ekrana kendisi dönüyor (arada başlangıç ekranı bir an görünür).
-- **Liste → ileti geçişinde listenin durumu:** telefonda ayrıntı açıkken liste bileşimden çıkar;
-  kendi hatırladıkları kaybolur (`docs/KIT-ISTEKLERI.md`, madde 9). Aynı çözüm: durum dışarıda.
+- **Kenar çubuğunun sıfırlanması (beta.1'e kadar):** klasör listesi değişince gezinme grafiği yeniden
+  kuruluyor ve kabuk başlangıç ekranına dönüyordu (`docs/KIT-ISTEKLERI.md`, madde 3); pencere kaldığı
+  ekrana kendisi dönüyordu. desktop-kit 2.8.0 grafiği bir kez kurar, açık ekran kalır (testle doğrulandı).
+  Pencerenin gösterdiği yine ekranların dışında tutulur (`MailUiState`, `SettingsUiState`).
+- **Liste → ileti geçişinde listenin durumu (beta.1'e kadar):** telefonda ayrıntı açıkken liste bileşimden
+  çıkıyor, kendi hatırladıkları kayboluyordu (`docs/KIT-ISTEKLERI.md`, madde 9); 2.8.0 bunu da tutar. Durum
+  yine dışarıda.
 - **Room 3, KSP ve AGP 9.4.1 uyumu:** alpha.2'de doğrulandı (Room 3.0.3, KSP 2.3.13; FTS4 ve
   işlemler dâhil). Yedek plana gerek kalmadı.
 - **Jakarta Mail Android'de:** kitaplık ilk kez cihazda alpha.2 ile çalışıyor; testler JVM'de koşuyor.

@@ -440,7 +440,8 @@ fun DeskMailApp(
                 sidebarCollapsed = prefs.sidebarCollapsed,
                 onSidebarCollapsedChange = prefs::updateSidebarCollapsed,
                 badges = badges,
-                iconBadges = iconBadges,
+                // a phone has Unread under "⋯": its count would only leave a dot there for good
+                iconBadges = if (widthClass == WidthClass.Compact) iconBadges.filterKeys { it == Routes.INBOX } else iconBadges,
                 navMenu = { route -> entryMenu(route, widthClass) },
                 navDrop = folderDrop,
                 menus = menus,

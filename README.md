@@ -4,7 +4,7 @@ Kişisel kullanım için Android e-posta uygulaması: telefon, tablet ve Samsung
 e-posta yapan bir istemci. Arayüzün tamamı [desktop-kit](https://github.com/hesaplarimdijital-coder/desktop-kit)
 ile çizilir. Play'de değildir; APK olarak kurulur.
 
-> **Durum:** 0.1.0'a giden ön sürümler; şimdiki `0.1.0-beta.1`. Hesap eklenir (Gmail uygulama şifresiyle;
+> **Durum:** 0.1.0'a giden ön sürümler; şimdiki `0.1.0-beta.2`. Hesap eklenir (Gmail uygulama şifresiyle;
 > başka sağlayıcılar şifreyle), klasörler ve iletiler eşitlenir, iletiler güvenli biçimde ve konuşmalarıyla
 > gösterilir; okundu ve yıldız sunucuya yazılır, iletiler arşivlenir, taşınır, silinir, ertelenir (hepsi geri
 > alınır; birden çok ileti seçilip birlikte de), ekler açılır ve kaydedilir; ileti yazılır, yanıtlanır,
@@ -12,7 +12,7 @@ ile çizilir. Play'de değildir; APK olarak kurulur.
 > klasöründe de durur; yanıtı beklenip gelmezse hatırlatılır); cihazda ve sunucuda aranır, aramalar klasör
 > gibi saklanır; gelen posta geldiği anda bildirilir (sunucuya açık bir hat tutulur; istenirse 15, 30 ya da
 > 60 dakikada bir bakılır) ve bildirimden yanıtlanır; ayarlar başka bir cihaza taşınır. Outlook hesapları
-> Microsoft girişini bekliyor (`0.1.0-beta.2`). Sıradaki adımlar `docs/PLAN.md`'de, yapılanlar
+> Microsoft girişini bekliyor (sıradaki sürüm). Sıradaki adımlar `docs/PLAN.md`'de, yapılanlar
 > `CHANGELOG.md`'de.
 
 ## Kurulum ve güncelleme
@@ -44,7 +44,7 @@ Ayarlar › Hesaplar › **Hesap ekle**. Adresi yazınca uygulama sunucuları ke
   seçeneği iş ve okul hesaplarında, Gelişmiş Koruma'da ve yalnızca güvenlik anahtarıyla doğrulanan
   hesaplarda görünmeyebilir. Google bir gün uygulama şifrelerini kapatırsa yedek yol Google OAuth'tur:
   `docs/GOOGLE-OAUTH.md`.
-- **Outlook, Hotmail, Live:** Microsoft'ta tarayıcıdan giriş ister (OAuth2); henüz eklenemez, `0.1.0-beta.2` ile gelir.
+- **Outlook, Hotmail, Live:** Microsoft'ta tarayıcıdan giriş ister (OAuth2); henüz eklenemez, sıradaki sürümle gelir.
 - **Diğerleri:** sağlayıcının verdiği şifre ya da uygulama şifresi. Sunucular Thunderbird'ün sağlayıcı
   veritabanından ya da alan adının DNS kayıtlarından bulunur; dışarıya yalnızca adresin @ işaretinden
   sonraki bölümü gider.
@@ -74,10 +74,10 @@ Her karar uygulamanın yılda bir güncellemeyle yaşayabilmesine göre verilir:
 | Belge | İçerik |
 | --- | --- |
 | `docs/PLAN.md` | Kararlar, mimari, veri modeli, senkron ve bildirim tasarımı, düzenler, kısayollar, PR'lar, riskler. |
-| `docs/KIT-ISTEKLERI.md` | desktop-kit'te eksik kalan ve kite yazılacak parçalar; her biri için şimdilik izlenen yol. |
+| `docs/KIT-ISTEKLERI.md` | desktop-kit'ten istenen parçalar: kitin getirdikleri ve DeskMail'in onlarla yaptığı, açık olanlar için şimdilik izlenen yol. |
 | `CHANGELOG.md` | Sürüm sürüm değişiklikler. |
 
-Araçlar desktop-kit 2.4.0 ile aynıdır: Android Gradle eklentisi 9.4.1, Gradle 9.8.2, Kotlin 2.4.20;
+Araçlar desktop-kit 2.8.0 ile aynıdır: Android Gradle eklentisi 9.4.1, Gradle 9.8.2, Kotlin 2.4.20;
 `minSdk` 34, `compileSdk` 37, `targetSdk` 36. Testler Java 21 ister (Robolectric 4.17, API 36).
 
 ## Derleme ve testler

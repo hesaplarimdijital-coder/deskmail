@@ -63,7 +63,7 @@ class MailScreenTest {
 
         compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
         compose.waitForIdle()
-        compose.onNodeWithText(subject).assertDoesNotExist()
+        compose.onNodeWithTag(MailTags.READER).assertDoesNotExist()
         compose.onNodeWithText(subject, substring = true).assertIsDisplayed()
     }
 
@@ -131,7 +131,8 @@ class MailScreenTest {
         compose.onNodeWithText("Açık ileti yok").assertIsDisplayed()
         compose.onNodeWithText(subject, substring = true).performClick()
         compose.waitForIdle()
-        compose.onNodeWithText(subject).assertIsDisplayed()
+        // in the reader (the row has the subject on a line of its own as well)
+        compose.onNode(hasText(subject) and hasAnyAncestor(hasTestTag(MailTags.READER))).assertIsDisplayed()
         // the list is still there
         compose.onNodeWithText("İade tarihi yaklaşıyor", substring = true).assertIsDisplayed()
     }
@@ -169,7 +170,8 @@ class MailScreenTest {
         compose.onNodeWithText("Açık ileti yok").assertIsDisplayed()
         compose.onNodeWithText(subject, substring = true).performClick()
         compose.waitForIdle()
-        compose.onNodeWithText(subject).assertIsDisplayed()
+        // in the reader (the row has the subject on a line of its own as well)
+        compose.onNode(hasText(subject) and hasAnyAncestor(hasTestTag(MailTags.READER))).assertIsDisplayed()
         // the list is still there
         compose.onNodeWithText("İade tarihi yaklaşıyor", substring = true).assertIsDisplayed()
     }

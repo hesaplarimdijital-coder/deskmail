@@ -2,6 +2,47 @@
 
 Sürümler [SemVer](https://semver.org/lang/tr/) kuralına uyar; 0.1.0'a kadar olanlar ön sürümdür (`0.1.0-alpha.N`, ardından `0.1.0-beta.N`). Her sürümün imzalı APK'sı GitHub'daki sürüm sayfasına eklenir.
 
+## 0.1.0-beta.2 (13 Kasım 2026)
+
+desktop-kit 2.8.0'a geçiş. Kit, DeskMail'in istediği 23 parçanın hepsini bu sürümle getirdi: kitin yeni parçaları uygulamaya bağlandı, uygulamanın onları beklerken izlediği geçici yollar kalktı. Outlook girişi sıradaki sürümde.
+
+### Telefon
+- **Yeni ileti düğmesi** listenin sağ altında yüzen bir düğme oldu; üst çubuktaki kalem kalktı. Liste en üstteyken "Yeni ileti" yazar, aşağı kaydırınca yalnızca simgesi kalır; alt çubuk çekilince onunla iner, ekran klavyesi açıkken gizlenir. İleti açıkken ve birden çok ileti seçiliyken yok.
+- **Satırı kaydırma.** Bir satırı parmakla sağa çekmek iletiyi (konuşmanın satırıysa hepsini) arşivler, "Geri al"lı bildirimle; sola çekmek "Ertele…" seçimini açar. Arşivlenemeyen ya da ertelenemeyen iletide o yön yok; satır seçerken kaydırma kapalı. TalkBack iki eylemi de adıyla sunar.
+- **Çekerek eşitleme.** Listeyi en üstünden aşağı çekip bırakmak o görünümü eşitler; disk, eşitleme bitene kadar döner. Üst çubuktaki **Eşitle** ve F5 duruyor.
+- **Satırlar üç satır:** gönderen, altında konu, onun altında iletinin ilk sözcükleri (önceden konu ve ilk sözcükler tek satırdaydı).
+- **Okunmamış sayısı alt çubukta.** "Gelen" simgesinin köşesinde gelen kutularındaki okunmamış iletilerin sayısı (rayda "Okunmamış"ta da). TalkBack "Gelen, 4 okunmamış" der.
+- **Klasörler.** Klasörler'den açılan bir klasördeyken alt çubukta "Klasörler" işaretli kalır (önceden "⋯" işaretliydi); "⋯" sayfası klasörleri artık listelemez, onlar Klasörler'de.
+- Ekran değişirken üst çubuk iki kez değişmiyor ve başlık boşuna solup gelmiyor; açılan ileti sayfası yerine otururken kaymıyor. İkisi alpha.1'in S24 kayıtlarında görülen titremelerdi.
+
+### Tablet ve DeX
+- **Yeni ileti düğmesi** rayın ve kenar çubuğunun en üstünde (önceden yalnızca menüde ve Ctrl+N ile).
+- **Kenar çubuğu.** Hesap başlığına tıklamak o hesabın klasörlerini kapatıp açar. Bir klasörün içindeki klasör onun altında girintili, kendi adıyla durur ("2026"; önceden "Projeler / 2026"), başlıkta yine yoluyla yazar. "Klasörler" ve "Ara" kenar çubuğunda artık yok: klasörler zaten orada, arama menü çubuğundaki alanda ve "/" ile.
+- **Girişlerin menüsü.** Kenar çubuğunda, rayda ve alt çubukta bir girişe sağ tık (ya da uzun basma, Menü tuşu): **Eşitle**, tablette ve DeX'te **Yeni pencerede aç**.
+- **Tablo.** Okunmamış iletinin satırı baştan sona kalın; okunmamış noktası, yıldız, yanıtlandı/iletildi ve ataç kendi sütunlarında simge. Yıldızın hücresine tıklamak iletiyi açmadan yıldızlar ya da yıldızı kaldırır.
+- **Fareyle çerçeve çizerek seçme.** Tabloda seçili olmayan bir satırdan (ya da satırların altındaki boşluktan) sürüklemek bir çerçeve çizer, değdiği satırlar seçilir; Ctrl ekler ya da çıkarır, Shift ekler, liste kenara gelince kayar, Esc çerçeveyi bırakıp önceki seçime döner. Seçili bir satırdan sürüklemek seçimi eskisi gibi klasöre taşır.
+- **Rayda alt sayfaların başlığı.** Ayarlar'ın üstüne açılan sayfalar (Hesap ekle, bir hesabın sayfası, Günlük, Lisanslar) tablette de üst çubukta kendi başlığını, Geri düğmesini ve eylemlerini gösterir; sistemin Geri'si sayfayı kapatır.
+- Kitin getirdikleri: rayda üst çubuktaki **≡** menü çubuğunun menülerini (Dosya, Düzen…) açar; simge düğmeleri imleç üstünde durunca ya da klavye odağındayken adını ve kısayolunu söyler; listelerde fareyle kaydırma çubuğu; Tab tuşu tabloyu tek durak sayar, içinde oklar gezer; tablonun başlığı satır boyunda, seçim kipinde satırlarda onay kutusu.
+
+### Okuma
+- **Cam ve ileti.** "İletinin üstünde cam" açıkken, ileti ekrandayken çubuklar bulanıklaştırmaz, yalnızca yarı saydam olur (titreme olmasın diye); ileti kapanınca bulanıklık geri gelir. Uzun iletide cam artık kapanmıyor. Denemeler'deki **WebView katmanı** seçeneği kalktı: gereği kalmadı.
+- **Uzak görseller şeridi.** "Bu göndericinin görsellerini hep göster" artık şeridin içinde, "Göster"in yanında.
+
+### Yazma
+- **Şablon imlecin olduğu yere eklenir** (önceden yazdığının sonuna). Kendi paragrafı olarak girer: önündeki ve arkasındaki yazıyla arasında boş satır kalır. Bir bölüm seçiliyse onun yerine geçer.
+- Alıcı alanının çipli hâli ve yazarken öneriler bu sürümde de yok: kitin çipli alanında, virgülle ya da Enter'la bitirilmemiş adres uygulamaya ulaşmıyor ve "Gönder" onu düşürürdü. Kite yazıldı (`docs/KIT-ISTEKLERI.md`, 26).
+
+### Ayarlar
+- Hesaplar listesinde hesabın satırının tamamı sayfasını açar; sondaki **Yönet** düğmesi kalktı.
+- **Hesabı kaldır** kırmızı (geri alınamayan eylem); önce sorulması aynı.
+- Hiç hesap yokken **Hesap ekle** vurgulu.
+
+### Klavye
+- Türkçe klavyede "/" (Shift+7) aramaya gider; kitin Ctrl+/ kısayolu (kısayol listesi) Türkçe klavyede de çalışır.
+
+### Altyapı
+- desktop-kit 2.4.0 → 2.8.0; derleme araçları aynı.
+
 ## 0.1.0-beta.1 (13 Kasım 2026)
 
 İlk beta: Outlook girişi dışında planlanan bütün özellikler (ilk aşamanın kalanı ve ikinci aşama). Outlook `0.1.0-beta.2`'de gelir.

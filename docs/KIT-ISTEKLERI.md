@@ -5,19 +5,18 @@ uygulamada yamanmaz, **kite yazılır** (kitin kendi sohbetinde). Kit yeni bir e
 DeskMail her maddede "Şimdilik" satırındaki yolla ilerler; etiket gelince sürüm yükseltilir ve geçici yol
 kaldırılır.
 
-Önerilen sıra: 20 (cam ve WebView), 12 (dolgu hatası), 18 (üst çubuğun yanıp sönmesi), 3 (kenar çubuğu),
-2 (tablo), 9 (liste durumu), 1 (rozetler), 10 (klavye düzeni), 13 (bölücü), 14 (çekerek yenileme);
-kalanlar ilgili PR'a kadar bekleyebilir. 12, 13, 18 ve 20 istek değil, hata. 14–17 alpha.2'de (gerçek
-posta ve hesap ekranları) eklendi; 18–20 alpha.1'in Galaxy S24'teki iki ekran kaydından (12 Kasım 2026),
-kare kare bakılarak yazıldı; 21 ve 4. maddenin eki alpha.3'te, yazma ekranıyla; 22 Barış'ın isteğiyle
-(13 Kasım 2026); 23 beta.1'in şablonlarıyla; 24 Barış'ın kararıyla (biçimli yazma kitte, 13 Kasım 2026); 25
-beta.1'in ertelemesiyle.
+**desktop-kit 2.8.0 (13 Kasım 2026)** 1–23'ün hepsini getirdi; DeskMail 2.8.0'a geçti (`0.1.0-beta.2`).
+Her maddenin "2.8.0" satırı kitin ne getirdiğini ve DeskMail'in onunla ne yaptığını söyler; o maddelerdeki
+"Bugün" satırları 2.4.0'ı anlatır. **Açık olanlar:** 4 (çipli alıcı alanı: 26'yı bekliyor), 24 (biçimli
+metin düzenleyici), 25 (tarih ve saat seçici), 26 (çipli alanda bitirilmemiş yazı).
 
-**beta.1'in beklediği maddeler:** 4 (alıcı önerileri), 7 (satırı kaydırma), 22 (çerçeveyle seçme), 23
-(metin alanında imleç), 24 (biçimli metin düzenleyici), 25 (tarih ve saat seçici). Kit bunları yayımlayınca
-uygulamaya bağlanır; beta.1 onları beklemeden çıkar.
+Nereden geldikleri: 12, 13, 18 ve 20 istek değil, hata. 14–17 alpha.2'de (gerçek posta ve hesap ekranları)
+eklendi; 18–20 alpha.1'in Galaxy S24'teki iki ekran kaydından (12 Kasım 2026), kare kare
+bakılarak; 21 ve 4. maddenin eki alpha.3'te, yazma ekranıyla; 22 Barış'ın isteğiyle (13 Kasım 2026); 23
+beta.1'in şablonlarıyla; 24 Barış'ın kararıyla (biçimli yazma kitte, 13 Kasım 2026); 25 beta.1'in
+ertelemesiyle; 26 2.8.0 bağlanırken.
 
-Satır ve dosya adları kitin 2.4.0 etiketine göredir.
+Satır ve dosya adları, 26 dışında, kitin 2.4.0 etiketine göredir.
 
 ## 1. Rozetler alt çubukta ve rayda da görünsün
 
@@ -26,7 +25,9 @@ Satır ve dosya adları kitin 2.4.0 etiketine göredir.
 - **İstek:** `BottomNavBar` ve `NavRail` öğelerinde de rozet: simgenin köşesinde küçük sayı (`CountBadge`
   boyunda) ya da nokta; TalkBack öğenin adıyla birlikte okur ("Gelen, 4 okunmamış").
 - **Neden:** telefonda "Gelen" sekmesinde okunmamış sayısı hiç görünmüyor.
-- **Şimdilik:** sayı telefonda yalnızca Klasörler ekranındaki satırlarda gösterilir.
+- **2.8.0:** `DesktopShell(iconBadges)`. Gelen ve Okunmamış simgelerinin köşesinde okunmamış sayısı
+  (`navIconBadges`); TalkBack "Gelen, 4 okunmamış" der. (Önceden sayı telefonda yalnızca Klasörler
+  ekranındaydı.)
 
 ## 2. `DenseTable`: satır vurgusu ve simge hücresi
 
@@ -40,7 +41,10 @@ Satır ve dosya adları kitin 2.4.0 etiketine göredir.
     `cell: @Composable (T) -> Unit` yuvası (yıldız, ek);
   - isteğe bağlı: hücreye tıklama (`onCellClick`), yıldızı satırı açmadan değiştirmek için.
 - **Neden:** e-posta listesinde okunmamış iletinin kalın görünmesi ve yıldız/ek simgeleri temel beklenti.
-- **Şimdilik:** okunmamış için "●" yazan dar bir sütun, yıldız için "★", ek için ek sayısı.
+- **2.8.0:** `DenseTable(rowEmphasis)`, `TableColumn(cell, onCellClick, cellClickLabel)`. Okunmamış
+  ileti baştan sona kalın; okunmamış noktası, yıldız, yanıtlandı/iletildi ve ataç kendi sütunlarında
+  simge; yıldızın hücresi iletiyi açmadan yıldızlar ya da kaldırır. Sütunun değeri sıralamaya kalır.
+  (Önceden "●", "★" ve ek sayısı yazıydı.)
 
 ## 3. Kenar çubuğu: değişen öğeler, girinti, sağ tık
 
@@ -73,12 +77,18 @@ Satır ve dosya adları kitin 2.4.0 etiketine göredir.
   değişince `ShellNavigator.navigate`), ama arada başlangıç ekranı bir an görünüyor (iki sekme geçişi) ve
   o ekranın geri yığını (telefonda Klasörler › klasör) gidiyor. Hesap eklenirken başlangıç ekranına
   dönüş bilerek bırakıldı: posta oraya gelir.
-- **Şimdilik:** klasörler `NavItem` olarak verilir, her pencere boyunda aynı `ShellSpec` ile; pencerenin
-  gösterdiği (açık ileti, süzgeçler, kaydırma) ekranların dışında tutulur (`MailUiState`), klasör listesi
-  değişince açık klasöre uygulama kendisi döner (alpha.2'de, gerçek klasörlerle); alt klasörler yolu
-  yazılarak ("Projeler / 2026") gösterilir; telefonda ve rayda klasöre Klasörler ekranından gidilir
-  (klasör listenin üstüne açılır, Geri listeye döner); klasör menüsü Klasörler ekranındaki satırlarda
-  olacak.
+- **2.8.0:** hepsi.
+  - Kabuk grafiği bir kez kurar ve rotaları ekler: yeni klasörde, hesap eklenince ya da kaldırılınca açık
+    ekran ve durumu kalır (`ShellNavigationTest.aNewFolderKeepsTheOpenScreenAndWhatItSaved`).
+    Uygulamanın açık ekrana geri dönüşü kalktı.
+  - Klasörler `NavItem(parent, showIn = Sidebar)`: yalnız kenar çubuğunda; kullanıcının bir klasörünün
+    içindeki klasör onun altında girintili, kendi adıyla ("2026"); başlıkta ve palette yoluyla
+    ("Projeler / 2026"). "Klasörler" ve "Ara" yalnız alt çubukta ve rayda. Hesabın bölümü açılıp
+    kapanır (`NavSection(collapsible = true)`).
+  - Telefonda ve rayda klasör `navigator.open` ile Klasörler'in sayfası olarak açılır: "Klasörler"
+    işaretli kalır, üst çubuğun Geri düğmesini kit verir. "⋯" sayfası klasörleri listelemiyor.
+  - Girişlerin menüsü (`DesktopShell(navMenu)`): "Eşitle", tablette ve DeX'te "Yeni pencerede aç".
+    "Tümünü okundu say" ve "Çöpü boşalt" uygulamada henüz yok (`docs/PLAN.md`).
 
 ## 4. Alıcı alanı: çipli adres girişi ve öneri listesi
 
@@ -91,33 +101,43 @@ Satır ve dosya adları kitin 2.4.0 etiketine göredir.
   bildirir ne ayarlatır (`TextFieldValue` alan bir biçimi yok). Bu yüzden düz alanın altına öneri listesi
   de eklenemiyor: öneri seçilince son parça değiştirilir, ama imleç eski yerinde, metnin ortasında kalır.
   Aynı eksik, yanıtta imleci alıntının üstüne koymayı ve ileride biçimli yazmayı da engeller.
+- **2.8.0:** `TokenField(suggestions)` ve `DeskTextField(TextFieldValue)` geldi. **DeskMail
+  `TokenField`'ı bağlamadı:** virgülle ya da Enter'la bitirilmemiş adres alanın kendi içinde kalıyor ve
+  uygulamaya ulaşmıyor; bağlansaydı "Gönder" o adresi sessizce düşürürdü (madde 26).
 - **Şimdilik:** virgülle ayrılmış düz `DeskTextField`; yazarken öneri yok. Öneri verisi hazır
-  (`MailComposer.suggest`: geçmiş iletilerin adresleri), arayüzü kitin alanını bekliyor.
+  (`MailComposer.suggest`: geçmiş iletilerin adresleri); 26 gelince bağlanır.
 
 ## 5. Telefonda yüzen birincil eylem düğmesi
 
 - **Bugün:** kabukta alt çubuğun üstünde duran, çubukla birlikte çekilen bir düğme yuvası yok.
 - **İstek:** kitin çizgisinde (Material FAB değil) yüzen birincil düğme: alt çubuğun üstünde, çubuk
   kaydırmayla çekilirken onunla birlikte hareket eder, ekran klavyesi açıkken gizlenir.
-- **Şimdilik:** "Yeni ileti" telefonda üst çubukta vurgu renkli simge (`TopBarAction(primary = true)`).
+- **2.8.0:** `ShellPrimaryAction`. "Yeni ileti" telefonda yüzen düğme (ileti açıkken ve seçim çubuğu
+  varken yok), rayın ve kenar çubuğunun en üstünde vurgulu düğme. (Önceden telefonun üst çubuğunda
+  vurgulu simgeydi; rayda ve DeX'te yalnızca menüde ve Ctrl+N ile.)
 
 ## 6. `StatusBanner`'da ikinci eylem
 
 - **Bugün:** tek `actionLabel`/`onAction` ve kapatma düğmesi (`components/Feedback.kt`).
 - **İstek:** ikinci eylem (`secondaryActionLabel`/`onSecondaryAction`); telefonda ikisi metnin altında.
 - **Neden:** "Uzak görseller engellendi · Göster · Bu gönderenden hep göster".
-- **Şimdilik:** şeritte yalnızca "Göster"; gönderen izni Aşama 2'de "⋯" menüsünden.
+- **2.8.0:** `StatusBanner(secondaryActionLabel, onSecondaryAction)`. Şeritte "Göster" ve "Bu
+  göndericinin görsellerini hep göster" (önceden şeridin altında ayrı bir düğmeydi).
 
 ## 7. Liste satırında kaydırma eylemleri (Aşama 2)
 
 - **İstek:** `DeskListRow`'da yana kaydırma eylemleri (arşivle, ertele): parmağı izler, eşikte titreşir,
   geri alınabilir; fare ve klavyede etkisiz.
+- **2.8.0:** `DeskListRow(swipeStart, swipeEnd)`. Sağa çekmek arşivler (geri alma bildirimiyle), sola
+  çekmek "Ertele…" seçimini açar (`removesRow = false`); arşivlenemeyen ya da ertelenemeyen satırda o yön
+  yok, seçim yapılırken ikisi de kapalı.
 
 ## 8. `DeskListRow`'da önizleme satırı (küçük)
 
 - **Bugün:** tek satır başlık ve tek satır alt başlık.
 - **İstek:** `subtitleMaxLines` ya da ikinci alt satır (gönderen / konu / önizleme).
-- **Şimdilik:** alt satır "Konu — önizleme" olarak tek satırda.
+- **2.8.0:** `DeskListRow(preview, previewMaxLines)`. Satır: gönderen, konu, bir satır önizleme. Tablo
+  "Konu — önizleme"yi tek hücrede tutar.
 
 ## 9. `DetailTransition`: ayrıntı açıkken listenin durumu kayboluyor
 
@@ -129,8 +149,8 @@ Satır ve dosya adları kitin 2.4.0 etiketine göredir.
   (`LogScreenTest`, 12 Kasım 2026).
 - **İstek:** `list` ve `detailContent` bir `SaveableStateHolder` içinde dursun (Navigation'ın ekranlar
   için yaptığı gibi); liste geri gelince kendi durumunu bulsun.
-- **Şimdilik:** korunması gereken durum (`LazyListState`, süzgeçler, açık ileti) `DetailTransition`'ın
-  dışında tutuluyor.
+- **2.8.0:** liste bir `SaveableStateHolder` içinde. DeskMail'in durumu dışarıda tutması da doğru
+  çalışıyor; değiştirilmedi.
 
 ## 10. Kısayollar tuşa göre eşleşiyor: Türkçe klavyede "/" yok
 
@@ -139,16 +159,17 @@ Satır ve dosya adları kitin 2.4.0 etiketine göredir.
   "Klavye kısayolları" kısayolu (Ctrl+/) da bu yüzden Türkçe klavyede çalışmaz.
 - **İstek:** noktalama tuşları için yazılan karaktere göre eşleşme (`KeyChord(char = '/')` ya da
   `matches` içinde `unicodeChar` denemesi), ya da bir kısayola ikinci bir tuş bileşimi.
-- **Şimdilik:** DeskMail tek tuşlu "/" için yazılan karaktere de bakıyor (`KeyRouter.typesSlash`);
-  Ctrl+/ kite kaldı.
+- **2.8.0:** noktalama kısayolları yazdıkları karakterle de eşleşir. `KeyRouter.typesSlash` kalktı;
+  Ctrl+/ de Türkçe klavyede çalışır.
 
 ## 11. Ayrıntı paneli kapalı başlayabilsin (küçük)
 
 - **Bugün:** `rememberInspectorState(prefs)` paneli ilk açılışta açık getirir
   (`DeskPreferences.inspectorCollapsed` varsayılanı `false`), ve durum ekrandan ekrana ortak değildir.
 - **İstek:** `rememberInspectorState(prefs, defaultCollapsed = true)`.
-- **Şimdilik:** DeskMail kendi `InspectorState`'ini kuruyor (kapalı başlar, genişliği ve durumu kendi
-  ayarlarında).
+- **2.8.0:** `rememberInspectorState(defaultCollapsed = true)`. DeskMail kendi `InspectorState`'ini
+  tutmaya devam ediyor (kapalı başlar, genişliği ve durumu kendi ayarlarında, pencereler arasında ortak):
+  kitinkine geçmek saklı seçimi sıfırlardı, bir şey kazandırmaz.
 
 ## 12. `rememberShellContentPadding()` alt bileşimden çağrılınca kabuk fark etmiyor (hata)
 
@@ -166,9 +187,9 @@ Satır ve dosya adları kitin 2.4.0 etiketine göredir.
 - **İstek:** çerçeve sayacı bileşimde okusun ya da sayaç değişince kendini yeniden ölçtürsün. Aynı tür
   hata kitte bir kez düzeltilmiş: `DesktopKitRoot`'taki "read here, not while measuring" notu
   (`RootInsets.shells`).
-- **Şimdilik:** DeskMail dolguyu ekranın kendi bileşiminde bir kez ister ve aşağıya parametre olarak
-  verir (`MailScreen`: `val bars = rememberShellContentPadding()`).
-  `MailScreenTest.aPhonesListAndReaderLieUnderTheBars` bunu tutar.
+- **2.8.0:** düzeltildi (kabuk sayacı bileşimde de okur). DeskMail dolguyu yine ekranın kendi
+  bileşiminde ister ve aşağıya verir; kitin notuna göre ikisi de doğru.
+  `MailScreenTest.aPhonesListAndReaderLieUnderTheBars` duruyor.
 
 ## 13. Bölücü sürüklenirken `SplitState` sınırların dışına taşıyor (küçük hata)
 
@@ -179,8 +200,8 @@ Koddan okundu, cihazda denenmedi.
   geçince durumdaki değer görünmeyen bir yere kaymayı sürdürür; geri sürüklerken o kadar yol boşa gider
   (bölme kıpırdamaz). Saklanan değer de sınırın dışında kalabilir.
 - **İstek:** sürüklemede ve ok tuşlarında değer, son ölçümdeki sınırlara kıstırılsın.
-- **Şimdilik:** DeskMail bölücüden yalnızca payı alır (genişlik / alan), payı gösterilen genişlikten
-  hesaplar (`MailLayout.listShare`) ve pencere yeniden yerleşince genişliği sınırların içine geri yazar.
+- **2.8.0:** düzeltildi; ayrıca `rememberSplitState(genislik, prefs, anahtar)`. DeskMail payı (genişlik /
+  alan) kendi ayarlarında tutmaya devam ediyor (`MailLayout.listShare`); değiştirilmedi.
 
 ## 14. Çekerek yenileme
 
@@ -189,8 +210,9 @@ Koddan okundu, cihazda denenmedi.
   yenileme sarmalayıcısı (`refreshing: Boolean`, `onRefresh`); kabuk çubuklarının altından geçen listede
   gösterge üst çubuğun altında dursun. Fare ve klavyede etkisiz.
 - **Neden:** telefonda e-posta listesini yenilemenin alışılmış yolu.
-- **Şimdilik:** telefonda üst çubukta, rayın yanında süzgeçlerin sonunda, büyük pencerede başlıkta bir
-  "Eşitle" düğmesi; klavyede F5. Eşitleme sürerken listenin üstünde ince bir `DeskProgressBar`.
+- **2.8.0:** `PullToRefresh`. Telefonda ve rayın yanında liste aşağı çekilince görünüm eşitlenir; disk,
+  çekişin başlattığı eşitleme bitene kadar döner. Uygulamanın kendi başlattığı eşitlemelerde listenin
+  üstündeki ince çubuk kaldı; "Eşitle" düğmesi ve F5 de.
 
 ## 15. Alt sayfanın başlığı rayda görünmüyor (küçük)
 
@@ -200,14 +222,16 @@ Koddan okundu, cihazda denenmedi.
   görünür.
 - **İstek:** `CompactTopBar`'ın başlık ve geri düğmesi rayda da geçerli olsun, ya da `PageHeader`'a
   "başlığı her düzende göster" seçeneği.
-- **Şimdilik:** alt sayfaların ilk bölüm başlığı sayfayı anlatıyor.
+- **2.8.0:** `CompactTopBar(showOnRail = true)`. Ayarlar'ın alt sayfaları (hesap ekle, hesap, günlük,
+  lisanslar) rayda da üst çubukta başlığını, Geri'sini ve eylemlerini gösterir; sistemin Geri'si sayfayı
+  kapatır. Sayfa başlığındaki Geri düğmesi yalnız kenar çubuklu düzende kaldı.
 
 ## 16. `MessageScreen`'in düğmesi vurgulu olamıyor (küçük)
 
 - **Bugün:** `MessageScreen(actionLabel, onAction)` düz bir `DeskButton` çizer.
 - **İstek:** `actionPrimary: Boolean = false`.
 - **Neden:** "Henüz hesap yok · Hesap ekle" ekranında tek ve asıl eylem bu düğme.
-- **Şimdilik:** düz düğme.
+- **2.8.0:** `MessageScreen(actionPrimary = true)`. "Hesap ekle" vurgulu.
 
 ## 17. Ayar kartında satırın tamamına dokunma, ve sakıncalı eylem düğmesi (küçük)
 
@@ -216,7 +240,8 @@ Koddan okundu, cihazda denenmedi.
 - **İstek:** `SettingRow(onClick = …)` (satırın tamamı, sonunda ok), ve `DeskButton(danger = true)`
   (ya da `tone`) geri alınamayan eylemler için.
 - **Neden:** Ayarlar › Hesaplar'da hesap satırı; "Hesabı kaldır".
-- **Şimdilik:** satırın sonunda "Yönet" düğmesi; "Hesabı kaldır" düz düğme, önce onay penceresi soruyor.
+- **2.8.0:** `SettingRow(onClick)`, `DeskButton(danger = true)`. Hesabın satırının tamamı sayfasını açar
+  ("Yönet" kalktı); "Hesabı kaldır" tehlike renginde, onay penceresi duruyor.
 
 ## 18. Telefonun üst çubuğu ekran değişirken yanıp sönüyor (hata)
 
@@ -234,7 +259,8 @@ Koddan okundu, cihazda denenmedi.
   - çıkmakta olan ekranın `CompactTopBar` kaydı, çıkış geçişi başlar başlamaz geçersiz sayılsın (ya da
     çubuğun içeriği rota ile birlikte tek adımda değişsin);
   - başlık metni değişmiyorsa solmasın: geri düğmesi gelince yalnızca yana kaysın.
-- **Şimdilik:** uygulama bir şey yapmıyor.
+- **2.8.0:** düzeltildi (bırakılan ekranın çağrısı sayılmaz; başlık sözcükleri değişmedikçe solmaz).
+  Uygulamanın yapacağı bir şey yok; cihazda bakılacak.
 
 ## 19. `open()` yayı tam sayfa geçişinde yerine otururken taşıyor (küçük)
 
@@ -245,7 +271,7 @@ Koddan okundu, cihazda denenmedi.
   kayıyor. Metinle dolu bir sayfada bu, yerine otururken kısa bir titreme gibi okunuyor.
 - **İstek:** tam ekran sayfa geçişlerinde taşmayan bir yay (sönüm 1,0) ya da son pikselde kırpma;
   küçük öğelerdeki hafif sekme kalabilir.
-- **Şimdilik:** uygulama bir şey yapmıyor.
+- **2.8.0:** `DeskMotion.page()` yerini geçmez. Uygulamanın yapacağı bir şey yok; cihazda bakılacak.
 
 ## 20. Cam kaynağının içinde WebView varken kaydırınca içerik yanıp sönüyor (hata)
 
@@ -273,12 +299,10 @@ Koddan okundu, cihazda denenmedi.
     bulanıklığı kendiliğinden bırakması;
   - en azından belgede uyarı ve ekran başına cam modu (`LocalGlassMode` bugün kabuğun üstünden
     verilebiliyor ama statik: değişince kabuğun tamamı yeniden bileşir).
-- **Şimdilik:** DeskMail, kabuğun camı bulanıkken iletinin WebView'ını kendi donanım katmanına çizer
-  (`ui/mail/MessageBody.kt`: `webLayerFor`): WebView bir kez çizilir, pencere ve her cam yüzey hazır
-  resmi o katmandan alır (0.1.0-alpha.3; cihazda doğrulanacak). Katmana sığmayan uzun iletide
-  (`LayerLimits`) ve "İletinin üstünde cam" denemesi kapalıyken kabuğa `glass = false` verir
-  (`shellGlass`); alpha.2 bunu her iletide yapıyordu. İstek yine geçerli: katman, iletinin boyu kadar
-  bellek tutar ve uzun iletide çare değildir.
+- **2.8.0:** `PauseGlassBlur()`. İleti ekrandayken cam bulanıklaştırmaz, yarı saydam tonda kalır; uzun
+  iletide de. DeskMail'in yolu (WebView'ı kendi donanım katmanına çizmek: `webLayerFor`, `LayerLimits`)
+  ve "WebView katmanı" denemesi kalktı. "İletinin üstünde cam" kapalıyken ileti açıkken çubuklar düz
+  (alpha.2'deki gibi). Cihazda bakılacak.
 
 ## 21. Bildirimin süresi verilebilsin (küçük)
 
@@ -288,8 +312,11 @@ Koddan okundu, cihazda denenmedi.
   (`calculateRecommendedTimeoutMillis`) bu süreye de uygulansın.
 - **Neden:** gönderiyi geri alma süresi ayarlanır (5, 10, 15 sn) ve bildirim tam o kadar durmalı:
   bildirim giderse ileti gider.
-- **Şimdilik:** bildirim `Indefinite` gösterilir ve uygulama onu süre dolunca kendisi kapatır
-  (`withTimeoutOrNull`). TalkBack kullanan biri için süre uzamaz; 15 saniyeyi seçebilir.
+- **2.8.0:** `ToastState.show(durationMillis = …)`; imleç üstündeyken, odak içindeyken ve TalkBack için
+  süre uzar.
+- **Karar: DeskMail kendi saatini tutar** (`Indefinite` + `withTimeoutOrNull`). Gönderim zamanı sabittir
+  (`sendAfter = şimdi + süre`); kitin süresi uzayınca bildirim, ileti gittikten sonra da "Geri al" diye
+  ekranda kalırdı. TalkBack kullanan biri daha uzun süreyi (15 sn) seçebilir.
 
 ## 22. Tabloda fareyle çerçeve çizerek seçme
 
@@ -310,7 +337,8 @@ Koddan okundu, cihazda denenmedi.
   - aynı davranış `DeskListRow` listeleri ve `Grid` için de düşünülebilir.
 - **Neden:** DeX'te ve tablette fareyle çalışırken dosya yöneticilerinden alışılan yol. Barış: "sol klik
   ile mouse'u sürüklediğimde bir kare çıkıyor, o karenin içindekiler seçili oluyor ya, ondan olsun."
-- **Şimdilik:** fareyle seçim Ctrl+tık ve Shift+tık ile; çerçeve yok.
+- **2.8.0:** tablo fareyle çerçeve çizerek seçer (seçili olmayan satırdan ya da satırların altından);
+  seçili satırdan sürüklemek seçimi klasöre taşır. Uygulamanın yapacağı bir şey yok.
 
 ## 23. Metin alanında imleç ve seçim
 
@@ -320,8 +348,9 @@ Koddan okundu, cihazda denenmedi.
   onValueChange: (TextFieldValue) -> Unit, …)`; görünüşü ve davranışı bugünküyle aynı.
 - **Neden:** yazarken seçilen şablon imlecin olduğu yere eklenmeli; biçimli (HTML) yazmada kalın, eğik,
   bağlantı gibi biçimler seçili metne uygulanır; ikisi de imlecin ve seçimin bilinmesini istiyor.
-- **Şimdilik:** şablon yazılanın sonuna, imzanın ve alıntının üstüne eklenir; yer metnin kendisinden
-  çıkarılır (`core/…/compose/Templates.kt`).
+- **2.8.0:** `DeskTextField(value: TextFieldValue, onValueChange)`. Yazma ekranının metni imleci ve
+  seçimi tutar (`ComposeFields.bodyValue`); şablon imlecin olduğu yere kendi paragrafı olarak, seçim
+  varsa onun yerine eklenir (`Templates.insertAt`).
 
 ## 24. Biçimli metin düzenleyici (HTML yazma)
 
@@ -370,3 +399,21 @@ Koddan okundu, cihazda denenmedi.
 - **Neden:** ertelemede yalnızca hazır süreler var (bu akşam, yarın sabah, hafta sonu, gelecek hafta);
   "Gün ve saat seç…" bu seçiciyi bekliyor.
 - **Şimdilik:** hazır süreler.
+
+## 26. `TokenField`: bitirilmemiş yazı uygulamaya ulaşmıyor
+
+2.8.0'ın kaynağından okundu, cihazda denenmedi.
+
+- **Bugün:** `TokenField` yazılan metni kendi durumunda tutar (`components/TokenField.kt`:
+  `var text by remember { mutableStateOf(TextFieldValue("")) }`). Metin yalnızca ayırıcı, Enter ya da
+  klavyenin eylem tuşuyla çip olur; `onTokensChange` ancak o zaman çağrılır. Odak alandan çıkınca da metin
+  olduğu gibi kalır.
+- **Sonuç:** "ayse@ornek.com" yazıp virgül koymadan Gönder'e (ya da Ctrl+Enter'a) basan kullanıcının
+  adresi alıcılara girmez: ileti o adres olmadan gider ya da "alıcı yok" denir; taslak kaydı da o adresi
+  tutmaz. E-postada adres sessizce düşer. Gönder düğmesine dokunmak odağı alandan almaz, o yüzden "odak
+  çıkınca çip yap" tek başına yetmez.
+- **İstek:** yazılan metin de uygulamaya gelsin: durumu uygulamanın tuttuğu bir `TokenFieldState`
+  (`tokens`, yazılan `text`, `commit()`: yazılanı çip yapar) ya da `TokenField(text, onTextChange)`.
+  Uygulama Gönder'de ve taslağı kaydederken yazılanı da sayar. Ek olarak odak alandan çıkınca yazılanın
+  çip olması (Gmail ve Outlook böyle) iyi olur.
+- **Şimdilik:** alıcılar virgülle ayrılmış düz `DeskTextField`'da (madde 4).
