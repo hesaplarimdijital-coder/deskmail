@@ -170,6 +170,12 @@ object MailIcons {
             DeskIcons.stroke("M7 2.8a3.7 3.7 0 1 0 0 7.4 3.7 3.7 0 0 0 0-7.4z"),
             DeskIcons.stroke("M9.7 9.2l2.3 2.3"),
             DeskIcons.stroke("M3 13.5h10"),
+    /** An arrow into a tray: take something in from a file. */
+    val Import: ImageVector by lazy {
+        DeskIcons.build(
+            "Import",
+            DeskIcons.stroke("M8 2.5v8M5 7.7 8 10.6l3-2.9"),
+            DeskIcons.stroke("M3.5 8.5v4a1 1 0 0 0 1 1h7a1 1 0 0 0 1-1v-4"),
         )
     }
 

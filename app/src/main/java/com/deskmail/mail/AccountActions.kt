@@ -53,6 +53,22 @@ sealed interface SetupResult {
     data object Duplicate : SetupResult
 }
 
+/**
+ * An account as a settings file carries it to another device: what it is and how it is set up,
+ * never what it signs in with. [provider] is the provider table's id, empty for servers set up by
+ * hand; [syncDays] and [notifyMode] are what the account keeps and tells of.
+ */
+data class PortableAccount(
+    val address: String,
+    val name: String,
+    val senderName: String,
+    val provider: String,
+    val settings: MailSettings,
+    val syncDays: Int,
+    val notifyMode: String,
+    val signature: String,
+)
+
 /** What Settings can do with the accounts. Every call waits for the server where it has to ask it. */
 interface AccountActions {
     /** Works out where the servers of [address] are; only its domain is ever sent anywhere. */
@@ -69,4 +85,13 @@ interface AccountActions {
 
     /** Takes the account off the device with everything kept of its mail. The mail stays on its server. */
     suspend fun remove(accountId: Long)
+
+    /** Every account as a settings file carries it to another device. */
+    suspend fun portable(): List<PortableAccount>
+
+    /**
+     * Adds the accounts of a settings file that the device does not have yet, by their addresses;
+     * each waits for its password ("Reconnect"). Those it has are left as they are. How many were added.
+     */
+    suspend fun adopt(accounts: List<PortableAccount>): Int
 }

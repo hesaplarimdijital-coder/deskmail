@@ -253,6 +253,19 @@
     <string name="settings_sender_unvip">Take off the VIPs</string>
     <string name="settings_sender_images">Remote pictures always shown</string>
     <string name="settings_sender_ask">Ask again</string>
+    <string name="transfer_title">Move to another device</string>
+    <string name="transfer_note">The accounts (their addresses, servers, names, signatures) and the app\'s settings are written to a file; no password is. Imported on the other device, the accounts are added, and each waits for its password.</string>
+    <string name="transfer_export">Export</string>
+    <string name="transfer_import">Import</string>
+    <string name="transfer_file_name">deskmail-settings.json</string>
+    <string name="transfer_exported">The settings were written to the file.</string>
+    <string name="transfer_export_failed">The file could not be written.</string>
+    <string name="transfer_not_a_file">This is not a DeskMail settings file.</string>
+    <string name="transfer_imported_none">The settings were taken; there was no new account to add.</string>
+    <plurals name="transfer_imported">
+        <item quantity="one">%d account was added; enter its password on its page.</item>
+        <item quantity="other">%d accounts were added; enter each one\'s password on its page.</item>
+    </plurals>
     <string name="log_copy">Copy</string>
     <string name="log_share">Share as a file</string>
     <string name="log_clear">Clear the log</string>
