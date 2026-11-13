@@ -3,6 +3,8 @@ package com.deskmail.ui.mail
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsFocused
+import androidx.compose.ui.test.assertIsNotFocused
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isSelectable
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
@@ -55,25 +57,50 @@ class SearchTest {
         compose.waitForIdle()
     }
 
-    /**
-     * The search tab, as a thumb reaches it from the inbox: the field, and under it what to type.
-     * (That "/" puts the cursor into the field is CommandsTest's. Whether the field also takes the
-     * focus by itself when the screen is reached this way is not looked at here: under Robolectric
-     * it does not, and what a device does is to be seen on a device.)
-     */
+    private fun tab(label: String) {
+        compose.onNode(hasText(label) and isSelectable()).performClick()
+        compose.waitForIdle()
+    }
+
+    /** The search tab, as a thumb reaches it from the inbox: the screen says what to type, and its field is ready for it. */
     @Test
-    fun theScreenOpensWithItsFieldAndSaysWhatToType() {
+    fun theScreenOpensReadyToBeTypedInto() {
         val prefs = testPrefs()
         val settings = testSettings()
         compose.setContent { TestApp(mail, prefs, settings, ui) }
         compose.waitForIdle()
 
-        compose.onNode(hasText("Ara") and isSelectable()).performClick()
-        compose.waitForIdle()
+        tab("Ara")
 
-        compose.onNodeWithTag(MailTags.SEARCH).assertIsDisplayed()
         compose.onNodeWithText("Ne arıyorsun?").assertIsDisplayed()
+        compose.onNodeWithTag(MailTags.SEARCH).assertIsFocused()
         assertTrue(ui.searchQuery.isEmpty())
+    }
+
+    /** A window that opens at the search screen (from the palette, in a window of its own) is ready as well. */
+    @Test
+    fun aWindowOpenedAtTheSearchIsReadyToBeTypedInto() {
+        launch()
+
+        compose.onNodeWithTag(MailTags.SEARCH).assertIsFocused()
+    }
+
+    /** Come back to with something typed, the screen shows what was found and leaves the keyboard where it is. */
+    @Test
+    fun comeBackToWithSomethingTypedTheFieldIsLeftAlone() {
+        launch()
+        type("fatura")
+
+        tab("Gelen")
+        tab("Ara")
+
+        assertEquals("fatura", ui.searchText)
+        compose.onNodeWithTag(MailTags.SEARCH).assertIsNotFocused()
+        // emptied and come back to, it is asked for again
+        type("")
+        tab("Gelen")
+        tab("Ara")
+        compose.onNodeWithTag(MailTags.SEARCH).assertIsFocused()
     }
 
     @Test
