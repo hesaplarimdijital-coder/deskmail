@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.ui.mail.MailStatesTest" tests="14" skipped="0" failures="0" errors="0" timestamp="2026-11-13T01:18:18.558Z" hostname="runnervmwuk1x" time="0.795">
+  <properties/>
+  <testcase name="aMessageWhoseTextIsNotOnTheDeviceSaysSo" classname="com.deskmail.ui.mail.MailStatesTest" time="0.059"/>
+  <testcase name="aScreenThatComesToTheFrontAsksForItsMail" classname="com.deskmail.ui.mail.MailStatesTest" time="0.076"/>
+  <testcase name="anAccountThatHasToSignInAgainSaysSoAboveTheList" classname="com.deskmail.ui.mail.MailStatesTest" time="0.073"/>
+  <testcase name="aMessageTooTallForALayerTakesTheGlassAway" classname="com.deskmail.ui.mail.MailStatesTest" time="0.1"/>
+  <testcase name="aListWhoseMailIsOnItsWayDoesNotSayItIsEmpty" classname="com.deskmail.ui.mail.MailStatesTest" time="0.056"/>
+  <testcase name="withTheExperimentOffNoMessageIsUnderGlass" classname="com.deskmail.ui.mail.MailStatesTest" time="0.064"/>
+  <testcase name="howTallAMessageMayBeForALayerOfItsOwn" classname="com.deskmail.ui.mail.MailStatesTest" time="0.023"/>
+  <testcase name="withoutAnAccountTheInboxOffersToAddOne" classname="com.deskmail.ui.mail.MailStatesTest" time="0.059"/>
+  <testcase name="remoteImagesStayOutUntilTheyAreAskedFor" classname="com.deskmail.ui.mail.MailStatesTest" time="0.045"/>
+  <testcase name="whenTheShellsGlassIsOn" classname="com.deskmail.ui.mail.MailStatesTest" time="0.022"/>
+  <testcase name="whatAMessagesWebViewDrawsInto" classname="com.deskmail.ui.mail.MailStatesTest" time="0.025"/>
+  <testcase name="theGlassStaysOverAMessage" classname="com.deskmail.ui.mail.MailStatesTest" time="0.087"/>
+  <testcase name="anAccountThatCouldNotBeReachedOffersToTryAgain" classname="com.deskmail.ui.mail.MailStatesTest" time="0.053"/>
+  <testcase name="aTextThatCouldNotBeFetchedOffersToTryAgain" classname="com.deskmail.ui.mail.MailStatesTest" time="0.051"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.db.MigrationTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-11-13T01:17:54.238Z" hostname="runnervmwuk1x" time="0.1">
+  <properties/>
+  <testcase name="version1BecomesTheCurrentVersionAndKeepsWhatItHeld" classname="com.deskmail.db.MigrationTest" time="0.039"/>
+  <testcase name="everyVersionHasItsSchemaAndItsMigration" classname="com.deskmail.db.MigrationTest" time="0.014"/>
+  <testcase name="anOldDatabaseDoesNotOpenWithoutItsMigrations" classname="com.deskmail.db.MigrationTest" time="0.018"/>
+  <testcase name="version2BecomesTheCurrentVersionAndKeepsWhatWasWaiting" classname="com.deskmail.db.MigrationTest" time="0.027"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.core.net.ServerIdentityTest" tests="7" skipped="0" failures="0" errors="0" timestamp="2026-11-13T01:16:45.136Z" hostname="runnervmwuk1x" time="0.009">
+  <properties/>
+  <testcase name="theCommonNameAloneNamesNoHost" classname="com.deskmail.core.net.ServerIdentityTest" time="0.002"/>
+  <testcase name="afterTheHandshakeTheServersOwnCertificateIsWhatCounts" classname="com.deskmail.core.net.ServerIdentityTest" time="0.003"/>
+  <testcase name="aHostGivenAsAnAddressMatchesAnAddressOnly" classname="com.deskmail.core.net.ServerIdentityTest" time="0.001"/>
+  <testcase name="nothingToCheckIsNoMatch" classname="com.deskmail.core.net.ServerIdentityTest" time="0.001"/>
+  <testcase name="aWildcardStandsForOneLabel" classname="com.deskmail.core.net.ServerIdentityTest" time="0.0"/>
+  <testcase name="aNameTheCertificateListsIsItsHost" classname="com.deskmail.core.net.ServerIdentityTest" time="0.0"/>
+  <testcase name="wildcardsThatCoverTooMuchCoverNothing" classname="com.deskmail.core.net.ServerIdentityTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
