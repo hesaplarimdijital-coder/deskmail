@@ -35,6 +35,7 @@ kitten istenenler `docs/KIT-ISTEKLERI.md`'de durur.
 | Bildirim: önce yedek yol | Brifin iki yolundan (ön plan hizmetinde IMAP IDLE; WorkManager ile periyodik denetim) önce ikincisi kuruldu: cihazsız sınanabilen ve tek başına işe yarayan o. Yeni posta her eşitlemenin sonunda aranır (`MailSync.onSynced` → `MailNotifier.check`), kim eşitlerse eşitlesin; IDLE geldiğinde aynı kancaya bağlanır. Bir iletinin "yeni" olması, gelen kutusunun UID işaretinin üstünde olmasıdır (`NotifyStore`, `UIDVALIDITY` ile); işaret ilk bakışta kurulur, o yüzden eski posta bildirilmez. |
 | Bildirim: sıklık | Şimdilik tek ayar (`AppSettings.checkMinutes`: 15, 30, 60, 0 = elle). Şemadaki hesap başına `notifyMode` alanı "Anlık" geldiğinde kullanılacak. |
 | Bildirimden yapılanlar | Okundu, Arşivle, Sil: alıcı (`NotifyActionReceiver`) cihazda hemen yapar ve `pending_op`'a yazar (geri alma beklemesi yok), sunucuya ayrı bir WorkManager işi söyler (`SyncWorker.tellServers`). Bildirime dokunmak iletiyi birleşik Gelen'de açar: o ekran her düzende ve klasörler okunmadan da vardır. |
+| Bildirimden gelen istek | "İletiyi aç" isteği (`OpenRequest`) dışa açık etkinliğe gelir; onu her uygulama gönderebilir. Bu yüzden istek, kurulumda bir kez üretilen ve yalnızca uygulamanın kendi bildirimlerinin taşıdığı bir belirteçle kabul edilir (`NotifyStore.token`). Belirteçsiz ya da okunamayan istek yok sayılır: başka bir uygulama DeskMail'e ileti açtıramaz, dolayısıyla okundu da yaptıramaz. |
 | Başka uygulamalardan gelen istek | `mailto:` (RFC 6068) ve paylaşım: yalnızca formun gösterdiği alanlar alınır (alıcılar, konu, metin; başka başlık adları atılır, satır kırma denemeleri tek satır olur). Dosyalar yalnızca başka uygulamaların `content://` sağlayıcılarından alınır; dosya yolu (`file://`) ve uygulamanın kendi sağlayıcısı alınmaz. Hiçbir şey kendiliğinden gönderilmez. |
 | Kit eksikleri | Kite yazılır; uygulamada yamanmaz (`docs/KIT-ISTEKLERI.md`). |
 | GitHub | PR'ları CI yeşilken Claude birleştirir. Etiketi ve sürümü Barış açar (Releases'ta `main` üzerinde): Claude'un oturumu etiket ve sürüm açamıyor (12 Kasım 2026'da denendi, ikisi de reddedildi). Force-push ve geçmişi yeniden yazma yok. |
@@ -225,9 +226,6 @@ o ön sürümün ilk PR'ında artar, sonraki PR'lar CHANGELOG'da aynı başlığ
    - **7b (kalan, ayrı PR):** IDLE döngüsü · `specialUse` ön plan hizmeti ve kalıcı bildirimi · alarm,
      uyandırma kilidi, ağ değişimi · açılışta ve güncellemeden sonra başlatma · "Anlık" seçeneği ve hesap
      başına sıklık · pil ayarlarına yönlendirme. Cihazda denenmeden birleştirilmemeli.
-   - **Küçük sağlamlaştırma (7b ile):** "iletiyi aç" isteği (`OpenRequest`) dışa açık etkinliğe geldiği için
-     başka bir uygulama da gönderebilir (en kötüsü: bir ileti açılır ve okundu olur). İsteğe, yalnızca
-     uygulamanın bildiği bir belirteç eklenecek; okunamayan ekler de `ComposeRequest`'teki gibi yok sayılacak.
 8. **Outlook OAuth2:** PKCE ve jeton istemcisi · XOAUTH2 ile IMAP/SMTP girişi · tarayıcı
    akışı ve jeton saklama · hesap eklemede Microsoft yolu · Outlook farkları ve hata yönlendirmeleri.
    Azure uygulama kaydını bekler (Barış'ın tarayıcısında yapılacak); o yüzden sırası sona alındı.

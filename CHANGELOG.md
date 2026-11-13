@@ -76,6 +76,7 @@ Posta artık yalnızca okunmuyor: okundu ve yıldız sunucuya yazılır, iletile
 - IMAP: bayrak yazma, MOVE (yoksa kopyala ve sil), yalnızca adı verilen iletileri silen UID EXPUNGE, APPEND; ek parçaları okundukça sunucudan akar.
 - Gönderilen ileti uygulamanın kendi yazıcısıyla bayt bayt yazılır (başlıklar, quoted-printable metin, base64 ekler, Türkçe dosya adları) ve SMTP sunucusuna dosyadan akıtılır; posta kitaplığının Android'de eksik paketlenebilen içerik işleyicilerine dayanmaz. Başlığa satır sokuşturma (header injection) denemeleri testlidir.
 - Yeni bağımlılık: WorkManager (`androidx.work:work-runtime` 2.12.0). Gönderimi ağ gelince ve uygulama kapalıyken de yapmak, yeni iletilere arka planda bakmak ve bildirimden yapılanı sunucuya söylemek için; brifin istediği yol. Uygulama açılışında değil, ilk gerektiğinde kurulur.
+- Bildirime dokununca gelen "iletiyi aç" isteği yalnızca uygulamanın kendi bildirimlerinin taşıdığı bir belirteçle kabul edilir: başka bir uygulama DeskMail'e ileti açtıramaz (ve böylece okundu yaptıramaz).
 - Yeni izin: `POST_NOTIFICATIONS`. Kendi sunucumuz, FCM ya da başka bir itme hizmeti yok: cihaz, posta sunucularına kendisi bakar.
 - Yeni kısayollar: E, V, Delete, Ctrl+Z; R, A, F, Ctrl+Enter. Tek tuşlar ve Ctrl+Z yazı alanındayken alanın kendisine kalır; Ctrl+Enter yazı alanında da çalışır.
 

@@ -90,7 +90,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         // started by a tapped notification: the message it told of is opened
-        if (savedInstanceState == null) OpenRequest.from(intent)?.let { state.mail.openRequest = it }
+        if (savedInstanceState == null) OpenRequest.from(intent, deskMail.notifyStore.token)?.let { state.mail.openRequest = it }
         // started by a mailto link or by something shared with the app: a message is begun with it
         if (savedInstanceState == null) ComposeRequest.from(this, intent)?.let { state.mail.composeRequest = it }
         setContent {
@@ -123,7 +123,7 @@ class MainActivity : ComponentActivity() {
     /** A notification was tapped while this window was there: it opens the message. */
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        OpenRequest.from(intent)?.let { state.mail.openRequest = it }
+        OpenRequest.from(intent, deskMail.notifyStore.token)?.let { state.mail.openRequest = it }
         ComposeRequest.from(this, intent)?.let { state.mail.composeRequest = it }
     }
 
