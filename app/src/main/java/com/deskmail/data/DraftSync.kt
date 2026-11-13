@@ -47,7 +47,7 @@ class DraftSync(
 
     /**
      * Brings the servers up to what is being written. True when something is left to do: a server
-     * could not be reached, or a draft was written on while its copy was on the way. Worth
+     * could not be reached, or a draft was written on, sent or thrown away while this ran. Worth
      * another run in a while.
      */
     suspend fun run(): Boolean = lock.withLock {
@@ -65,7 +65,8 @@ class DraftSync(
             for (folderId in listed) {
                 if (db.folders().byId(folderId)?.syncedAt != 0L) sync.folder(folderId)
             }
-            left || db.outbox().draftsToSave().isNotEmpty()
+            // written on, sent or thrown away while this ran: what that left to do is not to wait for another reason to run
+            left || db.outbox().draftsToSave().isNotEmpty() || db.outbox().removals().isNotEmpty()
         }
     }
 

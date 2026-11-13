@@ -293,6 +293,41 @@ class DraftSyncTest {
         assertTrue(server.message(now, DRAFTS)!!.sentText().contains("Burada bitirdim."))
     }
 
+    /**
+     * A draft written elsewhere with more to it than DeskMail writes (HTML here) is not taken up: its
+     * copy on the server is left as it is, and what is written here is saved beside it, as a message
+     * of its own.
+     */
+    @Test
+    fun aDraftWithMoreThanPlainTextIsLeftAsItIsAndWrittenBeside() = runBlocking {
+        val account = account()
+        val uid = server.deliver("Biçimli taslak", "Kalın bir söz.", start.minus(Duration.ofHours(1)), folder = DRAFTS, html = "<p><b>Kalın</b> bir söz.</p>")
+        val folder = draftsFolder(account)
+        assertEquals(MailSync.Outcome.Done, sync.folder(folder.id))
+        val source = db.messages().observeFolder(folder.id).first().single()
+
+        val id = composer.start(DraftKind.Edit, sourceId = source.id)!!
+
+        val row = db.outbox().byId(id)!!
+        assertEquals("Biçimli taslak", row.subject)
+        assertTrue(row.body, row.body.startsWith("Kalın bir söz."))
+        // not the server copy's: a Message-ID of its own, and nothing to put on the server yet
+        assertEquals(0L, row.draftUid)
+        assertNotEquals(source.globalId, row.messageId)
+        assertTrue(db.outbox().draftsToSave().isEmpty())
+        // taken up once more, it is the same message
+        assertEquals(id, composer.start(DraftKind.Edit, sourceId = source.id))
+
+        write(id, account, subject = "Biçimli taslak", body = "Kalın bir söz.\nBurada sürdü.\n")
+        assertFalse(drafts.run())
+
+        // the copy that was there is there still, as it was, and this one beside it
+        val uids = server.uids(DRAFTS)
+        assertEquals(2, uids.size)
+        assertTrue(uid in uids)
+        assertTrue(server.message(uids.first { it != uid }, DRAFTS)!!.sentText().contains("Burada sürdü."))
+    }
+
     private companion object {
         const val DRAFTS = "Drafts"
         const val UNDO_MS = 10_000L

@@ -822,6 +822,21 @@ abstract class OutboxDao {
     @Query("UPDATE outbox SET draftFolderId = :folderId, draftUid = :uid, draftUidValidity = :uidValidity, draftSavedAt = :savedAt WHERE id = :id")
     abstract suspend fun setDraftCopy(id: Long, folderId: Long, uid: Long, uidValidity: Long, savedAt: Long): Int
 
+    /**
+     * The draft's copy on the server becomes this message's: it is written under the copy's
+     * [messageId] and stands for it, up to date as it is.
+     */
+    @Query("UPDATE outbox SET messageId = :messageId, draftFolderId = :folderId, draftUid = :uid, draftUidValidity = :uidValidity, draftSavedAt = updatedAt WHERE id = :id")
+    abstract suspend fun takeUp(id: Long, messageId: String, folderId: Long, uid: Long, uidValidity: Long): Int
+
+    /** Nothing has been written into the draft that is not where it came from: no copy of it is to be put on the server yet. */
+    @Query("UPDATE outbox SET draftSavedAt = updatedAt WHERE id = :id")
+    abstract suspend fun asItCame(id: Long): Int
+
+    /** The draft being written as a copy of the server's draft [sourceId] ([OutboxEntity.EDIT]), if there is one. */
+    @Query("SELECT * FROM outbox WHERE sourceKind = 'Edit' AND sourceId = :sourceId AND state IN ('Draft', 'Failed') ORDER BY id LIMIT 1")
+    abstract suspend fun copiedFrom(sourceId: Long): OutboxEntity?
+
     /** The message that is being written under this Message-ID, if the device has it: a draft's copies all carry it. */
     @Query("SELECT * FROM outbox WHERE messageId = :messageId AND state IN ('Draft', 'Failed') ORDER BY id LIMIT 1")
     abstract suspend fun writtenUnder(messageId: String): OutboxEntity?
