@@ -11,6 +11,7 @@ import androidx.compose.ui.test.performSemanticsAction
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.deskmail.TestApp
 import com.deskmail.notify.NotifyGate
+import com.deskmail.settings.AppSettings
 import com.deskmail.testMail
 import com.deskmail.testPrefs
 import com.deskmail.testSettings
@@ -72,14 +73,14 @@ class SettingsScreenTest {
         assertEquals(15, settings.undoSendSeconds)
     }
 
-    /** How often the mail is looked for while the app is closed is chosen here, and whoever schedules it hears of it. */
+    /** How the mail is looked for while the app is closed is chosen here, and whoever sets that up hears of it. */
     @Test
-    fun howOftenTheMailIsLookedForIsChosen() {
+    fun howTheMailIsLookedForIsChosen() {
         val prefs = testPrefs()
         val settings = testSettings()
         var chosen = 0
         compose.setContent { TestApp(testMail(), prefs, settings, startRoute = Routes.SETTINGS, onCheckChosen = { chosen++ }) }
-        assertEquals(15, settings.checkMinutes)
+        assertEquals(AppSettings.CHECK_INSTANT, settings.checkMinutes)
 
         compose.onNode(hasScrollToNodeAction()).performScrollToNode(hasText("Elle"))
         compose.onNodeWithText("Elle").performSemanticsAction(SemanticsActions.OnClick)
@@ -91,6 +92,51 @@ class SettingsScreenTest {
         compose.waitForIdle()
         assertEquals(60, settings.checkMinutes)
         assertEquals(2, chosen)
+
+        compose.onNodeWithText("Anlık").performSemanticsAction(SemanticsActions.OnClick)
+        compose.waitForIdle()
+        assertEquals(AppSettings.CHECK_INSTANT, settings.checkMinutes)
+        assertEquals(3, chosen)
+    }
+
+    /**
+     * Mail is told of as it comes only where the system leaves the app alone in the background:
+     * while that is what is chosen, the settings say how the system has it, with the way there.
+     */
+    @Test
+    fun theBatterySettingIsShownWhileMailIsToldOfAsItComes() {
+        val prefs = testPrefs()
+        val settings = testSettings()
+        var asked = 0
+        var opened = 0
+        val gate = NotifyGate(ask = {}, openSystemSettings = {}, askBattery = { asked++ }, openBatterySettings = { opened++ }).apply {
+            this.asked = true
+            allowed = true
+            // led to the question before: it is not brought up unasked
+            batteryAsked = true
+        }
+        compose.setContent { TestApp(testMail(), prefs, settings, startRoute = Routes.SETTINGS, notifications = gate) }
+        compose.waitForIdle()
+
+        compose.onNode(hasScrollToNodeAction()).performScrollToNode(hasText("Pil kısıtlaması açık"))
+        compose.onNodeWithText("Kısıtlamayı kaldır").performSemanticsAction(SemanticsActions.OnClick)
+        compose.waitForIdle()
+        assertEquals(1, asked)
+
+        // lifted, by the system's question or in its settings
+        compose.runOnUiThread { gate.unrestricted = true }
+        compose.waitForIdle()
+        compose.onNodeWithText("Pil kısıtlaması yok").assertExists()
+        compose.onNodeWithText("Kısıtlamayı kaldır").assertDoesNotExist()
+        compose.onNodeWithText("Uygulama ayarları").performSemanticsAction(SemanticsActions.OnClick)
+        compose.waitForIdle()
+        assertEquals(1, opened)
+
+        // looked for every so often instead: the battery is the system's own business then
+        compose.onNodeWithText("30 dk").performSemanticsAction(SemanticsActions.OnClick)
+        compose.waitForIdle()
+        compose.onNodeWithText("Pil kısıtlaması yok").assertDoesNotExist()
+        compose.onNodeWithText("Pil kısıtlaması açık").assertDoesNotExist()
     }
 
     /** Whether the system lets the app tell of new mail is said, with the way to change it. */
@@ -101,7 +147,10 @@ class SettingsScreenTest {
         var asked = 0
         var opened = 0
         // asked before: the app does not ask by itself again
-        val gate = NotifyGate(ask = { asked++ }, openSystemSettings = { opened++ }).apply { this.asked = true }
+        val gate = NotifyGate(ask = { asked++ }, openSystemSettings = { opened++ }).apply {
+            this.asked = true
+            batteryAsked = true
+        }
         compose.setContent { TestApp(testMail(), prefs, settings, startRoute = Routes.SETTINGS, notifications = gate) }
         compose.waitForIdle()
         assertEquals(0, asked)

@@ -9,6 +9,21 @@
     <!-- New mail is told of with a notification, once the user has allowed it. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
+    <!-- Mail is told of as it comes: a foreground service keeps a line to each account's server
+         open (IMAP IDLE), since the app has no server of its own to push anything. "Special use":
+         nothing is being synced that would end, a line is being held.
+         - WAKE_LOCK: the device is kept awake while a server's news is fetched, not otherwise.
+         - ACCESS_NETWORK_STATE: the lines are made anew when the network changes.
+         - RECEIVE_BOOT_COMPLETED: the watch begins when the device is switched on.
+         - REQUEST_IGNORE_BATTERY_OPTIMIZATIONS: the app may ask, with the system's own question, to
+           be left alone in the background; otherwise a sleeping device cuts the lines. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+
     <!-- allowBackup: nothing of the app is backed up; mail is on the server and the credentials
          must not leave the device.
          enableOnBackInvokedCallback: the predictive Back gesture plays the kit's transitions. -->
@@ -67,6 +82,26 @@
                 android:value="androidx.startup"
                 tools:node="remove" />
         </provider>
+
+        <!-- Keeps the lines that wait for mail alive while no window is open. -->
+        <service
+            android:name=".watch.WatchService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Holds an IMAP IDLE connection to each of the user's mail servers so that new mail is announced as it arrives. The app has no push server." />
+        </service>
+
+        <!-- The device was switched on, or the app was updated: the watch begins again. -->
+        <receiver
+            android:name=".watch.StartReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
 
         <!-- The buttons of a new-mail notification ("Read", "Archive", "Delete"). Only the app's own
              notifications reach it. -->

@@ -138,6 +138,7 @@ class AppScreenshotTest {
     private fun gate(allowed: Boolean) = NotifyGate(ask = {}, openSystemSettings = {}).apply {
         this.allowed = allowed
         asked = true
+        batteryAsked = true
     }
 
     private fun capture(name: String) {

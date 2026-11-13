@@ -45,6 +45,15 @@ class TestMailServer : ExternalResource() {
     }
 
     override fun after() {
+        stop()
+    }
+
+    private var stopped = false
+
+    /** Ends the server in the middle of a test: whoever is connected loses the line. */
+    fun stop() {
+        if (stopped) return
+        stopped = true
         greenMail.stop()
     }
 

@@ -216,6 +216,14 @@ fun DeskMailApp(
     LaunchedEffect(hasAccounts, notifications) {
         if (hasAccounts && notifications != null && !notifications.allowed && !notifications.asked) notifications.ask()
     }
+    // Mail is told of as it comes only where the system leaves the app alone in the background.
+    // The user is led to that setting once, unasked: when there is an account, mail is to be
+    // told of as it comes, and the question about notifications is behind them.
+    if (hasAccounts && notifications != null && settings.checkMinutes == AppSettings.CHECK_INSTANT &&
+        !notifications.unrestricted && !notifications.batteryAsked && (notifications.allowed || notifications.asked)
+    ) {
+        BatteryQuestion(onAllow = notifications.askBattery, onLater = notifications.skipBattery)
+    }
     // What the divider between list and reader was dragged to outlives the window: once a drag
     // has rested, the window's state takes it as the list's share and stores it.
     LaunchedEffect(ui) {

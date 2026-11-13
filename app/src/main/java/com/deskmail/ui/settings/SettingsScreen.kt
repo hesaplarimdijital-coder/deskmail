@@ -222,8 +222,9 @@ private fun AccountsSection(accounts: List<MailAccount>, canAdd: Boolean, onOpen
 
 /**
  * New mail: whether the system lets the app tell of it, with the way to its settings (the
- * switch, and each account's sound), and how often the inboxes are looked at while no window is
- * open.
+ * switch, and each account's sound); how the inboxes are looked at while no window is open (as
+ * mail comes, every so often, or not at all); and, for "as it comes", whether the system leaves
+ * the app alone in the background, with the way to that setting.
  */
 @Composable
 private fun NotificationsSection(settings: AppSettings, gate: NotifyGate?, onCheckChosen: () -> Unit) {
@@ -242,7 +243,11 @@ private fun NotificationsSection(settings: AppSettings, gate: NotifyGate?, onChe
         SettingRow(stringResource(R.string.settings_check), subtitle = stringResource(R.string.settings_check_note)) {
             SegmentedChoice(
                 options = AppSettings.CHECK_CHOICES.map { minutes ->
-                    minutes to if (minutes == 0) stringResource(R.string.settings_check_manual) else stringResource(R.string.settings_check_minutes, minutes)
+                    minutes to when (minutes) {
+                        AppSettings.CHECK_INSTANT -> stringResource(R.string.settings_check_instant)
+                        0 -> stringResource(R.string.settings_check_manual)
+                        else -> stringResource(R.string.settings_check_minutes, minutes)
+                    }
                 },
                 selected = settings.checkMinutes,
                 onSelect = { minutes ->
@@ -250,6 +255,18 @@ private fun NotificationsSection(settings: AppSettings, gate: NotifyGate?, onChe
                     onCheckChosen()
                 },
             )
+        }
+        // the line that waits for mail lives through the night only where the system leaves the app alone
+        if (gate != null && settings.checkMinutes == AppSettings.CHECK_INSTANT) {
+            if (gate.unrestricted) {
+                SettingRow(stringResource(R.string.settings_battery_free), subtitle = stringResource(R.string.settings_battery_free_note)) {
+                    DeskButton(stringResource(R.string.settings_battery_app), gate.openBatterySettings)
+                }
+            } else {
+                SettingRow(stringResource(R.string.settings_battery_limited), subtitle = stringResource(R.string.settings_battery_limited_note)) {
+                    DeskButton(stringResource(R.string.settings_battery_allow), gate.askBattery, primary = true)
+                }
+            }
         }
     }
 }

@@ -297,9 +297,24 @@
     <string name="settings_notify_off_note">Sistem, DeskMail’in bildirim göstermesine izin vermiyor.</string>
     <string name="settings_notify_allow">İzin ver</string>
     <string name="settings_check">Yeni iletileri denetle</string>
-    <string name="settings_check_note">DeskMail kapalıyken gelen kutularına ne sıklıkla bakılacağı. Sistem pil için geciktirebilir. Anlık bildirim sonraki bir ön sürümle gelecek.</string>
+    <string name="settings_check_note">DeskMail kapalıyken yeni iletilere nasıl bakılacağı. Anlık: posta sunucusuna açık bir hat tutulur, ileti geldiği anda bildirilir. Süre seçersen o aralıkla bakılır; sistem pil için geciktirebilir.</string>
+    <string name="settings_check_instant">Anlık</string>
     <string name="settings_check_minutes">%1$d dk</string>
     <string name="settings_check_manual">Elle</string>
+    <string name="settings_battery_limited">Pil kısıtlaması açık</string>
+    <string name="settings_battery_limited_note">Anlık bildirim için DeskMail arka planda kısıtlanmamalı; yoksa cihaz uyuyunca hat kesilir. Samsung’da ayrıca: Ayarlar › Pil › Arka plan kullanım sınırları › Hiç uyumayan uygulamalar listesine DeskMail’i ekle.</string>
+    <string name="settings_battery_allow">Kısıtlamayı kaldır</string>
+    <string name="settings_battery_free">Pil kısıtlaması yok</string>
+    <string name="settings_battery_free_note">Samsung’da ayrıca DeskMail şu listede olmalı: Ayarlar › Pil › Arka plan kullanım sınırları › Hiç uyumayan uygulamalar.</string>
+    <string name="settings_battery_app">Uygulama ayarları</string>
+    <string name="battery_ask_title">Anlık bildirim için pil ayarı</string>
+    <string name="battery_ask_text">İletiler geldiği anda bildirilsin diye DeskMail posta sunucularına açık bir hat tutar. Cihaz uyuyunca sistemin bu hattı kesmemesi için DeskMail’in pil kısıtlamasını kaldırman gerekir.</string>
+    <string name="battery_ask_samsung">Samsung’da ayrıca: Ayarlar › Pil › Arka plan kullanım sınırları › Hiç uyumayan uygulamalar listesine DeskMail’i ekle. İkisini de sonradan Ayarlar › Bildirimler’den yapabilirsin.</string>
+    <string name="battery_ask_later">Şimdi değil</string>
+    <string name="watch_channel">Anlık bildirim hizmeti</string>
+    <string name="watch_channel_note">DeskMail yeni iletileri beklerken duran kalıcı bildirim. Bu kanalı kapatırsan bildirim gizlenir, bekleme sürer.</string>
+    <string name="watch_title">Yeni iletiler bekleniyor</string>
+    <string name="watch_text">Anlık bildirim açık.</string>
 
     <string name="settings_about">Hakkında</string>
     <string name="settings_version">Sürüm</string>

@@ -79,6 +79,22 @@ class ImapConnection private constructor(
     }
 
     /**
+     * Opens the folder at [path] to be waited on ([ImapWatch]); null when the server cannot do
+     * that (no IDLE). The connection is the watch's from then on, and is closed with it.
+     */
+    internal fun watch(path: String, onNews: () -> Unit): ImapWatch? {
+        if (!has("IDLE")) {
+            note("$path cannot be waited on: the server has no IDLE")
+            return null
+        }
+        return call("open $path to wait on it") {
+            val folder = store.getFolder(path) as IMAPFolder
+            folder.open(Folder.READ_ONLY)
+            ImapWatch(this, folder, path, onNews)
+        }
+    }
+
+    /**
      * How many messages the folder at [path] holds and how many of them are unread, without opening
      * it (STATUS); null where the server will not say.
      */
@@ -98,6 +114,9 @@ class ImapConnection private constructor(
 
     /** Runs [block] against the server; whatever it throws comes out as a [MailException], noted in the log. */
     internal fun <T> call(what: String, block: () -> T): T = guarded(server, log, what, block = block)
+
+    /** [error] as a [MailException], noted in the log: for what is not run through [call]. */
+    internal fun failure(what: String, error: Throwable): MailException = if (error is MailException) error else failed(server, log, what, error)
 
     /** Something worth knowing later that is no failure. */
     internal fun note(text: String) {

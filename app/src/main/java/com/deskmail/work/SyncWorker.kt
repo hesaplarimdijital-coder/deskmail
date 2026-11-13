@@ -35,6 +35,9 @@ class SyncWorker(context: Context, parameters: WorkerParameters) : CoroutineWork
             return if (mail.tellAll() && runAttemptCount < TRIES) Result.retry() else Result.success()
         }
         mail.syncAll()
+        // An account the watch gave up on (its server refused the sign-in) may be in order again
+        // after this look, and a watch the system ended may be allowed to begin again.
+        applicationContext.deskMail.arrangeBackground(restart = false)
         // whatever came of it, the next look is due in its own time
         return Result.success()
     }
