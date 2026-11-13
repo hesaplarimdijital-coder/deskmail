@@ -273,7 +273,9 @@ Her biri ayrı PR; sıra, cihazda en çok denenmesi gerekenden başlar.
 4. Taslakların sunucuya kaydı (5'in kalanı). **Yapıldı.**
 5. Sunucu araması, alan süzgeçleri, palette arama (6'nın kalanı).
 6. DeX'te yazmanın ayrı pencerede açılması; Contact Picker (5'in kalanı).
-7. İletinin içindeki (`cid:`) görseller; listede yanıtlandı ve iletildi işaretleri.
+7. İletinin içindeki (`cid:`) görseller; listede yanıtlandı ve iletildi işaretleri. **Yapıldı:** WebView'ın
+   `shouldInterceptRequest`'i `cid:` isteğini cihazdaki (gerekirse sunucudan alınan) parçayla yanıtlar;
+   başka hiçbir isteğe karışmaz. Tablonun sütun sırası `MessageColumns`'ta.
 8. Aşama 2, brifteki sırayla: konuşma dizileri · erteleme · şablonlar · kayıtlı aramalar · yanıt
    bekleyenler · VIP ve gönderen başına uzak görsel izni · ayrıntı paneli sekmeleri (Ayrıntılar, Ekler,
    Güvenlik, Ham başlıklar) · biçimli yazma · ayarları taşıma · bildirimden hızlı yanıt.

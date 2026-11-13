@@ -30,6 +30,10 @@ Sürümler [SemVer](https://semver.org/lang/tr/) kuralına uyar; 0.1.0'a kadar o
 - Hiçbir şey yazılmamış boş ileti sunucuya gitmez. Hesabın Taslaklar klasörü yoksa, ya da sunucu iletinin nereye konduğunu söylemiyorsa (UIDPLUS; Gmail ve Outlook söylüyor), taslak yalnızca cihazda kalır.
 - **Veritabanı sürüm 4:** güncellemede kendiliğinden taşınır.
 
+### Okuma
+- **İletinin içindeki resimler görünür.** Bültenlerdeki logolar, imzalardaki resimler gibi iletiye gömülü resimler (`cid:`) boş kalıyordu; artık gösterilir. Cihazda yoksa ek gibi sunucudan alınır. Bunlar iletinin kendi parçalarıdır: uzak görseller kapalıyken de görünürler, ağdan hiçbir şey yüklenmez. İletinin ekleri arasında da artık sayılmazlar.
+- **Yanıtlandı ve iletildi işaretleri.** Yanıtlanan ileti listede tarihin altında ↩, iletilen → ile görünür; geniş penceredeki tabloda dar bir sütunda ("↩", "→"), o sütuna göre sıralanabilir. Başka bir posta programında yanıtlanan ileti de işaretli görünür.
+
 ### Düzeltmeler
 - **Paylaşılan dosyayla yazma ekranı hemen açılır.** Başka bir uygulamadan dosya paylaşınca yazma ekranı, dosya uygulamaya kopyalanana dek açılmıyordu; büyük bir videoda o süre boyunca yalnızca Gelen görünüyordu. Ekran artık hemen açılır ve dosya arkada eklenir: ekran "Dosya ekleniyor…" der, dosya iletiye girmeden Gönder çalışmaz (ekranı kapatıp taslağı Giden kutusu'ndan yeniden açsan da). Yazma ekranındaki ataşla eklenen büyük dosyalarda da böyle.
 - **Yazma ekranı kendiliğinden kapanmaz.** Bir ileti yazarken başka bir ekrana bakıp geri dönünce yazma ekranı "Taslak Giden kutusu'nda duruyor" diyerek kapanıyordu (taslak kaybolmuyordu, Giden kutusu'ndan açmak gerekiyordu). Yazılan ileti artık ekranına dönüldüğünde bırakıldığı gibi durur.
