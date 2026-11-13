@@ -64,6 +64,7 @@ import desktopkit.components.DeskListRow
 import desktopkit.components.DeskProgressBar
 import desktopkit.components.DeskTextField
 import desktopkit.components.HorizontalSplitPane
+import desktopkit.components.IconMenuButton
 import desktopkit.components.InspectorPane
 import desktopkit.components.InspectorTab
 import desktopkit.components.InspectorToggleButton
@@ -696,32 +697,57 @@ class BulkActions(
     val onSnooze: (() -> Unit)? = null,
 )
 
-/** The bar of a selection: how many messages, what can be done to them all, and the way out. */
+/**
+ * The bar of a selection: how many messages, what can be done to them all, and the way out. Where
+ * the count and every button do not fit side by side (a phone, a narrow list beside a rail), moving
+ * and snoozing, which ask where to and until when anyway, are under "More options".
+ */
 @Composable
 private fun BulkBar(chosen: List<MailMessage>, bulk: BulkActions, modifier: Modifier = Modifier) {
     val anyUnread = chosen.any { it.unread }
     val allStarred = chosen.isNotEmpty() && chosen.all { it.starred }
-    SelectionBar(
-        text = pluralString(R.plurals.selection_count, chosen.size),
-        onClose = bulk.onClear,
-        modifier = modifier.testTag(MailTags.SELECTION),
-    ) {
-        DeskIconButton(
-            if (anyUnread) MailIcons.MailOpen else MailIcons.Mail,
-            stringResource(if (anyUnread) R.string.action_mark_read else R.string.action_mark_unread),
-            bulk.onToggleUnread,
-        )
-        DeskIconButton(
-            if (allStarred) MailIcons.StarFilled else MailIcons.Star,
-            stringResource(if (allStarred) R.string.action_unstar else R.string.action_star),
-            bulk.onToggleStar,
-        )
-        bulk.onArchive?.let { DeskIconButton(MailIcons.Archive, stringResource(R.string.action_archive), it) }
-        bulk.onMove?.let { DeskIconButton(MailIcons.MoveTo, stringResource(R.string.action_move), it) }
-        bulk.onSnooze?.let { DeskIconButton(MailIcons.Snooze, stringResource(R.string.action_snooze), it) }
-        DeskIconButton(DeskIcons.Delete, stringResource(R.string.action_delete), bulk.onDelete)
+    val moveLabel = stringResource(R.string.action_move)
+    val snoozeLabel = stringResource(R.string.action_snooze)
+    BoxWithConstraints(modifier) {
+        val roomy = maxWidth >= ROOMY_BULK_BAR
+        SelectionBar(
+            text = pluralString(R.plurals.selection_count, chosen.size),
+            onClose = bulk.onClear,
+            modifier = Modifier.testTag(MailTags.SELECTION),
+        ) {
+            DeskIconButton(
+                if (anyUnread) MailIcons.MailOpen else MailIcons.Mail,
+                stringResource(if (anyUnread) R.string.action_mark_read else R.string.action_mark_unread),
+                bulk.onToggleUnread,
+            )
+            DeskIconButton(
+                if (allStarred) MailIcons.StarFilled else MailIcons.Star,
+                stringResource(if (allStarred) R.string.action_unstar else R.string.action_star),
+                bulk.onToggleStar,
+            )
+            bulk.onArchive?.let { DeskIconButton(MailIcons.Archive, stringResource(R.string.action_archive), it) }
+            if (roomy) {
+                bulk.onMove?.let { DeskIconButton(MailIcons.MoveTo, moveLabel, it) }
+                bulk.onSnooze?.let { DeskIconButton(MailIcons.Snooze, snoozeLabel, it) }
+            } else if (bulk.onMove != null || bulk.onSnooze != null) {
+                IconMenuButton(
+                    icon = DeskIcons.MoreVertical,
+                    label = stringResource(R.string.action_more),
+                    entries = {
+                        listOfNotNull(
+                            bulk.onMove?.let { MenuEntry.Item(moveLabel, it, icon = MailIcons.MoveTo) },
+                            bulk.onSnooze?.let { MenuEntry.Item(snoozeLabel, it, icon = MailIcons.Snooze) },
+                        )
+                    },
+                )
+            }
+            DeskIconButton(DeskIcons.Delete, stringResource(R.string.action_delete), bulk.onDelete)
+        }
     }
 }
+
+/** How wide the selection's bar must be for the count and all of its buttons side by side. */
+private val ROOMY_BULK_BAR = 480.dp
 
 /** The room the selection's bar takes over the end of a phone's list: a row of the kit's icon buttons and its rule. */
 private val BULK_BAR_HEIGHT = 58.dp

@@ -116,6 +116,7 @@
     <string name="awaiting_stop">Beklemeyi bırak</string>
     <string name="awaiting_answered">Bu iletiye yanıt gelmiş.</string>
     <string name="action_snooze">Ertele</string>
+    <string name="action_more">Diğer seçenekler</string>
     <string name="action_unsnooze">Şimdi geri getir</string>
     <string name="snooze_title">Ne zaman dönsün?</string>
     <string name="snooze_evening">Bu akşam</string>

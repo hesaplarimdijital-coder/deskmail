@@ -126,6 +126,7 @@
     <string name="awaiting_stop">Stop waiting</string>
     <string name="awaiting_answered">This message was answered already.</string>
     <string name="action_snooze">Snooze</string>
+    <string name="action_more">More options</string>
     <string name="action_unsnooze">Bring back now</string>
     <string name="snooze_title">Back when?</string>
     <string name="snooze_evening">This evening</string>

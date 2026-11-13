@@ -2,6 +2,9 @@ package com.deskmail.ui
 
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.test.hasAnyAncestor
+import androidx.compose.ui.test.hasContentDescription
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithText
@@ -17,6 +20,7 @@ import com.deskmail.testComposer
 import com.deskmail.testMail
 import com.deskmail.testPrefs
 import com.deskmail.testSettings
+import com.deskmail.ui.mail.MailTags
 import com.deskmail.ui.mail.MailUiState
 import com.deskmail.ui.mail.SnoozeTags
 import com.deskmail.ui.mail.openMessage
@@ -97,6 +101,26 @@ class SnoozeUiTest {
         shows("1 ileti geri getirildi")
         assertEquals(FolderRole.Inbox, mail.folder(mail.message(bill.id)!!.folderId)!!.role)
         assertTrue(mail.messages(MailView.Snoozed).isEmpty())
+    }
+
+    /** A phone's selection bar keeps its count in sight: moving and snoozing are under "More options". */
+    @Test
+    fun severalAreSnoozedFromUnderMoreOptions() {
+        val notes = mail.messages.first { it.subject == "Kapadokya gezi notları" }
+        ui.pick(Routes.INBOX, bill.id)
+        ui.togglePicked(Routes.INBOX, notes.id)
+        launch()
+
+        val inBar = hasAnyAncestor(hasTestTag(MailTags.SELECTION))
+        compose.onNode(hasContentDescription("Ertele") and inBar).assertDoesNotExist()
+        compose.onNode(hasContentDescription("Taşı…") and inBar).assertDoesNotExist()
+        compose.onNode(hasContentDescription("Diğer seçenekler") and inBar).performSemanticsAction(SemanticsActions.OnClick)
+        compose.waitForIdle()
+        click("Ertele")
+        click("Yarın sabah")
+
+        shows("2 ileti ertelendi")
+        assertEquals(setOf(bill.id, notes.id), mail.messages(MailView.Snoozed).map { it.id }.toSet())
     }
 
     @Test
