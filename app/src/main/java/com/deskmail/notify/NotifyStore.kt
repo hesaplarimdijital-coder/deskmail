@@ -37,6 +37,11 @@ class NotifyStore(private val prefs: SharedPreferences) {
         get() = prefs.getBoolean(KEY_ASKED, false)
         set(value) = prefs.edit().putBoolean(KEY_ASKED, value).apply()
 
+    /** Whether the user was led to the question of battery optimisation: once unasked, and no more. */
+    var batteryAsked: Boolean
+        get() = prefs.getBoolean(KEY_BATTERY_ASKED, false)
+        set(value) = prefs.edit().putBoolean(KEY_BATTERY_ASKED, value).apply()
+
     /** How often, in minutes, the background look for mail was last scheduled; 0 while nothing is scheduled. */
     var scheduledMinutes: Int
         get() = prefs.getInt(KEY_SCHEDULED, 0)
@@ -55,6 +60,7 @@ class NotifyStore(private val prefs: SharedPreferences) {
         /** The file the marks are kept in. */
         const val FILE = "notify"
         private const val KEY_ASKED = "asked"
+        private const val KEY_BATTERY_ASKED = "battery-asked"
         private const val KEY_SCHEDULED = "scheduled-minutes"
         private const val KEY_TOKEN = "token"
     }

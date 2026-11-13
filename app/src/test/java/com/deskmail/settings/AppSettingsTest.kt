@@ -23,7 +23,8 @@ class AppSettingsTest {
         assertTrue(settings.darkenMessages)
         assertEquals(WebLayer.Default, settings.webLayer)
         assertEquals(10, settings.undoSendSeconds)
-        assertEquals(15, settings.checkMinutes)
+        // mail is told of as it comes, unless something else is chosen
+        assertEquals(AppSettings.CHECK_INSTANT, settings.checkMinutes)
         assertTrue(settings.inspectorCollapsed)
         assertEquals(0.45f, settings.listShare, 0f)
     }
@@ -82,17 +83,21 @@ class AppSettingsTest {
         assertEquals(10, AppSettings(prefs).undoSendSeconds)
     }
 
-    /** How often the mail is looked for is one of the choices; "by hand" (0) is one of them. */
+    /** How the mail is looked for is one of the choices: as it comes, every so often, or "by hand" (0). */
     @Test
-    fun howOftenTheMailIsLookedForIsOneOfTheChoices() {
+    fun howTheMailIsLookedForIsOneOfTheChoices() {
         val settings = AppSettings(prefs)
         settings.updateCheckMinutes(0)
         assertEquals(0, AppSettings(prefs).checkMinutes)
+        settings.updateCheckMinutes(30)
+        assertEquals(30, AppSettings(prefs).checkMinutes)
+        settings.updateCheckMinutes(AppSettings.CHECK_INSTANT)
+        assertEquals(AppSettings.CHECK_INSTANT, AppSettings(prefs).checkMinutes)
 
-        // the system allows nothing shorter than a quarter of an hour
+        // what is none of the choices (the system allows nothing shorter than a quarter of an hour) is the choice a fresh install starts with
         settings.updateCheckMinutes(5)
-        assertEquals(15, settings.checkMinutes)
+        assertEquals(AppSettings.CHECK_INSTANT, settings.checkMinutes)
         prefs.edit().putInt("check_minutes", 7).commit()
-        assertEquals(15, AppSettings(prefs).checkMinutes)
+        assertEquals(AppSettings.CHECK_INSTANT, AppSettings(prefs).checkMinutes)
     }
 }

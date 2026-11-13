@@ -104,8 +104,9 @@ class AppSettings(private val prefs: SharedPreferences, private val log: AppLog?
     // ------------------------------------------------------------------ new mail
 
     /**
-     * How often, in minutes, the mail is looked for while no window of the app is open; 0 for
-     * never (only by hand). One of [CHECK_CHOICES].
+     * How the mail is looked for while no window of the app is open: [CHECK_INSTANT] to be told
+     * as it comes, a number of minutes to look that often, 0 for never (only by hand). One of
+     * [CHECK_CHOICES].
      */
     var checkMinutes by mutableIntStateOf(prefs.getInt(KEY_CHECK_MINUTES, DEFAULT_CHECK_MINUTES).let { stored -> if (stored in CHECK_CHOICES) stored else DEFAULT_CHECK_MINUTES })
         private set
@@ -152,9 +153,15 @@ class AppSettings(private val prefs: SharedPreferences, private val log: AppLog?
         val UNDO_SEND_CHOICES = listOf(5, 10, 15)
         const val DEFAULT_UNDO_SEND = 10
 
-        /** How often the mail is looked for in the background, in minutes; 0 is "by hand". The system allows nothing shorter than a quarter of an hour. */
-        val CHECK_CHOICES = listOf(15, 30, 60, 0)
-        const val DEFAULT_CHECK_MINUTES = 15
+        /** Mail is told of as it comes: its servers are waited on (IMAP IDLE) rather than asked every so often. */
+        const val CHECK_INSTANT = -1
+
+        /**
+         * How the mail is looked for in the background: as it comes, every so many minutes, or not at
+         * all (0, "by hand"). The system allows no interval shorter than a quarter of an hour.
+         */
+        val CHECK_CHOICES = listOf(CHECK_INSTANT, 15, 30, 60, 0)
+        const val DEFAULT_CHECK_MINUTES = CHECK_INSTANT
 
         /** The list takes a little under half of the room until the divider is dragged. */
         const val DEFAULT_LIST_SHARE = 0.45f
