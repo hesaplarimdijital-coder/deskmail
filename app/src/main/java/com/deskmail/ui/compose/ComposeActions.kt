@@ -74,7 +74,8 @@ class ComposeActions(
                 return@launch
             }
             putAway()
-            ui.writing = Writing(id, route, fresh = true)
+            // a draft that is taken up was worth keeping before: closed untouched, it stays
+            ui.writing = Writing(id, route, fresh = kind != DraftKind.Edit)
         }
     }
 
