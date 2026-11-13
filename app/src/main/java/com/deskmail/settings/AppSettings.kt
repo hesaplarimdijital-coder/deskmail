@@ -171,6 +171,7 @@ class AppSettings(private val prefs: SharedPreferences, private val log: AppLog?
         KEY_GLASS to glass,
         KEY_GLASS_OVER_MESSAGES to glassOverMessages,
         KEY_WEB_LAYER to webLayer.name,
+        KEY_CONVERSATIONS to conversations,
     )
 
     /**
@@ -187,6 +188,7 @@ class AppSettings(private val prefs: SharedPreferences, private val log: AppLog?
         (values[KEY_GLASS] as? Boolean)?.let { updateGlass(it) }
         (values[KEY_GLASS_OVER_MESSAGES] as? Boolean)?.let { updateGlassOverMessages(it) }
         (values[KEY_WEB_LAYER] as? String)?.let { name -> WebLayer.entries.firstOrNull { it.name == name } }?.let { updateWebLayer(it) }
+        (values[KEY_CONVERSATIONS] as? Boolean)?.let { updateConversations(it) }
         return checkMinutes != check
     }
 
