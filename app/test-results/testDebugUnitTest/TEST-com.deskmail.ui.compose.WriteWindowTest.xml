@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.ui.compose.WriteWindowTest" tests="7" skipped="0" failures="0" errors="0" timestamp="2026-11-13T10:08:16.950Z" hostname="runnervmccnms" time="0.462">
+  <properties/>
+  <testcase name="theActionsAreOnThePageEvenWhenTheWindowIsNarrow" classname="com.deskmail.ui.compose.WriteWindowTest" time="0.069"/>
+  <testcase name="whatWasWrittenIsKeptWhenTheWindowCloses" classname="com.deskmail.ui.compose.WriteWindowTest" time="0.057"/>
+  <testcase name="aDraftSomebodyWroteIsKeptEvenUntouched" classname="com.deskmail.ui.compose.WriteWindowTest" time="0.053"/>
+  <testcase name="sendHandsTheMessageOverAndEndsTheWindow" classname="com.deskmail.ui.compose.WriteWindowTest" time="0.082"/>
+  <testcase name="aMessageBegunForTheWindowAndLeftEmptyIsNotKept" classname="com.deskmail.ui.compose.WriteWindowTest" time="0.052"/>
+  <testcase name="throwingTheMessageAwayEndsTheWindow" classname="com.deskmail.ui.compose.WriteWindowTest" time="0.075"/>
+  <testcase name="whatIsWrongWithTheRecipientsIsSaidInTheWindow" classname="com.deskmail.ui.compose.WriteWindowTest" time="0.072"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

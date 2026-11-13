@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.ui.NotifyUiTest" tests="10" skipped="0" failures="0" errors="0" timestamp="2026-11-13T10:08:11.685Z" hostname="runnervmccnms" time="0.895">
+  <properties/>
+  <testcase name="withoutAnAccountNobodyIsAsked" classname="com.deskmail.ui.NotifyUiTest" time="0.121"/>
+  <testcase name="aTappedNotificationOpensItsMessageInTheInbox" classname="com.deskmail.ui.NotifyUiTest" time="0.094"/>
+  <testcase name="theLeaveToNotifyIsAskedForOnceWhenThereIsAnAccount" classname="com.deskmail.ui.NotifyUiTest" time="0.091"/>
+  <testcase name="theBatterySettingCanBePutOff" classname="com.deskmail.ui.NotifyUiTest" time="0.114"/>
+  <testcase name="anAccountsLineOpensTheInbox" classname="com.deskmail.ui.NotifyUiTest" time="0.09"/>
+  <testcase name="nobodyIsLedToTheBatterySettingWithoutAReason" classname="com.deskmail.ui.NotifyUiTest" time="0.062"/>
+  <testcase name="withAnIntervalChosenNobodyIsLedToTheBatterySetting" classname="com.deskmail.ui.NotifyUiTest" time="0.065"/>
+  <testcase name="theUserIsLedToTheBatterySettingOnce" classname="com.deskmail.ui.NotifyUiTest" time="0.098"/>
+  <testcase name="whoAllowedItAlreadyIsNotAsked" classname="com.deskmail.ui.NotifyUiTest" time="0.069"/>
+  <testcase name="theWindowSaysWhichListOfMailItShows" classname="com.deskmail.ui.NotifyUiTest" time="0.085"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

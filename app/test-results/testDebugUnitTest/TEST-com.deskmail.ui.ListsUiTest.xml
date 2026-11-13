@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.ui.ListsUiTest" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-11-13T10:08:09.825Z" hostname="runnervmccnms" time="1.851">
+  <properties/>
+  <testcase name="theTemplatesAreWrittenChangedAndDeletedInSettings" classname="com.deskmail.ui.ListsUiTest" time="0.462"/>
+  <testcase name="theVipFolderSaysHowSomebodyBecomesOne" classname="com.deskmail.ui.ListsUiTest" time="0.11"/>
+  <testcase name="aSearchIsKeptAsAFolderOfItsOwn" classname="com.deskmail.ui.ListsUiTest" time="0.21"/>
+  <testcase name="aSenderBecomesAVipFromTheirMessage" classname="com.deskmail.ui.ListsUiTest" time="0.348"/>
+  <testcase name="whatWasWrittenIsKeptAsATemplate" classname="com.deskmail.ui.ListsUiTest" time="0.283"/>
+  <testcase name="aSendersPicturesCanAlwaysBeShown" classname="com.deskmail.ui.ListsUiTest" time="0.1"/>
+  <testcase name="aSavedSearchListsWhatItFinds" classname="com.deskmail.ui.ListsUiTest" time="0.088"/>
+  <testcase name="aKeptTextGoesIntoTheMessageAboveTheSignature" classname="com.deskmail.ui.ListsUiTest" time="0.246"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

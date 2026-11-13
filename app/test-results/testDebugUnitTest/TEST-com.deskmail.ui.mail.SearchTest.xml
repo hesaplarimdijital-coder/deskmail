@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.ui.mail.SearchTest" tests="9" skipped="0" failures="0" errors="0" timestamp="2026-11-13T10:08:20.201Z" hostname="runnervmccnms" time="0.755">
+  <properties/>
+  <testcase name="aWindowOpenedAtTheSearchIsReadyToBeTypedInto" classname="com.deskmail.ui.mail.SearchTest" time="0.044"/>
+  <testcase name="comeBackToWithSomethingTypedTheFieldIsLeftAlone" classname="com.deskmail.ui.mail.SearchTest" time="0.157"/>
+  <testcase name="whatIsTypedIsLookedForOnceTheTypingPauses" classname="com.deskmail.ui.mail.SearchTest" time="0.068"/>
+  <testcase name="aSearchCanBeToldWhereToLook" classname="com.deskmail.ui.mail.SearchTest" time="0.061"/>
+  <testcase name="theServersAreAskedForWhatTheDeviceDoesNotHave" classname="com.deskmail.ui.mail.SearchTest" time="0.078"/>
+  <testcase name="everyWordNarrowsAndTurkishLettersNeedNotBeTyped" classname="com.deskmail.ui.mail.SearchTest" time="0.07"/>
+  <testcase name="whatIsFoundOpensAndIsReadLikeAnyOtherMail" classname="com.deskmail.ui.mail.SearchTest" time="0.105"/>
+  <testcase name="theScreenOpensReadyToBeTypedInto" classname="com.deskmail.ui.mail.SearchTest" time="0.104"/>
+  <testcase name="whenNothingIsFoundTheScreenSaysWhereItLooked" classname="com.deskmail.ui.mail.SearchTest" time="0.065"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.screenshots.AppScreenshotTest" tests="36" skipped="0" failures="0" errors="0" timestamp="2026-11-13T10:07:56.982Z" hostname="runnervmccnms" time="10.883">
+  <properties/>
+  <testcase name="dexWorkstationDark" classname="com.deskmail.screenshots.AppScreenshotTest" time="3.896"/>
+  <testcase name="tabletPortraitInboxDark" classname="com.deskmail.screenshots.AppScreenshotTest" time="0.304"/>
+  <testcase name="dexWorkstationLight" classname="com.deskmail.screenshots.AppScreenshotTest" time="0.359"/>
+  <testcase name="twoPanesBesideTheRailDark" classname="com.deskmail.screenshots.AppScreenshotTest" time="0.272"/>
+  <testcase name="phoneAccountNoticeDark" classname="com.deskmail.screenshots.AppScreenshotTest" time="0.241"/>
+  <testcase name="phoneSearchDark" classname="com.deskmail.screenshots.AppScreenshotTest" time="0.205"/>
+  <testcase name="phoneComposeDark" classname="com.deskmail.screenshots.AppScreenshotTest" time="0.215"/>
+  <testcase name="dexSelectionDark" classname="com.deskmail.screenshots.AppScreenshotTest" time="0.256"/>
+  <testcase name="phoneMoreSheetDark" classname="com.deskmail.screenshots.AppScreenshotTest" time="0.312"/>
+  <testcase name="phoneLogDark" classname="com.deskmail.screenshots.AppScreenshotTest" time="0.402"/>
+  <testcase name="phoneOutboxLight" classname="com.deskmail.screenshots.AppScreenshotTest" time="0.145"/>
+  <testcase name="dexComposeLight" classname="com.deskmail.screenshots.AppScreenshotTest" time="0.191"/>
+  <testcase name="phoneReaderDark" classname="com.deskmail.screenshots.AppScreenshotTest" time="0.164"/>
+  <testcase name="tabletLandscapeInspectorLight" classname="com.deskmail.screenshots.AppScreenshotTest" time="0.258"/>
+  <testcase name="tabletPortraitServersLight" classname="com.deskmail.screenshots.AppScreenshotTest" time="0.192"/>
+  <testcase name="phonePaletteDark" classname="com.deskmail.screenshots.AppScreenshotTest" time="0.224"/>
+  <testcase name="phoneWelcomeLight" classname="com.deskmail.screenshots.AppScreenshotTest" time="0.142"/>
+  <testcase name="phoneFoldersDark" classname="com.deskmail.screenshots.AppScreenshotTest" time="0.138"/>
+  <testcase name="phoneReaderLight" classname="com.deskmail.screenshots.AppScreenshotTest" time="0.134"/>
+  <testcase name="dexSettingsDark" classname="com.deskmail.screenshots.AppScreenshotTest" time="0.153"/>
+  <testcase name="dexSearchLight" classname="com.deskmail.screenshots.AppScreenshotTest" time="0.188"/>
+  <testcase name="tabletLandscapeWithAMouseDark" classname="com.deskmail.screenshots.AppScreenshotTest" time="0.224"/>
+  <testcase name="tabletLandscapeDark" classname="com.deskmail.screenshots.AppScreenshotTest" time="0.207"/>
+  <testcase name="dexFolderOled" classname="com.deskmail.screenshots.AppScreenshotTest" time="0.172"/>
+  <testcase name="phoneAddAccountDark" classname="com.deskmail.screenshots.AppScreenshotTest" time="0.122"/>
+  <testcase name="dexAccountLight" classname="com.deskmail.screenshots.AppScreenshotTest" time="0.141"/>
+  <testcase name="dexPaletteDark" classname="com.deskmail.screenshots.AppScreenshotTest" time="0.217"/>
+  <testcase name="phoneInboxDark" classname="com.deskmail.screenshots.AppScreenshotTest" time="0.136"/>
+  <testcase name="phoneInboxOled" classname="com.deskmail.screenshots.AppScreenshotTest" time="0.133"/>
+  <testcase name="phoneSettingsLight" classname="com.deskmail.screenshots.AppScreenshotTest" time="0.152"/>
+  <testcase name="dexWriteWindowDark" classname="com.deskmail.screenshots.AppScreenshotTest" time="0.143"/>
+  <testcase name="phoneInboxLight" classname="com.deskmail.screenshots.AppScreenshotTest" time="0.139"/>
+  <testcase name="phoneReaderFailedLight" classname="com.deskmail.screenshots.AppScreenshotTest" time="0.123"/>
+  <testcase name="phoneSelectionLight" classname="com.deskmail.screenshots.AppScreenshotTest" time="0.138"/>
+  <testcase name="dexSecurityLight" classname="com.deskmail.screenshots.AppScreenshotTest" time="0.203"/>
+  <testcase name="tabletPortraitReaderLight" classname="com.deskmail.screenshots.AppScreenshotTest" time="0.149"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[System.logW: A resource failed to call close. 
+System.logW: A resource failed to call close. 
+System.logW: A resource failed to call SQLiteConnection.close. 
+System.logW: A resource failed to call SQLiteConnection.close. 
+System.logW: A resource failed to call SQLiteConnection.close. 
+System.logW: A resource failed to call SQLiteConnection.close. 
+System.logW: A resource failed to call SQLiteConnectionPool.close. 
+]]></system-err>
+</testsuite>
