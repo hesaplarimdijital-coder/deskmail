@@ -182,6 +182,16 @@ object MailIcons {
         )
     }
 
+    /** An hourglass: a message an answer is waited for. */
+    val Awaiting: ImageVector by lazy {
+        DeskIcons.build(
+            "Awaiting",
+            DeskIcons.stroke("M4 2.5h8M4 13.5h8"),
+            DeskIcons.stroke("M5.2 2.5v1.6c0 1.3 1.1 2.3 2.8 3.9 1.7-1.6 2.8-2.6 2.8-3.9V2.5"),
+            DeskIcons.stroke("M5.2 13.5v-1.6c0-1.3 1.1-2.3 2.8-3.9 1.7 1.6 2.8 2.6 2.8 3.9v1.6"),
+        )
+    }
+
     /** A shield: what the provider found of where a message came from. */
     val Shield: ImageVector by lazy {
         DeskIcons.build(

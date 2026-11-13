@@ -24,6 +24,7 @@ import com.deskmail.notify.FrontViews
 import com.deskmail.notify.MailNotifier
 import com.deskmail.notify.NotifyActions
 import com.deskmail.notify.NotifyStore
+import com.deskmail.notify.ReplyReminder
 import com.deskmail.settings.AppSettings
 import com.deskmail.ui.compose.WriteWindows
 import com.deskmail.ui.mail.WebViewWarmUp
@@ -31,6 +32,7 @@ import com.deskmail.watch.Awake
 import com.deskmail.watch.MailWatch
 import com.deskmail.watch.WatchService
 import com.deskmail.work.DraftWorker
+import com.deskmail.work.RemindWorker
 import com.deskmail.work.SendWorker
 import com.deskmail.work.SyncWorker
 import kotlinx.coroutines.CancellationException
@@ -73,8 +75,13 @@ class DeskMailApplication : Application(), Configuration.Provider {
     private val accountStore: AccountStore by lazy { AccountStore(database, DeviceSecretBox(), log) }
 
     private val sync: MailSync by lazy {
-        // whoever has an account synced, new mail is told of afterwards
-        MailSync(database, accountStore, log, background).also { it.onSynced = { accountId -> notifier.check(accountId) } }
+        // whoever has an account synced, new mail is told of afterwards, and answers that did not come
+        MailSync(database, accountStore, log, background).also {
+            it.onSynced = { accountId ->
+                notifier.check(accountId)
+                replies.check(accountId)
+            }
+        }
     }
 
     /** Which lists of mail the windows have in front: new mail in one of them needs no notification. */
@@ -86,11 +93,14 @@ class DeskMailApplication : Application(), Configuration.Provider {
     /** Tells of new mail with the system's notifications, and takes them down as the mail is read. */
     val notifier: MailNotifier by lazy { MailNotifier(this, database, notifyStore, front, log).also { it.watch(background) } }
 
+    /** Reminds of the user's messages whose answers did not come in time ("Awaiting replies"). */
+    val replies: ReplyReminder by lazy { ReplyReminder(this, database, notifyStore, log, schedule = { dueAt -> RemindWorker.schedule(this, dueAt) }) }
+
     /** What the buttons of a notification do. */
     val notifyActions: NotifyActions by lazy { NotifyActions(mail, notifier, log, composer, tellServers = { SyncWorker.tellServers(this) }) }
 
     /** The mail as the windows show it. */
-    val mail: LiveMail by lazy { LiveMail(database, sync, background, File(cacheDir, FILES_DIRECTORY)) }
+    val mail: LiveMail by lazy { LiveMail(database, sync, background, File(cacheDir, FILES_DIRECTORY), awaitingChanged = { replies.arrange() }) }
 
     /** Adding, reconnecting and removing accounts. */
     val accounts: AccountActions by lazy {
@@ -182,7 +192,11 @@ class DeskMailApplication : Application(), Configuration.Provider {
 
     /** Sends what waits in the outbox; the background work that does so ([SendWorker]) finds it here. */
     val sender: MailSend by lazy {
-        MailSend(database, accountStore, sync, log, File(cacheDir, OUTGOING_DIRECTORY), outboxFiles, onDraftCopies = { saveDrafts(0) })
+        MailSend(
+            database, accountStore, sync, log, File(cacheDir, OUTGOING_DIRECTORY), outboxFiles,
+            onDraftCopies = { saveDrafts(0) },
+            awaitingChanged = { replies.arrange() },
+        )
     }
 
     /** Keeps a copy of what is being written among the drafts on its server; the background work ([DraftWorker]) finds it here. */
