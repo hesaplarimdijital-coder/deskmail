@@ -65,7 +65,7 @@ sealed interface FetchedFile {
  * @param changes what the source needs to take it back; nothing a screen reads.
  */
 class MailUndo(val action: Action, val messages: List<Long>, val folder: Long = 0, val changes: List<Change> = emptyList()) {
-    enum class Action { Archived, Deleted, DeletedForGood, Moved }
+    enum class Action { Archived, Deleted, DeletedForGood, Moved, Snoozed, Unsnoozed }
 
     /** A message on its way: the change that is waiting, where the message came [from] and where it goes [to] (0: nowhere, it is removed). */
     class Change(val id: Long, val accountId: Long, val messageId: Long, val from: Long, val to: Long)
@@ -171,6 +171,9 @@ sealed interface MailView {
 
     /** The user's messages that answers are waited for ([AwaitedReply]): their copies under Sent, the one due first on top. */
     data object Awaiting : MailView
+
+    /** The snoozed messages of every account, the one to come back first on top ([MailSource.snooze]). */
+    data object Snoozed : MailView
 }
 
 /**

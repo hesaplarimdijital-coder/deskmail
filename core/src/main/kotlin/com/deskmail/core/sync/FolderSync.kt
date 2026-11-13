@@ -65,8 +65,8 @@ class FolderSync(private val store: SyncStore, private val log: AppLog? = null) 
 
         var added = 0
         for (batch in remote.filter { it !in onDevice }.sortedDescending().chunked(HEADERS_PER_FETCH)) {
-            // marked for deletion and not yet removed: as good as gone
-            val headers = mailbox.headers(batch).filter { !it.flags.deleted }
+            // marked for deletion and not yet removed: as good as gone; and the list of snoozes is no mail to show
+            val headers = mailbox.headers(batch).filter { !it.flags.deleted && !SnoozeList.isList(it.globalId) }
             if (headers.isNotEmpty()) store.insert(folder.id, headers)
             added += headers.size
         }

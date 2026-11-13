@@ -2,6 +2,7 @@ package com.deskmail.mail
 
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
+import java.time.Instant
 
 /**
  * Where the screens get the mail from and what they can ask of it: the device's copy of the
@@ -59,6 +60,24 @@ interface MailSource {
 
     /** No longer waits for an answer ([AwaitedReply.id]). */
     suspend fun stopAwaiting(id: Long) {}
+
+    /** When the snoozed messages come back, by account and Message-ID. Snapshot state. */
+    val snoozes: Map<Pair<Long, String>, Instant> get() = emptyMap()
+
+    /** When [message] comes back, should it be a snoozed one whose time the device knows; else null. */
+    fun snoozedUntil(message: MailMessage): Instant? =
+        if (message.globalId.isEmpty()) null else snoozes[message.accountId to message.globalId]
+
+    /**
+     * Snoozes the messages until [wakeAt]: each goes to its account's Snoozed folder (made on the
+     * server the first time) and comes back then, unread, on whichever of the user's devices looks
+     * first. One snoozed already is given the new time. Null when nothing could be snoozed (the
+     * folder could not be made: no network).
+     */
+    suspend fun snooze(ids: List<Long>, wakeAt: Instant): MailUndo? = null
+
+    /** Brings snoozed messages back now, to the folders they came from. */
+    suspend fun unsnooze(ids: List<Long>): MailUndo? = null
 
     fun account(id: Long): MailAccount? = accounts.firstOrNull { it.id == id }
 

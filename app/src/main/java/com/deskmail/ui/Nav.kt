@@ -78,7 +78,7 @@ fun navBadges(folders: List<MailFolder>, outbox: Int = 0): Map<String, String> =
     if (outbox > 0) put(Routes.OUTBOX, outbox.toString())
     val inbox = folders.filter { it.role == FolderRole.Inbox }.sumOf { it.unread }
     if (inbox > 0) put(Routes.INBOX, inbox.toString())
-    val unread = folders.filter { it.role != FolderRole.All && it.role != FolderRole.Junk && it.role != FolderRole.Trash }.sumOf { it.unread }
+    val unread = folders.filter { it.role != FolderRole.All && it.role != FolderRole.Junk && it.role != FolderRole.Trash && it.role != FolderRole.Snoozed }.sumOf { it.unread }
     if (unread > 0) put(Routes.UNREAD, unread.toString())
     folders.forEach { folder -> if (folder.unread > 0) put(Routes.folder(folder.id), folder.unread.toString()) }
 }
@@ -92,6 +92,7 @@ fun folderName(resources: Resources, folder: MailFolder): String = when (folder.
     FolderRole.Junk -> resources.getString(R.string.folder_junk)
     FolderRole.Trash -> resources.getString(R.string.folder_trash)
     FolderRole.All -> resources.getString(R.string.folder_all)
+    FolderRole.Snoozed -> resources.getString(R.string.folder_snoozed)
     FolderRole.Other -> folder.name
 }
 
@@ -110,5 +111,6 @@ fun folderIcon(role: FolderRole): ImageVector = when (role) {
     FolderRole.Junk -> MailIcons.Junk
     FolderRole.Trash -> DeskIcons.Delete
     FolderRole.All -> MailIcons.Mail
+    FolderRole.Snoozed -> MailIcons.Snooze
     FolderRole.Other -> DeskIcons.Folder
 }

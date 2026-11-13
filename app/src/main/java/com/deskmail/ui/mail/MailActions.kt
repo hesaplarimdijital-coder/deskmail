@@ -32,6 +32,7 @@ import desktopkit.shell.WidthClass
 import desktopkit.shell.currentWidthClass
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import java.time.Instant
 
 /**
  * What a window does to messages on the user's word, whoever passes that word on: a button of
@@ -66,6 +67,11 @@ class MailActions(
     fun delete(ids: List<Long>) = act(R.string.action_nothing_done) { mail.delete(ids) }
 
     fun move(ids: List<Long>, folderId: Long) = act(R.string.action_nothing_done) { mail.move(ids, folderId) }
+
+    /** Snoozes the messages until [wakeAt]; where the account's Snoozed folder could not be had, says so. */
+    fun snooze(ids: List<Long>, wakeAt: Instant) = act(R.string.snooze_failed) { mail.snooze(ids, wakeAt) }
+
+    fun unsnooze(ids: List<Long>) = act(R.string.action_nothing_done) { mail.unsnooze(ids) }
 
     /** Takes back what was done last; false when there is nothing to take back. */
     fun undoLast(): Boolean {
@@ -118,6 +124,8 @@ class MailActions(
                 val folder = mail.folder(undo.folder)?.let { folderPathLabel(resources, it) }.orEmpty()
                 resources.getQuantityString(R.plurals.done_moved, count, count, folder)
             }
+            MailUndo.Action.Snoozed -> resources.getQuantityString(R.plurals.done_snoozed, count, count)
+            MailUndo.Action.Unsnoozed -> resources.getQuantityString(R.plurals.done_unsnoozed, count, count)
         }
     }
 

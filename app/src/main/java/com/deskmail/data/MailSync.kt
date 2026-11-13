@@ -12,6 +12,7 @@ import com.deskmail.core.sync.ChangeOutcome
 import com.deskmail.core.sync.ChangeSync
 import com.deskmail.core.sync.FolderSync
 import com.deskmail.core.sync.PendingChange
+import com.deskmail.core.sync.SnoozeList
 import com.deskmail.core.text.SearchTerm
 import com.deskmail.db.AccountEntity
 import com.deskmail.db.DeskMailDatabase
@@ -143,9 +144,49 @@ class MailSync(
      * Tells the account's server what was done on the device and is due: marks, moves and
      * removals. Without anything due no connection is made.
      */
-    suspend fun changes(accountId: Long): Outcome = changeLock(accountId).withLock {
-        if (db.pending().due(accountId, clock().toEpochMilli()).isEmpty()) return@withLock Outcome.Done
-        connected(accountId) { _, remote -> push(accountId, remote) }
+    suspend fun changes(accountId: Long): Outcome {
+        var told = false
+        val outcome = changeLock(accountId).withLock {
+            if (db.pending().due(accountId, clock().toEpochMilli()).isEmpty()) return@withLock Outcome.Done
+            told = true
+            connected(accountId) { _, remote -> push(accountId, remote) }
+        }
+        if (told && outcome == Outcome.Done) {
+            try {
+                onChangesTold?.invoke(accountId)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                log.error(TAG, "account $accountId: its changes were told, but what follows that failed", e)
+            }
+        }
+        return outcome
+    }
+
+    /** Told after what was done on the device reached an account's server: the snoozes' list hangs here (a message moved into its folder). */
+    @Volatile
+    var onChangesTold: (suspend (accountId: Long) -> Unit)? = null
+
+    /** Runs [work] on a connection of the account's own, as every other piece of work here does. */
+    suspend fun onServer(accountId: Long, work: suspend (AccountEntity, RemoteAccount) -> Unit): Outcome = connected(accountId, work)
+
+    /**
+     * The account's folder for snoozed mail: the one it has, or one made on its server now
+     * ([SnoozeList.FOLDER]), after which the account's folders are listed anew. Null when there is
+     * none and none could be made (no network, a server that makes no folders).
+     */
+    suspend fun snoozeFolder(accountId: Long): Long? {
+        val known = db.folders().ofAccount(accountId).firstOrNull { folderRole(it.role) == FolderRole.Snoozed }
+        if (known != null) return known.id
+        val outcome = connected(accountId) { _, remote ->
+            remote.create(SnoozeList.FOLDER)
+            store.saveFolders(accountId, remote.folders().filter { it.isListed })
+        }
+        if (outcome != Outcome.Done) {
+            log.warn(TAG, "account $accountId: no folder for snoozed mail could be had: $outcome")
+            return null
+        }
+        return db.folders().ofAccount(accountId).firstOrNull { folderRole(it.role) == FolderRole.Snoozed }?.id
     }
 
     /**
