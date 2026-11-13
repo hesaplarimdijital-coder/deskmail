@@ -22,6 +22,7 @@ Posta artık yalnızca okunmuyor: okundu ve yıldız sunucuya yazılır, iletile
 - **Gönderilmiş klasörü:** Gmail ve Outlook, gönderileni Gönderilmiş'e kendileri kaydeder; uygulama ikinci bir kopya yazmaz. Öteki sunucularda gönderilen ileti Gönderilmiş klasörüne eklenir (gizli alıcılarıyla birlikte).
 - Yanıtlanan ileti sunucuda "yanıtlandı", iletilen "iletildi" olarak işaretlenir; öteki posta programları bunu gösterir. ("İletildi" işaretini yalnızca etiket tutan sunucular saklar: Gmail saklar, Outlook.com saklamaz.)
 - **Ad ve imza:** Ayarlar › Hesaplar › hesabın sayfası › Yazarken. Ad, yazdığın kişilerin adresinin yanında gördüğü addır; boşsa yalnızca adres görünür. İmza yeni iletinin sonuna, yanıtta ve iletmede alıntının üstüne eklenir.
+- **Başka uygulamalardan:** bir uygulamada ya da web sayfasında e-posta adresine (`mailto:` bağlantısına) dokununca DeskMail seçilebilir; alıcı, varsa konu ve metin dolu olarak yazma ekranı açılır. Paylaş menüsünde de DeskMail var: paylaşılan metin iletinin metni, paylaşılan dosyalar (bir ya da birkaç tane) eki olur. Hiçbir şey kendiliğinden gönderilmez; Gönder'e sen basarsın. Bağlantı yalnızca formda gördüklerini doldurabilir (alıcılar, konu, metin); başka bir uygulama yalnızca kendi verdiği dosyaları ekletebilir.
 - Gönderim yarıda kesilirse (ileti sunucuya verilirken uygulama kapanırsa) ileti kendiliğinden ikinci kez gönderilmez: "Gönderilemedi" olarak durur ve yeniden göndermeden önce Gönderilmiş'e bakmanı söyler.
 
 ### Bildirimler ve arka planda denetim
@@ -64,7 +65,7 @@ Posta artık yalnızca okunmuyor: okundu ve yıldız sunucuya yazılır, iletile
 
 ### Bu sürümde bilerek olmayanlar
 - Çoklu seçim ve klasöre sürükle bırak (ileti işlemlerinin ikinci adımı).
-- Yazmada: biçimli (HTML) yazma; taslakların sunucudaki Taslaklar klasörüne kaydı; yazarken alıcı önerisi ve rehberden alıcı seçme; `mailto:` bağlantısıyla ve paylaşılan dosyayla yeni ileti; DeX'te yazmanın ayrı pencerede açılması. Yazma ekranı şimdilik pencerenin içinde, başlatıldığı ekranın yerinde açılır; başka bir ekrana geçip geri dönünce yazılan yerinde durur.
+- Yazmada: biçimli (HTML) yazma; taslakların sunucudaki Taslaklar klasörüne kaydı; yazarken alıcı önerisi ve rehberden alıcı seçme; DeX'te yazmanın ayrı pencerede açılması (bağlantıdan ya da paylaşımdan açılan yazma ekranı da şimdilik uygulamanın tam penceresinde açılır). Yazma ekranı şimdilik pencerenin içinde, başlatıldığı ekranın yerinde açılır; başka bir ekrana geçip geri dönünce yazılan yerinde durur.
 - Sunucuda arama; aramada alan süzgeçleri ("kimden:", "konu:").
 - Anlık bildirim (IMAP IDLE, ön plan hizmeti, pil ayarlarına yönlendirme); gelen kutusu dışındaki klasörler için bildirim; hesap başına bildirim sıklığı.
 - Outlook girişi.

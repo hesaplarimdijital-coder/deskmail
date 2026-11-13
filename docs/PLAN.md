@@ -35,6 +35,7 @@ kitten istenenler `docs/KIT-ISTEKLERI.md`'de durur.
 | Bildirim: önce yedek yol | Brifin iki yolundan (ön plan hizmetinde IMAP IDLE; WorkManager ile periyodik denetim) önce ikincisi kuruldu: cihazsız sınanabilen ve tek başına işe yarayan o. Yeni posta her eşitlemenin sonunda aranır (`MailSync.onSynced` → `MailNotifier.check`), kim eşitlerse eşitlesin; IDLE geldiğinde aynı kancaya bağlanır. Bir iletinin "yeni" olması, gelen kutusunun UID işaretinin üstünde olmasıdır (`NotifyStore`, `UIDVALIDITY` ile); işaret ilk bakışta kurulur, o yüzden eski posta bildirilmez. |
 | Bildirim: sıklık | Şimdilik tek ayar (`AppSettings.checkMinutes`: 15, 30, 60, 0 = elle). Şemadaki hesap başına `notifyMode` alanı "Anlık" geldiğinde kullanılacak. |
 | Bildirimden yapılanlar | Okundu, Arşivle, Sil: alıcı (`NotifyActionReceiver`) cihazda hemen yapar ve `pending_op`'a yazar (geri alma beklemesi yok), sunucuya ayrı bir WorkManager işi söyler (`SyncWorker.tellServers`). Bildirime dokunmak iletiyi birleşik Gelen'de açar: o ekran her düzende ve klasörler okunmadan da vardır. |
+| Başka uygulamalardan gelen istek | `mailto:` (RFC 6068) ve paylaşım: yalnızca formun gösterdiği alanlar alınır (alıcılar, konu, metin; başka başlık adları atılır, satır kırma denemeleri tek satır olur). Dosyalar yalnızca başka uygulamaların `content://` sağlayıcılarından alınır; dosya yolu (`file://`) ve uygulamanın kendi sağlayıcısı alınmaz. Hiçbir şey kendiliğinden gönderilmez. |
 | Kit eksikleri | Kite yazılır; uygulamada yamanmaz (`docs/KIT-ISTEKLERI.md`). |
 | GitHub | PR'ları CI yeşilken Claude birleştirir. Etiketi ve sürümü Barış açar (Releases'ta `main` üzerinde): Claude'un oturumu etiket ve sürüm açamıyor (12 Kasım 2026'da denendi, ikisi de reddedildi). Force-push ve geçmişi yeniden yazma yok. |
 
@@ -204,13 +205,18 @@ o ön sürümün ilk PR'ında artar, sonraki PR'lar CHANGELOG'da aynı başlığ
    gönderim işi (WorkManager), gönderiyi geri alma ve süresi · yazma ekranı · yanıtla, tümünü yanıtla, ilet ·
    dosya ekleme · cihazda taslaklar · gönderileni kaydetme kuralı · yanıtlandı ve iletildi işaretleri ·
    hesabın adı ve imzası · R, A, F ve Ctrl+Enter.
+   - **Sonradan (alpha.3):** `mailto:` bağlantıları ve paylaşım (`MailtoLink`, `ComposeRequest`): başka
+     uygulamanın istediği ileti, öndeki ekranın üstünde yeni bir ileti olarak başlar.
    - **Kalan (ayrı PR):** taslakların sunucudaki Taslaklar klasörüne kaydı · alıcı önerilerinin arayüzü
-     (kit isteği 4) ve Contact Picker · `mailto:` ve paylaşım · DeX'te yazmanın ayrı pencerede açılması.
+     (kit isteği 4) ve Contact Picker · DeX'te yazmanın ayrı pencerede açılması.
 6. **Arama (alpha.3):** dizin sorgusu (`SearchQuery`: yazılan katlanır, dizinin böldüğü gibi sözcüklere
    bölünür, her sözcük ön ek olarak aranır; yazılanın hiçbir parçası dizine sözdizimi olarak ulaşmaz) ·
    Ara ekranı (posta listesinin kendisi, üstünde arama alanı) · "/" kısayolu.
    - **Kalan (ayrı PR):** sunucu araması (cihazda olmayan eski posta) · alan süzgeçleri ("kimden:",
      "konu:") · palette "iletilerde ara".
+   - **Açık nokta:** "/" imleci arama alanına koyar (testli). Ekrana alt çubuktan ya da kenar çubuğundan
+     girilince alan odağı ister, ama test ortamında (Robolectric) almadı ve nedeni bulunamadı; cihazda ne
+     olduğuna bakılacak, sonra ya düzeltilecek ya da "alana dokun" davranışı olarak bırakılacak.
 7. **Bildirimler**
    - **7a (alpha.3):** periyodik yedek yol (WorkManager, 15/30/60 dk ya da elle) · yeni posta bildirimi
      (hesap başına kanal ve grup, BigTextStyle, InboxStyle özet) · Okundu, Arşivle, Sil düğmeleri ·
