@@ -16,7 +16,9 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.deskmail.TestApp
 import com.deskmail.demo.DemoMail
 import com.deskmail.mail.Draft
+import com.deskmail.mail.DraftSeed
 import com.deskmail.mail.DraftState
+import com.deskmail.noMail
 import com.deskmail.testComposer
 import com.deskmail.testMail
 import com.deskmail.testPrefs
@@ -25,6 +27,7 @@ import com.deskmail.ui.Routes
 import com.deskmail.ui.mail.MailUiState
 import com.deskmail.ui.mail.openMessage
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -334,5 +337,62 @@ class ComposeTest {
         compose.waitForIdle()
         assertNull(composer.draft(other))
         compose.onNodeWithText("Taslak silindi.").assertIsDisplayed()
+    }
+
+    // ------------------------------------------------------------------ asked for by another app
+
+    /** A mailto link, or something shared with the app: a new message begins with it over the screen in front. */
+    @Test
+    fun whatAnotherAppAsksForBeginsAMessageWithIt() {
+        launch()
+        val seed = DraftSeed(to = "ayse.yilmaz@posta.example", cc = "elif@posta.example", subject = "Rapor", body = "Ekte.")
+        val file = SharedFile("rapor.pdf", "application/pdf") { ByteArray(12).inputStream() }
+
+        compose.runOnUiThread { ui.composeRequest = ComposeRequest(seed, listOf(file)) }
+        compose.waitForIdle()
+
+        // taken up once, over the inbox
+        assertNull(ui.composeRequest)
+        val writing = ui.writingOver(Routes.INBOX)!!
+        val draft = composer.draft(writing.draftId)!!
+        assertEquals("ayse.yilmaz@posta.example", draft.to)
+        assertEquals("elif@posta.example", draft.cc)
+        assertEquals("Rapor", draft.subject)
+        assertTrue(draft.body.startsWith("Ekte."))
+        assertEquals(listOf("rapor.pdf"), draft.files.map { it.name })
+        // it came with something to say: closed untouched, it is kept
+        assertFalse(writing.fresh)
+        compose.onNodeWithTag(ComposeTags.SUBJECT).assertExists()
+        compose.onNodeWithTag(ComposeTags.CC).assertExists()
+    }
+
+    /** A link that only names who to write to begins a message that is not worth keeping empty. */
+    @Test
+    fun aMessageThatOnlyHasItsRecipientIsNotKeptWhenItIsLeftUntouched() {
+        launch()
+
+        compose.runOnUiThread { ui.composeRequest = ComposeRequest(DraftSeed(to = "ayse.yilmaz@posta.example")) }
+        compose.waitForIdle()
+
+        val writing = ui.writingOver(Routes.INBOX)!!
+        assertTrue(writing.fresh)
+        assertEquals("ayse.yilmaz@posta.example", composer.draft(writing.draftId)!!.to)
+    }
+
+    @Test
+    fun withoutAnAccountWhatAnotherAppAsksForIsAnsweredWithANotice() {
+        val nobody = noMail()
+        val nobodysComposer = testComposer(nobody)
+        val prefs = testPrefs()
+        val settings = testSettings()
+        compose.setContent { TestApp(nobody, prefs, settings, ui, composer = nobodysComposer) }
+        compose.waitForIdle()
+
+        compose.runOnUiThread { ui.composeRequest = ComposeRequest(DraftSeed(to = "ayse.yilmaz@posta.example")) }
+        compose.waitForIdle()
+
+        assertNull(ui.composeRequest)
+        assertNull(ui.writing)
+        compose.onNodeWithText("Önce bir hesap ekle.").assertExists()
     }
 }
