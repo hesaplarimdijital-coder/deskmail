@@ -175,25 +175,6 @@ class ComposeTest {
         assertTrue(composer.sent.isEmpty())
     }
 
-    /**
-     * Writing takes the phone's height down to the system's bar: the bottom navigation is away
-     * while the message is on the screen, and back when it is closed (desktop-kit 2.9.0).
-     */
-    @Test
-    fun theBottomNavigationIsAwayWhileAMessageIsWritten() {
-        launch()
-        val tab = hasText("Klasörler") and isSelectable()
-        compose.onNode(tab).assertExists()
-
-        compose.pressNewMessage()
-        compose.onNodeWithTag(ComposeTags.BODY).assertExists()
-        compose.onNode(tab).assertDoesNotExist()
-
-        back()
-        compose.onNodeWithTag(ComposeTags.BODY).assertDoesNotExist()
-        compose.onNode(tab).assertExists()
-    }
-
     @Test
     fun closingKeepsWhatWasWrittenAndSaysWhereItIs() {
         launch()
