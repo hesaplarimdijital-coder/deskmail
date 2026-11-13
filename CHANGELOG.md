@@ -51,6 +51,11 @@ Sürümler [SemVer](https://semver.org/lang/tr/) kuralına uyar; 0.1.0'a kadar o
 - Telefonda ve tablette yazma eskisi gibi ekranın üstünde. Başka bir uygulamadan paylaşılan ya da `mailto:` bağlantısıyla gelen ileti DeX'te de posta penceresinin içinde açılır.
 - **Rehberden alıcı.** "Kime" alanının sağındaki **Rehberden ekle** sistemin kişi seçicisini açar; seçilen adresler "Kime"ye eklenir. DeskMail rehberi okuma izni istemez: seçici yalnızca seçileni verir. Android 17'de birden çok kişi seçilebilir ve yalnızca e-posta adresleri gelir; öncesinde rehber uygulaması bir adres verir.
 
+### Başka bir cihaza taşıma
+- **Ayarları başka bir cihaza taşı.** Ayarlar'da yeni bölüm: **Dışa aktar**, hesapları (adresleri, sunucuları, kullanıcı adları, adları, imzaları), uygulamanın seçimlerini (geri alma süresi, yeni postayı denetleme sıklığı, deneyler) ve görünümü (tema, vurgu, yoğunluk) bir dosyaya yazar; dosyanın yerini sen seçersin. **Şifreler ve jetonlar dosyaya yazılmaz:** dosyada onlara yer yok.
+- **İçe aktar** öbür cihazda o dosyayı okur: cihazda olmayan hesaplar eklenir, her biri şifresini bekler (hesabın sayfasında "Yeniden bağlan"); cihazda olan hesaplara dokunulmaz. Seçimler ve görünüm alınır.
+- DeskMail'in ayar dosyası olmayan dosya ya da işe yaramayan kayıt (adressiz ya da sunucusuz hesap, olmayacak bir port) geçilir; ayar dosyasından çok büyük bir dosya bütünüyle okunmaz.
+
 ### Düzeltmeler
 - **Paylaşılan dosyayla yazma ekranı hemen açılır.** Başka bir uygulamadan dosya paylaşınca yazma ekranı, dosya uygulamaya kopyalanana dek açılmıyordu; büyük bir videoda o süre boyunca yalnızca Gelen görünüyordu. Ekran artık hemen açılır ve dosya arkada eklenir: ekran "Dosya ekleniyor…" der, dosya iletiye girmeden Gönder çalışmaz (ekranı kapatıp taslağı Giden kutusu'ndan yeniden açsan da). Yazma ekranındaki ataşla eklenen büyük dosyalarda da böyle.
 - **Yazma ekranı kendiliğinden kapanmaz.** Bir ileti yazarken başka bir ekrana bakıp geri dönünce yazma ekranı "Taslak Giden kutusu'nda duruyor" diyerek kapanıyordu (taslak kaybolmuyordu, Giden kutusu'ndan açmak gerekiyordu). Yazılan ileti artık ekranına dönüldüğünde bırakıldığı gibi durur.
