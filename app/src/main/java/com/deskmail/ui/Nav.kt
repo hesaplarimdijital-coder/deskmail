@@ -6,6 +6,7 @@ import com.deskmail.R
 import com.deskmail.core.mail.FolderRole
 import com.deskmail.mail.MailAccount
 import com.deskmail.mail.MailFolder
+import com.deskmail.mail.SavedSearch
 import desktopkit.components.DeskIcons
 import desktopkit.shell.MoreStyle
 import desktopkit.shell.NavItem
@@ -26,6 +27,7 @@ fun buildShellSpec(
     accounts: List<MailAccount>,
     folders: List<MailFolder>,
     startRoute: String? = null,
+    saved: List<SavedSearch> = emptyList(),
 ): ShellSpec {
     val views = NavSection(
         title = null,
@@ -33,9 +35,17 @@ fun buildShellSpec(
             NavItem(Routes.INBOX, resources.getString(R.string.nav_inbox), MailIcons.Inbox),
             NavItem(Routes.UNREAD, resources.getString(R.string.nav_unread), MailIcons.Mail),
             NavItem(Routes.STARRED, resources.getString(R.string.nav_starred), MailIcons.Star),
+            NavItem(Routes.VIP, resources.getString(R.string.nav_vip), MailIcons.Vip),
             NavItem(Routes.FOLDERS, resources.getString(R.string.nav_folders), DeskIcons.Folder),
             NavItem(Routes.SEARCH, resources.getString(R.string.nav_search), DeskIcons.Search),
             NavItem(Routes.OUTBOX, resources.getString(R.string.nav_outbox), MailIcons.Sent),
+        ),
+    )
+    // the searches the user keeps as folders, under a heading of their own
+    val searches = if (saved.isEmpty()) emptyList() else listOf(
+        NavSection(
+            title = resources.getString(R.string.nav_saved_searches),
+            items = saved.map { NavItem(Routes.saved(it.id), it.name, MailIcons.SavedSearch) },
         ),
     )
     val perAccount = accounts.map { account ->
@@ -48,7 +58,7 @@ fun buildShellSpec(
     }
     return ShellSpec(
         appTitle = resources.getString(R.string.app_name),
-        sections = listOf(views) + perAccount,
+        sections = listOf(views) + searches + perAccount,
         footer = NavItem(Routes.SETTINGS, resources.getString(desktopkit.R.string.dk_settings), DeskIcons.Settings),
         bottomBar = listOf(Routes.INBOX, Routes.FOLDERS, Routes.SEARCH),
         rail = listOf(Routes.INBOX, Routes.UNREAD, Routes.STARRED, Routes.FOLDERS, Routes.SEARCH),
