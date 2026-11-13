@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.ui.mail.ConversationUiTest" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-11-13T22:29:40.977Z" hostname="runnervmccnms" time="0.225">
+  <properties/>
+  <testcase name="aMessageOfItsOwnHasNoConversationUnderIt" classname="com.deskmail.ui.mail.ConversationUiTest" time="0.096"/>
+  <testcase name="theConversationStandsUnderTheOpenMessage" classname="com.deskmail.ui.mail.ConversationUiTest" time="0.126"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

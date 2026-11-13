@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.MainActivityTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-11-13T22:27:57.090Z" hostname="runnervmccnms" time="3.615">
+  <properties/>
+  <testcase name="ctrlCommaOpensSettings" classname="com.deskmail.MainActivityTest" time="2.77"/>
+  <testcase name="ctrlKOpensThePalette" classname="com.deskmail.MainActivityTest" time="0.418"/>
+  <testcase name="startsAtTheUnifiedInboxAndOffersToAddAnAccount" classname="com.deskmail.MainActivityTest" time="0.423"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[System.logW: A resource failed to call close. 
+]]></system-err>
+</testsuite>
