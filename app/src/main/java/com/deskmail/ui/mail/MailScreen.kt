@@ -110,7 +110,6 @@ import kotlinx.coroutines.launch
  * what is found, and what is found is listed, opened and acted on like any other mail.
  *
  * @param title the view's name, for the header of a large window.
- * @param onBack set on a phone for a folder opened from the Folders list: the top bar gets a back arrow.
  * @param onCompose "New message"; the phone shows it as the accent icon of the top bar.
  * @param onWrite begins a reply to a message, or sends it on; null where nothing can be written.
  * @param actions archives, moves and deletes messages, and says what came of it.
@@ -128,7 +127,6 @@ fun MailScreen(
     mail: MailSource,
     ui: MailUiState,
     prefs: DeskPreferences,
-    onBack: (() -> Unit)?,
     onCompose: () -> Unit,
     onWrite: ((DraftKind, MailMessage) -> Unit)?,
     actions: MailActions,
@@ -459,9 +457,9 @@ fun MailScreen(
     // The rows as a phone, a tablet held upright and a window beside a rail list them: under the
     // chips, which scroll away with them. They are what the keyboard steps through there (J, K).
     val rows: @Composable () -> Unit = {
-        // a phone's top bar: the view's name, back for a folder opened from the Folders list, "New message", "Sync"
+        // A phone's top bar: the view's name, "New message" and "Sync". A folder opened from the Folders
+        // screen is a page of it, and the kit gives the bar its Back button.
         CompactTopBar(
-            onBack = onBack,
             actions = listOf(
                 TopBarAction(MailIcons.Compose, composeLabel, onCompose, primary = true),
                 TopBarAction(MailIcons.Refresh, refreshLabel, refresh),
