@@ -197,8 +197,6 @@ fun MessageReader(
                 trailingActions()
             }
         }
-        // the other messages of its conversation, to go to
-        conversation()
         // a phone has no row of actions above the subject: "Reply" is beside the sender there
         ReaderHeader(message, onToggleStar, onReply = if (compact && answers != null) ({ answers(DraftKind.Reply) }) else null)
         val strip = Modifier.padding(horizontal = dimens.pagePadding).padding(bottom = dimens.gapM)
@@ -250,6 +248,8 @@ fun MessageReader(
                 modifier = strip,
             )
         }
+        // the other messages of its conversation, to go on to once it is read
+        conversation()
     }
 }
 

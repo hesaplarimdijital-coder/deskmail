@@ -10,6 +10,9 @@ import androidx.compose.runtime.setValue
 sealed interface SettingsPage {
     data object Log : SettingsPage
 
+    /** The licences of other people's work the app is made with. */
+    data object Licences : SettingsPage
+
     data object AddAccount : SettingsPage
 
     /** One account: how it is doing, signing in again, removing it. */

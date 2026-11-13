@@ -747,8 +747,10 @@ private fun SaveSearchDialog(query: String, onDismiss: () -> Unit, onSave: (Stri
 }
 
 /**
- * The conversation of the open message above it, where it has more than one: each of its messages
+ * The conversation of the open message under it, where it has more than one: each of its messages
  * on a line (who, when, the first words), oldest first, the open one marked; another opens on a tap.
+ * Under the message, not above it: the subject stays where the eye looks first, and a long
+ * conversation does not push the message down.
  */
 @Composable
 private fun ConversationStrip(mail: MailSource, message: MailMessage, onOpen: (MailMessage) -> Unit) {
@@ -756,7 +758,7 @@ private fun ConversationStrip(mail: MailSource, message: MailMessage, onOpen: (M
     if (conversation.size < 2) return
     val dates = rememberDateLabels()
     val dimens = DeskTheme.dimens
-    Column(Modifier.fillMaxWidth().padding(horizontal = dimens.pagePadding).padding(top = dimens.gapS).testTag(MailTags.CONVERSATION)) {
+    Column(Modifier.fillMaxWidth().padding(horizontal = dimens.pagePadding).padding(top = dimens.gapS, bottom = dimens.gapXl).testTag(MailTags.CONVERSATION)) {
         Text(
             pluralString(R.plurals.conversation_count, conversation.size),
             style = DeskTheme.type.labelSmall,

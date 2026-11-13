@@ -445,4 +445,6 @@
     <string name="settings_about">Hakkında</string>
     <string name="settings_version">Sürüm</string>
     <string name="settings_about_note">Postanı okuyan, düzenleyen, gönderen, arayan ve yeni iletileri bildiren bir ön sürüm. Outlook hesapları sonraki ön sürümlerle gelir.</string>
+    <string name="licences_title">Açık kaynak lisansları</string>
+    <string name="licences_note">DeskMail başkalarının bu açık kaynak çalışmalarıyla yapıldı. Birine dokununca lisansının metni açılır.</string>
 </resources>

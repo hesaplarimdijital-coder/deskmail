@@ -98,11 +98,11 @@ class AwaitingTest {
         assertEquals(waited, mail.awaitedOf(message))
         assertEquals(listOf("Proje planı"), withTimeout(15_000) { mail.observe(MailView.Awaiting).first { it.isNotEmpty() } }.map { it.subject })
 
-        // asked again: the new time
+        // asked again: the new time, in its place
         mail.awaitReply(plan, 7)
         eventually("the new time") { mail.awaited.singleOrNull()?.dueAt == Instant.ofEpochMilli(now + 7 * DAY_MS) }
 
-        mail.stopAwaiting(waited.id)
+        mail.stopAwaiting(mail.awaited.single().id)
         eventually("no longer waited for") { mail.awaited.isEmpty() }
         assertTrue(withTimeout(15_000) { mail.observe(MailView.Awaiting).first { it.isEmpty() } }.isEmpty())
         assertEquals(3, changed.get())

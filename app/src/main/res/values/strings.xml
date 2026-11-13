@@ -476,4 +476,6 @@
     <string name="settings_about">About</string>
     <string name="settings_version">Version</string>
     <string name="settings_about_note">A pre-release that reads, files, sends and searches your mail, and tells you of new mail. Outlook accounts arrive with the next ones.</string>
+    <string name="licences_title">Open-source licences</string>
+    <string name="licences_note">DeskMail is made with this open-source work of others. Tap one for its licence\'s text.</string>
 </resources>
