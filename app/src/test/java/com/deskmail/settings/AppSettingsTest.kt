@@ -21,7 +21,6 @@ class AppSettingsTest {
         assertTrue(settings.glassOverMessages)
         assertTrue(settings.readerUnderBars)
         assertTrue(settings.darkenMessages)
-        assertEquals(WebLayer.Default, settings.webLayer)
         assertEquals(10, settings.undoSendSeconds)
         // mail is told of as it comes, unless something else is chosen
         assertEquals(AppSettings.CHECK_INSTANT, settings.checkMinutes)
@@ -36,7 +35,6 @@ class AppSettingsTest {
             updateGlassOverMessages(false)
             updateReaderUnderBars(false)
             updateDarkenMessages(false)
-            updateWebLayer(WebLayer.Software)
             updateUndoSendSeconds(15)
             updateCheckMinutes(60)
             updateInspector(width = 380f, collapsed = false)
@@ -48,7 +46,6 @@ class AppSettingsTest {
         assertFalse(restarted.glassOverMessages)
         assertFalse(restarted.readerUnderBars)
         assertFalse(restarted.darkenMessages)
-        assertEquals(WebLayer.Software, restarted.webLayer)
         assertEquals(15, restarted.undoSendSeconds)
         assertEquals(60, restarted.checkMinutes)
         assertFalse(restarted.inspectorCollapsed)
@@ -63,12 +60,6 @@ class AppSettingsTest {
         assertEquals(0.85f, AppSettings(prefs).listShare, 0f)
         AppSettings(prefs).updateListShare(0.01f)
         assertEquals(0.15f, AppSettings(prefs).listShare, 0f)
-    }
-
-    @Test
-    fun aValueFromANewerVersionFallsBackToTheDefault() {
-        prefs.edit().putString("experiment_web_layer", "Vulkan").commit()
-        assertEquals(WebLayer.Default, AppSettings(prefs).webLayer)
     }
 
     /** "Send" can be taken back for one of the times there are to choose from, whatever was stored or is asked for. */
@@ -108,7 +99,6 @@ class AppSettingsTest {
             updateUndoSendSeconds(15)
             updateCheckMinutes(30)
             updateDarkenMessages(false)
-            updateWebLayer(WebLayer.Software)
             updateListShare(0.6f)
             updateConversations(false)
         }
@@ -122,7 +112,6 @@ class AppSettingsTest {
         assertEquals(15, there.undoSendSeconds)
         assertEquals(30, there.checkMinutes)
         assertFalse(there.darkenMessages)
-        assertEquals(WebLayer.Software, there.webLayer)
         assertFalse(there.conversations)
         assertEquals(0.45f, there.listShare, 0f)
         // kept, as any choice is
@@ -140,14 +129,14 @@ class AppSettingsTest {
                 "undo_send_seconds" to "twenty",
                 "check_minutes" to null,
                 "experiment_darken_messages" to 1,
-                "experiment_web_layer" to "Holographic",
+                // a setting this version no longer has (the alphas had the WebView's layer)
+                "experiment_web_layer" to "Software",
                 "unknown" to true,
             ),
         )
         assertFalse(changed)
         assertEquals(10, settings.undoSendSeconds)
         assertTrue(settings.darkenMessages)
-        assertEquals(WebLayer.Default, settings.webLayer)
         // a number that is none of the choices is the choice a fresh install starts with, as anywhere
         settings.adopt(mapOf("undo_send_seconds" to 3600))
         assertEquals(10, settings.undoSendSeconds)

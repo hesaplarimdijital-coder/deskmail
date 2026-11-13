@@ -295,17 +295,11 @@
     <string name="experiment_glass">Glass bars</string>
     <string name="experiment_glass_note">Off: bars, sheets and menus are solid surfaces.</string>
     <string name="experiment_glass_over_messages">Glass over a message</string>
-    <string name="experiment_glass_over_messages_note">The bars stay glass with a message open; the message is drawn into a layer of its own for that. Over a very long message the glass turns itself off. Turn this off if a message flickers while it is scrolled.</string>
+    <string name="experiment_glass_over_messages_note">The bars stay glass with a message open; while its page is shown the glass does not blur, it only tints (so that the page does not flicker). Off: solid bars while a message is open.</string>
     <string name="experiment_under_bars">Message scrolls under the bars</string>
     <string name="experiment_under_bars_note">Phone. Off: the message stays between the top and the bottom bar.</string>
     <string name="experiment_darken">Darken messages on dark themes</string>
     <string name="experiment_darken_note">Off: a message is shown on white, as its sender made it.</string>
-    <string name="experiment_web_layer">WebView layer</string>
-    <string name="experiment_web_layer_note">Automatic: a hardware layer under glass, none without. Try the others if a message flickers or a part of it stays empty.</string>
-    <string name="web_layer_default">Automatic</string>
-    <string name="web_layer_none">None</string>
-    <string name="web_layer_hardware">Hardware</string>
-    <string name="web_layer_software">Software</string>
 
     <!-- Settings › Log -->
     <string name="settings_log">Log</string>

@@ -241,24 +241,16 @@ class MailUiState(private val settings: AppSettings? = null) {
         movingIds = ids
     }
 
-    /**
-     * How many message bodies this window is drawing with a WebView right now, and how many of
-     * them are too tall for a layer of their own. What the shell's glass goes by ([shellGlass]).
-     */
+    /** How many message bodies this window is drawing with a WebView right now: what the shell's glass goes by ([shellGlass]). */
     var webBodies by mutableIntStateOf(0)
         private set
 
-    var tallWebBodies by mutableIntStateOf(0)
-        private set
-
-    fun webBodyShown(tall: Boolean = false) {
+    fun webBodyShown() {
         webBodies++
-        if (tall) tallWebBodies++
     }
 
-    fun webBodyGone(tall: Boolean = false) {
+    fun webBodyGone() {
         if (webBodies > 0) webBodies--
-        if (tall && tallWebBodies > 0) tallWebBodies--
     }
 
     /** Whether the images a message asks for from the network are loaded: only after the reader said so, and until the window closes. */
