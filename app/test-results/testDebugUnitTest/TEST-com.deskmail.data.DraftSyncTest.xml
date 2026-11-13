@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.data.DraftSyncTest" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-11-13T09:56:24.170Z" hostname="runnervmwuk1x" time="11.026">
+  <properties/>
+  <testcase name="withTheServerOutOfReachTheDraftWaitsOnTheDevice" classname="com.deskmail.data.DraftSyncTest" time="0.62"/>
+  <testcase name="aDraftThatIsWrittenOnHasItsCopyReplaced" classname="com.deskmail.data.DraftSyncTest" time="1.915"/>
+  <testcase name="aDraftThatIsThrownAwayLosesItsCopy" classname="com.deskmail.data.DraftSyncTest" time="1.708"/>
+  <testcase name="anAccountWithoutADraftsFolderKeepsItsDraftsOnTheDevice" classname="com.deskmail.data.DraftSyncTest" time="0.314"/>
+  <testcase name="aDraftThatWasWrittenElsewhereIsTakenUpAndItsCopyReplaced" classname="com.deskmail.data.DraftSyncTest" time="1.651"/>
+  <testcase name="aFileThatComesPutsTheDraftOnTheServerAnewWithIt" classname="com.deskmail.data.DraftSyncTest" time="1.902"/>
+  <testcase name="whatIsWrittenIsKeptAmongTheDraftsOnTheServer" classname="com.deskmail.data.DraftSyncTest" time="1.171"/>
+  <testcase name="aMessageThatIsSentLosesItsCopyAmongTheDrafts" classname="com.deskmail.data.DraftSyncTest" time="1.741"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

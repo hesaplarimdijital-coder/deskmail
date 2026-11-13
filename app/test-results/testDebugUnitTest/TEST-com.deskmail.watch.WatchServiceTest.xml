@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.watch.WatchServiceTest" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-11-13T09:57:48.383Z" hostname="runnervmwuk1x" time="0.448">
+  <properties/>
+  <testcase name="theServiceShowsASilentNotificationOfItsOwnAndSchedulesTheNextBeginning" classname="com.deskmail.watch.WatchServiceTest" time="0.17"/>
+  <testcase name="whenItsTimeHasComeTheWaitsAreBegunAnewAndTheNextTimeIsSet" classname="com.deskmail.watch.WatchServiceTest" time="0.048"/>
+  <testcase name="withoutAnAccountNothingIsStarted" classname="com.deskmail.watch.WatchServiceTest" time="0.036"/>
+  <testcase name="aDeviceThatIsSwitchedOnAndAnAppThatWasUpdatedStartTheWatch" classname="com.deskmail.watch.WatchServiceTest" time="0.066"/>
+  <testcase name="withAnAccountAndMailToBeToldOfAsItComesTheWatchIsStarted" classname="com.deskmail.watch.WatchServiceTest" time="0.041"/>
+  <testcase name="endingTheServiceEndsTheWatchAndItsAlarm" classname="com.deskmail.watch.WatchServiceTest" time="0.026"/>
+  <testcase name="theSystemStartsItAgainWhenItEndedIt" classname="com.deskmail.watch.WatchServiceTest" time="0.024"/>
+  <testcase name="aRunningWatchLooksAtTheAccountsAgainInsteadOfBeingStartedOnceMore" classname="com.deskmail.watch.WatchServiceTest" time="0.033"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
