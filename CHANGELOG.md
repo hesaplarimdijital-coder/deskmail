@@ -2,7 +2,7 @@
 
 Sürümler [SemVer](https://semver.org/lang/tr/) kuralına uyar; 0.1.0'a kadar olanlar ön sürümdür (`0.1.0-alpha.N`, ardından `0.1.0-beta.N`). Her sürümün imzalı APK'sı GitHub'daki sürüm sayfasına eklenir.
 
-## 0.1.0-beta.1 (hazırlanıyor)
+## 0.1.0-beta.1 (13 Kasım 2026)
 
 İlk beta: Outlook girişi dışında planlanan bütün özellikler (ilk aşamanın kalanı ve ikinci aşama). Outlook `0.1.0-beta.2`'de gelir.
 
@@ -31,7 +31,7 @@ Sürümler [SemVer](https://semver.org/lang/tr/) kuralına uyar; 0.1.0'a kadar o
 ### Taslaklar sunucuda
 - **Yazılan ileti sunucudaki Taslaklar klasörüne de kaydedilir.** Yazma durduktan yaklaşık 20 saniye sonra (ve bir dosya eklenip çıkarılınca) taslağın bir kopyası hesabın Taslaklar klasörüne konur; yeniden yazılınca yenisi konur, eskisi silinir. Sunucuda her zaman tek kopya olur; başka bir cihaz ya da web postası taslağı orada görür. Gizli alıcılar kopyada durur.
 - **Gönderilen ya da silinen taslağın sunucudaki kopyası da silinir** (ağ yoksa ağ gelince).
-- **Sunucudaki taslağa devam etmek:** Taslaklar klasöründe bir taslağı açınca "Yanıtla" yerine **Düzenle** ve altta **Yazmaya devam et** çıkar. Bu cihazda başlanmış taslak kaldığı yerden açılır; başka bir cihazda başlanmışsa yeni bir ileti olarak açılır ve sunucudaki kopyası artık onundur.
+- **Sunucudaki taslağa devam etmek:** Taslaklar klasöründe bir taslağı açınca "Yanıtla" yerine **Düzenle** ve altta **Yazmaya devam et** çıkar. Bu cihazda başlanmış taslak kaldığı yerden açılır; başka bir cihazda başlanmışsa yeni bir ileti olarak açılır ve sunucudaki kopyası artık onundur. Bu, taslak eksiksiz alınabildiğinde böyledir: düz metinse, metninde resim yoksa ve bütün ekleri indirilebildiyse. Başka bir programda biçimli (HTML) yazılmış ya da bir eki alınamamış taslağın sunucudaki kopyasına dokunulmaz: DeskMail yazdığını onun yanına, ayrı bir taslak olarak kaydeder (sunucuda iki taslak olur; gönderince eskisi Taslaklar'da kalır, istersen silersin).
 - Hiçbir şey yazılmamış boş ileti sunucuya gitmez. Hesabın Taslaklar klasörü yoksa, ya da sunucu iletinin nereye konduğunu söylemiyorsa (UIDPLUS; Gmail ve Outlook söylüyor), taslak yalnızca cihazda kalır.
 - **Veritabanı sürüm 4:** güncellemede kendiliğinden taşınır.
 
@@ -40,7 +40,7 @@ Sürümler [SemVer](https://semver.org/lang/tr/) kuralına uyar; 0.1.0'a kadar o
 - **Yanıtlandı ve iletildi işaretleri.** Yanıtlanan ileti listede tarihin altında ↩, iletilen → ile görünür; geniş penceredeki tabloda dar bir sütunda ("↩", "→"), o sütuna göre sıralanabilir. Başka bir posta programında yanıtlanan ileti de işaretli görünür.
 
 ### Konuşmalar
-- **Konuşma dizileri.** Listelerde bir konuşmanın iletileri tek satır olur: en yenisi, yanında kaç ileti olduğuyla. Satır, konuşmada okunmamış ileti varsa okunmamış, yıldızlı ileti varsa yıldızlı görünür. Satıra yapılan (arşivle, sil, taşı, okundu) o listedeki bütün iletilerine yapılır.
+- **Konuşma dizileri.** Listelerde bir konuşmanın iletileri tek satır olur: en yenisi, yanında kaç ileti olduğuyla. Satır, konuşmada okunmamış ileti varsa okunmamış, yıldızlı ileti varsa yıldızlı görünür. Satıra yapılan (arşivle, sil, taşı, okundu; kısayollarla da) o listedeki bütün iletilerine yapılır.
 - **Açılan iletinin altında konuşma.** İletinin metninin (ve Yanıtla düğmelerinin) altında "Bu konuşmada N ileti" ve konuşmanın iletileri eskiden yeniye; açık olan işaretli, birine dokununca o açılır. Senin iletilerinde kime gittiği yazar ("Kime: …"). Konu, açılan iletinin en üstünde kalır. Konuşmanın iletileri nerede durursa dursun toplanır (Gönderilmiş'teki yanıtların da), Çöp ve Spam hariç.
 - Konuşma, iletilerin References ve In-Reply-To başlıklarından bulunur; her hesap kendi içinde. Arama sonuçları bir araya getirilmez.
 - Ayarlar › Listeler › **Konuşmaları bir arada göster** (varsayılan açık); kapalıyken her ileti kendi satırında. Bu seçim de ayarlarla başka bir cihaza taşınır.
@@ -53,7 +53,7 @@ Sürümler [SemVer](https://semver.org/lang/tr/) kuralına uyar; 0.1.0'a kadar o
 - Veritabanı: ertelemeler için yeni bir tablo (sürüm 4'e eklendi; güncellemede kendiliğinden taşınır).
 
 ### İletinin ayrıntıları
-- **Güvenlik sekmesi.** Geniş pencerelerdeki (DeX, yatay tablet) ayrıntı panelinde yeni **Güvenlik** sekmesi: iletinin SPF, DKIM ve DMARC sonuçları, üstte tek satırlık bir yargıyla ("Gönderici doğrulandı", "Doğrulama tam değil" ya da "Gönderici doğrulanamadı: ileti göründüğü yerden gelmemiş olabilir"). Sonuçlar, senin sağlayıcının iletiye eklediği `Authentication-Results` başlığından okunur: en üstteki, yani sağlayıcının kendisininki; iletiyle birlikte gelen daha alttakilere güvenilmez. DeskMail doğrulamayı kendisi yapmaz; sağlayıcı bir sonuç eklememişse sekme bunu söyler.
+- **Güvenlik sekmesi.** Geniş pencerelerdeki (DeX, yatay tablet) ayrıntı panelinde yeni **Güvenlik** sekmesi: iletinin SPF, DKIM ve DMARC sonuçları, üstte tek satırlık bir yargıyla ("Gönderici doğrulandı", "Doğrulama tam değil" ya da "Gönderici doğrulanamadı: ileti göründüğü yerden gelmemiş olabilir"). Sonuçlar, senin sağlayıcının iletiye eklediği `Authentication-Results` başlığından okunur: en üstteki, yani sağlayıcının kendisininki; iletiyle birlikte gelen daha alttakilere güvenilmez. En üstteki de yalnızca sağlayıcının sunucusunun adını taşıyorsa (Gmail'de `mx.google.com`; Microsoft'unki ad taşımaz) sağlayıcınınki sayılır: sağlayıcı kendi sonucunu eklemediyse en üstte iletiyle gelen bir başlık durabilir. Öyleyse, ve DeskMail'in tanımadığı sağlayıcılarda, sonuçlar gösterilir ama bir yargıya varılmaz; sekme bunların iletiyle gelmiş olabileceğini söyler. DeskMail doğrulamayı kendisi yapmaz; sağlayıcı bir sonuç eklememişse sekme bunu söyler.
 - **Ham başlıklar sekmesi.** İletinin başlık satırları geldiği gibi; seçilip kopyalanabilir, **Kopyala** hepsini alır.
 - Başlıklar iletinin metniyle birlikte cihaza alınır. Bu sürümden önce cihaza gelmiş iletilerin başlıkları, sekme ilk açıldığında sunucudan alınır.
 - Veritabanı: iletinin metninin yanında başlıkları için bir alan (sürüm 4'e eklendi; güncellemede kendiliğinden taşınır).
