@@ -288,6 +288,8 @@ Her biri ayrı PR; sıra, cihazda en çok denenmesi gerekenden başlar.
 8. Aşama 2, brifteki sırayla: konuşma dizileri · erteleme · şablonlar · kayıtlı aramalar · yanıt
    bekleyenler · VIP ve gönderen başına uzak görsel izni · ayrıntı paneli sekmeleri (Ayrıntılar, Ekler,
    Güvenlik, Ham başlıklar) · biçimli yazma · ayarları taşıma · bildirimden hızlı yanıt.
+   - **Ayarları taşıma: yapıldı.** `SettingsFile` (JSON; `kind`, `format`), şifre ve jeton için yeri yok. İçe
+     aktarılan hesap şifresiz eklenir (`AccountStore.addWaiting`, durumu `NeedsLogin`), "Yeniden bağlan" ile açılır.
    - **Bildirimden hızlı yanıt: yapıldı.** `RemoteInput`; yanıt `DraftKind.Reply` ile başlar, yazılan en üste
      konur ve beklemeden gönderilir (`sendNow`). Sistem en çok üç düğme gösterdiği için düğmeler Yanıtla,
      Okundu, Arşivle (arşivi olmayan hesapta Sil).
