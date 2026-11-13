@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.ui.compose.ContactPickTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-11-13T08:46:01.899Z" hostname="runnervmwuk1x" time="0.054">
+  <properties/>
+  <testcase name="earlierAndroidAsksTheContactsAppForOneAddress" classname="com.deskmail.ui.compose.ContactPickTest" time="0.024"/>
+  <testcase name="onlyEmailAddressesAreTakenEachOnce" classname="com.deskmail.ui.compose.ContactPickTest" time="0.011"/>
+  <testcase name="android17AsksItsOwnPickerForEmailAddresses" classname="com.deskmail.ui.compose.ContactPickTest" time="0.009"/>
+  <testcase name="whatIsPickedComesAfterWhatWasTypedAndNobodyTwice" classname="com.deskmail.ui.compose.ContactPickTest" time="0.009"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
