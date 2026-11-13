@@ -703,6 +703,57 @@ abstract class OutboxDao {
     @Query("SELECT MIN(sendAfter) FROM outbox WHERE state = 'Queued' AND sendAfter > :now")
     abstract suspend fun nextDue(now: Long): Long?
 
+    // ------------------------------------------------------------------ the draft's copy on the server
+
+    /** The drafts that were touched since their copy was put on the server, or have none there yet. */
+    @Query("SELECT * FROM outbox WHERE state = 'Draft' AND updatedAt > draftSavedAt ORDER BY id")
+    abstract suspend fun draftsToSave(): List<OutboxEntity>
+
+    /** Notes where a draft's copy lies now, and as of when ([savedAt]: the draft's updatedAt that was put there). */
+    @Query("UPDATE outbox SET draftFolderId = :folderId, draftUid = :uid, draftSavedAt = :savedAt WHERE id = :id")
+    abstract suspend fun setDraftCopy(id: Long, folderId: Long, uid: Long, savedAt: Long)
+
+    /** The draft whose copy on the server this is, if the device has it. */
+    @Query("SELECT * FROM outbox WHERE draftFolderId = :folderId AND draftUid = :uid LIMIT 1")
+    abstract suspend fun byDraftCopy(folderId: Long, uid: Long): OutboxEntity?
+
+    /** A file came or went: the draft is ahead of its copy, as after something typed. */
+    @Query("UPDATE outbox SET updatedAt = :now WHERE id = :id AND state IN ('Draft', 'Failed')")
+    abstract suspend fun touch(id: Long, now: Long)
+
+    @Insert
+    abstract suspend fun addRemoval(removal: DraftRemovalEntity): Long
+
+    @Query("SELECT * FROM draft_removal ORDER BY id")
+    abstract suspend fun removals(): List<DraftRemovalEntity>
+
+    @Query("DELETE FROM draft_removal WHERE id = :id")
+    abstract suspend fun removalDone(id: Long)
+
+    /**
+     * Throws a message away unless it is being handed to its server this moment ([discard]); a copy
+     * it has on the server is noted for removal. 0 when it was not thrown away.
+     */
+    @Transaction
+    open suspend fun discardWithCopy(id: Long): Int {
+        val row = byId(id) ?: return 0
+        val gone = discard(id)
+        if (gone > 0) noteCopy(row)
+        return gone
+    }
+
+    /** A message was sent: it leaves the outbox, and the copy it had among the drafts is noted for removal. */
+    @Transaction
+    open suspend fun deleteSent(id: Long) {
+        val row = byId(id) ?: return
+        delete(id)
+        noteCopy(row)
+    }
+
+    private suspend fun noteCopy(row: OutboxEntity) {
+        if (row.draftFolderId != 0L && row.draftUid != 0L) addRemoval(DraftRemovalEntity(accountId = row.accountId, folderId = row.draftFolderId, uid = row.draftUid))
+    }
+
     @Query("SELECT * FROM outbox_file WHERE outboxId = :outboxId ORDER BY id")
     abstract suspend fun files(outboxId: Long): List<OutboxFileEntity>
 

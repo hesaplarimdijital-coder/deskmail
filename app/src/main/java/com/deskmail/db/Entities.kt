@@ -251,6 +251,8 @@ data class PendingOpEntity(
  * @param sourceId the message it answers or forwards, by the app's own id, 0 for none; [sourceKind]
  *   says which ([REPLY], [FORWARD]): that message is marked so once this one is sent.
  * @param draftFolderId where the draft's copy on the server lies and [draftUid] its UID there; 0 for none.
+ * @param draftSavedAt what [updatedAt] was when that copy was put there: a draft that was touched
+ *   since is ahead of its copy.
  */
 @Entity(
     tableName = "outbox",
@@ -277,6 +279,7 @@ data class OutboxEntity(
     val error: String,
     val createdAt: Long,
     val updatedAt: Long,
+    val draftSavedAt: Long = 0,
 ) {
     companion object {
         const val DRAFT = "Draft"
@@ -290,6 +293,23 @@ data class OutboxEntity(
         const val FORWARD = "Forward"
     }
 }
+
+/**
+ * A draft's copy on the server that is of no use any more: its message was sent or thrown away,
+ * and with it the row that knew of the copy. It is noted here until the server has been told to
+ * remove it, which may be later (no network) than the message went.
+ */
+@Entity(
+    tableName = "draft_removal",
+    foreignKeys = [ForeignKey(entity = AccountEntity::class, parentColumns = ["id"], childColumns = ["accountId"], onDelete = ForeignKey.CASCADE)],
+    indices = [Index(value = ["accountId"])],
+)
+data class DraftRemovalEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val accountId: Long,
+    val folderId: Long,
+    val uid: Long,
+)
 
 /**
  * A file that goes with a message that is being written: [path] is its copy in the app's own
