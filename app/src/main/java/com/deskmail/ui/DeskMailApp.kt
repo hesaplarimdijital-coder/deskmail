@@ -22,6 +22,7 @@ import com.deskmail.core.log.AppLog
 import com.deskmail.core.mail.FolderRole
 import com.deskmail.mail.AccountActions
 import com.deskmail.mail.DraftKind
+import com.deskmail.mail.FetchedFile
 import com.deskmail.mail.MailAccount
 import com.deskmail.mail.MailComposer
 import com.deskmail.mail.MailContent
@@ -75,6 +76,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeoutOrNull
 
 /**
  * The whole app inside one window: the kit's root (theme, density, insets) and its shell (bottom
@@ -175,6 +178,8 @@ fun DeskMailApp(
             layer = settings.webLayer,
             onLink = showLink,
             onTall = { tall = it },
+            // a picture of the message's own: from the device, or from its server (a WebView thread waits for it)
+            picture = { part -> runBlocking { withTimeoutOrNull(PICTURE_WAIT_MS) { (mail.fetch(part) as? FetchedFile.Ready)?.file } } },
         )
     }
     // archive, move and delete, with their notices and the way back; the files of messages
@@ -559,6 +564,9 @@ fun DeskMailApp(
 
 /** A link's address is shown whole up to this many characters. */
 private const val LINK_LENGTH = 300
+
+/** How long a message's page waits for one of its own pictures to come from the server; then it goes without. */
+private const val PICTURE_WAIT_MS = 30_000L
 
 /** A dragged divider is stored once the drag has rested this long. */
 private const val SAVE_AFTER_MS = 500L

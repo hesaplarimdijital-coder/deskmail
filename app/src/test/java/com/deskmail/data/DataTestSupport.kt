@@ -194,6 +194,29 @@ class TestImapServer : ExternalResource() {
         return folder("INBOX").appendMessage(message, Flags(), Date.from(received))
     }
 
+    /**
+     * Puts an HTML message into the inbox that shows a picture of its own in its text: [html]
+     * refers to it as "cid:[contentId]", and the picture travels with it (multipart/related).
+     * Returns its UID.
+     */
+    fun deliverWithPicture(subject: String, html: String, contentId: String, picture: ByteArray, received: Instant): Long {
+        val id = ++counter
+        val raw = "From: " + word("Ayşe Yılmaz") + " <ayse@example.org>\r\n" +
+            "To: " + word("Deniz Aksoy") + " <" + ADDRESS + ">\r\n" +
+            "Subject: " + word(subject) + "\r\n" +
+            "Date: " + RFC_822.format(received.atOffset(ZoneOffset.UTC)) + "\r\n" +
+            "Message-ID: <test-" + id + "@example.org>\r\n" +
+            "MIME-Version: 1.0\r\n" +
+            "Content-Type: multipart/related; boundary=\"rel\"; type=\"text/html\"\r\n\r\n" +
+            "--rel\r\nContent-Type: text/html; charset=UTF-8\r\nContent-Transfer-Encoding: base64\r\n\r\n" + encoded(html) +
+            "--rel\r\nContent-Type: image/png; name=\"logo.png\"\r\nContent-Transfer-Encoding: base64\r\n" +
+            "Content-ID: <" + contentId + ">\r\nContent-Disposition: inline; filename=\"logo.png\"\r\n\r\n" +
+            Base64.getMimeEncoder(76, "\r\n".toByteArray()).encodeToString(picture) + "\r\n" +
+            "--rel--\r\n"
+        val message = GreenMailUtil.newMimeMessage(ByteArrayInputStream(raw.toByteArray(Charsets.US_ASCII)))
+        return folder("INBOX").appendMessage(message, Flags(), Date.from(received))
+    }
+
     companion object {
         const val LOCALHOST = "127.0.0.1"
         const val ADDRESS = "deniz@example.org"

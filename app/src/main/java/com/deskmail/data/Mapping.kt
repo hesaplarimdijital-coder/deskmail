@@ -74,6 +74,8 @@ internal fun MessageEntity.toMessage(outgoing: Boolean): MailMessage {
         attachmentCount = attachments,
         outgoing = outgoing,
         cc = MailAddress.labels(MailAddress.decode(ccList)),
+        answered = answered,
+        forwarded = forwarded,
     )
 }
 
@@ -91,4 +93,10 @@ internal fun once(found: List<MessageEntity>, folders: List<FolderEntity>): List
 
 /** The files a message offers: not the pictures its HTML shows in its own place. */
 internal fun List<AttachmentEntity>.toFiles(): List<MailAttachment> =
-    filter { !it.inline || it.contentId.isEmpty() }.map { MailAttachment(it.name.ifEmpty { it.mimeType }, it.size, it.id, it.mimeType) }
+    filter { !it.inline || it.contentId.isEmpty() }.map { it.toAttachment() }
+
+/** The parts the message's HTML can show in its own place ("cid:…"), by the name it refers to them by. */
+internal fun List<AttachmentEntity>.toPictures(): Map<String, MailAttachment> =
+    filter { it.contentId.isNotEmpty() }.associate { it.contentId to it.toAttachment() }
+
+private fun AttachmentEntity.toAttachment() = MailAttachment(name.ifEmpty { mimeType }, size, id, mimeType)
