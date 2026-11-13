@@ -101,7 +101,7 @@ class RoomSyncStore(db: DeskMailDatabase) : SyncStore {
             return
         }
         messages.keepBody(
-            body = BodyEntity(message.id, body.text, body.html, body.remoteImages),
+            body = BodyEntity(message.id, body.text, body.html, body.remoteImages, body.headers),
             attachments = body.attachments.map { AttachmentEntity(0, message.id, it.part, it.name, it.mimeType, it.size, it.contentId, it.inline) },
             preview = body.preview,
             index = indexOf(message, body.text),

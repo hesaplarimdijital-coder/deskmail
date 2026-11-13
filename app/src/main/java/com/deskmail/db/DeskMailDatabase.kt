@@ -101,6 +101,7 @@ abstract class DeskMailDatabase : RoomDatabase() {
          * server was told to remove it. What a search of the server found is remembered for a while.
          * The user's own lists: texts to put into a message, searches kept as folders, and what was
          * said of senders (VIPs, and whose remote images are shown).
+         * A message's header lines are kept with its text.
          */
         val MIGRATION_3_4: Migration = object : Migration(3, 4) {
             override suspend fun migrate(connection: SQLiteConnection) {
@@ -131,6 +132,7 @@ abstract class DeskMailDatabase : RoomDatabase() {
                     "CREATE TABLE IF NOT EXISTS `sender` (`address` TEXT NOT NULL, `vip` INTEGER NOT NULL, `images` INTEGER NOT NULL, " +
                         "PRIMARY KEY(`address`))",
                 )
+                connection.runSql("ALTER TABLE `body` ADD COLUMN `headers` TEXT NOT NULL DEFAULT ''")
             }
         }
 

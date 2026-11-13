@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 4,
-    "identityHash": "99860417c6ef68673eebd502dca15d46",
+    "identityHash": "38cc467370424fcdd47b4900c70c9f19",
     "entities": [
       {
         "tableName": "account",
@@ -523,7 +523,7 @@
       },
       {
         "tableName": "body",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`messageId` INTEGER NOT NULL, `text` TEXT NOT NULL, `html` TEXT, `remoteImages` INTEGER NOT NULL, PRIMARY KEY(`messageId`), FOREIGN KEY(`messageId`) REFERENCES `message`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`messageId` INTEGER NOT NULL, `text` TEXT NOT NULL, `html` TEXT, `remoteImages` INTEGER NOT NULL, `headers` TEXT NOT NULL, PRIMARY KEY(`messageId`), FOREIGN KEY(`messageId`) REFERENCES `message`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
         "fields": [
           {
             "fieldPath": "messageId",
@@ -546,6 +546,12 @@
             "fieldPath": "remoteImages",
             "columnName": "remoteImages",
             "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "headers",
+            "columnName": "headers",
+            "affinity": "TEXT",
             "notNull": true
           }
         ],
@@ -1274,7 +1280,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '99860417c6ef68673eebd502dca15d46')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '38cc467370424fcdd47b4900c70c9f19')"
     ]
   }
 }

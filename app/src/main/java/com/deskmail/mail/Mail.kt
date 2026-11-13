@@ -110,6 +110,8 @@ sealed interface MailContent {
      * @param remoteImages the HTML asks for images from the network, which are not loaded unless the reader says so.
      * @param pictures the pictures the HTML shows in its own place ("cid:…"), by the name it refers
      *   to them by. They are the message's own: fetched from its server when the page asks for them.
+     * @param headers its header lines as they arrived; empty for a message whose text was fetched
+     *   before they were kept with it ([MailSource.fetchHeaders]).
      */
     data class Ready(
         val text: String,
@@ -117,6 +119,7 @@ sealed interface MailContent {
         val remoteImages: Boolean = false,
         val attachments: List<MailAttachment> = emptyList(),
         val pictures: Map<String, MailAttachment> = emptyMap(),
+        val headers: String = "",
     ) : MailContent
 
     /** It could not be fetched; [kind] says why, as far as that is known. */

@@ -47,6 +47,12 @@ interface MailSource {
 
     fun folder(id: Long): MailFolder? = folders.firstOrNull { it.id == id }
 
+    /**
+     * Fetches the header lines of the message [id] from its server, for one whose text came before
+     * they were kept with it; its content then has them. False when they could not be had.
+     */
+    suspend fun fetchHeaders(id: Long): Boolean = false
+
     /** The messages of [view], newest first, now and whenever they change. */
     fun observe(view: MailView): Flow<List<MailMessage>>
 
