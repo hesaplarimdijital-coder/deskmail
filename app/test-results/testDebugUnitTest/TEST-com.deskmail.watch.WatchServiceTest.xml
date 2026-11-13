@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.watch.WatchServiceTest" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-11-13T07:23:58.329Z" hostname="runnervmwuk1x" time="0.574">
+  <properties/>
+  <testcase name="theServiceShowsASilentNotificationOfItsOwnAndSchedulesTheNextBeginning" classname="com.deskmail.watch.WatchServiceTest" time="0.201"/>
+  <testcase name="whenItsTimeHasComeTheWaitsAreBegunAnewAndTheNextTimeIsSet" classname="com.deskmail.watch.WatchServiceTest" time="0.047"/>
+  <testcase name="withoutAnAccountNothingIsStarted" classname="com.deskmail.watch.WatchServiceTest" time="0.061"/>
+  <testcase name="aDeviceThatIsSwitchedOnAndAnAppThatWasUpdatedStartTheWatch" classname="com.deskmail.watch.WatchServiceTest" time="0.084"/>
+  <testcase name="withAnAccountAndMailToBeToldOfAsItComesTheWatchIsStarted" classname="com.deskmail.watch.WatchServiceTest" time="0.065"/>
+  <testcase name="endingTheServiceEndsTheWatchAndItsAlarm" classname="com.deskmail.watch.WatchServiceTest" time="0.032"/>
+  <testcase name="theSystemStartsItAgainWhenItEndedIt" classname="com.deskmail.watch.WatchServiceTest" time="0.035"/>
+  <testcase name="aRunningWatchLooksAtTheAccountsAgainInsteadOfBeingStartedOnceMore" classname="com.deskmail.watch.WatchServiceTest" time="0.046"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[System.logW: A resource failed to call close. 
+]]></system-err>
+</testsuite>

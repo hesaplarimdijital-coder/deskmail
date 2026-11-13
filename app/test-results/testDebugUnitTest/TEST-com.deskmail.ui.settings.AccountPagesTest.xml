@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.ui.settings.AccountPagesTest" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-11-13T07:23:50.581Z" hostname="runnervmwuk1x" time="0.909">
+  <properties/>
+  <testcase name="theAccountsAreListedWithHowTheyAreDoing" classname="com.deskmail.ui.settings.AccountPagesTest" time="0.065"/>
+  <testcase name="anAccountSignsInAgainAndCanBeRemoved" classname="com.deskmail.ui.settings.AccountPagesTest" time="0.136"/>
+  <testcase name="outlookSaysItIsNotReadyYet" classname="com.deskmail.ui.settings.AccountPagesTest" time="0.101"/>
+  <testcase name="anUnknownAddressIsSetUpByHand" classname="com.deskmail.ui.settings.AccountPagesTest" time="0.168"/>
+  <testcase name="theSettingsListLeadsToAnAccountsPage" classname="com.deskmail.ui.settings.AccountPagesTest" time="0.071"/>
+  <testcase name="aGmailAccountIsAddedWithAnAppPassword" classname="com.deskmail.ui.settings.AccountPagesTest" time="0.153"/>
+  <testcase name="theNameAndTheSignatureAnAccountWritesWithAreSaved" classname="com.deskmail.ui.settings.AccountPagesTest" time="0.105"/>
+  <testcase name="aRefusedSignInSaysWhatTheServerSaid" classname="com.deskmail.ui.settings.AccountPagesTest" time="0.105"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

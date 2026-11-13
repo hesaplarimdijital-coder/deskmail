@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.data.LiveMailTest" tests="14" skipped="0" failures="0" errors="0" timestamp="2026-11-13T07:22:48.302Z" hostname="runnervmwuk1x" time="12.965">
+  <properties/>
+  <testcase name="anAccountThatWasJustAddedIsSyncedOnce" classname="com.deskmail.data.LiveMailTest" time="0.765"/>
+  <testcase name="readingAndStarringShowAtOnceAndAreToldToTheServer" classname="com.deskmail.data.LiveMailTest" time="0.96"/>
+  <testcase name="aMoveGoesToTheFolderThatWasChosen" classname="com.deskmail.data.LiveMailTest" time="0.779"/>
+  <testcase name="aSearchFindsWhatTheDeviceHasByItsSubjectItsPeopleAndItsText" classname="com.deskmail.data.LiveMailTest" time="0.506"/>
+  <testcase name="aViewThatComesToTheFrontIsSyncedUnlessItJustWas" classname="com.deskmail.data.LiveMailTest" time="2.44"/>
+  <testcase name="theScreensSeeTheAccountsTheFoldersAndTheMail" classname="com.deskmail.data.LiveMailTest" time="0.889"/>
+  <testcase name="aFilesNameCannotLeadOutOfItsDirectory" classname="com.deskmail.data.LiveMailTest" time="0.029"/>
+  <testcase name="aMessagesTextIsFetchedWhenSomebodyLooks" classname="com.deskmail.data.LiveMailTest" time="1.74"/>
+  <testcase name="aFileIsFetchedOnceAndKeptOnTheDevice" classname="com.deskmail.data.LiveMailTest" time="0.702"/>
+  <testcase name="whatStandsIsToldToTheServerAndCanStillBeBroughtBack" classname="com.deskmail.data.LiveMailTest" time="1.18"/>
+  <testcase name="anArchivedMessageIsTakenBackBeforeTheServerHearsOfIt" classname="com.deskmail.data.LiveMailTest" time="0.507"/>
+  <testcase name="deletingMovesToTheTrashAndFromThereForGood" classname="com.deskmail.data.LiveMailTest" time="0.966"/>
+  <testcase name="aTextThatCannotBeFetchedSaysSo" classname="com.deskmail.data.LiveMailTest" time="0.448"/>
+  <testcase name="whatWasDoneWhileTheServerWasAwayIsToldBeforeTheNextSyncReads" classname="com.deskmail.data.LiveMailTest" time="1.046"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[System.logW: A resource failed to call close. 
+System.logW: A resource failed to call close. 
+System.logW: A resource failed to call close. 
+System.logW: A resource failed to call SQLiteConnection.close. 
+System.logW: A resource failed to call SQLiteConnectionPool.close. 
+System.logW: A resource failed to call close. 
+System.logW: A resource failed to call SQLiteConnection.close. 
+System.logW: A resource failed to call SQLiteConnection.close. 
+System.logW: A resource failed to call SQLiteConnection.close. 
+]]></system-err>
+</testsuite>

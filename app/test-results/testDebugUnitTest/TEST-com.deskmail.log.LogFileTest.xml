@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.log.LogFileTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-11-13T07:23:13.193Z" hostname="runnervmwuk1x" time="0.019">
+  <properties/>
+  <testcase name="whatIsAppendedIsThereForTheNextRun" classname="com.deskmail.log.LogFileTest" time="0.011"/>
+  <testcase name="aFullFileBecomesThePreviousOneAndTheOneBeforeIsDropped" classname="com.deskmail.log.LogFileTest" time="0.004"/>
+  <testcase name="theExportIsOneFileWithItsHeaderFirst" classname="com.deskmail.log.LogFileTest" time="0.001"/>
+  <testcase name="clearingLeavesNothingOnDisk" classname="com.deskmail.log.LogFileTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
