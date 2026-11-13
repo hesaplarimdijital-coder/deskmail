@@ -32,6 +32,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -122,10 +123,6 @@ class ComposeFields {
     private var asRead: List<Any> = emptyList()
     private var filesChanged = false
 
-    /** How many files are still being copied into the message: it is not sent before they are in it. */
-    var attaching by mutableIntStateOf(0)
-        private set
-
     /** The message was thrown away: what is still being done for it has nothing to report. */
     var thrownAway = false
         private set
@@ -149,17 +146,6 @@ class ComposeFields {
         filesChanged = true
     }
 
-    /** [count] files are about to be copied into the message. */
-    fun attachBegun(count: Int) {
-        attaching += count
-    }
-
-    /** One of them is done with: in the message, or not. */
-    fun attachEnded(added: Boolean) {
-        attaching = (attaching - 1).coerceAtLeast(0)
-        if (added) filesChanged = true
-    }
-
     /** Everything that is kept, as one value: what changes when something was typed. */
     fun typed(): List<Any> = listOf(accountId, to, cc, bcc, subject, body)
 
@@ -170,10 +156,33 @@ class ComposeFields {
     }
 }
 
-/** What a window's compose screen can be asked from outside: Ctrl+Enter sends. */
+/**
+ * What a window's compose screen can be asked from outside (Ctrl+Enter sends), and what the window
+ * knows of its messages apart from their screens: the files that are still on their way into them.
+ *
+ * A file is copied into its message behind the screen, and a large one takes its time. The count
+ * is kept here, by message, rather than by the screen: a message that is put away and taken up
+ * again while its file is still being copied is not sent without it.
+ */
 @Stable
 class ComposeHost {
     var send: (() -> Unit)? = null
+
+    private val arriving = mutableStateMapOf<Long, Int>()
+
+    /** How many files are still being copied into the message [draftId]: it is not sent before they are in it. */
+    fun arriving(draftId: Long): Int = arriving[draftId] ?: 0
+
+    /** [count] files are about to be copied into the message. */
+    fun filesBegun(draftId: Long, count: Int) {
+        if (count > 0) arriving[draftId] = arriving(draftId) + count
+    }
+
+    /** One of them is done with: in the message, or not. */
+    fun fileEnded(draftId: Long) {
+        val left = arriving(draftId) - 1
+        if (left > 0) arriving[draftId] = left else arriving.remove(draftId)
+    }
 }
 
 /** Names the tests find the fields by. */
@@ -254,12 +263,14 @@ fun ComposeScreen(
         }
     }
 
+    // the files that are still being copied into this message, whichever screen began them
+    val arriving = host.arriving(draftId)
     val waitForFiles = stringResource(R.string.compose_wait_files)
     val send: () -> Unit = {
         scope.launch {
             if (!fields.loaded) return@launch
             // a file that is still being copied would be left behind
-            if (fields.attaching > 0) {
+            if (host.arriving(draftId) > 0) {
                 onNotify(waitForFiles)
                 return@launch
             }
@@ -287,12 +298,12 @@ fun ComposeScreen(
         if (chosen.isNotEmpty()) {
             scope.launch {
                 var failed = false
-                fields.attachBegun(chosen.size)
+                host.filesBegun(draftId, chosen.size)
                 for (uri in chosen) {
                     val (name, type) = describe(context, uri)
                     val added = composer.attach(draftId, name, type) { context.contentResolver.openInputStream(uri) }
-                    fields.attachEnded(added)
-                    if (!added) failed = true
+                    host.fileEnded(draftId)
+                    if (added) fields.fileChanged() else failed = true
                 }
                 if (failed) onNotify(resources.getString(R.string.compose_attach_failed))
             }
@@ -321,7 +332,7 @@ fun ComposeScreen(
         onBack = onClose,
         backIcon = TopBarBackIcon.Close,
         actions = listOf(
-            TopBarAction(MailIcons.Sent, sendLabel, send, enabled = fields.attaching == 0, primary = true),
+            TopBarAction(MailIcons.Sent, sendLabel, send, enabled = arriving == 0, primary = true),
             TopBarAction(MailIcons.Attachment, attachLabel, attach),
             TopBarAction(DeskIcons.Delete, discardLabel, onDiscard),
         ),
@@ -346,7 +357,7 @@ fun ComposeScreen(
         ) {
             if (!compact) {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(dimens.gapS), verticalAlignment = Alignment.CenterVertically) {
-                    DeskButton(sendLabel, send, Modifier.keepsKeyboardOpen(), icon = MailIcons.Sent, primary = true, enabled = fields.attaching == 0)
+                    DeskButton(sendLabel, send, Modifier.keepsKeyboardOpen(), icon = MailIcons.Sent, primary = true, enabled = arriving == 0)
                     DeskButton(attachLabel, attach, icon = MailIcons.Attachment)
                     Spacer(Modifier.weight(1f))
                     DeskIconButton(DeskIcons.Delete, discardLabel, onDiscard)
@@ -422,10 +433,10 @@ fun ComposeScreen(
                 }
             }
             // a large file takes its time: said here, and the message is not sent before it is in
-            if (fields.attaching > 0) {
+            if (arriving > 0) {
                 StatusBanner(
                     tone = BannerTone.Info,
-                    text = pluralStringResource(R.plurals.compose_attaching, fields.attaching, fields.attaching),
+                    text = pluralStringResource(R.plurals.compose_attaching, arriving, arriving),
                     modifier = Modifier.testTag(ComposeTags.ATTACHING),
                 )
             }

@@ -86,7 +86,8 @@ class ComposeActions(
      *
      * The screen opens at once and the files are copied into the message behind it: a video takes
      * its time, and until it is in the message there would be nothing to see of what was asked
-     * for. The screen says that files are on their way, and does not send before they are in.
+     * for. The screen says that files are on their way, and does not send before they are in
+     * ([ComposeHost.arriving]), also when the message is put away and taken up again meanwhile.
      */
     fun begin(route: String, request: ComposeRequest) {
         scope.launch {
@@ -100,17 +101,16 @@ class ComposeActions(
             val writing = Writing(id, route, fresh = !request.hasContent)
             ui.writing = writing
             if (request.files.isEmpty()) return@launch
-            val fields = writing.fields
-            fields.attachBegun(request.files.size)
+            host.filesBegun(id, request.files.size)
             var failed = false
             for (file in request.files) {
                 // to its end, whatever becomes of the window meanwhile: half a file is of no use to the message
                 val added = withContext(NonCancellable) { composer.attach(id, file.name, file.mimeType, file.open) }
-                fields.attachEnded(added)
+                host.fileEnded(id)
                 if (!added) failed = true
             }
             // thrown away meanwhile: there is nothing to say about its files
-            if (failed && !fields.thrownAway) toasts.show(resources.getString(R.string.compose_attach_failed))
+            if (failed && !writing.fields.thrownAway) toasts.show(resources.getString(R.string.compose_attach_failed))
         }
     }
 

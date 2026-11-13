@@ -374,7 +374,6 @@ class ComposeTest {
         assertEquals("Rapor", draft.subject)
         assertTrue(draft.body.startsWith("Ekte."))
         assertTrue(draft.files.isEmpty())
-        assertEquals(1, writing.fields.attaching)
         compose.onNodeWithText("Dosya ekleniyor…").assertExists()
         compose.onNodeWithContentDescription("Gönder").assertIsNotEnabled()
         // it came with something to say: closed untouched, it is kept
@@ -384,7 +383,6 @@ class ComposeTest {
         compose.waitForIdle()
 
         assertEquals(listOf("tatil.mp4"), composer.draft(writing.draftId)!!.files.map { it.name })
-        assertEquals(0, writing.fields.attaching)
         compose.onNodeWithTag(ComposeTags.ATTACHING).assertDoesNotExist()
         compose.onNodeWithContentDescription("Gönder").assertIsEnabled()
         compose.onNodeWithText("tatil.mp4").assertExists()
@@ -407,6 +405,40 @@ class ComposeTest {
         assertNull(ui.writing)
         assertNull(composer.draft(writing.draftId))
         compose.onNodeWithText("Dosya eklenemedi.").assertDoesNotExist()
+    }
+
+    /**
+     * Put away while its file was still on its way, and taken up again from the outbox: the screen
+     * it is written on now knows of the file too, and does not send the message without it.
+     */
+    @Test
+    fun aMessageThatIsTakenUpAgainWhileItsFileIsOnItsWayStillWaitsForIt() {
+        launch(startRoute = Routes.OUTBOX)
+        val held = CompletableDeferred<Unit>()
+        composer.filesHeld = held
+        val seed = DraftSeed(to = "ayse.yilmaz@posta.example", subject = "Video")
+        compose.runOnUiThread { ui.composeRequest = ComposeRequest(seed, listOf(SharedFile("tatil.mp4", "video/mp4") { ByteArray(12).inputStream() })) }
+        compose.waitForIdle()
+        val first = ui.writing!!
+
+        // put away: it came with something, so it is kept, and its file goes on being copied
+        back()
+        assertNull(ui.writing)
+        compose.onNodeWithText("Taslak").performClick()
+        compose.waitForIdle()
+
+        val again = ui.writing!!
+        assertEquals(first.draftId, again.draftId)
+        assertTrue(first !== again)
+        compose.onNodeWithTag(ComposeTags.ATTACHING).assertExists()
+        compose.onNodeWithContentDescription("Gönder").assertIsNotEnabled()
+
+        held.complete(Unit)
+        compose.waitForIdle()
+
+        compose.onNodeWithTag(ComposeTags.ATTACHING).assertDoesNotExist()
+        compose.onNodeWithContentDescription("Gönder").assertIsEnabled()
+        compose.onNodeWithText("tatil.mp4").assertExists()
     }
 
     /**
