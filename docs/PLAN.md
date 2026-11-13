@@ -283,6 +283,9 @@ Her biri ayrı PR; sıra, cihazda en çok denenmesi gerekenden başlar.
 8. Aşama 2, brifteki sırayla: konuşma dizileri · erteleme · şablonlar · kayıtlı aramalar · yanıt
    bekleyenler · VIP ve gönderen başına uzak görsel izni · ayrıntı paneli sekmeleri (Ayrıntılar, Ekler,
    Güvenlik, Ham başlıklar) · biçimli yazma · ayarları taşıma · bildirimden hızlı yanıt.
+   - **Bildirimden hızlı yanıt: yapıldı.** `RemoteInput`; yanıt `DraftKind.Reply` ile başlar, yazılan en üste
+     konur ve beklemeden gönderilir (`sendNow`). Sistem en çok üç düğme gösterdiği için düğmeler Yanıtla,
+     Okundu, Arşivle (arşivi olmayan hesapta Sil).
 9. Cilâ (9): boş ve hata durumları, erişilebilirlik, lisanslar ekranı, belgeler, bağımsız inceleme.
 
 **Kiti bekleyenler** (uygulamada yamanmaz; `docs/KIT-ISTEKLERI.md`): alıcı önerilerinin arayüzü (4),
