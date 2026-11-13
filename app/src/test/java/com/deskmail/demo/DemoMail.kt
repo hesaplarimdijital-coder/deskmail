@@ -20,6 +20,8 @@ import com.deskmail.mail.MailMessage
 import com.deskmail.mail.MailSource
 import com.deskmail.mail.MailUndo
 import com.deskmail.mail.MailView
+import com.deskmail.mail.SavedSearch
+import com.deskmail.mail.SenderMarks
 import com.deskmail.mail.ServerSearch
 import kotlinx.coroutines.flow.Flow
 import java.time.Duration
@@ -93,6 +95,35 @@ class DemoMail(private val now: Instant = Instant.now(), empty: Boolean = false)
     /** Whether mail is being fetched: a test says so. */
     override var syncing: Boolean by mutableStateOf(false)
 
+    private val searches = mutableStateListOf<SavedSearch>()
+    private var nextSearch = 1L
+
+    override val savedSearches: List<SavedSearch> get() = searches
+
+    override var senders: Map<String, SenderMarks> by mutableStateOf(emptyMap())
+        private set
+
+    override suspend fun saveSearch(id: Long, name: String, query: String): Long {
+        val index = searches.indexOfFirst { it.id == id }
+        val named = name.trim().ifBlank { query.trim() }
+        if (index >= 0) {
+            searches[index] = SavedSearch(id, named, query.trim())
+            return id
+        }
+        val made = SavedSearch(nextSearch++, named, query.trim())
+        searches += made
+        return made.id
+    }
+
+    override suspend fun removeSearch(id: Long) {
+        searches.removeAll { it.id == id }
+    }
+
+    override suspend fun markSender(address: String, marks: SenderMarks) {
+        val key = address.trim().lowercase()
+        senders = if (marks == SenderMarks()) senders - key else senders + (key to marks)
+    }
+
     /** What was taken off its place, by what would bring it back. */
     private val taken = HashMap<MailUndo, List<MailMessage>>()
 
@@ -127,6 +158,8 @@ class DemoMail(private val now: Instant = Instant.now(), empty: Boolean = false)
             MailView.Starred -> stored.filter { it.starred && roles[it.folderId] !in OUTSIDE_THE_VIEWS }
             is MailView.Folder -> stored.filter { it.folderId == view.id }
             is MailView.Search -> found(view.query)
+            MailView.Vip -> stored.filter { roles[it.folderId] == FolderRole.Inbox && senders[it.fromAddress.lowercase()]?.vip == true }
+            is MailView.Saved -> searches.firstOrNull { it.id == view.id }?.let { found(it.query) }.orEmpty()
         }
     }
 

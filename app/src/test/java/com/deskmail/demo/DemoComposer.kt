@@ -12,6 +12,7 @@ import com.deskmail.mail.DraftSeed
 import com.deskmail.mail.DraftState
 import com.deskmail.mail.MailComposer
 import com.deskmail.mail.MailContent
+import com.deskmail.mail.MessageTemplate
 import com.deskmail.mail.SendCheck
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.Flow
@@ -174,6 +175,26 @@ class DemoComposer(private val mail: DemoMail, private val now: Instant = Instan
     }
 
     override fun suggest(typed: String, limit: Int): List<MailAddress> = emptyList()
+
+    private val kept = mutableStateListOf<MessageTemplate>()
+    private var nextTemplate = 1L
+
+    override val templates: List<MessageTemplate> get() = kept
+
+    override suspend fun saveTemplate(id: Long, name: String, body: String): Long {
+        val index = kept.indexOfFirst { it.id == id }
+        if (index >= 0) {
+            kept[index] = MessageTemplate(id, name.trim(), body)
+            return id
+        }
+        val made = MessageTemplate(nextTemplate++, name.trim(), body)
+        kept += made
+        return made.id
+    }
+
+    override suspend fun removeTemplate(id: Long) {
+        kept.removeAll { it.id == id }
+    }
 
     private fun edit(id: Long, change: (Draft) -> Draft) {
         val index = drafts.indexOfFirst { it.id == id }

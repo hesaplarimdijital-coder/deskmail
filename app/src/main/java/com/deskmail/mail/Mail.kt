@@ -150,4 +150,16 @@ sealed interface MailView {
      * its text), as the beginning of a word. Nothing for a query with nothing to look for.
      */
     data class Search(val query: String) : MailView
+
+    /** The mail of the senders the user called VIPs ([SenderMarks.vip]), in every account's inbox. */
+    data object Vip : MailView
+
+    /** A search kept as a folder of its own ([SavedSearch]): what the search finds for its query as it now stands. */
+    data class Saved(val id: Long) : MailView
 }
+
+/** A search kept as a folder of its own in the sidebar: [query] as it was typed, [name] what the folder is called. */
+data class SavedSearch(val id: Long, val name: String, val query: String)
+
+/** What the user said of a sender: a VIP, whose mail has a folder of its own; one whose remote images are shown without being asked. */
+data class SenderMarks(val vip: Boolean = false, val images: Boolean = false)

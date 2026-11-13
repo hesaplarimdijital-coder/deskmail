@@ -6,8 +6,9 @@ import kotlinx.coroutines.flow.Flow
  * Where the screens get the mail from and what they can ask of it: the device's copy of the
  * accounts' mail in the app, made-up mail in the tests and the screenshots.
  *
- * [accounts], [folders], [recent], [loaded] and [syncing] are snapshot state: a screen that reads
- * them is drawn again when they change. The lists of messages are watched one view at a time.
+ * [accounts], [folders], [recent], [loaded], [syncing], [savedSearches] and [senders] are snapshot
+ * state: a screen that reads them is drawn again when they change. The lists of messages are
+ * watched one view at a time.
  */
 interface MailSource {
     /** The accounts in the user's order. */
@@ -24,6 +25,23 @@ interface MailSource {
 
     /** Whether mail is being fetched right now. */
     val syncing: Boolean
+
+    /** The searches kept as folders of their own ([MailView.Saved]), in the user's order. */
+    val savedSearches: List<SavedSearch>
+
+    /** What the user said of senders (VIPs, whose remote images are shown), by address in lower case. */
+    val senders: Map<String, SenderMarks>
+
+    /** What was said of the sender [address]; nothing for one nothing was said of. */
+    fun sender(address: String): SenderMarks = senders[address.trim().lowercase()] ?: SenderMarks()
+
+    /** Keeps a search as a folder: a new one for [id] 0, else that one changed (named [name], looking for [query]). Its id. */
+    suspend fun saveSearch(id: Long, name: String, query: String): Long
+
+    suspend fun removeSearch(id: Long)
+
+    /** Keeps what is said of the sender [address]: a VIP or not, whose remote images are shown or not. */
+    suspend fun markSender(address: String, marks: SenderMarks)
 
     fun account(id: Long): MailAccount? = accounts.firstOrNull { it.id == id }
 

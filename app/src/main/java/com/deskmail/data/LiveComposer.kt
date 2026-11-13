@@ -14,6 +14,7 @@ import com.deskmail.db.DeskMailDatabase
 import com.deskmail.db.MessageEntity
 import com.deskmail.db.OutboxEntity
 import com.deskmail.db.OutboxFileEntity
+import com.deskmail.db.TemplateEntity
 import com.deskmail.mail.Draft
 import com.deskmail.mail.DraftFile
 import com.deskmail.mail.DraftKind
@@ -22,6 +23,7 @@ import com.deskmail.mail.DraftState
 import com.deskmail.mail.FetchedFile
 import com.deskmail.mail.MailAttachment
 import com.deskmail.mail.MailComposer
+import com.deskmail.mail.MessageTemplate
 import com.deskmail.mail.SendCheck
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -86,6 +88,9 @@ class LiveComposer(
     override var outbox: List<Draft> by mutableStateOf(emptyList())
         private set
 
+    override var templates: List<MessageTemplate> by mutableStateOf(emptyList())
+        private set
+
     /** The addresses mail was had with lately, the latest first: what is offered while a recipient is typed. */
     @Volatile
     private var known: List<MailAddress> = emptyList()
@@ -101,6 +106,9 @@ class LiveComposer(
                 val own = accounts.mapTo(HashSet()) { it.address.lowercase() }
                 correspondents(messages, own)
             }.collect { known = it }
+        }
+        scope.launch {
+            db.lists().observeTemplates().collect { rows -> templates = rows.map { MessageTemplate(it.id, it.name, it.body) } }
         }
         scope.launch {
             // what an earlier run left behind: half sent, or waiting with nobody asked to send it
@@ -317,8 +325,25 @@ class LiveComposer(
             .toList()
     }
 
+    override suspend fun saveTemplate(id: Long, name: String, body: String): Long {
+        val kept = name.replace(CONTROLS, " ").trim().take(MAX_TEMPLATE_NAME)
+        val text = body.replace("\r\n", "\n").take(MAX_TEMPLATE)
+        val lists = db.lists()
+        if (id != 0L && lists.updateTemplate(id, kept, text) > 0) return id
+        return lists.insertTemplate(TemplateEntity(name = kept, body = text, position = lists.nextTemplatePosition()))
+    }
+
+    override suspend fun removeTemplate(id: Long) = db.lists().deleteTemplate(id)
+
     companion object {
         private const val TAG = "compose"
+
+        /** A text's name is one line of a menu; the text itself is a few paragraphs at most. */
+        const val MAX_TEMPLATE_NAME = 80
+        const val MAX_TEMPLATE = 10_000
+
+        /** Line breaks, tabs and the like, however many in a row. */
+        private val CONTROLS = Regex("\\p{Cntrl}+")
 
         /** How long a message waits after "Send" unless the settings say otherwise. */
         const val UNDO_SEND_MS = 10_000L
