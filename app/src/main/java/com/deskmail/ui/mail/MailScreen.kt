@@ -29,6 +29,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -71,9 +72,11 @@ import desktopkit.components.InspectorTab
 import desktopkit.components.InspectorToggleButton
 import desktopkit.components.KeyValueRow
 import desktopkit.components.MenuEntry
+import desktopkit.components.PullToRefresh
 import desktopkit.components.SelectionBar
 import desktopkit.components.SkeletonList
 import desktopkit.components.StatusBanner
+import desktopkit.components.SwipeAction
 import desktopkit.components.WorkstationLayout
 import desktopkit.pluralString
 import desktopkit.screens.MessageScreen
@@ -90,7 +93,9 @@ import desktopkit.shell.currentWidthClass
 import desktopkit.shell.rememberShellContentPadding
 import desktopkit.theme.DeskTheme
 import desktopkit.theme.InputMode
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 
 /**
  * A view over the mail (the unified inbox, a folder) in the layout its window has room for:
@@ -260,6 +265,28 @@ fun MailScreen(
             add(MenuEntry.Item(selectLabel, { ui.pick(route, message.id) }))
         }
     }
+    // What a finger does by sliding a row sideways (desktop-kit 2.8.0; docs/KIT-ISTEKLERI.md, 7): toward
+    // its end it archives the row's messages, with the notice's way back; toward its start it asks
+    // until when to snooze them, and the row stays where it is until that is chosen.
+    val archiveSwipe: (MailMessage) -> SwipeAction? = { message ->
+        if (archivable(mail, message)) SwipeAction(archiveLabel, MailIcons.Archive, { actions.archive(threads.of(message.id)) }) else null
+    }
+    val snoozeSwipe: (MailMessage) -> SwipeAction? = { message ->
+        if (snoozable(mail, message)) SwipeAction(snoozeLabel, MailIcons.Snooze, { ui.snoozing = threads.of(message.id) }, removesRow = false) else null
+    }
+    // a table's star, clicked without opening the row: for every message the row stands for
+    val toggleStar: (MailMessage) -> Unit = { message -> mail.markStarred(threads.of(message.id), starred = !message.starred) }
+    // A finger pulling the list down past its top syncs it (desktop-kit 2.8.0; docs/KIT-ISTEKLERI.md,
+    // 14). The disc turns from the pull until that sync has ended; the syncs the app begins itself
+    // keep the thin bar over the list.
+    var pulled by remember { mutableStateOf(false) }
+    LaunchedEffect(pulled) {
+        if (!pulled) return@LaunchedEffect
+        // the sync may take a moment to begin, or not begin at all (no account to sync): the disc waits that long for it
+        withTimeoutOrNull(SYNC_BEGINS_MS) { snapshotFlow { mail.syncing }.first { it } }
+        snapshotFlow { mail.syncing }.first { !it }
+        pulled = false
+    }
     // What the phone's bars cover. Asked for here, in the screen's own composition, and handed
     // down: asked for from inside the BoxWithConstraints below, the shell does not notice and pads
     // the screen as well, so everything stands a bar's height too low (docs/KIT-ISTEKLERI.md, 12).
@@ -321,7 +348,7 @@ fun MailScreen(
         Column {
             if (searching != null) SearchBox(ui)
             if (serverKey != null && !noAccount) ServerSearchRow(ui.serverSearch?.takeIf { it.key == serverKey }, searchServers, onSave = { savingSearch = true })
-            if (mail.syncing) {
+            if (mail.syncing && !pulled) {
                 DeskProgressBar(
                     fraction = null,
                     modifier = Modifier.padding(horizontal = DeskTheme.dimens.pagePadding),
@@ -474,20 +501,30 @@ fun MailScreen(
             showSearch = searching == null,
         )
         Box(Modifier.fillMaxSize()) {
-            MessageRows(
-                messages = listedRows,
-                openedId = opened?.id,
-                state = ui.listState(route),
-                onOpen = open,
-                // the last rows come to rest above the selection's bar, not under it
-                contentPadding = if (several) PaddingValues(top = bars.calculateTopPadding(), bottom = bars.calculateBottomPadding() + BULK_BAR_HEIGHT) else bars,
-                modifier = Modifier.testTag(MailTags.LIST),
-                header = chips,
-                empty = empty,
-                menu = rowMenu,
-                selection = chosenIds,
-                onPick = if (picking) ({ message -> ui.togglePicked(route, message.id) }) else null,
-            )
+            PullToRefresh(
+                refreshing = pulled,
+                onRefresh = {
+                    pulled = true
+                    refresh()
+                },
+            ) {
+                MessageRows(
+                    messages = listedRows,
+                    openedId = opened?.id,
+                    state = ui.listState(route),
+                    onOpen = open,
+                    // the last rows come to rest above the selection's bar, not under it
+                    contentPadding = if (several) PaddingValues(top = bars.calculateTopPadding(), bottom = bars.calculateBottomPadding() + BULK_BAR_HEIGHT) else bars,
+                    modifier = Modifier.testTag(MailTags.LIST),
+                    header = chips,
+                    empty = empty,
+                    menu = rowMenu,
+                    selection = chosenIds,
+                    onPick = if (picking) ({ message -> ui.togglePicked(route, message.id) }) else null,
+                    swipeStart = archiveSwipe,
+                    swipeEnd = snoozeSwipe,
+                )
+            }
             if (several) {
                 // above the phone's bottom bar, over the end of the list
                 BulkBar(chosen, bulk, Modifier.align(Alignment.BottomCenter).padding(bottom = bars.calculateBottomPadding()))
@@ -531,6 +568,7 @@ fun MailScreen(
                                     several = several,
                                     bulk = bulk,
                                     drag = drag,
+                                    onToggleStar = toggleStar,
                                 )
                             },
                             end = {
@@ -642,6 +680,7 @@ private fun ListPane(
     several: Boolean,
     bulk: BulkActions,
     drag: (MailMessage) -> DeskDragPayload?,
+    onToggleStar: (MailMessage) -> Unit,
 ) {
     val selection = ui.selection(route)
     val picking = ui.picking(route)
@@ -673,6 +712,7 @@ private fun ListPane(
                         onSelect = { ui.select(route, it) },
                         picking = picking,
                         drag = drag,
+                        onToggleStar = onToggleStar,
                     )
                     else -> MessageRows(
                         messages = shown,
@@ -758,6 +798,9 @@ private val ROOMY_BULK_BAR = 480.dp
 
 /** The room the selection's bar takes over the end of a phone's list: a row of the kit's icon buttons and its rule. */
 private val BULK_BAR_HEIGHT = 58.dp
+
+/** How long the disc of a pull waits for the sync it asked for to begin. */
+private const val SYNC_BEGINS_MS = 2_000L
 
 /** "Search the server too", and what the last search of the servers for what is typed came to. */
 @Composable
