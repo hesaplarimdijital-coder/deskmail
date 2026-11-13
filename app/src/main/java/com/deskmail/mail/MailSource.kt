@@ -57,6 +57,12 @@ interface MailSource {
 
     fun toggleStarred(id: Long)
 
+    /** Marks these messages read, or unread, all the same way: a selection. What is so marked already is left as it is. */
+    fun markUnread(ids: List<Long>, unread: Boolean)
+
+    /** Stars these messages, or takes their stars away. */
+    fun markStarred(ids: List<Long>, starred: Boolean)
+
     /**
      * Moves the messages to their account's archive: its Archive folder or, where it has none
      * (Gmail), "All Mail". Null when none of them could be: no such folder, or they are in it.

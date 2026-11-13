@@ -1,6 +1,8 @@
 package com.deskmail.ui.mail
 
 import android.text.format.Formatter
+import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -37,6 +39,7 @@ import com.deskmail.ui.MailIcons
 import com.deskmail.ui.folderPathLabel
 import desktopkit.appResources
 import desktopkit.components.BannerTone
+import desktopkit.components.DeskDragPayload
 import desktopkit.components.DeskIconButton
 import desktopkit.components.DeskIcons
 import desktopkit.components.DeskListRow
@@ -47,6 +50,7 @@ import desktopkit.components.InspectorTab
 import desktopkit.components.InspectorToggleButton
 import desktopkit.components.KeyValueRow
 import desktopkit.components.MenuEntry
+import desktopkit.components.SelectionBar
 import desktopkit.components.SkeletonList
 import desktopkit.components.StatusBanner
 import desktopkit.components.WorkstationLayout
@@ -134,6 +138,30 @@ fun MailScreen(
     val opened = if (openedId == null) null else key(openedId) { watchedMessage(mail, openedId, all.firstOrNull { it.id == openedId }) }
     val open: (MailMessage) -> Unit = { message -> openMessage(mail, ui, route, message.id) }
     val refresh: () -> Unit = { mail.refresh(view) }
+    val resources = appResources()
+    // Several messages at once: rows selected with the mouse (Ctrl, Shift), or picked with a finger.
+    val chosenIds = ui.selection(route)
+    val picking = ui.picking(route)
+    val chosen = remember(all, chosenIds) { if (chosenIds.isEmpty()) emptyList() else all.filter { it.id in chosenIds } }
+    // a message that left the list (moved or deleted, here or elsewhere) is selected no longer
+    LaunchedEffect(known, chosenIds) {
+        if (known != null && chosen.size != chosenIds.size) ui.select(route, chosen.mapTo(HashSet()) { it.id })
+    }
+    val several = chosen.size > 1 || (picking && chosen.isNotEmpty())
+    val bulk = BulkActions(
+        // read them all while one is unread; unread only when all were read
+        onToggleUnread = { mail.markUnread(chosen.map { it.id }, unread = chosen.none { it.unread }) },
+        onToggleStar = { mail.markStarred(chosen.map { it.id }, starred = !chosen.all { it.starred }) },
+        onArchive = if (chosen.any { archivable(mail, it) }) ({ actions.archive(chosen.map { it.id }) }) else null,
+        onMove = chosen.firstOrNull { mail.moveTargets(it).isNotEmpty() }?.let { anchor -> { ui.moveSeveral(anchor, chosen.map { it.id }) } },
+        onDelete = { actions.delete(chosen.map { it.id }) },
+        onClear = { ui.clearSelection(route) },
+    )
+    // what travels when a row is dragged to a folder: the selection when the row is part of it
+    val drag: (MailMessage) -> DeskDragPayload? = { message ->
+        val ids = if (message.id in chosenIds) chosen.map { it.id } else listOf(message.id)
+        DeskDragPayload(MESSAGE_DRAG, ids.map { it.toString() }, resources.getQuantityString(R.plurals.message_count, ids.size, ids.size))
+    }
     val composeLabel = stringResource(R.string.action_new_message)
     val refreshLabel = stringResource(R.string.action_refresh)
     val openLabel = stringResource(R.string.action_open_message)
@@ -147,9 +175,20 @@ fun MailScreen(
     val replyLabel = stringResource(R.string.action_reply)
     val replyAllLabel = stringResource(R.string.action_reply_all)
     val forwardLabel = stringResource(R.string.action_forward)
+    val selectLabel = stringResource(R.string.action_select)
     // What can be done with a message from its row: a long press, a right click, the Menu key.
     val rowMenu: (MailMessage) -> List<MenuEntry> = { message ->
-        buildList {
+        if (several && message.id in chosenIds) {
+            // one of several selected rows: what is done is done to all of them
+            buildList {
+                add(MenuEntry.Item(if (chosen.any { it.unread }) markReadLabel else markUnreadLabel, bulk.onToggleUnread, shortcut = "U"))
+                add(MenuEntry.Item(if (chosen.all { it.starred }) unstarLabel else starLabel, bulk.onToggleStar, shortcut = "S"))
+                add(MenuEntry.Separator)
+                bulk.onArchive?.let { add(MenuEntry.Item(archiveLabel, it, shortcut = "E", icon = MailIcons.Archive)) }
+                bulk.onMove?.let { add(MenuEntry.Item(moveLabel, it, shortcut = "V", icon = MailIcons.MoveTo)) }
+                add(MenuEntry.Item(deleteLabel, bulk.onDelete, shortcut = "Delete", icon = DeskIcons.Delete, destructive = true))
+            }
+        } else buildList {
             add(MenuEntry.Item(openLabel, { open(message) }))
             add(MenuEntry.Item(if (message.unread) markReadLabel else markUnreadLabel, { mail.toggleUnread(message.id) }, shortcut = "U"))
             add(MenuEntry.Item(if (message.starred) unstarLabel else starLabel, { mail.toggleStarred(message.id) }, shortcut = "S"))
@@ -163,6 +202,9 @@ fun MailScreen(
             if (archivable(mail, message)) add(MenuEntry.Item(archiveLabel, { actions.archive(listOf(message.id)) }, shortcut = "E", icon = MailIcons.Archive))
             if (mail.moveTargets(message).isNotEmpty()) add(MenuEntry.Item(moveLabel, { ui.moving = message }, shortcut = "V", icon = MailIcons.MoveTo))
             add(MenuEntry.Item(deleteLabel, { actions.delete(listOf(message.id)) }, shortcut = "Delete", icon = DeskIcons.Delete, destructive = true))
+            add(MenuEntry.Separator)
+            // from here on a tap adds or removes a row: how several are chosen with a finger
+            add(MenuEntry.Item(selectLabel, { ui.pick(route, message.id) }))
         }
     }
     // What the phone's bars cover. Asked for here, in the screen's own composition, and handed
@@ -266,10 +308,13 @@ fun MailScreen(
         )
     }
     // "Move…": which folder, asked over whatever layout the window has
+    val moving = ui.moving
+    // read here, with the message: choosing a folder clears both before the move is asked for
+    val movingIds = if (moving == null) emptyList() else ui.movingIds.ifEmpty { listOf(moving.id) }
     MoveChooser(
-        message = ui.moving,
+        message = moving,
         mail = mail,
-        onMove = { message, folderId -> actions.move(listOf(message.id), folderId) },
+        onMove = { _, folderId -> actions.move(movingIds, folderId) },
         onDismiss = { ui.moving = null },
     )
     // The rows as a phone, a tablet held upright and a window beside a rail list them: under the
@@ -285,17 +330,27 @@ fun MailScreen(
             // the search screen has its own field; the bar's magnifier would open the palette beside it
             showSearch = searching == null,
         )
-        MessageRows(
-            messages = filtered,
-            openedId = opened?.id,
-            state = ui.listState(route),
-            onOpen = open,
-            contentPadding = bars,
-            modifier = Modifier.testTag(MailTags.LIST),
-            header = chips,
-            empty = empty,
-            menu = rowMenu,
-        )
+        Box(Modifier.fillMaxSize()) {
+            MessageRows(
+                messages = filtered,
+                openedId = opened?.id,
+                state = ui.listState(route),
+                onOpen = open,
+                contentPadding = bars,
+                modifier = Modifier.testTag(MailTags.LIST),
+                header = chips,
+                empty = empty,
+                menu = rowMenu,
+                selection = chosenIds,
+                onPick = if (picking) ({ message -> ui.togglePicked(route, message.id) }) else null,
+            )
+            if (several) {
+                // above the phone's bottom bar, over the end of the list
+                BulkBar(chosen, bulk, Modifier.align(Alignment.BottomCenter).padding(bottom = bars.calculateBottomPadding()))
+            }
+        }
+        // Back ends the picking before it does anything else
+        BackHandler(enabled = picking) { ui.clearSelection(route) }
     }
     if (!sidebar) SideEffect { ui.setShown(route, filtered.map { it.id }, leadingItems = 1) }
 
@@ -328,6 +383,10 @@ fun MailScreen(
                                     chips = chips,
                                     empty = empty,
                                     menu = rowMenu,
+                                    chosen = chosen,
+                                    several = several,
+                                    bulk = bulk,
+                                    drag = drag,
                                 )
                             },
                             end = {
@@ -435,7 +494,13 @@ private fun ListPane(
     chips: @Composable () -> Unit,
     empty: @Composable () -> Unit,
     menu: (MailMessage) -> List<MenuEntry>,
+    chosen: List<MailMessage>,
+    several: Boolean,
+    bulk: BulkActions,
+    drag: (MailMessage) -> DeskDragPayload?,
 ) {
+    val selection = ui.selection(route)
+    val picking = ui.picking(route)
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val table = pointer && maxWidth >= MailLayout.TABLE_FROM.dp
         val sort = ui.sort
@@ -447,32 +512,81 @@ private fun ListPane(
                 DeskIconButton(MailIcons.Refresh, stringResource(R.string.action_refresh), onRefresh)
             }
             chips()
-            when {
-                shown.isEmpty() -> empty()
-                table -> MessageTable(
-                    messages = shown,
-                    openedId = openedId,
-                    state = ui.listState(route),
-                    sort = sort,
-                    onSortChange = { ui.sort = it },
-                    onOpen = onOpen,
-                    prefs = prefs,
-                    modifier = Modifier.testTag(MailTags.LIST),
-                    menu = menu,
-                )
-                else -> MessageRows(
-                    messages = shown,
-                    openedId = openedId,
-                    state = ui.listState(route),
-                    onOpen = onOpen,
-                    contentPadding = PaddingValues(bottom = 8.dp),
-                    modifier = Modifier.testTag(MailTags.LIST),
-                    menu = menu,
-                )
+            Box(Modifier.weight(1f).fillMaxWidth()) {
+                when {
+                    shown.isEmpty() -> empty()
+                    table -> MessageTable(
+                        messages = shown,
+                        openedId = openedId,
+                        state = ui.listState(route),
+                        sort = sort,
+                        onSortChange = { ui.sort = it },
+                        onOpen = onOpen,
+                        prefs = prefs,
+                        modifier = Modifier.testTag(MailTags.LIST),
+                        menu = menu,
+                        selection = selection,
+                        onSelect = { ui.select(route, it) },
+                        picking = picking,
+                        drag = drag,
+                    )
+                    else -> MessageRows(
+                        messages = shown,
+                        openedId = openedId,
+                        state = ui.listState(route),
+                        onOpen = onOpen,
+                        contentPadding = PaddingValues(bottom = 8.dp),
+                        modifier = Modifier.testTag(MailTags.LIST),
+                        menu = menu,
+                        selection = selection,
+                        onPick = if (picking) ({ message -> ui.togglePicked(route, message.id) }) else null,
+                    )
+                }
             }
+            // under the list, where the hand that selected the rows already is
+            if (several) BulkBar(chosen, bulk)
         }
     }
 }
+
+/** What is done to several messages at once; null where it cannot be done to any of them. */
+class BulkActions(
+    val onToggleUnread: () -> Unit,
+    val onToggleStar: () -> Unit,
+    val onArchive: (() -> Unit)?,
+    val onMove: (() -> Unit)?,
+    val onDelete: () -> Unit,
+    val onClear: () -> Unit,
+)
+
+/** The bar of a selection: how many messages, what can be done to them all, and the way out. */
+@Composable
+private fun BulkBar(chosen: List<MailMessage>, bulk: BulkActions, modifier: Modifier = Modifier) {
+    val anyUnread = chosen.any { it.unread }
+    val allStarred = chosen.isNotEmpty() && chosen.all { it.starred }
+    SelectionBar(
+        text = pluralString(R.plurals.selection_count, chosen.size),
+        onClose = bulk.onClear,
+        modifier = modifier.testTag(MailTags.SELECTION),
+    ) {
+        DeskIconButton(
+            if (anyUnread) MailIcons.MailOpen else MailIcons.Mail,
+            stringResource(if (anyUnread) R.string.action_mark_read else R.string.action_mark_unread),
+            bulk.onToggleUnread,
+        )
+        DeskIconButton(
+            if (allStarred) MailIcons.StarFilled else MailIcons.Star,
+            stringResource(if (allStarred) R.string.action_unstar else R.string.action_star),
+            bulk.onToggleStar,
+        )
+        bulk.onArchive?.let { DeskIconButton(MailIcons.Archive, stringResource(R.string.action_archive), it) }
+        bulk.onMove?.let { DeskIconButton(MailIcons.MoveTo, stringResource(R.string.action_move), it) }
+        DeskIconButton(DeskIcons.Delete, stringResource(R.string.action_delete), bulk.onDelete)
+    }
+}
+
+/** The kind of what is dragged out of a list of messages; the folders of the sidebar take it. */
+const val MESSAGE_DRAG = "message"
 
 /** Opens the message [id] in [route]'s reader. A message that is opened is read. */
 fun openMessage(mail: MailSource, ui: MailUiState, route: String, id: Long) {
@@ -486,6 +600,7 @@ fun openMessage(mail: MailSource, ui: MailUiState, route: String, message: MailM
 object MailTags {
     const val LIST = "mail-list"
     const val READER = "mail-reader"
+    const val SELECTION = "mail-selection"
     const val SEARCH = "mail-search"
 }
 

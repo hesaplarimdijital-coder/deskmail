@@ -56,6 +56,11 @@
     <string name="action_archive">Archive</string>
     <string name="action_delete">Delete</string>
     <string name="action_move">Move…</string>
+    <string name="action_select">Select</string>
+    <plurals name="selection_count">
+        <item quantity="one">%d message selected</item>
+        <item quantity="other">%d messages selected</item>
+    </plurals>
     <string name="action_undo">Undo</string>
     <string name="action_open_message">Open</string>
     <string name="move_title">Move to a folder</string>
