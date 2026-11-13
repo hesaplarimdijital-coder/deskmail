@@ -112,7 +112,7 @@ class MainActivity : ComponentActivity() {
             val task = deskMail.writeWindows.taskOf(draftId)
             val existing = task?.let { id ->
                 // a task that went meanwhile says so by throwing
-                getSystemService(ActivityManager::class.java).appTasks.firstOrNull { runCatching { it.taskInfo.taskId == id }.getOrDefault(false) }
+                getSystemService(ActivityManager::class.java).appTasks.firstOrNull { runCatching { it.taskInfo?.taskId == id }.getOrDefault(false) }
             }
             if (existing != null && runCatching { existing.moveToFront() }.isSuccess) return
             DeskWindows.openNewWindow(this@MainActivity, intent = WriteActivity.intent(this@MainActivity, draftId, fresh, opener = taskId), adjacent = false)
