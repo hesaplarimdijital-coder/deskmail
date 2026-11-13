@@ -21,6 +21,9 @@ import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeoutOrNull
 import org.junit.rules.ExternalResource
+import org.junit.rules.TestRule
+import org.junit.runner.Description
+import org.junit.runners.model.Statement
 import java.io.ByteArrayInputStream
 import java.time.Instant
 import java.time.ZoneOffset
@@ -28,6 +31,9 @@ import java.time.format.DateTimeFormatter
 import java.util.Base64
 import java.util.Date
 import java.util.Locale
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicReference
 import javax.crypto.spec.SecretKeySpec
 import kotlin.coroutines.CoroutineContext
 
@@ -93,6 +99,12 @@ class TestImapServer : ExternalResource() {
 
     override fun after() {
         greenMail.stop()
+    }
+
+    /** Removes a message for good, as another mail program would. */
+    fun expunge(uid: Long, folder: String = "INBOX") {
+        setFlag(uid, Flags.Flag.DELETED, true, folder)
+        folder(folder).expunge()
     }
 
     /** Stops the server while the test goes on: nobody answers at its port any more. */
@@ -223,6 +235,53 @@ fun MimeMessage.sentFiles(): List<Pair<String, ByteArray>> {
 fun endAndWait(scope: CoroutineScope) {
     val job = scope.coroutineContext[Job] ?: return
     runBlocking { withTimeoutOrNull(10_000) { job.cancelAndJoin() } }
+}
+
+/**
+ * Has a test that got stuck fail, and say where every thread stood when it did. For tests that
+ * wait on lines and threads of their own: a wait that nothing ends would otherwise keep the whole
+ * build waiting, and leave nothing to go by.
+ *
+ * After [seconds] the test's thread is interrupted, which ends most waits. A test that is still
+ * stuck half a minute later takes the test run down with it; where it stood is on standard error
+ * by then.
+ */
+class StuckGuard(private val seconds: Long = 120) : TestRule {
+    override fun apply(base: Statement, description: Description): Statement = object : Statement() {
+        override fun evaluate() {
+            val test = Thread.currentThread()
+            val done = CountDownLatch(1)
+            val stood = AtomicReference<String>()
+            val watchdog = Thread {
+                if (done.await(seconds, TimeUnit.SECONDS)) return@Thread
+                val stacks = Thread.getAllStackTraces().entries.joinToString("\n") { (thread, frames) ->
+                    "\"${thread.name}\" ${thread.state}\n" + frames.joinToString("\n") { "    at $it" }
+                }
+                stood.set(stacks)
+                System.err.println("STUCK after $seconds s: ${description.displayName}\n$stacks")
+                System.err.flush()
+                test.interrupt()
+                if (!done.await(30, TimeUnit.SECONDS)) {
+                    System.err.println("STILL STUCK: ${description.displayName}; the test run ends here")
+                    System.err.flush()
+                    Runtime.getRuntime().halt(3)
+                }
+            }
+            watchdog.isDaemon = true
+            watchdog.name = "stuck-guard"
+            watchdog.start()
+            try {
+                base.evaluate()
+            } catch (e: Throwable) {
+                val stacks = stood.get() ?: throw e
+                throw AssertionError("the test was stuck after $seconds s: $e\n$stacks", e)
+            } finally {
+                done.countDown()
+                // an interrupt that came too late is not the next test's business
+                Thread.interrupted()
+            }
+        }
+    }
 }
 
 /** Waits until [check] holds: for what the app does on threads of its own. */

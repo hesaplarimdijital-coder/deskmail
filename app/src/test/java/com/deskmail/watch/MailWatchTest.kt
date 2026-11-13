@@ -11,6 +11,7 @@ import com.deskmail.core.net.ServerAddress
 import com.deskmail.core.provider.AuthKind
 import com.deskmail.core.provider.MailSettings
 import com.deskmail.data.AccountStore
+import com.deskmail.data.StuckGuard
 import com.deskmail.data.accountState
 import com.deskmail.data.endAndWait
 import com.deskmail.data.eventually
@@ -26,6 +27,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import java.util.concurrent.CopyOnWriteArrayList
@@ -76,6 +78,9 @@ class MailWatchTest {
 
         private fun lost(text: String) = MailException(MailException.Kind.Network, text)
     }
+
+    @get:Rule
+    val guard = StuckGuard()
 
     private val log = AppLog()
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)

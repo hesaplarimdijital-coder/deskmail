@@ -20,6 +20,7 @@ import com.deskmail.core.net.ServerAddress
 import com.deskmail.core.provider.AuthKind
 import com.deskmail.core.provider.MailSettings
 import com.deskmail.data.AccountStore
+import com.deskmail.data.StuckGuard
 import com.deskmail.data.eventually
 import com.deskmail.data.testBox
 import com.deskmail.deskMail
@@ -33,6 +34,7 @@ import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Robolectric
@@ -49,6 +51,9 @@ import org.robolectric.annotation.Config
 @Config(qualifiers = "tr")
 class WatchServiceTest {
 
+    @get:Rule
+    val guard = StuckGuard()
+
     private val context = ApplicationProvider.getApplicationContext<Context>()
     private val app: DeskMailApplication get() = context.deskMail
     private var service: ServiceController<WatchService>? = null
@@ -61,6 +66,8 @@ class WatchServiceTest {
     @After
     fun endService() {
         service?.destroy()
+        // what the service began on the main thread is let through before the watch is ended
+        idle()
         runBlocking { app.watch.stop() }
     }
 

@@ -28,6 +28,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 
 /**
@@ -81,38 +82,49 @@ class MailWatch(
      * account that can be signed in to is watched, one that is gone no longer is. Asked again
      * whenever an account was added, reconnected or removed.
      */
-    suspend fun arrange() = arranging.withLock {
-        val wanted = accounts.all().filter { it.accountState() != AccountState.NeedsLogin }.map { it.id }.toSet()
-        for ((id, watcher) in watchers.entries.toList()) {
-            // gone, or it gave up (its server refused the sign-in, or cannot be waited on)
-            if (id !in wanted || !watcher.alive) {
-                watcher.stop()
-                watchers.remove(id)
+    suspend fun arrange() = apart {
+        arranging.withLock {
+            val wanted = accounts.all().filter { it.accountState() != AccountState.NeedsLogin }.map { it.id }.toSet()
+            for ((id, watcher) in watchers.entries.toList()) {
+                // gone, or it gave up (its server refused the sign-in, or cannot be waited on)
+                if (id !in wanted || !watcher.alive) {
+                    watcher.stop()
+                    watchers.remove(id)
+                }
             }
-        }
-        for (id in wanted) {
-            if (id !in watchers) watchers[id] = Watcher(id).also { it.start() }
+            for (id in wanted) {
+                if (id !in watchers) watchers[id] = Watcher(id).also { it.start() }
+            }
         }
     }
 
     /** Ends all watching. */
-    suspend fun stop() = arranging.withLock {
-        watchers.values.forEach { it.stop() }
-        watchers.clear()
+    suspend fun stop() = apart {
+        arranging.withLock {
+            watchers.values.forEach { it.stop() }
+            watchers.clear()
+        }
     }
 
     /** Begins every wait anew. Returns when each server has answered or was given up on. */
-    suspend fun refresh() {
+    suspend fun refresh() = apart {
         val live = arranging.withLock { watchers.values.toList() }
-        coroutineScope { live.forEach { watcher -> launch(io) { watcher.refresh() } } }
+        coroutineScope { live.forEach { watcher -> launch { watcher.refresh() } } }
     }
+
+    /**
+     * Runs [work] on the watch's own threads, whoever asks: what is arranged here is never held
+     * up by the thread that asked for it (the main thread, where the service and the settings
+     * live), and never holds that thread up.
+     */
+    private suspend fun <T> apart(work: suspend CoroutineScope.() -> T): T = withContext(io, work)
 
     /**
      * The network the device is on changed: lines made over the old one are dead, or will be.
      * They are made anew now, and whoever pauses before trying again tries now.
      */
     fun networkChanged() {
-        scope.launch {
+        scope.launch(io) {
             val live = arranging.withLock { watchers.values.toList() }
             if (live.isNotEmpty()) log.info(TAG, "the network changed: the lines are made anew")
             live.forEach { it.restart() }
