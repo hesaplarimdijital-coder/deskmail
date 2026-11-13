@@ -1,6 +1,7 @@
 package com.deskmail.notify
 
 import android.content.SharedPreferences
+import java.util.UUID
 
 /** How far an inbox's mail has been told of: the folder's stamp on the server and the highest UID seen under it. */
 data class Watermark(val uidValidity: Long, val uid: Long)
@@ -8,8 +9,8 @@ data class Watermark(val uidValidity: Long, val uid: Long)
 /**
  * What telling of new mail has to remember, in a preferences file of its own: how far each
  * inbox's mail has been told of (a message is "new" once: when its UID is above its inbox's mark
- * the first time it is looked at), whether the user was asked to allow notifications, and what
- * was scheduled.
+ * the first time it is looked at), whether the user was asked to allow notifications, what was
+ * scheduled, and the token the app's notifications are known by.
  */
 class NotifyStore(private val prefs: SharedPreferences) {
 
@@ -41,6 +42,13 @@ class NotifyStore(private val prefs: SharedPreferences) {
         get() = prefs.getInt(KEY_SCHEDULED, 0)
         set(value) = prefs.edit().putInt(KEY_SCHEDULED, value).apply()
 
+    /**
+     * What the app's own notifications carry to be known by: made up once for this installation.
+     * A request to open a message that does not carry it did not come from one of them.
+     */
+    val token: String
+        get() = prefs.getString(KEY_TOKEN, null) ?: UUID.randomUUID().toString().also { prefs.edit().putString(KEY_TOKEN, it).apply() }
+
     private fun key(folderId: Long) = "told-$folderId"
 
     companion object {
@@ -48,5 +56,6 @@ class NotifyStore(private val prefs: SharedPreferences) {
         const val FILE = "notify"
         private const val KEY_ASKED = "asked"
         private const val KEY_SCHEDULED = "scheduled-minutes"
+        private const val KEY_TOKEN = "token"
     }
 }

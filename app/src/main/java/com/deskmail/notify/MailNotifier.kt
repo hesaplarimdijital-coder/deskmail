@@ -239,7 +239,7 @@ class MailNotifier(
 
     /** Opens the message [messageId] in a window of the app; 0 for the inbox alone. */
     private fun open(messageId: Long): PendingIntent =
-        PendingIntent.getActivity(context, 0, OpenRequest.intent(context, messageId), PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+        PendingIntent.getActivity(context, 0, OpenRequest.intent(context, messageId, store.token), PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
 
     private fun action(label: Int, what: String, messageId: Long): Notification.Action =
         Notification.Action.Builder(null as Icon?, context.getString(label), broadcast(what, messageId)).build()

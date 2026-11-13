@@ -138,10 +138,14 @@ class MailNotifierTest {
 
         val one = shown(MailNotifier.MESSAGE).single().notification
         val tapped = shadowOf(one.contentIntent).savedIntent
-        assertEquals(OpenRequest(id), OpenRequest.from(tapped))
+        assertEquals(OpenRequest(id), OpenRequest.from(tapped, store.token))
         // the window brought back later from the list of recent apps is not asked again
-        assertNull(OpenRequest.from(Intent(tapped).addFlags(Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY)))
-        assertNull(OpenRequest.from(Intent(Intent.ACTION_MAIN)))
+        assertNull(OpenRequest.from(Intent(tapped).addFlags(Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY), store.token))
+        assertNull(OpenRequest.from(Intent(Intent.ACTION_MAIN), store.token))
+        // any app can ask the window for a message; only the app's own notifications carry what they are known by
+        assertNull(OpenRequest.from(Intent(tapped).removeExtra("token"), store.token))
+        assertNull(OpenRequest.from(Intent(tapped).putExtra("token", "guessed"), store.token))
+        assertNull(OpenRequest.from(tapped, "another installation's"))
         val buttons = one.actions.map { shadowOf(it.actionIntent).savedIntent }
         assertEquals(listOf(NotifyActionReceiver.READ, NotifyActionReceiver.ARCHIVE, NotifyActionReceiver.DELETE), buttons.map { it.action })
         assertTrue(buttons.all { it.getLongExtra(NotifyActionReceiver.EXTRA_MESSAGE, 0) == id })
@@ -151,7 +155,7 @@ class MailNotifierTest {
         assertEquals(NotifyActionReceiver.DISMISSED, swept.action)
         assertEquals(id, swept.getLongExtra(NotifyActionReceiver.EXTRA_MESSAGE, 0))
         // the account's line opens the inbox
-        assertEquals(OpenRequest(0), OpenRequest.from(shadowOf(shown(MailNotifier.SUMMARY).single().notification.contentIntent).savedIntent))
+        assertEquals(OpenRequest(0), OpenRequest.from(shadowOf(shown(MailNotifier.SUMMARY).single().notification.contentIntent).savedIntent, store.token))
     }
 
     /** An account without an archive offers none. */
@@ -386,11 +390,16 @@ class MailNotifierTest {
         first.tell(2, Watermark(9, 3))
         first.asked = true
         first.scheduledMinutes = 30
+        // made up once, and the same from then on
+        val token = first.token
+        assertTrue(token.length >= 32)
+        assertEquals(token, first.token)
 
         val next = NotifyStore(prefs)
         assertEquals(Watermark(7, 12), next.told(1))
         assertTrue(next.asked)
         assertEquals(30, next.scheduledMinutes)
+        assertEquals(token, next.token)
         next.forget(listOf(1))
         assertNull(next.told(1))
         assertEquals(Watermark(9, 3), next.told(2))

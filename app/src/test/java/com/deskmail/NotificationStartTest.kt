@@ -30,9 +30,12 @@ class NotificationStartTest {
 
     private val context = ApplicationProvider.getApplicationContext<Context>()
 
+    /** What the app's own notifications are known by. */
+    private val token: String get() = context.deskMail.notifyStore.token
+
     @Test
     fun aTappedNotificationReachesTheWindowAtItsStartAndWhileItIsThere() {
-        ActivityScenario.launch<MainActivity>(OpenRequest.intent(context, 5)).use { scenario ->
+        ActivityScenario.launch<MainActivity>(OpenRequest.intent(context, 5, token)).use { scenario ->
             compose.waitForIdle()
             scenario.onActivity { activity ->
                 val window = ViewModelProvider(activity)[WindowState::class.java]
@@ -42,7 +45,7 @@ class NotificationStartTest {
 
             // another one, tapped while the window is there
             scenario.onActivity { activity ->
-                InstrumentationRegistry.getInstrumentation().callActivityOnNewIntent(activity, OpenRequest.intent(context, 8))
+                InstrumentationRegistry.getInstrumentation().callActivityOnNewIntent(activity, OpenRequest.intent(context, 8, token))
             }
             compose.waitForIdle()
             scenario.onActivity { activity ->
@@ -57,6 +60,21 @@ class NotificationStartTest {
     @Test
     fun anOrdinaryStartAsksForNothing() {
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+            compose.waitForIdle()
+            scenario.onActivity { activity ->
+                val window = ViewModelProvider(activity)[WindowState::class.java]
+                assertNull(window.mail.openRequest)
+                assertNull(window.mail.openedId(Routes.INBOX))
+            }
+        }
+    }
+
+    /** Any app can start the window; one that asks it for a message without what the app's notifications carry is not heard. */
+    @Test
+    fun anotherAppsRequestToOpenAMessageIsNotHeard() {
+        val forged = OpenRequest.intent(context, 5, "guessed")
+
+        ActivityScenario.launch<MainActivity>(forged).use { scenario ->
             compose.waitForIdle()
             scenario.onActivity { activity ->
                 val window = ViewModelProvider(activity)[WindowState::class.java]
