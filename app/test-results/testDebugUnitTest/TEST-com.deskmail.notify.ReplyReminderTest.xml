@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.notify.ReplyReminderTest" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-11-13T22:41:30.049Z" hostname="runnervmwuk1x" time="0.158">
+  <properties/>
+  <testcase name="whatIsNotDueYetIsNotToldOf" classname="com.deskmail.notify.ReplyReminderTest" time="0.018"/>
+  <testcase name="theUsersOwnFollowUpIsNoAnswer" classname="com.deskmail.notify.ReplyReminderTest" time="0.02"/>
+  <testcase name="stoppingForgetsItAndTakesItsReminderDown" classname="com.deskmail.notify.ReplyReminderTest" time="0.022"/>
+  <testcase name="anAnswerFurtherDownTheConversationCountsToo" classname="com.deskmail.notify.ReplyReminderTest" time="0.017"/>
+  <testcase name="anAnswerThatDidNotComeInTimeIsRemindedOfOnce" classname="com.deskmail.notify.ReplyReminderTest" time="0.02"/>
+  <testcase name="anAnswerEndsTheWaitAndTakesTheReminderDown" classname="com.deskmail.notify.ReplyReminderTest" time="0.02"/>
+  <testcase name="theWorkIsArrangedForEveryTimeAReminderIsDue" classname="com.deskmail.notify.ReplyReminderTest" time="0.017"/>
+  <testcase name="aReminderOfWhatIsNoLongerWaitedForGoesAtTheNextLook" classname="com.deskmail.notify.ReplyReminderTest" time="0.02"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
