@@ -41,6 +41,11 @@ Sürümler [SemVer](https://semver.org/lang/tr/) kuralına uyar; 0.1.0'a kadar o
 - Sunucu bir aramayı reddederse posta kitaplığının yedek yolu (klasörün bütün iletilerini cihaza indirip taramak) kullanılmaz; o klasör atlanır.
 - Sunucuda bulunanlar veritabanında yeni bir tabloda tutulur (sürüm 4'e eklendi; güncellemede kendiliğinden taşınır).
 
+### Yazma
+- **DeX'te yazma ayrı pencerede.** DeX'te (ve Android'in masaüstü pencerelerinde) yeni ileti, yanıt, iletme, taslağı düzenleme ve Giden kutusu'ndan bir taslağı açma, posta penceresinin yanında **kendi penceresinde** açılır: yalnızca yazma ekranı, kenar çubuğu ve menü yok. Pencere 720 × 760 dp açılır, büyütülüp küçültülebilir; adı iletinin konusudur. Gönder, Kapat, Taslağı sil ya da pencerenin kendi kapatma düğmesiyle kapanır; hiçbir şey yazılmadan kapanan yeni ileti saklanmaz. Gönderince "Gönderiliyor… Geri al" posta penceresinde çıkar; geri alınca ileti yine kendi penceresinde açılır. Aynı taslak ikinci kez istenirse açık olan penceresi öne gelir. Ctrl+Enter o pencerede de gönderir.
+- Telefonda ve tablette yazma eskisi gibi ekranın üstünde. Başka bir uygulamadan paylaşılan ya da `mailto:` bağlantısıyla gelen ileti DeX'te de posta penceresinin içinde açılır.
+- **Rehberden alıcı.** "Kime" alanının sağındaki **Rehberden ekle** sistemin kişi seçicisini açar; seçilen adresler "Kime"ye eklenir. DeskMail rehberi okuma izni istemez: seçici yalnızca seçileni verir. Android 17'de birden çok kişi seçilebilir ve yalnızca e-posta adresleri gelir; öncesinde rehber uygulaması bir adres verir.
+
 ### Düzeltmeler
 - **Paylaşılan dosyayla yazma ekranı hemen açılır.** Başka bir uygulamadan dosya paylaşınca yazma ekranı, dosya uygulamaya kopyalanana dek açılmıyordu; büyük bir videoda o süre boyunca yalnızca Gelen görünüyordu. Ekran artık hemen açılır ve dosya arkada eklenir: ekran "Dosya ekleniyor…" der, dosya iletiye girmeden Gönder çalışmaz (ekranı kapatıp taslağı Giden kutusu'ndan yeniden açsan da). Yazma ekranındaki ataşla eklenen büyük dosyalarda da böyle.
 - **Yazma ekranı kendiliğinden kapanmaz.** Bir ileti yazarken başka bir ekrana bakıp geri dönünce yazma ekranı "Taslak Giden kutusu'nda duruyor" diyerek kapanıyordu (taslak kaybolmuyordu, Giden kutusu'ndan açmak gerekiyordu). Yazılan ileti artık ekranına dönüldüğünde bırakıldığı gibi durur.
