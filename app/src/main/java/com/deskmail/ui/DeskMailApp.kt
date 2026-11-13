@@ -555,12 +555,10 @@ fun DeskMailApp(
                         notifications = notifications,
                         onCheckChosen = onCheckChosen,
                         onAccountAdded = { address ->
-                            // To the inbox, where its mail is arriving. Said to the route keeper as
-                            // well: the account's folders are about to change the set of routes, and
-                            // whichever happens first, the inbox is where the window is to be.
+                            // To the inbox, where its mail is arriving. The account's folders change the
+                            // set of routes a moment later, and the inbox stays open (desktop-kit 2.8.0).
                             settingsUi.close()
                             notify(resources.getString(R.string.setup_added, address))
-                            at = Routes.INBOX
                             navigator.navigate(Routes.INBOX)
                         },
                     )
