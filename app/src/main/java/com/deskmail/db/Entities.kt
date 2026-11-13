@@ -172,6 +172,8 @@ data class BodyEntity(
     val text: String,
     val html: String?,
     val remoteImages: Boolean,
+    /** The message's header lines as they arrived: what the inspector shows, and where the provider's authentication results are read. */
+    val headers: String = "",
 )
 
 /**

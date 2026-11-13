@@ -39,6 +39,7 @@ data class StoredBody(
     val remoteImages: Boolean,
     val preview: String,
     val attachments: List<RemoteAttachment>,
+    val headers: String = "",
 )
 
 /**

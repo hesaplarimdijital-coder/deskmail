@@ -248,6 +248,25 @@ class MailSync(
     }
 
     /**
+     * Fetches the header lines of a message whose text was fetched before they were kept with it
+     * (the inspector's "Security" and "Headers").
+     */
+    suspend fun headers(messageId: Long): Outcome {
+        val message = db.messages().byId(messageId) ?: return Outcome.Gone
+        val folder = db.folders().byId(message.folderId) ?: return Outcome.Gone
+        var found: String? = null
+        val outcome = connected(message.accountId) { _, remote ->
+            remote.open(folder.path).use { mailbox ->
+                // the folder's UIDs mean something else now: not this message's lines, then
+                if (folder.uidValidity == 0L || mailbox.uidValidity == folder.uidValidity) found = mailbox.headers(message.uid)
+            }
+        }
+        val lines = found ?: return if (outcome == Outcome.Done) Outcome.Gone else outcome
+        db.messages().setHeaders(messageId, lines)
+        return Outcome.Done
+    }
+
+    /**
      * Fetches a file a message carries into [target], which exists only once all of it is there.
      *
      * @return [Outcome.Gone] when the message or the file in it is no longer on the server.

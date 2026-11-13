@@ -9,6 +9,11 @@ import java.time.LocalDate
  * [com.deskmail.core.imap.ImapMailbox]; the sync's own tests put a made-up server behind this.)
  */
 interface RemoteMailbox {
+    companion object {
+        /** A message's header lines are kept up to this many characters: a header block is seldom longer than a few thousand. */
+        const val MAX_HEADERS = 64_000
+    }
+
     /** The server's stamp on this folder's UIDs: when it differs from last time, every UID known of the folder is void. */
     val uidValidity: Long
 
@@ -42,6 +47,13 @@ interface RemoteMailbox {
      * Null when the folder no longer has the message.
      */
     fun body(uid: Long, maxTextBytes: Int): RemoteBody?
+
+    /**
+     * The message's header lines as they arrived, up to [MAX_HEADERS] characters: what the inspector
+     * shows as they are, and where the provider's authentication results are read from. Null when
+     * the message is gone; empty where the server says nothing of them.
+     */
+    fun headers(uid: Long): String? = null
 
     /**
      * Writes a file the message carries into [into], decoded: the part at [part], as

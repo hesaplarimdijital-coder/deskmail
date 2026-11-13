@@ -25,6 +25,7 @@ object BodyProcessor {
             remoteImages = clean?.remoteImages ?: false,
             preview = preview(text),
             attachments = body.attachments,
+            headers = body.headers,
         )
     }
 

@@ -102,4 +102,5 @@ data class RemoteBody(
     val html: String?,
     val attachments: List<RemoteAttachment>,
     val tooLarge: Boolean = false,
+    val headers: String = "",
 )
