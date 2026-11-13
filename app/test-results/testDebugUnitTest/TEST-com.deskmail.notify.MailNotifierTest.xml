@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.notify.MailNotifierTest" tests="17" skipped="0" failures="0" errors="0" timestamp="2026-11-13T12:14:30.706Z" hostname="runnervmwuk1x" time="1.199">
+  <properties/>
+  <testcase name="theStoreRemembersWhatItWasToldAcrossRuns" classname="com.deskmail.notify.MailNotifierTest" time="0.029"/>
+  <testcase name="aNotificationGoesWhenItsMessageIsReadAndTheAccountsLineWithTheLast" classname="com.deskmail.notify.MailNotifierTest" time="0.226"/>
+  <testcase name="whatTheWindowsShowDecidesWhatNeedsNoTelling" classname="com.deskmail.notify.MailNotifierTest" time="0.024"/>
+  <testcase name="theAccountsLineCountsWhatIsShownOfItsMail" classname="com.deskmail.notify.MailNotifierTest" time="0.034"/>
+  <testcase name="theFirstLookAtAnInboxTellsOfNothing" classname="com.deskmail.notify.MailNotifierTest" time="0.024"/>
+  <testcase name="aFloodIsCutDownToItsNewest" classname="com.deskmail.notify.MailNotifierTest" time="0.04"/>
+  <testcase name="aNotificationOpensItsMessageAndItsButtonsNameIt" classname="com.deskmail.notify.MailNotifierTest" time="0.031"/>
+  <testcase name="newMailIsToldOfOnceWithWhoItIsFromItsSubjectAndItsFirstLines" classname="com.deskmail.notify.MailNotifierTest" time="0.035"/>
+  <testcase name="theNotificationsFollowTheMailByThemselves" classname="com.deskmail.notify.MailNotifierTest" time="0.532"/>
+  <testcase name="whenTheSystemDoesNotAllowNotificationsNoneIsShown" classname="com.deskmail.notify.MailNotifierTest" time="0.024"/>
+  <testcase name="aNotificationThatIsDealtWithIsTakenDownAtOnce" classname="com.deskmail.notify.MailNotifierTest" time="0.028"/>
+  <testcase name="anInboxTheServerNumberedAnewIsLookedAtAfresh" classname="com.deskmail.notify.MailNotifierTest" time="0.025"/>
+  <testcase name="onlyTheInboxIsToldOf" classname="com.deskmail.notify.MailNotifierTest" time="0.02"/>
+  <testcase name="mailThatArrivesInAListTheUserIsLookingAtIsNotToldOf" classname="com.deskmail.notify.MailNotifierTest" time="0.03"/>
+  <testcase name="whatTheUserSweptAwayIsNoLongerCounted" classname="com.deskmail.notify.MailNotifierTest" time="0.032"/>
+  <testcase name="withoutAnArchiveThereIsNoButtonForIt" classname="com.deskmail.notify.MailNotifierTest" time="0.029"/>
+  <testcase name="anAccountThatIsRemovedTakesItsNotificationsItsChannelAndItsMarksAlong" classname="com.deskmail.notify.MailNotifierTest" time="0.032"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[System.logW: A resource failed to call SQLiteConnection.close. 
+System.logW: A resource failed to call SQLiteConnection.close. 
+System.logW: A resource failed to call SQLiteConnectionPool.close. 
+System.logW: A resource failed to call SQLiteConnection.close. 
+System.logW: A resource failed to call SQLiteConnection.close. 
+System.logW: A resource failed to call SQLiteConnection.close. 
+System.logW: A resource failed to call SQLiteConnection.close. 
+System.logW: A resource failed to call SQLiteConnectionPool.close. 
+System.logW: A resource failed to call SQLiteConnection.close. 
+System.logW: A resource failed to call SQLiteConnection.close. 
+System.logW: A resource failed to call SQLiteConnectionPool.close. 
+]]></system-err>
+</testsuite>

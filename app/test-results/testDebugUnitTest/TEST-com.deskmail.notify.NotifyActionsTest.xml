@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.notify.NotifyActionsTest" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-11-13T12:14:31.909Z" hostname="runnervmwuk1x" time="8.253">
+  <properties/>
+  <testcase name="mailThatArrivesIsToldOfByTheSyncThatBringsIt" classname="com.deskmail.notify.NotifyActionsTest" time="1.308"/>
+  <testcase name="aReplyTypedIntoANotificationIsSentAtOnce" classname="com.deskmail.notify.NotifyActionsTest" time="0.963"/>
+  <testcase name="aNotificationThatWasSweptAwayLeavesItsMessageAsItIs" classname="com.deskmail.notify.NotifyActionsTest" time="0.954"/>
+  <testcase name="anEmptyReplyOrOneToAMessageThatWentSendsNothing" classname="com.deskmail.notify.NotifyActionsTest" time="0.965"/>
+  <testcase name="aButtonForAMessageThatIsNoLongerThereDoesNothing" classname="com.deskmail.notify.NotifyActionsTest" time="0.026"/>
+  <testcase name="aNotificationsButtonsAreCarriedOutOnTheDeviceAtOnceAndToldToTheServer" classname="com.deskmail.notify.NotifyActionsTest" time="2.123"/>
+  <testcase name="aServerThatCannotBeReachedKeepsWhatWasDoneWaiting" classname="com.deskmail.notify.NotifyActionsTest" time="0.96"/>
+  <testcase name="aNotificationOffersToReplyFromWhereItIs" classname="com.deskmail.notify.NotifyActionsTest" time="0.951"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
