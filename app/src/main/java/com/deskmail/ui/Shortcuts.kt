@@ -90,8 +90,8 @@ class CommandHost {
  * - a single key (J, K, R, A, F, S, U, E, V, Delete, Esc, /) and Ctrl+Z run their command only while
  *   nothing is being typed ([typing]: the focus is in a text field). A key held down repeats J
  *   and K down the list, and nothing else;
- * - "/" also counts where it is typed with another key (Shift+7 on a Turkish keyboard), since a
- *   shortcut table knows keys, not the characters they type.
+ * - "/" also counts where it is typed with another key (Shift+7 on a Turkish keyboard): the kit's
+ *   table matches a punctuation key by the character it types too (desktop-kit 2.8.0).
  *
  * A command with nothing to do (S with no message open) leaves the key to the focused view.
  */
@@ -106,13 +106,9 @@ class KeyRouter(
         if (event.action != KeyEvent.ACTION_DOWN || paletteOpen()) return false
         registry.matchNative(event)?.let { return perform(it.id) }
         if (typing()) return false
-        val id = registry.matchNative(event, setOf(MailScope), allowPlainKeys = true)?.id
-            ?: (if (typesSlash(event)) Commands.FIND else return false)
+        val id = registry.matchNative(event, setOf(MailScope), allowPlainKeys = true)?.id ?: return false
         // held down: J and K walk the list, anything else would flip back and forth
         if (event.repeatCount > 0 && id != Commands.NEXT && id != Commands.PREVIOUS) return true
         return perform(id)
     }
-
-    private fun typesSlash(event: KeyEvent): Boolean =
-        !event.isCtrlPressed && !event.isAltPressed && !event.isMetaPressed && event.unicodeChar == '/'.code
 }
