@@ -57,6 +57,8 @@
     <string name="action_delete">Delete</string>
     <string name="action_move">Move…</string>
     <string name="action_select">Select</string>
+    <string name="action_edit_draft">Edit</string>
+    <string name="draft_continue">Go on writing</string>
     <plurals name="selection_count">
         <item quantity="one">%d message selected</item>
         <item quantity="other">%d messages selected</item>

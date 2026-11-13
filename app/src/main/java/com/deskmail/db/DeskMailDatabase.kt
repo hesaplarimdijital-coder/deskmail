@@ -96,9 +96,10 @@ abstract class DeskMailDatabase : RoomDatabase() {
         val MIGRATION_3_4: Migration = object : Migration(3, 4) {
             override suspend fun migrate(connection: SQLiteConnection) {
                 connection.runSql("ALTER TABLE `outbox` ADD COLUMN `draftSavedAt` INTEGER NOT NULL DEFAULT 0")
+                connection.runSql("ALTER TABLE `outbox` ADD COLUMN `draftUidValidity` INTEGER NOT NULL DEFAULT 0")
                 connection.runSql(
                     "CREATE TABLE IF NOT EXISTS `draft_removal` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `accountId` INTEGER NOT NULL, " +
-                        "`folderId` INTEGER NOT NULL, `uid` INTEGER NOT NULL, " +
+                        "`folderId` INTEGER NOT NULL, `uid` INTEGER NOT NULL, `uidValidity` INTEGER NOT NULL, " +
                         "FOREIGN KEY(`accountId`) REFERENCES `account`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
                 )
                 connection.runSql("CREATE INDEX IF NOT EXISTS `index_draft_removal_accountId` ON `draft_removal` (`accountId`)")

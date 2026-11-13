@@ -709,13 +709,16 @@ abstract class OutboxDao {
     @Query("SELECT * FROM outbox WHERE state = 'Draft' AND updatedAt > draftSavedAt ORDER BY id")
     abstract suspend fun draftsToSave(): List<OutboxEntity>
 
-    /** Notes where a draft's copy lies now, and as of when ([savedAt]: the draft's updatedAt that was put there). */
-    @Query("UPDATE outbox SET draftFolderId = :folderId, draftUid = :uid, draftSavedAt = :savedAt WHERE id = :id")
-    abstract suspend fun setDraftCopy(id: Long, folderId: Long, uid: Long, savedAt: Long)
+    /**
+     * Notes where a draft's copy lies now, and as of when ([savedAt]: the draft's updatedAt that
+     * was put there). 0 when the draft is gone: sent or thrown away meanwhile.
+     */
+    @Query("UPDATE outbox SET draftFolderId = :folderId, draftUid = :uid, draftUidValidity = :uidValidity, draftSavedAt = :savedAt WHERE id = :id")
+    abstract suspend fun setDraftCopy(id: Long, folderId: Long, uid: Long, uidValidity: Long, savedAt: Long): Int
 
-    /** The draft whose copy on the server this is, if the device has it. */
-    @Query("SELECT * FROM outbox WHERE draftFolderId = :folderId AND draftUid = :uid LIMIT 1")
-    abstract suspend fun byDraftCopy(folderId: Long, uid: Long): OutboxEntity?
+    /** The message that is being written under this Message-ID, if the device has it: a draft's copies all carry it. */
+    @Query("SELECT * FROM outbox WHERE messageId = :messageId AND state IN ('Draft', 'Failed') ORDER BY id LIMIT 1")
+    abstract suspend fun writtenUnder(messageId: String): OutboxEntity?
 
     /** A file came or went: the draft is ahead of its copy, as after something typed. */
     @Query("UPDATE outbox SET updatedAt = :now WHERE id = :id AND state IN ('Draft', 'Failed')")
@@ -751,7 +754,9 @@ abstract class OutboxDao {
     }
 
     private suspend fun noteCopy(row: OutboxEntity) {
-        if (row.draftFolderId != 0L && row.draftUid != 0L) addRemoval(DraftRemovalEntity(accountId = row.accountId, folderId = row.draftFolderId, uid = row.draftUid))
+        if (row.draftFolderId != 0L && row.draftUid != 0L) {
+            addRemoval(DraftRemovalEntity(accountId = row.accountId, folderId = row.draftFolderId, uid = row.draftUid, uidValidity = row.draftUidValidity))
+        }
     }
 
     @Query("SELECT * FROM outbox_file WHERE outboxId = :outboxId ORDER BY id")

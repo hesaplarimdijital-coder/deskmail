@@ -47,6 +47,8 @@
     <string name="action_delete">Sil</string>
     <string name="action_move">Taşı…</string>
     <string name="action_select">Seç</string>
+    <string name="action_edit_draft">Düzenle</string>
+    <string name="draft_continue">Yazmaya devam et</string>
     <plurals name="selection_count">
         <item quantity="one">%d ileti seçili</item>
         <item quantity="other">%d ileti seçili</item>

@@ -253,6 +253,8 @@ data class PendingOpEntity(
  * @param draftFolderId where the draft's copy on the server lies and [draftUid] its UID there; 0 for none.
  * @param draftSavedAt what [updatedAt] was when that copy was put there: a draft that was touched
  *   since is ahead of its copy.
+ * @param draftUidValidity the server's stamp on the folder's UIDs when the copy was put there:
+ *   under another stamp [draftUid] names some other message, and is not acted on.
  */
 @Entity(
     tableName = "outbox",
@@ -280,6 +282,7 @@ data class OutboxEntity(
     val createdAt: Long,
     val updatedAt: Long,
     val draftSavedAt: Long = 0,
+    val draftUidValidity: Long = 0,
 ) {
     companion object {
         const val DRAFT = "Draft"
@@ -309,6 +312,7 @@ data class DraftRemovalEntity(
     val accountId: Long,
     val folderId: Long,
     val uid: Long,
+    val uidValidity: Long,
 )
 
 /**

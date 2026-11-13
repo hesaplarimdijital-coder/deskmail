@@ -87,6 +87,8 @@ import kotlinx.coroutines.delay
  * @param onMove asks which folder to move it to; null where there is no other folder.
  * @param onAttachment what to do with a file of the message: open, save or share it.
  * @param fetchingFile a file is on its way from the server.
+ * @param draft the message is a draft that lies in its account's Drafts folder: there is nothing
+ *   to answer, it is taken up to be written on ([DraftKind.Edit]).
  */
 @Composable
 fun MessageReader(
@@ -108,6 +110,7 @@ fun MessageReader(
     modifier: Modifier = Modifier,
     underBars: Boolean = true,
     fetchingFile: Boolean = false,
+    draft: Boolean = false,
     trailingActions: @Composable RowScope.() -> Unit = {},
 ) {
     val colors = DeskTheme.colors
@@ -121,16 +124,21 @@ fun MessageReader(
     val replyLabel = stringResource(R.string.action_reply)
     val replyAllLabel = stringResource(R.string.action_reply_all)
     val forwardLabel = stringResource(R.string.action_forward)
+    val editLabel = stringResource(R.string.action_edit_draft)
+    // what there is to write from here: on with the draft itself, or an answer to the message
+    val answers = onWrite?.takeIf { !draft }
+    val edit: (() -> Unit)? = onWrite?.takeIf { draft }?.let { write -> { write(DraftKind.Edit) } }
     if (onClose != null) {
         // a phone: back and the actions in the top bar (nothing happens on wider windows)
         CompactTopBar(
             onBack = onClose,
             actions = listOfNotNull(
                 onArchive?.let { TopBarAction(MailIcons.Archive, archiveLabel, it) },
+                edit?.let { TopBarAction(MailIcons.Compose, editLabel, it, primary = true) },
                 TopBarAction(DeskIcons.Delete, deleteLabel, onDelete),
-                onWrite?.let { write -> TopBarAction(MailIcons.Reply, replyLabel, { write(DraftKind.Reply) }) },
-                onWrite?.let { write -> TopBarAction(MailIcons.ReplyAll, replyAllLabel, { write(DraftKind.ReplyAll) }) },
-                onWrite?.let { write -> TopBarAction(MailIcons.ForwardMail, forwardLabel, { write(DraftKind.Forward) }) },
+                answers?.let { write -> TopBarAction(MailIcons.Reply, replyLabel, { write(DraftKind.Reply) }) },
+                answers?.let { write -> TopBarAction(MailIcons.ReplyAll, replyAllLabel, { write(DraftKind.ReplyAll) }) },
+                answers?.let { write -> TopBarAction(MailIcons.ForwardMail, forwardLabel, { write(DraftKind.Forward) }) },
                 TopBarAction(unreadIcon, unreadLabel, onToggleUnread),
                 onMove?.let { TopBarAction(MailIcons.MoveTo, moveLabel, it) },
             ),
@@ -155,11 +163,12 @@ fun MessageReader(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 if (onClose != null) DeskIconButton(DeskIcons.ArrowLeft, stringResource(desktopkit.R.string.dk_back), onClose)
-                if (onWrite != null) {
-                    DeskIconButton(MailIcons.Reply, replyLabel, { onWrite(DraftKind.Reply) })
-                    DeskIconButton(MailIcons.ReplyAll, replyAllLabel, { onWrite(DraftKind.ReplyAll) })
-                    DeskIconButton(MailIcons.ForwardMail, forwardLabel, { onWrite(DraftKind.Forward) })
+                if (answers != null) {
+                    DeskIconButton(MailIcons.Reply, replyLabel, { answers(DraftKind.Reply) })
+                    DeskIconButton(MailIcons.ReplyAll, replyAllLabel, { answers(DraftKind.ReplyAll) })
+                    DeskIconButton(MailIcons.ForwardMail, forwardLabel, { answers(DraftKind.Forward) })
                 }
+                if (edit != null) DeskIconButton(MailIcons.Compose, editLabel, edit)
                 Spacer(Modifier.weight(1f))
                 if (onArchive != null) DeskIconButton(MailIcons.Archive, archiveLabel, onArchive)
                 DeskIconButton(DeskIcons.Delete, deleteLabel, onDelete)
@@ -169,7 +178,7 @@ fun MessageReader(
             }
         }
         // a phone has no row of actions above the subject: "Reply" is beside the sender there
-        ReaderHeader(message, onToggleStar, onReply = if (compact && onWrite != null) ({ onWrite(DraftKind.Reply) }) else null)
+        ReaderHeader(message, onToggleStar, onReply = if (compact && answers != null) ({ answers(DraftKind.Reply) }) else null)
         val strip = Modifier.padding(horizontal = dimens.pagePadding).padding(bottom = dimens.gapM)
         when (content) {
             is MailContent.Ready -> {
@@ -185,7 +194,8 @@ fun MessageReader(
                 }
                 // a view of its own for every message
                 key(message.id) { body(content, showImages, Modifier.fillMaxWidth()) }
-                if (onWrite != null) AnswerRow(onWrite)
+                if (answers != null) AnswerRow(answers)
+                if (edit != null) EditRow(edit)
             }
             MailContent.Loading -> ContentOnItsWay()
             is MailContent.Failed -> StatusBanner(
@@ -239,6 +249,15 @@ private fun AnswerRow(onWrite: (DraftKind) -> Unit) {
         DeskButton(stringResource(R.string.action_reply), { onWrite(DraftKind.Reply) }, icon = MailIcons.Reply)
         DeskButton(stringResource(R.string.action_reply_all), { onWrite(DraftKind.ReplyAll) }, icon = MailIcons.ReplyAll)
         DeskButton(stringResource(R.string.action_forward), { onWrite(DraftKind.Forward) }, icon = MailIcons.ForwardMail)
+    }
+}
+
+/** Under a draft's text: the way on with it. */
+@Composable
+private fun EditRow(onEdit: () -> Unit) {
+    val dimens = DeskTheme.dimens
+    Row(Modifier.fillMaxWidth().padding(horizontal = dimens.pagePadding).padding(top = dimens.gapL, bottom = dimens.gapXl)) {
+        DeskButton(stringResource(R.string.draft_continue), onEdit, icon = MailIcons.Compose, primary = true)
     }
 }
 

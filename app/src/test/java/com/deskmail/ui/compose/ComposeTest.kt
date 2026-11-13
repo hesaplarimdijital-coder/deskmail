@@ -18,6 +18,7 @@ import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTouchInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.deskmail.TestApp
+import com.deskmail.core.mail.FolderRole
 import com.deskmail.demo.DemoMail
 import com.deskmail.mail.Draft
 import com.deskmail.mail.DraftSeed
@@ -465,6 +466,29 @@ class ComposeTest {
         // and it is sent from there as if nothing had happened
         press("Gönder")
         assertEquals(DraftState.Waiting, composer.outbox.single().state)
+    }
+
+    /** A draft that lies in its account's Drafts folder is gone on with, not answered. */
+    @Test
+    fun aDraftInItsFolderIsTakenUpToBeWrittenOn() {
+        val draft = mail.messages.first { it.subject == "Re: Cumartesi kahvaltı?" && mail.folder(it.folderId)?.role == FolderRole.Drafts }
+        val route = Routes.folder(draft.folderId)
+        launch(startRoute = route)
+        compose.runOnUiThread { openMessage(mail, ui, route, draft) }
+        compose.waitForIdle()
+        // there is nothing to answer here
+        compose.onNodeWithContentDescription("Yanıtla").assertDoesNotExist()
+        compose.onNodeWithText("Yazmaya devam et").assertExists()
+
+        press("Düzenle")
+
+        val writing = ui.writingOver(route)!!
+        assertEquals("Re: Cumartesi kahvaltı?", writing.fields.subject)
+        compose.onNodeWithTag(ComposeTags.SUBJECT).assertExists()
+        // it was worth keeping before it was taken up: closed untouched, it stays
+        assertFalse(writing.fresh)
+        back()
+        assertEquals(1, composer.outbox.size)
     }
 
     /** A link that only names who to write to begins a message that is not worth keeping empty. */

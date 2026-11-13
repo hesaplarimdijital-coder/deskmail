@@ -27,6 +27,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.deskmail.R
+import com.deskmail.core.mail.FolderRole
 import com.deskmail.core.text.SearchQuery
 import com.deskmail.mail.AccountState
 import com.deskmail.mail.DraftKind
@@ -176,6 +177,7 @@ fun MailScreen(
     val replyAllLabel = stringResource(R.string.action_reply_all)
     val forwardLabel = stringResource(R.string.action_forward)
     val selectLabel = stringResource(R.string.action_select)
+    val editLabel = stringResource(R.string.action_edit_draft)
     // What can be done with a message from its row: a long press, a right click, the Menu key.
     val rowMenu: (MailMessage) -> List<MenuEntry> = { message ->
         if (several && message.id in chosenIds) {
@@ -193,7 +195,11 @@ fun MailScreen(
             add(MenuEntry.Item(if (message.unread) markReadLabel else markUnreadLabel, { mail.toggleUnread(message.id) }, shortcut = "U"))
             add(MenuEntry.Item(if (message.starred) unstarLabel else starLabel, { mail.toggleStarred(message.id) }, shortcut = "S"))
             add(MenuEntry.Separator)
-            if (onWrite != null) {
+            if (onWrite != null && isDraft(mail, message)) {
+                // a draft is gone on with, not answered
+                add(MenuEntry.Item(editLabel, { onWrite(DraftKind.Edit, message) }, icon = MailIcons.Compose))
+                add(MenuEntry.Separator)
+            } else if (onWrite != null) {
                 add(MenuEntry.Item(replyLabel, { onWrite(DraftKind.Reply, message) }, shortcut = "R", icon = MailIcons.Reply))
                 add(MenuEntry.Item(replyAllLabel, { onWrite(DraftKind.ReplyAll, message) }, shortcut = "A", icon = MailIcons.ReplyAll))
                 add(MenuEntry.Item(forwardLabel, { onWrite(DraftKind.Forward, message) }, shortcut = "F", icon = MailIcons.ForwardMail))
@@ -304,6 +310,7 @@ fun MailScreen(
             modifier = Modifier.testTag(MailTags.READER),
             underBars = readerUnderBars,
             fetchingFile = files.busy,
+            draft = isDraft(mail, message),
             trailingActions = { trailing() },
         )
     }
@@ -588,6 +595,9 @@ private fun BulkBar(chosen: List<MailMessage>, bulk: BulkActions, modifier: Modi
 
 /** The room the selection's bar takes over the end of a phone's list: a row of the kit's icon buttons and its rule. */
 private val BULK_BAR_HEIGHT = 58.dp
+
+/** Whether the message is a draft that lies in its account's Drafts folder: one to go on writing, not one to answer. */
+fun isDraft(mail: MailSource, message: MailMessage): Boolean = mail.folder(message.folderId)?.role == FolderRole.Drafts
 
 /** The kind of what is dragged out of a list of messages; the folders of the sidebar take it. */
 const val MESSAGE_DRAG = "message"
