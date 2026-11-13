@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.ui.NotifyUiTest" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-11-13T00:34:26.039Z" hostname="runnervmwuk1x" time="0.735">
+  <properties/>
+  <testcase name="withoutAnAccountNobodyIsAsked" classname="com.deskmail.ui.NotifyUiTest" time="0.069"/>
+  <testcase name="aTappedNotificationOpensItsMessageInTheInbox" classname="com.deskmail.ui.NotifyUiTest" time="0.133"/>
+  <testcase name="theLeaveToNotifyIsAskedForOnceWhenThereIsAnAccount" classname="com.deskmail.ui.NotifyUiTest" time="0.158"/>
+  <testcase name="anAccountsLineOpensTheInbox" classname="com.deskmail.ui.NotifyUiTest" time="0.157"/>
+  <testcase name="whoAllowedItAlreadyIsNotAsked" classname="com.deskmail.ui.NotifyUiTest" time="0.091"/>
+  <testcase name="theWindowSaysWhichListOfMailItShows" classname="com.deskmail.ui.NotifyUiTest" time="0.124"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

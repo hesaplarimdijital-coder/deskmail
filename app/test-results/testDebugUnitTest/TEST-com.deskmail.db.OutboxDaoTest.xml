@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.db.OutboxDaoTest" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-11-13T00:34:01.214Z" hostname="runnervmwuk1x" time="0.178">
+  <properties/>
+  <testcase name="theOutboxIsListedTheLatestTouchedFirst" classname="com.deskmail.db.OutboxDaoTest" time="0.026"/>
+  <testcase name="aMessageOnItsWayCanNeitherBeTakenBackNorChangedNorThrownAway" classname="com.deskmail.db.OutboxDaoTest" time="0.02"/>
+  <testcase name="whatIsTypedIsKeptOnlyWhileTheMessageIsBeingWrittenOn" classname="com.deskmail.db.OutboxDaoTest" time="0.022"/>
+  <testcase name="theEarliestWaitingMessageSaysWhenToLook" classname="com.deskmail.db.OutboxDaoTest" time="0.023"/>
+  <testcase name="aDraftIsHandedOverTakenBackAndHandedOverAgain" classname="com.deskmail.db.OutboxDaoTest" time="0.018"/>
+  <testcase name="anAccountThatIsRemovedTakesItsOutboxAlong" classname="com.deskmail.db.OutboxDaoTest" time="0.019"/>
+  <testcase name="whatAnEarlierRunWasSendingIsKeptAsFailed" classname="com.deskmail.db.OutboxDaoTest" time="0.019"/>
+  <testcase name="filesBelongToTheirMessageAndGoWithIt" classname="com.deskmail.db.OutboxDaoTest" time="0.026"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
