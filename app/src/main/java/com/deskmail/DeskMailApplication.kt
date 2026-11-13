@@ -10,6 +10,7 @@ import com.deskmail.data.AccountSetup
 import com.deskmail.data.AccountStore
 import com.deskmail.data.ComposeWords
 import com.deskmail.data.DeviceSecretBox
+import com.deskmail.data.DraftSync
 import com.deskmail.data.LiveComposer
 import com.deskmail.data.LiveMail
 import com.deskmail.data.MailSend
@@ -28,6 +29,7 @@ import com.deskmail.ui.mail.WebViewWarmUp
 import com.deskmail.watch.Awake
 import com.deskmail.watch.MailWatch
 import com.deskmail.watch.WatchService
+import com.deskmail.work.DraftWorker
 import com.deskmail.work.SendWorker
 import com.deskmail.work.SyncWorker
 import kotlinx.coroutines.CancellationException
@@ -178,7 +180,20 @@ class DeskMailApplication : Application(), Configuration.Provider {
     private val outboxFiles: File get() = File(filesDir, OUTBOX_DIRECTORY)
 
     /** Sends what waits in the outbox; the background work that does so ([SendWorker]) finds it here. */
-    val sender: MailSend by lazy { MailSend(database, accountStore, sync, log, File(cacheDir, OUTGOING_DIRECTORY), outboxFiles) }
+    val sender: MailSend by lazy {
+        MailSend(database, accountStore, sync, log, File(cacheDir, OUTGOING_DIRECTORY), outboxFiles, onDraftCopies = { saveDrafts(0) })
+    }
+
+    /** Keeps a copy of what is being written among the drafts on its server; the background work ([DraftWorker]) finds it here. */
+    val drafts: DraftSync by lazy { DraftSync(database, sync, log, File(cacheDir, OUTGOING_DIRECTORY)) }
+
+    private fun saveDrafts(delayMs: Long) {
+        try {
+            DraftWorker.schedule(this, delayMs)
+        } catch (e: Exception) {
+            log.error("app", "the drafts could not be asked to be saved", e)
+        }
+    }
 
     /** Writing and sending, as the windows see it. */
     val composer: LiveComposer by lazy {
@@ -193,6 +208,7 @@ class DeskMailApplication : Application(), Configuration.Provider {
             recover = { sender.recover() },
             log = log,
             undoMs = { settings.undoSendSeconds * 1000L },
+            saveDrafts = ::saveDrafts,
         )
     }
 

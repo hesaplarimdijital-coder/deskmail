@@ -194,6 +194,80 @@ class OutboxDaoTest {
         assertNull(outbox.observe(404).first())
     }
 
+    /** A draft is ahead of its copy on the server from the moment it is touched until the copy is put there anew. */
+    @Test
+    fun aDraftKnowsWhetherItsCopyOnTheServerIsBehind() = runBlocking {
+        val id = draft(updatedAt = 10)
+        assertEquals(listOf(id), outbox.draftsToSave().map { it.id })
+
+        assertEquals(1, outbox.setDraftCopy(id, folderId = 4, uid = 21, uidValidity = 7, savedAt = 10))
+        assertTrue(outbox.draftsToSave().isEmpty())
+        assertEquals(listOf(4L, 21L, 7L, 10L), stored(id)!!.let { listOf(it.draftFolderId, it.draftUid, it.draftUidValidity, it.draftSavedAt) })
+
+        // something is typed, or a file comes or goes
+        write(id, "değişti", now = 20)
+        assertEquals(listOf(id), outbox.draftsToSave().map { it.id })
+        outbox.setDraftCopy(id, 4, 22, 7, savedAt = 20)
+        outbox.touch(id, now = 30)
+        assertEquals(listOf(id), outbox.draftsToSave().map { it.id })
+
+        // handed over, it is no draft any more: its copy is left as it is until the message is sent
+        outbox.queue(id, sendAfter = 40, now = 35)
+        assertTrue(outbox.draftsToSave().isEmpty())
+        // a file that comes now changes nothing either
+        outbox.touch(id, now = 36)
+        assertEquals(35L, stored(id)!!.updatedAt)
+    }
+
+    @Test
+    fun theCopyOfAMessageThatIsSentOrThrownAwayIsNotedForRemoval() = runBlocking {
+        val thrown = draft("atılan")
+        val sent = draft("giden")
+        val plain = draft("kopyasız")
+        outbox.setDraftCopy(thrown, folderId = 4, uid = 21, uidValidity = 7, savedAt = 1)
+        outbox.setDraftCopy(sent, folderId = 4, uid = 22, uidValidity = 7, savedAt = 1)
+
+        assertEquals(1, outbox.discardWithCopy(thrown))
+        outbox.deleteSent(sent)
+        // without a copy there is nothing to note
+        assertEquals(1, outbox.discardWithCopy(plain))
+
+        assertNull(stored(thrown))
+        assertNull(stored(sent))
+        assertEquals(listOf(21L, 22L), outbox.removals().map { it.uid })
+        assertEquals(listOf(7L, 7L), outbox.removals().map { it.uidValidity })
+
+        outbox.removalDone(outbox.removals().first().id)
+        assertEquals(listOf(22L), outbox.removals().map { it.uid })
+        // a copy that was noted for a message that is gone: 0 says so to whoever put it there
+        assertEquals(0, outbox.setDraftCopy(thrown, 4, 30, 7, savedAt = 5))
+    }
+
+    /** A message on its way is not thrown away, and nothing is noted for it. */
+    @Test
+    fun aMessageOnItsWayKeepsItsCopy() = runBlocking {
+        val id = draft()
+        outbox.setDraftCopy(id, folderId = 4, uid = 21, uidValidity = 7, savedAt = 1)
+        outbox.queue(id, sendAfter = 5, now = 2)
+        assertEquals(1, outbox.claim(id, now = 5))
+
+        assertEquals(0, outbox.discardWithCopy(id))
+
+        assertTrue(outbox.removals().isEmpty())
+        assertEquals(21L, stored(id)!!.draftUid)
+    }
+
+    /** A draft is found by the Message-ID its copies carry, while it can still be written on. */
+    @Test
+    fun aDraftIsFoundByItsMessageId() = runBlocking {
+        val id = draft()
+        assertEquals(id, outbox.writtenUnder("<taslak@example.org>")?.id)
+        assertNull(outbox.writtenUnder("<baska@example.org>"))
+
+        outbox.queue(id, sendAfter = 5, now = 2)
+        assertNull(outbox.writtenUnder("<taslak@example.org>"))
+    }
+
     @Test
     fun anAccountThatIsRemovedTakesItsOutboxAlong() = runBlocking {
         val id = draft()
