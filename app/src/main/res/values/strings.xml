@@ -287,6 +287,13 @@
         <item quantity="one">%d account was added; enter its password on its page.</item>
         <item quantity="other">%d accounts were added; enter each one\'s password on its page.</item>
     </plurals>
+    <string name="settings_lists">Lists</string>
+    <string name="settings_conversations">Keep conversations together</string>
+    <string name="settings_conversations_note">A conversation\'s messages are one row of a list: the newest, with how many there are. Opened, the conversation\'s other messages stand above it.</string>
+    <plurals name="conversation_count">
+        <item quantity="one">%d message in this conversation</item>
+        <item quantity="other">%d messages in this conversation</item>
+    </plurals>
     <string name="log_copy">Copy</string>
     <string name="log_share">Share as a file</string>
     <string name="log_clear">Clear the log</string>

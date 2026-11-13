@@ -270,6 +270,13 @@
         <item quantity="one">%d hesap eklendi; şifresini hesabın sayfasında gir.</item>
         <item quantity="other">%d hesap eklendi; her birinin şifresini hesabın sayfasında gir.</item>
     </plurals>
+    <string name="settings_lists">Listeler</string>
+    <string name="settings_conversations">Konuşmaları bir arada göster</string>
+    <string name="settings_conversations_note">Bir konuşmanın iletileri listede tek satır olur: en yenisi, yanında kaç ileti olduğu. Açınca konuşmanın öbür iletileri üstte durur.</string>
+    <plurals name="conversation_count">
+        <item quantity="one">Bu konuşmada %d ileti</item>
+        <item quantity="other">Bu konuşmada %d ileti</item>
+    </plurals>
     <string name="log_copy">Kopyala</string>
     <string name="log_share">Dosya olarak paylaş</string>
     <string name="log_clear">Günlüğü temizle</string>

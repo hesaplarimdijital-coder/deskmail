@@ -190,6 +190,16 @@ class DemoMail(private val now: Instant = Instant.now(), empty: Boolean = false)
 
     override fun cached(view: MailView): List<MailMessage> = messages(view)
 
+    /** A conversation, oldest first, wherever its messages are filed, but not in Trash or Spam. */
+    override fun observeThread(message: MailMessage): Flow<List<MailMessage>> = snapshotFlow {
+        if (message.thread.isEmpty()) {
+            listOf(message)
+        } else {
+            val roles = tree.associate { it.id to it.role }
+            stored.filter { it.thread == message.thread && roles[it.folderId] != FolderRole.Trash && roles[it.folderId] != FolderRole.Junk }.sortedBy { it.sentAt }
+        }
+    }
+
     override fun observeMessage(id: Long): Flow<MailMessage?> = snapshotFlow { message(id) }
 
     override fun cachedMessage(id: Long): MailMessage? = message(id)
@@ -343,6 +353,7 @@ class DemoMail(private val now: Instant = Instant.now(), empty: Boolean = false)
             answered: Boolean = false,
             forwarded: Boolean = false,
             authentication: String = "dkim=pass header.i=@${address.substringAfter('@')} header.s=s1; spf=pass smtp.mailfrom=$address; dmarc=pass header.from=${address.substringAfter('@')}",
+            thread: String = "",
         ) {
             val id = nextId++
             list += MailMessage(
@@ -361,6 +372,7 @@ class DemoMail(private val now: Instant = Instant.now(), empty: Boolean = false)
                 outgoing = outgoing,
                 answered = answered,
                 forwarded = forwarded,
+                thread = if (thread.isEmpty()) "" else tree.first { it.id == folder }.accountId.toString() + " " + thread,
             )
             // the header lines as a provider hands them on: its own word on where the message came from on top
             val headers = listOf(
@@ -381,6 +393,7 @@ class DemoMail(private val now: Instant = Instant.now(), empty: Boolean = false)
             "Selam Deniz,\n\nCumartesi sabahı Moda'da kahvaltıya ne dersin? Zeynep de geliyor, saat 10 gibi buluşuruz diye düşündük. " +
                 "Yer ayırtmam gerekiyor, akşama kadar haber verirsen sevinirim.\n\nSevgiler,\nAyşe",
             unread = true,
+            thread = KAHVALTI,
         )
         add(
             11, "Sahaf Kitabevi", "bulten@sahaf.example", "Kasım bülteni: yeni gelenler ve imza günü", Duration.ofHours(2),
@@ -395,6 +408,7 @@ class DemoMail(private val now: Instant = Instant.now(), empty: Boolean = false)
             html = DemoBodies.replyChain, starred = true, to = "$ME, Elif Şahin",
             attachments = listOf(MailAttachment("Proje planı v3.pdf", 284_000, mimeType = "application/pdf")),
             answered = true,
+            thread = PLAN,
         )
         add(
             11, "Derleme Sunucusu", "ci@ci.example", "[deskmail] feature/skeleton: 3 iş başarılı", Duration.ofHours(21),
@@ -436,11 +450,13 @@ class DemoMail(private val now: Instant = Instant.now(), empty: Boolean = false)
         add(
             12, ME, "deniz@outlook.example", "Re: Cumartesi kahvaltı?", Duration.ofMinutes(8),
             "Ayşe selam,\n\nOlur, gelirim. Saat 10 uygun, yalnız", to = "Ayşe Yılmaz", outgoing = true,
+            thread = KAHVALTI,
         )
         add(
             13, ME, "deniz@outlook.example", "Re: Proje planı (v2)", Duration.ofHours(19),
             "Senkron için bir hafta az. Klasör listesi, bayraklar ve gövdeler ayrı ayrı sınanmalı; en az iki hafta diyelim.",
             to = "Mehmet Demir", outgoing = true,
+            thread = PLAN,
         )
         add(
             13, ME, "deniz@outlook.example", "Kitap ayırtma", Duration.ofDays(5),
@@ -456,6 +472,7 @@ class DemoMail(private val now: Instant = Instant.now(), empty: Boolean = false)
             14, "Mehmet Demir", "mehmet.demir@isyeri.example", "Proje planı (v1)", Duration.ofDays(12),
             "İlk taslağı gönderiyorum, tarihler kabaca. Yorumlarını bekliyorum.",
             attachments = listOf(MailAttachment("Proje planı v1.pdf", 251_000)),
+            thread = PLAN,
         )
         add(
             14, "Zeynep Kaya", "zeynep.kaya@posta.example", "Uçak mı tren mi?", Duration.ofDays(20),
@@ -540,6 +557,10 @@ class DemoMail(private val now: Instant = Instant.now(), empty: Boolean = false)
         const val OUTLOOK = 1L
         const val GMAIL = 2L
         const val ME = "Deniz Aksoy"
+
+        /** The conversations of the made-up mail: the breakfast, and the project plan's versions. */
+        private const val KAHVALTI = "<kahvalti@posta.example>"
+        private const val PLAN = "<plan-v1@isyeri.example>"
 
         /** Mail in these is not counted as unread or starred in the views over every account. */
         private val OUTSIDE_THE_VIEWS = setOf(FolderRole.All, FolderRole.Junk, FolderRole.Trash)
