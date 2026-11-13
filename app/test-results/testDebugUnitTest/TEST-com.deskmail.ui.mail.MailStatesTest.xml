@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.ui.mail.MailStatesTest" tests="14" skipped="0" failures="0" errors="0" timestamp="2026-11-13T12:25:52.897Z" hostname="runnervmccnms" time="1.148">
+  <properties/>
+  <testcase name="aMessageWhoseTextIsNotOnTheDeviceSaysSo" classname="com.deskmail.ui.mail.MailStatesTest" time="0.067"/>
+  <testcase name="aScreenThatComesToTheFrontAsksForItsMail" classname="com.deskmail.ui.mail.MailStatesTest" time="0.066"/>
+  <testcase name="anAccountThatHasToSignInAgainSaysSoAboveTheList" classname="com.deskmail.ui.mail.MailStatesTest" time="0.094"/>
+  <testcase name="aMessageTooTallForALayerTakesTheGlassAway" classname="com.deskmail.ui.mail.MailStatesTest" time="0.159"/>
+  <testcase name="aListWhoseMailIsOnItsWayDoesNotSayItIsEmpty" classname="com.deskmail.ui.mail.MailStatesTest" time="0.073"/>
+  <testcase name="withTheExperimentOffNoMessageIsUnderGlass" classname="com.deskmail.ui.mail.MailStatesTest" time="0.119"/>
+  <testcase name="howTallAMessageMayBeForALayerOfItsOwn" classname="com.deskmail.ui.mail.MailStatesTest" time="0.044"/>
+  <testcase name="withoutAnAccountTheInboxOffersToAddOne" classname="com.deskmail.ui.mail.MailStatesTest" time="0.093"/>
+  <testcase name="remoteImagesStayOutUntilTheyAreAskedFor" classname="com.deskmail.ui.mail.MailStatesTest" time="0.126"/>
+  <testcase name="whenTheShellsGlassIsOn" classname="com.deskmail.ui.mail.MailStatesTest" time="0.044"/>
+  <testcase name="whatAMessagesWebViewDrawsInto" classname="com.deskmail.ui.mail.MailStatesTest" time="0.03"/>
+  <testcase name="theGlassStaysOverAMessage" classname="com.deskmail.ui.mail.MailStatesTest" time="0.097"/>
+  <testcase name="anAccountThatCouldNotBeReachedOffersToTryAgain" classname="com.deskmail.ui.mail.MailStatesTest" time="0.069"/>
+  <testcase name="aTextThatCouldNotBeFetchedOffersToTryAgain" classname="com.deskmail.ui.mail.MailStatesTest" time="0.063"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

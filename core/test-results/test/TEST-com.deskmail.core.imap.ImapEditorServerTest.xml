@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.core.imap.ImapEditorServerTest" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-11-13T12:23:03.615Z" hostname="runnervmccnms" time="3.443">
+  <properties/>
+  <testcase name="aMessageIsMovedAndTheServerSaysWhereItWent" classname="com.deskmail.core.imap.ImapEditorServerTest" time="0.694"/>
+  <testcase name="aUidTheFolderDoesNotHaveIsPassedOver" classname="com.deskmail.core.imap.ImapEditorServerTest" time="0.298"/>
+  <testcase name="answeredAndForwardedAreMarksTheServerKeeps" classname="com.deskmail.core.imap.ImapEditorServerTest" time="0.574"/>
+  <testcase name="onlyWhatIsNamedIsRemoved" classname="com.deskmail.core.imap.ImapEditorServerTest" time="0.322"/>
+  <testcase name="marksAreSetAndCleared" classname="com.deskmail.core.imap.ImapEditorServerTest" time="0.415"/>
+  <testcase name="aMessageIsAddedToAFolderAsItWasWritten" classname="com.deskmail.core.imap.ImapEditorServerTest" time="0.597"/>
+  <testcase name="severalMessagesMoveAtOnce" classname="com.deskmail.core.imap.ImapEditorServerTest" time="0.304"/>
+  <testcase name="movingToAFolderThatIsNotThereIsTheServersNo" classname="com.deskmail.core.imap.ImapEditorServerTest" time="0.235"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

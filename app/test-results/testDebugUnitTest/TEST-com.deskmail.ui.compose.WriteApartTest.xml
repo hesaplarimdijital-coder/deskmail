@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.ui.compose.WriteApartTest" tests="7" skipped="0" failures="0" errors="0" timestamp="2026-11-13T12:25:47.353Z" hostname="runnervmccnms" time="1.04">
+  <properties/>
+  <testcase name="awayFromADesktopTheMessageIsWrittenInThisWindow" classname="com.deskmail.ui.compose.WriteApartTest" time="0.201"/>
+  <testcase name="aNewMessageOpensInAWindowOfItsOwn" classname="com.deskmail.ui.compose.WriteApartTest" time="0.145"/>
+  <testcase name="theWindowSaysWhereItsWritingIsOnlyWhileItIsThere" classname="com.deskmail.ui.compose.WriteApartTest" time="0.143"/>
+  <testcase name="whatAWindowOfItsOwnSentLeavesWhenItsTimeIsUp" classname="com.deskmail.ui.compose.WriteApartTest" time="0.155"/>
+  <testcase name="whatAWindowOfItsOwnHasToSayIsSaidHere" classname="com.deskmail.ui.compose.WriteApartTest" time="0.131"/>
+  <testcase name="whatAWindowOfItsOwnSentCanBeTakenBackHere" classname="com.deskmail.ui.compose.WriteApartTest" time="0.139"/>
+  <testcase name="aDraftOfTheOutboxOpensInAWindowOfItsOwn" classname="com.deskmail.ui.compose.WriteApartTest" time="0.123"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

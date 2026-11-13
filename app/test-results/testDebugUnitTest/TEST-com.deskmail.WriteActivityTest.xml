@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.WriteActivityTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-11-13T12:24:20.920Z" hostname="runnervmccnms" time="0.139">
+  <properties/>
+  <testcase name="deXIsOnlyWhatSamsungSaysIsDeX" classname="com.deskmail.WriteActivityTest" time="0.023"/>
+  <testcase name="aWindowWithoutAMessageGoesAtOnce" classname="com.deskmail.WriteActivityTest" time="0.049"/>
+  <testcase name="aMessageIsWrittenInOneWindowAtMost" classname="com.deskmail.WriteActivityTest" time="0.018"/>
+  <testcase name="whatAWindowOfItsOwnDidIsToldWhereItCameFromOrElsewhere" classname="com.deskmail.WriteActivityTest" time="0.046"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

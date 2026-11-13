@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.data.LiveMailTest" tests="19" skipped="0" failures="0" errors="0" timestamp="2026-11-13T12:24:36.438Z" hostname="runnervmccnms" time="18.473">
+  <properties/>
+  <testcase name="anAccountThatWasJustAddedIsSyncedOnce" classname="com.deskmail.data.LiveMailTest" time="0.778"/>
+  <testcase name="readingAndStarringShowAtOnceAndAreToldToTheServer" classname="com.deskmail.data.LiveMailTest" time="0.973"/>
+  <testcase name="aMoveGoesToTheFolderThatWasChosen" classname="com.deskmail.data.LiveMailTest" time="0.805"/>
+  <testcase name="aSearchFindsWhatTheDeviceHasByItsSubjectItsPeopleAndItsText" classname="com.deskmail.data.LiveMailTest" time="0.562"/>
+  <testcase name="aViewThatComesToTheFrontIsSyncedUnlessItJustWas" classname="com.deskmail.data.LiveMailTest" time="2.452"/>
+  <testcase name="theScreensSeeTheAccountsTheFoldersAndTheMail" classname="com.deskmail.data.LiveMailTest" time="1.003"/>
+  <testcase name="aSearchOfTheServerBringsWhatTheDeviceDoesNotHave" classname="com.deskmail.data.LiveMailTest" time="2.092"/>
+  <testcase name="aSearchCanBeToldWhereToLook" classname="com.deskmail.data.LiveMailTest" time="0.557"/>
+  <testcase name="aServerThatCannotBeReachedIsSaidSo" classname="com.deskmail.data.LiveMailTest" time="0.46"/>
+  <testcase name="aFilesNameCannotLeadOutOfItsDirectory" classname="com.deskmail.data.LiveMailTest" time="0.02"/>
+  <testcase name="aMessagesTextIsFetchedWhenSomebodyLooks" classname="com.deskmail.data.LiveMailTest" time="2.601"/>
+  <testcase name="aFileIsFetchedOnceAndKeptOnTheDevice" classname="com.deskmail.data.LiveMailTest" time="0.714"/>
+  <testcase name="aFolderTheServerWillNotSearchIsLeftOut" classname="com.deskmail.data.LiveMailTest" time="0.414"/>
+  <testcase name="whatStandsIsToldToTheServerAndCanStillBeBroughtBack" classname="com.deskmail.data.LiveMailTest" time="1.211"/>
+  <testcase name="anArchivedMessageIsTakenBackBeforeTheServerHearsOfIt" classname="com.deskmail.data.LiveMailTest" time="0.54"/>
+  <testcase name="deletingMovesToTheTrashAndFromThereForGood" classname="com.deskmail.data.LiveMailTest" time="1.003"/>
+  <testcase name="aTextThatCannotBeFetchedSaysSo" classname="com.deskmail.data.LiveMailTest" time="0.458"/>
+  <testcase name="whatWasDoneWhileTheServerWasAwayIsToldBeforeTheNextSyncReads" classname="com.deskmail.data.LiveMailTest" time="1.083"/>
+  <testcase name="aPictureInsideTheMessageIsKeptApartFromItsFiles" classname="com.deskmail.data.LiveMailTest" time="0.74"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[System.logW: A resource failed to call SQLiteConnection.close. 
+System.logW: A resource failed to call SQLiteConnection.close. 
+System.logW: A resource failed to call SQLiteConnection.close. 
+System.logW: A resource failed to call SQLiteConnection.close. 
+System.logW: A resource failed to call SQLiteConnectionPool.close. 
+System.logW: A resource failed to call SQLiteConnection.close. 
+System.logW: A resource failed to call SQLiteConnection.close. 
+System.logW: A resource failed to call SQLiteConnection.close. 
+System.logW: A resource failed to call SQLiteConnection.close. 
+System.logW: A resource failed to call SQLiteConnectionPool.close. 
+System.logW: A resource failed to call SQLiteConnection.close. 
+System.logW: A resource failed to call SQLiteConnection.close. 
+System.logW: A resource failed to call SQLiteConnection.close. 
+System.logW: A resource failed to call SQLiteConnection.close. 
+System.logW: A resource failed to call SQLiteConnectionPool.close. 
+System.logW: A resource failed to call close. 
+System.logW: A resource failed to call close. 
+System.logW: A resource failed to call close. 
+System.logW: A resource failed to call close. 
+]]></system-err>
+</testsuite>

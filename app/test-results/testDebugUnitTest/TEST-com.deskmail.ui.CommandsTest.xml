@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.ui.CommandsTest" tests="13" skipped="0" failures="0" errors="0" timestamp="2026-11-13T12:25:36.392Z" hostname="runnervmccnms" time="2.583">
+  <properties/>
+  <testcase name="theKeysWalkTheListAsItIsFiltered" classname="com.deskmail.ui.CommandsTest" time="0.216"/>
+  <testcase name="replyReplyAllAndForwardBeginAMessageFromTheOpenOne" classname="com.deskmail.ui.CommandsTest" time="0.251"/>
+  <testcase name="syncAsksTheServersWithTheScreenInFront" classname="com.deskmail.ui.CommandsTest" time="0.102"/>
+  <testcase name="starAndReadActOnTheOpenMessageOnly" classname="com.deskmail.ui.CommandsTest" time="0.2"/>
+  <testcase name="undoStillWorksWhenTheNoticeIsGone" classname="com.deskmail.ui.CommandsTest" time="0.233"/>
+  <testcase name="moveAsksForAFolder" classname="com.deskmail.ui.CommandsTest" time="0.151"/>
+  <testcase name="ctrlEnterSendsWhatIsBeingWrittenAndCtrlZTakesItBack" classname="com.deskmail.ui.CommandsTest" time="0.229"/>
+  <testcase name="whileAMessageIsBeingWrittenTheKeysOfTheListDoNothing" classname="com.deskmail.ui.CommandsTest" time="0.156"/>
+  <testcase name="archiveAndDeleteActOnTheOpenMessageAndUndoBringsItBack" classname="com.deskmail.ui.CommandsTest" time="0.226"/>
+  <testcase name="slashOpensTheSearchReadyToBeTypedInto" classname="com.deskmail.ui.CommandsTest" time="0.352"/>
+  <testcase name="nextAndPreviousWalkTheListAndReadWhatTheyOpen" classname="com.deskmail.ui.CommandsTest" time="0.155"/>
+  <testcase name="aNewMessageBegunInAFolderIsFromThatFoldersAccount" classname="com.deskmail.ui.CommandsTest" time="0.133"/>
+  <testcase name="withSeveralMessagesSelectedTheKeysActOnAllOfThem" classname="com.deskmail.ui.CommandsTest" time="0.172"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
