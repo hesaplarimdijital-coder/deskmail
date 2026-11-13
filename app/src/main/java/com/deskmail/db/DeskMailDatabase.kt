@@ -30,6 +30,7 @@ import kotlinx.coroutines.Dispatchers
         OutboxEntity::class,
         OutboxFileEntity::class,
         DraftRemovalEntity::class,
+        SearchHitEntity::class,
     ],
     version = 4,
     exportSchema = true,
@@ -91,7 +92,7 @@ abstract class DeskMailDatabase : RoomDatabase() {
         /**
          * 0.1.0-beta.1: drafts are kept on the server as well. A draft knows how far its copy there
          * is behind it, and the copy of a message that was sent or thrown away is noted until the
-         * server was told to remove it.
+         * server was told to remove it. What a search of the server found is remembered for a while.
          */
         val MIGRATION_3_4: Migration = object : Migration(3, 4) {
             override suspend fun migrate(connection: SQLiteConnection) {
@@ -103,6 +104,13 @@ abstract class DeskMailDatabase : RoomDatabase() {
                         "FOREIGN KEY(`accountId`) REFERENCES `account`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
                 )
                 connection.runSql("CREATE INDEX IF NOT EXISTS `index_draft_removal_accountId` ON `draft_removal` (`accountId`)")
+                connection.runSql(
+                    "CREATE TABLE IF NOT EXISTS `search_hit` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `query` TEXT NOT NULL, " +
+                        "`messageId` INTEGER NOT NULL, `foundAt` INTEGER NOT NULL, " +
+                        "FOREIGN KEY(`messageId`) REFERENCES `message`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+                )
+                connection.runSql("CREATE INDEX IF NOT EXISTS `index_search_hit_messageId` ON `search_hit` (`messageId`)")
+                connection.runSql("CREATE UNIQUE INDEX IF NOT EXISTS `index_search_hit_query_messageId` ON `search_hit` (`query`, `messageId`)")
             }
         }
 

@@ -237,8 +237,8 @@ başlığında.
 6. **Arama (alpha.3):** dizin sorgusu (`SearchQuery`: yazılan katlanır, dizinin böldüğü gibi sözcüklere
    bölünür, her sözcük ön ek olarak aranır; yazılanın hiçbir parçası dizine sözdizimi olarak ulaşmaz) ·
    Ara ekranı (posta listesinin kendisi, üstünde arama alanı) · "/" kısayolu.
-   - **Kalan (ayrı PR):** sunucu araması (cihazda olmayan eski posta) · alan süzgeçleri ("kimden:",
-     "konu:") · palette "iletilerde ara".
+   - **Sonradan (beta.1):** sunucu araması (cihazda olmayan eski posta; `search_hit`) · alan önekleri
+     ("kimden:", "kime:", "konu:"; İngilizceleri de) · palette "İletilerde ara".
    - **Odak (çözüldü):** alan, pencerede yerini aldıktan sonra odağı ister ve odak birkaç kare kendisinde
      kalana dek (en çok bir saniye) istemeyi sürdürür. İlk karelerde bir kez istemek, ekran yerleşmeden
      karşılıksız kalıyordu; "/" isteği ikinci kez tetiklediği için çalışıyordu. Cihazda bakılacak tek şey:
@@ -271,7 +271,11 @@ Her biri ayrı PR; sıra, cihazda en çok denenmesi gerekenden başlar.
 2. Anlık bildirim (7b). **Yapıldı.**
 3. Çoklu seçim, toplu işlem, klasöre sürükle bırak (4'ün kalanı). **Yapıldı.**
 4. Taslakların sunucuya kaydı (5'in kalanı). **Yapıldı.**
-5. Sunucu araması, alan süzgeçleri, palette arama (6'nın kalanı).
+5. Sunucu araması, alan süzgeçleri, palette arama (6'nın kalanı). **Yapıldı:** `SearchQuery.terms` yazılanı
+   alanlarıyla parçalara ayırır; sunucuya `UID SEARCH` doğrudan gider (kitaplığın, sunucu hayır deyince
+   klasörü cihazda tarayan yedek yolu kullanılmaz). Sunucunun bulduğu iletiler `search_hit` tablosunda bir
+   gün tutulur; o sürede eşitleme onları silmez. **Şema 4** (taslak alanları, `draft_removal`,
+   `search_hit`) yayımlanmadı: beta.1 çıkana dek beta.1'in bütün şema değişiklikleri onda toplanır.
 6. DeX'te yazmanın ayrı pencerede açılması; Contact Picker (5'in kalanı).
 7. İletinin içindeki (`cid:`) görseller; listede yanıtlandı ve iletildi işaretleri. **Yapıldı:** WebView'ın
    `shouldInterceptRequest`'i `cid:` isteğini cihazdaki (gerekirse sunucudan alınan) parçayla yanıtlar;

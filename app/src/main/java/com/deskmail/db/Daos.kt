@@ -140,6 +140,9 @@ abstract class FolderDao {
  */
 private const val STAYING = "NOT EXISTS (SELECT 1 FROM pending_op WHERE pending_op.messageId = message.id AND pending_op.kind IN ('Move', 'Expunge'))"
 
+/** A message no search of the server found lately ([SearchHitEntity]): the sync may remove it. */
+private const val NOT_FOUND = "NOT EXISTS (SELECT 1 FROM search_hit WHERE search_hit.messageId = message.id)"
+
 /** A message's UID and marks, for comparing with the server's. */
 data class FlagRow(
     val uid: Long,
@@ -289,10 +292,37 @@ abstract class MessageDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     abstract suspend fun saveFts(rows: List<MessageFts>)
 
-    @Query("DELETE FROM message_fts WHERE rowid IN (SELECT id FROM message WHERE folderId = :folderId AND uid IN (:uids))")
+    @Query("DELETE FROM message_fts WHERE rowid IN (SELECT id FROM message WHERE folderId = :folderId AND uid IN (:uids) AND $NOT_FOUND)")
     abstract suspend fun deleteFtsOf(folderId: Long, uids: List<Long>)
 
-    @Query("DELETE FROM message WHERE folderId = :folderId AND uid IN (:uids)")
+    // ------------------------------------------------------------------ what a search of the server found
+
+    /** What was found is remembered under [SearchHitEntity.query]; a message that was found before is found again, and then. */
+    @Upsert
+    abstract suspend fun upsertHits(hits: List<SearchHitEntity>)
+
+    @Transaction
+    open suspend fun remember(query: String, messageIds: Collection<Long>, now: Long) {
+        val known = hitsFor(query).associateBy { it.messageId }
+        upsertHits(messageIds.map { id -> SearchHitEntity(id = known[id]?.id ?: 0, query = query, messageId = id, foundAt = now) })
+    }
+
+    @Query("SELECT * FROM search_hit WHERE `query` = :query")
+    abstract suspend fun hitsFor(query: String): List<SearchHitEntity>
+
+    /** The messages a search of the server found for [query], newest first; those on their way elsewhere are left out. */
+    @Query(
+        "SELECT message.* FROM message JOIN search_hit ON search_hit.messageId = message.id JOIN folder ON folder.id = message.folderId " +
+            "WHERE search_hit.`query` = :query AND folder.role != 'Junk' AND $STAYING ORDER BY message.date DESC, message.id DESC LIMIT :limit",
+    )
+    abstract fun observeHits(query: String, limit: Int): Flow<List<MessageEntity>>
+
+    /** Forgets what was found before [before]: the sync may take those messages off the device again. */
+    @Query("DELETE FROM search_hit WHERE foundAt < :before")
+    abstract suspend fun forgetHits(before: Long)
+
+    /** A message a search of the server found is left alone while it is remembered ([SearchHitEntity]). */
+    @Query("DELETE FROM message WHERE folderId = :folderId AND uid IN (:uids) AND $NOT_FOUND")
     abstract suspend fun deleteRows(folderId: Long, uids: List<Long>)
 
     @Query("DELETE FROM message WHERE folderId = :folderId")

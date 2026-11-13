@@ -6,6 +6,8 @@ import com.deskmail.core.mail.OpenMailbox
 import com.deskmail.core.mail.RemoteBody
 import com.deskmail.core.mail.RemoteFlags
 import com.deskmail.core.mail.RemoteMessage
+import com.deskmail.core.text.SearchField
+import com.deskmail.core.text.SearchTerm
 import jakarta.mail.Address
 import jakarta.mail.FetchProfile
 import jakarta.mail.Flags
@@ -13,6 +15,7 @@ import jakarta.mail.Message
 import jakarta.mail.UIDFolder
 import jakarta.mail.internet.InternetAddress
 import jakarta.mail.internet.MimeUtility
+import org.eclipse.angus.mail.iap.Argument
 import org.eclipse.angus.mail.imap.IMAPFolder
 import org.eclipse.angus.mail.imap.IMAPMessage
 import org.eclipse.angus.mail.imap.protocol.IMAPProtocol
@@ -45,7 +48,30 @@ class ImapMailbox internal constructor(
 
     override fun uids(since: LocalDate?): List<Long> = connection.call("search") {
         val criteria = if (since == null) "ALL" else "SINCE " + IMAP_DATE.format(since)
-        val found = folder.doCommand(IMAPFolder.ProtocolCommand { protocol -> uidSearch(protocol, criteria) }) as LongArray
+        val found = folder.doCommand(IMAPFolder.ProtocolCommand { protocol -> uidSearch(protocol, criteria, null) }) as LongArray
+        found.sorted()
+    }
+
+    override fun search(terms: List<SearchTerm>): List<Long> = connection.call("search the server") {
+        if (terms.isEmpty()) return@call emptyList()
+        // what is not plain ASCII is sent as UTF-8, and the server is told so
+        val utf8 = terms.any { term -> term.typed.any { it.code > ASCII } }
+        val args = Argument()
+        if (utf8) args.writeAtom("CHARSET").writeAtom("UTF-8")
+        for (term in terms) {
+            when (term.field) {
+                // TEXT: the headers and the text of the message
+                SearchField.Any -> args.writeAtom("TEXT").writeString(term.typed, Charsets.UTF_8)
+                SearchField.From -> args.writeAtom("FROM").writeString(term.typed, Charsets.UTF_8)
+                SearchField.To -> args.writeAtom("OR").writeAtom("TO").writeString(term.typed, Charsets.UTF_8).writeAtom("CC").writeString(term.typed, Charsets.UTF_8)
+                SearchField.Subject -> args.writeAtom("SUBJECT").writeString(term.typed, Charsets.UTF_8)
+            }
+        }
+        // marked for removal, and not yet removed: as good as gone
+        args.writeAtom("NOT").writeAtom("DELETED")
+        // Asked of the server and nowhere else: the mail library would look through every message
+        // of the folder itself where the server says no to a search, and that is never wanted here.
+        val found = folder.doCommand(IMAPFolder.ProtocolCommand { protocol -> uidSearch(protocol, "", args) }) as LongArray
         found.sorted()
     }
 
@@ -135,6 +161,9 @@ class ImapMailbox internal constructor(
         private const val HEADER_BATCH = 100
         private const val FLAG_BATCH = 500
 
+        /** The last character that is plain ASCII. */
+        private const val ASCII = 127
+
         private val WHITESPACE = Regex("\\s+")
 
         /** IMAP writes a date as 1-Nov-2026, in English. */
@@ -193,9 +222,9 @@ class ImapMailbox internal constructor(
             return decoded.replace(WHITESPACE, " ").trim()
         }
 
-        /** UID SEARCH with [criteria]: the UIDs the server answers with. */
-        private fun uidSearch(protocol: IMAPProtocol, criteria: String): LongArray {
-            val responses = protocol.command("UID SEARCH $criteria", null)
+        /** UID SEARCH with [criteria] (written out) and [args] (strings the library writes out as they must be): the UIDs the server answers with. */
+        private fun uidSearch(protocol: IMAPProtocol, criteria: String, args: Argument?): LongArray {
+            val responses = protocol.command(if (criteria.isEmpty()) "UID SEARCH" else "UID SEARCH $criteria", args)
             val last = responses[responses.size - 1]
             val uids = ArrayList<Long>()
             if (last.isOK) {

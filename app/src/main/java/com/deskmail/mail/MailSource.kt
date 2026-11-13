@@ -57,6 +57,13 @@ interface MailSource {
 
     fun toggleStarred(id: Long)
 
+    /**
+     * Asks the servers of every account for what [query] finds ([MailView.Search]), and brings
+     * onto the device what it did not have: the search screen lists it from then on. Null when
+     * there is nothing in [query] to look for.
+     */
+    suspend fun searchServers(query: String): ServerSearch?
+
     /** Marks these messages read, or unread, all the same way: a selection. What is so marked already is left as it is. */
     fun markUnread(ids: List<Long>, unread: Boolean)
 

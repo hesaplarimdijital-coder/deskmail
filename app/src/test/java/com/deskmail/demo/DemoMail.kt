@@ -8,6 +8,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import com.deskmail.core.mail.FolderRole
+import com.deskmail.core.text.SearchField
 import com.deskmail.core.text.SearchQuery
 import com.deskmail.mail.AccountState
 import com.deskmail.mail.FetchedFile
@@ -19,6 +20,7 @@ import com.deskmail.mail.MailMessage
 import com.deskmail.mail.MailSource
 import com.deskmail.mail.MailUndo
 import com.deskmail.mail.MailView
+import com.deskmail.mail.ServerSearch
 import kotlinx.coroutines.flow.Flow
 import java.time.Duration
 import java.time.Instant
@@ -128,14 +130,26 @@ class DemoMail(private val now: Instant = Instant.now(), empty: Boolean = false)
         }
     }
 
-    /** What a search finds: every word typed begins a word of the message's subject, of the people on it or of its text. Not in Spam. */
+    /**
+     * What a search finds: every word typed begins a word of the message's subject, of the people
+     * on it or of its text; where a piece says where to look ("kimden:", "kime:", "konu:"), there.
+     * Not in Spam.
+     */
     private fun found(query: String): List<MailMessage> {
         if (SearchQuery.match(query) == null) return emptyList()
-        val words = SearchQuery.words(query)
+        val terms = SearchQuery.terms(query)
         val roles = tree.associate { it.id to it.role }
         return stored.filter { message ->
             roles[message.folderId] != FolderRole.Junk && roles[message.folderId] != FolderRole.All &&
-                SearchQuery.matches(words, listOf(message.subject, message.fromName, message.fromAddress, message.to, contents[message.id]?.text.orEmpty()).joinToString(" "))
+                terms.all { term ->
+                    val where = when (term.field) {
+                        SearchField.Any -> listOf(message.subject, message.fromName, message.fromAddress, message.to, contents[message.id]?.text.orEmpty())
+                        SearchField.From -> listOf(message.fromName, message.fromAddress)
+                        SearchField.To -> listOf(message.to, message.cc)
+                        SearchField.Subject -> listOf(message.subject)
+                    }
+                    SearchQuery.matches(term.words, where.joinToString(" "))
+                }
         }
     }
 
@@ -164,6 +178,18 @@ class DemoMail(private val now: Instant = Instant.now(), empty: Boolean = false)
     }
 
     override fun markUnread(ids: List<Long>, unread: Boolean) = ids.forEach { setUnread(it, unread) }
+
+    /** The queries the servers were asked for. */
+    val askedServers = ArrayList<String>()
+
+    /** What asking the servers comes to; the test sets it. */
+    var serverAnswer: ServerSearch = ServerSearch(0, 0)
+
+    override suspend fun searchServers(query: String): ServerSearch? {
+        if (SearchQuery.match(query) == null) return null
+        askedServers += query
+        return serverAnswer
+    }
 
     override fun markStarred(ids: List<Long>, starred: Boolean) = ids.forEach { setStarred(it, starred) }
 

@@ -2,6 +2,7 @@ package com.deskmail.data
 
 import com.deskmail.core.imap.ImapConnection
 import com.deskmail.core.log.AppLog
+import com.deskmail.core.mail.FolderRole
 import com.deskmail.core.mail.MailException
 import com.deskmail.core.mail.RemoteAccount
 import com.deskmail.core.net.Credentials
@@ -11,6 +12,7 @@ import com.deskmail.core.sync.ChangeOutcome
 import com.deskmail.core.sync.ChangeSync
 import com.deskmail.core.sync.FolderSync
 import com.deskmail.core.sync.PendingChange
+import com.deskmail.core.text.SearchTerm
 import com.deskmail.db.AccountEntity
 import com.deskmail.db.DeskMailDatabase
 import com.deskmail.db.DueChange
@@ -326,6 +328,59 @@ class MailSync(
     }
 
     /**
+     * Asks the account's server what [terms] find, and brings what the device does not have onto
+     * it: the newest [limit] of them, as a list shows them (their text comes when they are
+     * opened). Every message found, the device's own among them, is remembered under [key] for a
+     * while ([com.deskmail.db.SearchHitEntity]): the search screen lists them, and the sync leaves
+     * them on the device although they may be older than what it keeps.
+     *
+     * Looked through: Gmail's "All Mail" where the account has one (everything once, Sent among it),
+     * else every folder that holds mail but Drafts, Trash and Spam.
+     *
+     * @return [Outcome.Done] with how many messages were new on the device, or what failed.
+     */
+    suspend fun searchServer(accountId: Long, terms: List<SearchTerm>, key: String, limit: Int, now: Long): Pair<Outcome, Int> {
+        var added = 0
+        val outcome = connected(accountId) { _, remote ->
+            val folders = db.folders().ofAccount(accountId).filter { it.selectable }
+            val all = folders.firstOrNull { folderRole(it.role) == FolderRole.All }
+            val targets = if (all != null) listOf(all) else folders.filter { folderRole(it.role) !in UNSEARCHED }
+            var left = limit
+            for (folder in targets) {
+                remote.open(folder.path).use { box ->
+                    // the folder's UIDs mean something else than what the device knows them as: its next sync starts over first
+                    if (folder.uidValidity != 0L && folder.uidValidity != box.uidValidity) return@use
+                    if (folder.uidValidity == 0L) db.folders().setState(folder.id, box.uidValidity, folder.uidNext, folder.highestModSeq)
+                    val matched = try {
+                        box.search(terms)
+                    } catch (e: MailException) {
+                        // A server that will not search this folder for this (a word it does not take, a
+                        // character set it does not know): the folder is left out, and the account is not
+                        // the worse for it. A connection that is gone is the account's business.
+                        if (e.kind != MailException.Kind.Server) throw e
+                        log.warn(TAG, "account $accountId: ${folder.path}: the server would not search it (${e.message})")
+                        emptyList()
+                    }.takeLast(MATCHES_KEPT)
+                    if (matched.isEmpty()) return@use
+                    val have = store.uids(folder.id).toHashSet()
+                    val missing = matched.filter { it !in have }.sortedDescending().take(left.coerceAtLeast(0))
+                    if (missing.isNotEmpty()) {
+                        // marked for deletion and not yet removed: as good as gone
+                        val headers = box.headers(missing).filter { !it.flags.deleted }
+                        store.insert(folder.id, headers)
+                        added += headers.size
+                        left -= headers.size
+                    }
+                    val ids = matched.mapNotNull { uid -> db.pending().idAt(folder.id, uid) }
+                    db.messages().remember(key, ids, now)
+                }
+            }
+        }
+        if (outcome == Outcome.Done) log.info(TAG, "account $accountId: the server's search brought $added messages the device did not have")
+        return outcome to added
+    }
+
+    /**
      * Signs in to the account's server and runs [work] there. How it went is written on the
      * account: all well, sign in again, or what failed.
      */
@@ -369,6 +424,12 @@ class MailSync(
 
         /** How many texts the backlog fetches before it looks again at what is waiting. */
         const val BACKLOG_BODIES = 50
+
+        /** The folders a search of the server does not look through. */
+        private val UNSEARCHED = setOf(FolderRole.Drafts, FolderRole.Trash, FolderRole.Junk)
+
+        /** Of what a search of the server finds in a folder, the newest so many are kept in mind. */
+        private const val MATCHES_KEPT = 500
 
         /** How often one connection looks again for changes that became due while it was sending. */
         private const val PUSH_ROUNDS = 5

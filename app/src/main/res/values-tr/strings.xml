@@ -165,9 +165,18 @@
 
     <string name="search_hint">İletilerde ara</string>
     <string name="search_start_title">Ne arıyorsun?</string>
-    <string name="search_start_text">Konudan, kişilerden ya da metinden birkaç sözcük yaz. Sözcüğün başı yeter: “fat” yazınca “fatura” bulunur; “ş” yerine “s” de olur.</string>
+    <string name="search_start_text">Konudan, kişilerden ya da metinden birkaç sözcük yaz. Sözcüğün başı yeter: “fat” yazınca “fatura” bulunur; “ş” yerine “s” de olur. Nerede aranacağını da söyleyebilirsin: “kimden:ayşe”, “kime:elif”, “konu:fatura”.</string>
     <string name="search_none_title">Bulunamadı</string>
-    <string name="search_scope">Arama bu cihazdaki iletilerde yapılır: gelen kutularının son 30 günü ve açtığın klasörler. Daha eskisi için klasörü açıp eşitle; sunucuda arama sonraki ön sürümlerden biriyle gelecek.</string>
+    <string name="search_scope">Önce bu cihazdaki iletilerde aranır: gelen kutularının son 30 günü ve açtığın klasörler. Daha eskisi için “Sunucuda da ara”.</string>
+    <string name="search_server">Sunucuda da ara</string>
+    <string name="search_server_running">Sunucularda aranıyor…</string>
+    <plurals name="search_server_found">
+        <item quantity="one">Sunucuda bir ileti daha bulundu.</item>
+        <item quantity="other">Sunucuda %d ileti daha bulundu.</item>
+    </plurals>
+    <string name="search_server_none">Sunucuda başka ileti yok.</string>
+    <string name="search_server_unreachable">Sunucuya ulaşılamadı; cihazdakiler gösteriliyor.</string>
+    <string name="palette_search_mail">İletilerde ara</string>
 
     <string name="settings_experiments">Denemeler</string>
     <string name="settings_experiments_note">İlk ön sürümlerin cihazlarda yanıtlaması gereken sorular. Bir ileti aç, sonra her birini dene.</string>

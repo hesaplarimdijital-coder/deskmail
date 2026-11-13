@@ -7,6 +7,9 @@ import com.deskmail.core.imap.ImapConnection
 import com.deskmail.core.log.AppLog
 import com.deskmail.core.mail.FolderRole
 import com.deskmail.core.mail.MailException
+import com.deskmail.core.mail.OpenMailbox
+import com.deskmail.core.mail.RemoteAccount
+import com.deskmail.core.text.SearchTerm
 import com.deskmail.db.DeskMailDatabase
 import com.deskmail.db.MessageEntity
 import com.deskmail.mail.AccountState
@@ -15,6 +18,7 @@ import com.deskmail.mail.MailAttachment
 import com.deskmail.mail.MailContent
 import com.deskmail.mail.MailUndo
 import com.deskmail.mail.MailView
+import com.deskmail.mail.ServerSearch
 import jakarta.mail.Flags
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -35,6 +39,7 @@ import org.junit.runner.RunWith
 import java.io.File
 import java.time.Duration
 import java.time.Instant
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
 
@@ -52,6 +57,9 @@ class LiveMailTest {
     private val log = AppLog()
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private val connections = AtomicInteger()
+
+    /** The server says no to every search (and is itself otherwise): see [Refusing]. */
+    private val refuseSearch = AtomicBoolean(false)
     private val clock = AtomicLong(1_000_000)
     private lateinit var db: DeskMailDatabase
     private lateinit var accounts: AccountStore
@@ -68,7 +76,8 @@ class LiveMailTest {
             db, accounts, log, scope,
             connect = { address, credentials ->
                 connections.incrementAndGet()
-                ImapConnection.open(address, credentials, log)
+                val connection = ImapConnection.open(address, credentials, log)
+                if (refuseSearch.get()) Refusing(connection) else connection
             },
             clock = { now },
         )
@@ -80,6 +89,13 @@ class LiveMailTest {
     fun close() {
         endAndWait(scope)
         db.close()
+    }
+
+    /** A server that says no to every search, as one does to a character set it does not know, and is otherwise itself. */
+    private class Refusing(private val real: RemoteAccount) : RemoteAccount by real {
+        override fun open(path: String): OpenMailbox = object : OpenMailbox by real.open(path) {
+            override fun search(terms: List<SearchTerm>): List<Long> = throw MailException(MailException.Kind.Server, "NO [BADCHARSET] (US-ASCII) not supported")
+        }
     }
 
     private fun hoursAgo(hours: Long): Instant = now.minus(Duration.ofHours(hours))
@@ -168,6 +184,90 @@ class LiveMailTest {
         val gone = mail.delete(listOf(breakfast.id))
         assertTrue(gone != null)
         assertTrue(found("kahvalti").isEmpty())
+    }
+
+    /** "kimden:" and "kime:" ask about the sender or the recipients alone; "konu:" the subject. */
+    @Test
+    fun aSearchCanBeToldWhereToLook() = runBlocking {
+        server.deliver("Rapor hazır", "Ekte.", hoursAgo(3), from = "Mehmet Demir")
+        server.deliver("Mehmet'in raporu", "Elif yazdı.", hoursAgo(2), from = "Elif Şahin")
+        val id = account()
+        assertEquals(MailSync.Outcome.Done, sync.account(id))
+
+        suspend fun found(typed: String) = mail.observe(MailView.Search(typed)).first().map { it.subject }
+
+        assertEquals(listOf("Mehmet'in raporu", "Rapor hazır"), found("mehmet"))
+        // from Mehmet: not the one about him
+        assertEquals(listOf("Rapor hazır"), found("kimden:mehmet"))
+        assertEquals(listOf("Rapor hazır"), found("kimden: Mehmet rapor"))
+        assertEquals(listOf("Mehmet'in raporu"), found("konu:mehmet"))
+        // everybody wrote to Deniz
+        assertEquals(listOf("Mehmet'in raporu", "Rapor hazır"), found("kime:deniz"))
+        assertTrue(found("kime:mehmet").isEmpty())
+    }
+
+    /**
+     * Mail older than what the device keeps is looked for on the server: what is found comes onto
+     * the device, is listed by the search, and stays while it is remembered (a day).
+     */
+    @Test
+    fun aSearchOfTheServerBringsWhatTheDeviceDoesNotHave() = runBlocking {
+        server.deliver("Rapor 2025: geçen yılın özeti", "Eski bir rapor.", hoursAgo(24 * 120))
+        server.deliver("Bu haftanın notu", "Rapor değil.", hoursAgo(2))
+        val id = account()
+        assertEquals(MailSync.Outcome.Done, sync.account(id))
+
+        suspend fun found(typed: String) = mail.observe(MailView.Search(typed)).first().map { it.subject }
+
+        assertTrue(found("2025").isEmpty())
+
+        assertEquals(ServerSearch(added = 1, unreachable = 0), mail.searchServers("2025"))
+
+        assertEquals(listOf("Rapor 2025: geçen yılın özeti"), found("2025"))
+        // its text comes when it is opened
+        val old = mail.observe(MailView.Search("2025")).first().single()
+        withTimeout(15_000) { mail.observeContent(old.id).first { it is MailContent.Ready } }
+        // the sync leaves it on the device while it is remembered, though it is older than what it keeps
+        assertEquals(MailSync.Outcome.Done, sync.account(id))
+        assertEquals(listOf("Rapor 2025: geçen yılın özeti"), found("2025"))
+        // asked again: nothing new; and what the device has is found on the server too
+        assertEquals(ServerSearch(added = 0, unreachable = 0), mail.searchServers("rapor"))
+        assertEquals(listOf("Bu haftanın notu", "Rapor 2025: geçen yılın özeti"), found("rapor"))
+        // nothing to look for: the servers are not asked
+        assertNull(mail.searchServers("a"))
+
+        // a day later it is forgotten, and the sync does with it what it does with any other old message
+        clock.addAndGet(LiveMail.HITS_KEPT_MS + 1)
+        mail.searchServers("olmayan")
+        assertEquals(MailSync.Outcome.Done, sync.account(id))
+        assertTrue(found("2025").isEmpty())
+    }
+
+    /** A folder its server will not search is left out; the account is none the worse for it. */
+    @Test
+    fun aFolderTheServerWillNotSearchIsLeftOut() = runBlocking {
+        server.deliver("Rapor 2025: geçen yılın özeti", "Eski bir rapor.", hoursAgo(24 * 120))
+        val id = account()
+        assertEquals(MailSync.Outcome.Done, sync.account(id))
+
+        refuseSearch.set(true)
+        assertEquals(ServerSearch(added = 0, unreachable = 0), mail.searchServers("2025"))
+
+        assertEquals(AccountState.Ok.name, accounts.byId(id)!!.state)
+        assertTrue(mail.observe(MailView.Search("2025")).first().isEmpty())
+    }
+
+    /** A server that cannot be reached is said so; what the device has is still found. */
+    @Test
+    fun aServerThatCannotBeReachedIsSaidSo() = runBlocking {
+        server.deliver("Bu haftanın notu", "Rapor değil.", hoursAgo(2))
+        val id = account()
+        assertEquals(MailSync.Outcome.Done, sync.account(id))
+
+        server.stop()
+
+        assertEquals(ServerSearch(added = 0, unreachable = 1), mail.searchServers("rapor"))
+        assertEquals(listOf("Bu haftanın notu"), mail.observe(MailView.Search("rapor")).first().map { it.subject })
     }
 
     @Test

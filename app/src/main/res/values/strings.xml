@@ -180,9 +180,18 @@
 
     <string name="search_hint">Search the mail</string>
     <string name="search_start_title">What are you looking for?</string>
-    <string name="search_start_text">Type a few words of the subject, the people or the text. The beginning of a word is enough: “inv” finds “invoice”.</string>
+    <string name="search_start_text">Type a few words of the subject, the people or the text. The beginning of a word is enough: “inv” finds “invoice”. You can say where to look, too: “from:ayse”, “to:elif”, “subject:invoice”.</string>
     <string name="search_none_title">Nothing found</string>
-    <string name="search_scope">The search looks through the messages on this device: the last 30 days of the inboxes, and the folders you opened. For older mail, open its folder and sync; searching on the server comes with one of the next pre-releases.</string>
+    <string name="search_scope">The messages on this device are searched first: the last 30 days of the inboxes, and the folders you opened. For older mail, “Search the server too”.</string>
+    <string name="search_server">Search the server too</string>
+    <string name="search_server_running">Searching the servers…</string>
+    <plurals name="search_server_found">
+        <item quantity="one">One more message was found on the server.</item>
+        <item quantity="other">%d more messages were found on the server.</item>
+    </plurals>
+    <string name="search_server_none">There is nothing more on the server.</string>
+    <string name="search_server_unreachable">The server could not be reached; what is on the device is shown.</string>
+    <string name="palette_search_mail">Search the mail</string>
 
     <!-- Settings › Experiments: what the first pre-releases are to find out on the devices -->
     <string name="settings_experiments">Experiments</string>

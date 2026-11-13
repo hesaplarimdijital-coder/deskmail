@@ -126,6 +126,12 @@ sealed interface MailContent {
     data object Unavailable : MailContent
 }
 
+/**
+ * What a search of the servers came to: [added] messages the device did not have, and
+ * [unreachable] accounts whose server could not be asked (no network, a sign-in it refused).
+ */
+data class ServerSearch(val added: Int, val unreachable: Int)
+
 /** Which messages a screen lists. */
 sealed interface MailView {
     /** The inboxes of every account. */
