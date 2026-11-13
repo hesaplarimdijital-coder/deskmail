@@ -45,6 +45,13 @@ Sürümler [SemVer](https://semver.org/lang/tr/) kuralına uyar; 0.1.0'a kadar o
 - Konuşma, iletilerin References ve In-Reply-To başlıklarından bulunur; her hesap kendi içinde. Arama sonuçları bir araya getirilmez.
 - Ayarlar › Listeler › **Konuşmaları bir arada göster** (varsayılan açık); kapalıyken her ileti kendi satırında. Bu seçim de ayarlarla başka bir cihaza taşınır.
 
+### Erteleme
+- **Ertele.** Bir iletiyi sonraya bırak: okurken **Ertele** (telefonda "Diğer seçenekler"in içinde), listede satırın menüsünden (uzun bas ya da sağ tık) ya da birkaçını seçip alttaki çubuktan (telefonda Taşı ile birlikte "Diğer seçenekler"in altında: çubuk kaç ileti seçildiğini göstermeye yer bıraksın diye). Ne zamana: bu akşam (18.00; en az bir saat varsa), yarın sabah (08.00), hafta sonu (hafta içinde: cumartesi 09.00), gelecek hafta (pazartesi 08.00); her biri gününü ve saatini yazar.
+- **Ertelenenler.** Kenar çubuğunda (telefonda "Daha fazla"da) yeni klasör: ertelenen iletiler, önce dönecek olan üstte. İletiyi açınca ne zaman döneceği yazar; **Şimdi geri getir** onu hemen geldiği klasöre döndürür. Başka bir zaman için yeniden ertele.
+- **Sunucuda tutulur.** İleti sunucuda "Ertelenenler" klasörüne taşınır (hesapta "Snoozed" klasörü varsa o kullanılır); ne zaman döneceği aynı klasördeki "DeskMail ertelemeleri" iletisinde yazar. Böylece erteleme öbür cihazlarında da geçerlidir ve hangisi önce bakarsa ileti onunla döner. Başka bir posta programında bu klasörü ve o iletiyi görürsün; o iletiyi silme. Liste her değişince yenisi konur, eskisi silinir (Gmail'de Çöp kutusuna gider, Gmail onu 30 gün sonra siler).
+- **Zamanı gelince** ileti okunmamış olarak geldiği klasöre (o klasör artık yoksa gelen kutusuna) döner ve yeni posta gibi bildirilir. Listede kendi tarihindeki yerinde durur, en üstte değil. Ağ yoksa ağ gelince döner.
+- Veritabanı: ertelemeler için yeni bir tablo (sürüm 4'e eklendi; güncellemede kendiliğinden taşınır).
+
 ### İletinin ayrıntıları
 - **Güvenlik sekmesi.** Geniş pencerelerdeki (DeX, yatay tablet) ayrıntı panelinde yeni **Güvenlik** sekmesi: iletinin SPF, DKIM ve DMARC sonuçları, üstte tek satırlık bir yargıyla ("Gönderici doğrulandı", "Doğrulama tam değil" ya da "Gönderici doğrulanamadı: ileti göründüğü yerden gelmemiş olabilir"). Sonuçlar, senin sağlayıcının iletiye eklediği `Authentication-Results` başlığından okunur: en üstteki, yani sağlayıcının kendisininki; iletiyle birlikte gelen daha alttakilere güvenilmez. DeskMail doğrulamayı kendisi yapmaz; sağlayıcı bir sonuç eklememişse sekme bunu söyler.
 - **Ham başlıklar sekmesi.** İletinin başlık satırları geldiği gibi; seçilip kopyalanabilir, **Kopyala** hepsini alır.

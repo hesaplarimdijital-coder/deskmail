@@ -73,6 +73,9 @@ Room 3; şema dışa aktarılır, v1'den itibaren göç testi vardır.
   kendi deposunda durur (önbellekte değil: ileti gidene kadar orada olmalı).
 - `awaiting` (şema 4): yanıtı beklenen iletiler; hesap, Message-ID (hesapta tekil), konu, alıcılar, gönderildiği ve
   beklemenin bittiği zaman, hatırlatıldığı zaman. Yazılan iletide seçilen süre `outbox.awaitDays`'te.
+- `snooze` (şema 4): ertelenen iletiler, sunucudaki "DeskMail ertelemeleri" listesinin cihazdaki kopyası; hesap,
+  Message-ID (hesapta tekil), döneceği klasörün yolu, konu, dönüş zamanı, durum (Listed, Added, Removed) ve bu
+  cihazın değiştirdiği zaman.
 - Ayrı bir adres tablosu yok: alıcı önerileri en yeni 500 iletinin adreslerinden okunur.
 
 ## Senkron
@@ -295,6 +298,17 @@ Her biri ayrı PR; sıra, cihazda en çok denenmesi gerekenden başlar.
      listedeki bütün iletilerine yapılır. Açılan iletinin altında konuşmanın iletileri (`MessageDao.observeThread`;
      Çöp ve Spam dışında). Şerit iletinin üstünde değil: konu yerinde kalsın, uzun bir konuşma iletiyi itmesin.
      Ayar `AppSettings.conversations` (varsayılan açık), ayar dosyasıyla taşınır.
+   - **Erteleme: yapıldı.** Barış'ın kararı (13 Kasım 2026): A, ertelemeler sunucuda bir iletide. İleti
+     sunucuda ertelenenler klasörüne taşınır (`\Snoozed` özelliği ya da "Snoozed" adı olan klasör; yoksa
+     "Ertelenenler" açılır). Ne zaman döneceği aynı klasördeki tek bir iletide yazar: "DeskMail ertelemeleri"
+     (`SnoozeList`; Message-ID'si `<deskmail-snoozes.` ile başlar; her satırda zaman, Message-ID, döneceği klasör,
+     konu). Listeyi her cihaz okur; değiştiren yenisini koyar, eskisini siler (Gmail'de Çöp'e taşıyarak: etiketi
+     kaldırmak arşivler). Cihazdaki `snooze` satırları (şema 4) listedeki, eklenen ve kaldırılan diye tutulur ve
+     her bakışta sunucunun listesiyle birleştirilir (`SnoozeSync`); sunucunun klasörde tutmadığı bir ekleme
+     bir gün sonra bırakılır. Zamanı gelen ileti okunmadı yapılıp geldiği klasöre, o yoksa gelen kutusuna
+     taşınır; bunu ilk bakan cihaz yapar (`SnoozeWorker`, ağ gerekir). Liste iletisi cihaza alınmaz
+     (`FolderSync`). Dönen ileti IMAP MOVE ile taşındığı için kendi tarihini korur; listede en üste çıkmaz.
+     Süreler hazır seçenekler; takvimden gün ve saat seçmek kitin seçicisini bekliyor (kit isteği 25).
    - **Ayrıntı paneli sekmeleri (Güvenlik, Ham başlıklar): yapıldı.** Başlık satırları iletinin metniyle
      birlikte alınır ve `body.headers`'ta durur (şema 4; en çok 64 000 karakter); daha önce gelmiş iletininki
      sekme açılınca alınır (`MailSync.headers`). Sonuçlar en üstteki `Authentication-Results` başlığından
@@ -312,6 +326,10 @@ Her biri ayrı PR; sıra, cihazda en çok denenmesi gerekenden başlar.
      kendi adresinden gelmeyen ileti (`answered`; cihazdaki iletilerde aranır). Her eşitlemeden sonra
      `ReplyReminder` bakar; süre dolunca `RemindWorker` önce eşitler, sonra bir kez bildirir. Yalnızca bu
      cihazda tutulur.
+   - **Biçimli (HTML) yazma: kitte.** Barış'ın kararı (13 Kasım 2026): "Biçimli yazma editörü kitte olsun."
+     İstek `docs/KIT-ISTEKLERI.md` 24'te. Kit yayımlayınca uygulamanın payı: yazma ekranına bağlamak, taslakta
+     HTML'yi saklamak (şema), iletiyi `multipart/alternative` yazmak (`MessageWriter`) ve yanıtta alıntıyı
+     HTML olarak kurmak. beta.1 beklemez; iletiler düz metin yazılır.
    - **Ayarları taşıma: yapıldı.** `SettingsFile` (JSON; `kind`, `format`), şifre ve jeton için yeri yok. İçe
      aktarılan hesap şifresiz eklenir (`AccountStore.addWaiting`, durumu `NeedsLogin`), "Yeniden bağlan" ile açılır.
    - **Bildirimden hızlı yanıt: yapıldı.** `RemoteInput`; yanıt `DraftKind.Reply` ile başlar, yazılan en üste
@@ -321,7 +339,7 @@ Her biri ayrı PR; sıra, cihazda en çok denenmesi gerekenden başlar.
 
 **Kiti bekleyenler** (uygulamada yamanmaz; `docs/KIT-ISTEKLERI.md`): alıcı önerilerinin arayüzü (4),
 telefonda satırı kaydırarak arşiv ve erteleme (7), fareyle çerçeve çizerek seçme (22), şablonun imlecin
-olduğu yere eklenmesi (23). Kit bunları
+olduğu yere eklenmesi (23), biçimli metin düzenleyici (24), ertelemede gün ve saat seçmek (25). Kit bunları
 yayımlayınca sürümü yükseltilir ve uygulamaya bağlanır; beta.1 bunları beklemez.
 
 "Sonra, her biri ayrı karar" başlığındakiler (OpenPGP/S/MIME, çeviri, Handoff, Thunderbird QR, okundu
