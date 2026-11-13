@@ -193,6 +193,8 @@ class MailWatchTest {
         val watch = watch()
         watch.arrange()
         eventually("the first line") { lines.size == 1 && watch.watched.value == setOf(id) }
+        // looked at once the line was made (a line that is lost before that takes its look with it: the next line's will do)
+        eventually("the first look") { synced.size == 1 }
 
         lines[0].lose()
 
