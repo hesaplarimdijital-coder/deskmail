@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.db.DeskMailDatabaseTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-11-13T12:42:27.906Z" hostname="runnervmccnms" time="0.082">
+  <properties/>
+  <testcase name="accountsStandInTheUsersOrder" classname="com.deskmail.db.DeskMailDatabaseTest" time="0.014"/>
+  <testcase name="anAccountComesBackAsItWasStored" classname="com.deskmail.db.DeskMailDatabaseTest" time="0.014"/>
+  <testcase name="aFolderWithoutAnAccountIsRefused" classname="com.deskmail.db.DeskMailDatabaseTest" time="0.016"/>
+  <testcase name="aFolderIsListedOncePerAccount" classname="com.deskmail.db.DeskMailDatabaseTest" time="0.017"/>
+  <testcase name="anAccountTakesItsCredentialAndItsFoldersWithIt" classname="com.deskmail.db.DeskMailDatabaseTest" time="0.017"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

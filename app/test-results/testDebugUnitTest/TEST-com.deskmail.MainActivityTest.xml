@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.MainActivityTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-11-13T12:41:29.409Z" hostname="runnervmccnms" time="3.287">
+  <properties/>
+  <testcase name="ctrlCommaOpensSettings" classname="com.deskmail.MainActivityTest" time="2.585"/>
+  <testcase name="ctrlKOpensThePalette" classname="com.deskmail.MainActivityTest" time="0.368"/>
+  <testcase name="startsAtTheUnifiedInboxAndOffersToAddAnAccount" classname="com.deskmail.MainActivityTest" time="0.33"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

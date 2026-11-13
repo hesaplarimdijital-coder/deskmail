@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.core.sync.SnoozeListTest" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-11-13T12:40:36.261Z" hostname="runnervmccnms" time="0.006">
+  <properties/>
+  <testcase name="whatIsWrittenIsReadBackTheFirstToComeBackFirst" classname="com.deskmail.core.sync.SnoozeListTest" time="0.001"/>
+  <testcase name="aWorkingDayOffersTheEveningTomorrowTheWeekendAndNextWeek" classname="com.deskmail.core.sync.SnoozeListTest" time="0.003"/>
+  <testcase name="theEveningIsOfferedWhileItIsMoreThanAnHourAway" classname="com.deskmail.core.sync.SnoozeListTest" time="0.0"/>
+  <testcase name="whatIsNotALineOfTheListIsPassedOver" classname="com.deskmail.core.sync.SnoozeListTest" time="0.0"/>
+  <testcase name="aSundayOffersTomorrowOnce" classname="com.deskmail.core.sync.SnoozeListTest" time="0.001"/>
+  <testcase name="theListIsKnownByItsMessageId" classname="com.deskmail.core.sync.SnoozeListTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

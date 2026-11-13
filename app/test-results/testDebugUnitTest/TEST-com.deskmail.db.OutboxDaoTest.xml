@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.db.OutboxDaoTest" tests="12" skipped="0" failures="0" errors="0" timestamp="2026-11-13T12:42:28.189Z" hostname="runnervmccnms" time="0.255">
+  <properties/>
+  <testcase name="aDraftIsFoundByItsMessageId" classname="com.deskmail.db.OutboxDaoTest" time="0.022"/>
+  <testcase name="theOutboxIsListedTheLatestTouchedFirst" classname="com.deskmail.db.OutboxDaoTest" time="0.022"/>
+  <testcase name="aMessageOnItsWayCanNeitherBeTakenBackNorChangedNorThrownAway" classname="com.deskmail.db.OutboxDaoTest" time="0.015"/>
+  <testcase name="theCopyOfAMessageThatIsSentOrThrownAwayIsNotedForRemoval" classname="com.deskmail.db.OutboxDaoTest" time="0.016"/>
+  <testcase name="whatIsTypedIsKeptOnlyWhileTheMessageIsBeingWrittenOn" classname="com.deskmail.db.OutboxDaoTest" time="0.02"/>
+  <testcase name="theEarliestWaitingMessageSaysWhenToLook" classname="com.deskmail.db.OutboxDaoTest" time="0.026"/>
+  <testcase name="aDraftIsHandedOverTakenBackAndHandedOverAgain" classname="com.deskmail.db.OutboxDaoTest" time="0.021"/>
+  <testcase name="anAccountThatIsRemovedTakesItsOutboxAlong" classname="com.deskmail.db.OutboxDaoTest" time="0.019"/>
+  <testcase name="aDraftKnowsWhetherItsCopyOnTheServerIsBehind" classname="com.deskmail.db.OutboxDaoTest" time="0.02"/>
+  <testcase name="whatAnEarlierRunWasSendingIsKeptAsFailed" classname="com.deskmail.db.OutboxDaoTest" time="0.021"/>
+  <testcase name="aMessageOnItsWayKeepsItsCopy" classname="com.deskmail.db.OutboxDaoTest" time="0.022"/>
+  <testcase name="filesBelongToTheirMessageAndGoWithIt" classname="com.deskmail.db.OutboxDaoTest" time="0.028"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.core.imap.SnoozeWorkServerTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-11-13T12:40:32.313Z" hostname="runnervmccnms" time="3.614">
+  <properties/>
+  <testcase name="aNewListTakesThePlaceOfTheOld" classname="com.deskmail.core.imap.SnoozeWorkServerTest" time="1.376"/>
+  <testcase name="anOlderListIsLeftOver" classname="com.deskmail.core.imap.SnoozeWorkServerTest" time="0.701"/>
+  <testcase name="aMessageIsSnoozedListedAndBroughtBackUnread" classname="com.deskmail.core.imap.SnoozeWorkServerTest" time="1.327"/>
+  <testcase name="theFolderIsMadeOnceAndKnownForWhatItIs" classname="com.deskmail.core.imap.SnoozeWorkServerTest" time="0.209"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
