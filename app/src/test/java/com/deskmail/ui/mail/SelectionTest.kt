@@ -1,13 +1,19 @@
 package com.deskmail.ui.mail
 
 import androidx.activity.ComponentActivity
+import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.click
+import androidx.compose.ui.test.hasAnyAncestor
+import androidx.compose.ui.test.hasContentDescription
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performMouseInput
 import androidx.compose.ui.test.performTouchInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.deskmail.TestApp
@@ -18,6 +24,7 @@ import com.deskmail.testMail
 import com.deskmail.testPrefs
 import com.deskmail.testSettings
 import com.deskmail.ui.Routes
+import desktopkit.theme.DensityPreference
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -198,6 +205,44 @@ class SelectionTest {
         assertEquals(target.id, mail.message(second.id)!!.folderId)
         assertNull(ui.moving)
         assertTrue(ui.selection(Routes.INBOX).isEmpty())
+    }
+
+    /**
+     * A large window with a mouse: a click selects its row and opens the message; several selected
+     * rows get the bar under the table, and what is done there is done to all of them.
+     */
+    @OptIn(ExperimentalTestApi::class)
+    @Test
+    @Config(qualifiers = "tr-w1440dp-h900dp-mdpi")
+    fun inALargeWindowTheTablesSelectedRowsAreActedOnTogether() {
+        val (first, second) = two()
+        val prefs = testPrefs(density = DensityPreference.Pointer)
+        val settings = testSettings()
+        compose.setContent { TestApp(mail, prefs, settings, ui) }
+        compose.waitForIdle()
+        compose.onNodeWithText("Kimden").assertIsDisplayed()
+
+        compose.onNodeWithText(first.subject, substring = true).performMouseInput { click() }
+        compose.waitForIdle()
+        assertEquals(first.id, ui.openedId(Routes.INBOX))
+        assertEquals(setOf(first.id), ui.selection(Routes.INBOX))
+        // one selected row is no selection to act on
+        compose.onNodeWithTag(MailTags.SELECTION).assertDoesNotExist()
+
+        // a second row is added (Ctrl+click, Shift+click or Ctrl+A in the table)
+        compose.runOnUiThread { ui.select(Routes.INBOX, setOf(first.id, second.id)) }
+        compose.waitForIdle()
+        compose.onNodeWithText("2 ileti seçili").assertIsDisplayed()
+
+        // the bar's own "Delete": the reader beside the list has one for the open message
+        compose.onNode(hasContentDescription("Sil") and hasAnyAncestor(hasTestTag(MailTags.SELECTION))).performClick()
+        compose.waitForIdle()
+
+        assertEquals(FolderRole.Trash, role(first.id))
+        assertEquals(FolderRole.Trash, role(second.id))
+        assertTrue(ui.selection(Routes.INBOX).isEmpty())
+        assertNull(ui.openedId(Routes.INBOX))
+        compose.onNodeWithTag(MailTags.SELECTION).assertDoesNotExist()
     }
 
     /** What the window keeps of a selection, apart from any screen. */
