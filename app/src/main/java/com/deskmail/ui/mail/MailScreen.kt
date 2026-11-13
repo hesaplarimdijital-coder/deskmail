@@ -336,7 +336,8 @@ fun MailScreen(
                 openedId = opened?.id,
                 state = ui.listState(route),
                 onOpen = open,
-                contentPadding = bars,
+                // the last rows come to rest above the selection's bar, not under it
+                contentPadding = if (several) PaddingValues(top = bars.calculateTopPadding(), bottom = bars.calculateBottomPadding() + BULK_BAR_HEIGHT) else bars,
                 modifier = Modifier.testTag(MailTags.LIST),
                 header = chips,
                 empty = empty,
@@ -584,6 +585,9 @@ private fun BulkBar(chosen: List<MailMessage>, bulk: BulkActions, modifier: Modi
         DeskIconButton(DeskIcons.Delete, stringResource(R.string.action_delete), bulk.onDelete)
     }
 }
+
+/** The room the selection's bar takes over the end of a phone's list: a row of the kit's icon buttons and its rule. */
+private val BULK_BAR_HEIGHT = 58.dp
 
 /** The kind of what is dragged out of a list of messages; the folders of the sidebar take it. */
 const val MESSAGE_DRAG = "message"
