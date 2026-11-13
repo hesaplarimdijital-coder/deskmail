@@ -38,6 +38,13 @@
     <string name="list_empty_title">No messages here</string>
     <string name="list_empty_filtered">No message matches the filters</string>
     <string name="list_resize">Resize the message list</string>
+    <!-- An entry's menu in the sidebar, the rail and the bottom bar -->
+    <string name="nav_open_in_new_window">Open in a new window</string>
+    <!-- What TalkBack reads after the name of Inbox and Unread in the bottom bar and the rail -->
+    <plurals name="nav_unread_count">
+        <item quantity="one">%d unread</item>
+        <item quantity="other">%d unread</item>
+    </plurals>
     <plurals name="message_count">
         <item quantity="one">%d message</item>
         <item quantity="other">%d messages</item>
@@ -295,17 +302,11 @@
     <string name="experiment_glass">Glass bars</string>
     <string name="experiment_glass_note">Off: bars, sheets and menus are solid surfaces.</string>
     <string name="experiment_glass_over_messages">Glass over a message</string>
-    <string name="experiment_glass_over_messages_note">The bars stay glass with a message open; the message is drawn into a layer of its own for that. Over a very long message the glass turns itself off. Turn this off if a message flickers while it is scrolled.</string>
+    <string name="experiment_glass_over_messages_note">The bars stay glass with a message open; while its page is shown the glass does not blur, it only tints (so that the page does not flicker). Off: solid bars while a message is open.</string>
     <string name="experiment_under_bars">Message scrolls under the bars</string>
     <string name="experiment_under_bars_note">Phone. Off: the message stays between the top and the bottom bar.</string>
     <string name="experiment_darken">Darken messages on dark themes</string>
     <string name="experiment_darken_note">Off: a message is shown on white, as its sender made it.</string>
-    <string name="experiment_web_layer">WebView layer</string>
-    <string name="experiment_web_layer_note">Automatic: a hardware layer under glass, none without. Try the others if a message flickers or a part of it stays empty.</string>
-    <string name="web_layer_default">Automatic</string>
-    <string name="web_layer_none">None</string>
-    <string name="web_layer_hardware">Hardware</string>
-    <string name="web_layer_software">Software</string>
 
     <!-- Settings › Log -->
     <string name="settings_log">Log</string>
@@ -386,7 +387,6 @@
     <string name="settings_accounts">Accounts</string>
     <string name="settings_accounts_empty">No account yet. Gmail works with an app password; Outlook arrives with the next pre-release.</string>
     <string name="account_add">Add an account</string>
-    <string name="account_manage">Manage</string>
     <string name="account_state_ok">Working</string>
     <string name="account_state_login">Has to sign in again</string>
     <string name="account_state_unreachable">Server not reached</string>

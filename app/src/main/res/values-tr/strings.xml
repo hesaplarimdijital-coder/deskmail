@@ -31,6 +31,13 @@
     <string name="list_empty_title">Burada ileti yok</string>
     <string name="list_empty_filtered">Süzgeçlere uyan ileti yok</string>
     <string name="list_resize">İleti listesini boyutlandır</string>
+    <!-- An entry's menu in the sidebar, the rail and the bottom bar -->
+    <string name="nav_open_in_new_window">Yeni pencerede aç</string>
+    <!-- What TalkBack reads after the name of Inbox and Unread in the bottom bar and the rail -->
+    <plurals name="nav_unread_count">
+        <item quantity="one">%d okunmamış</item>
+        <item quantity="other">%d okunmamış</item>
+    </plurals>
     <plurals name="message_count">
         <item quantity="one">%d ileti</item>
         <item quantity="other">%d ileti</item>
@@ -279,17 +286,11 @@
     <string name="experiment_glass">Cam çubuklar</string>
     <string name="experiment_glass_note">Kapalıyken çubuklar, sayfalar ve menüler düz yüzey olur.</string>
     <string name="experiment_glass_over_messages">İletinin üstünde cam</string>
-    <string name="experiment_glass_over_messages_note">İleti açıkken de çubuklar cam kalır; ileti bunun için kendi katmanına çizilir. Çok uzun iletide cam kendiliğinden kapanır. İleti kaydırılırken titrerse bunu kapat.</string>
+    <string name="experiment_glass_over_messages_note">İleti açıkken de çubuklar cam kalır; iletinin sayfası görünürken cam bulanıklaştırmaz, yalnızca yarı saydam olur (titremesin diye). Kapalıyken ileti açıkken çubuklar düz.</string>
     <string name="experiment_under_bars">İleti çubukların altından geçsin</string>
     <string name="experiment_under_bars_note">Telefon. Kapalıyken ileti üst ve alt çubuğun arasında kalır.</string>
     <string name="experiment_darken">Koyu temada iletiyi karart</string>
     <string name="experiment_darken_note">Kapalıyken ileti, gönderenin yaptığı gibi beyaz zeminde görünür.</string>
-    <string name="experiment_web_layer">WebView katmanı</string>
-    <string name="experiment_web_layer_note">Otomatik: camın altında donanım katmanı, cam yokken katmansız. İleti titriyor ya da bir bölümü boş kalıyorsa ötekileri dene.</string>
-    <string name="web_layer_default">Otomatik</string>
-    <string name="web_layer_none">Yok</string>
-    <string name="web_layer_hardware">Donanım</string>
-    <string name="web_layer_software">Yazılım</string>
 
     <string name="settings_log">Günlük</string>
     <string name="settings_log_note">Uygulamanın yaptıkları ve ters giden şeyler. Şifreler ve jetonlar satır saklanmadan önce maskelenir. Bir şey bozulunca paylaş.</string>
@@ -365,7 +366,6 @@
     <string name="settings_accounts">Hesaplar</string>
     <string name="settings_accounts_empty">Henüz hesap yok. Gmail uygulama şifresiyle çalışır; Outlook bir sonraki ön sürümle geliyor.</string>
     <string name="account_add">Hesap ekle</string>
-    <string name="account_manage">Yönet</string>
     <string name="account_state_ok">Çalışıyor</string>
     <string name="account_state_login">Yeniden giriş gerekiyor</string>
     <string name="account_state_unreachable">Sunucuya ulaşılamadı</string>

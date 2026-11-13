@@ -10,15 +10,6 @@ import androidx.compose.runtime.setValue
 import com.deskmail.core.log.AppLog
 
 /**
- * What the reader's WebView draws into; see [AppSettings.webLayer].
- * - [Default]: the app decides: a hardware layer of the view's own while the shell's glass blurs
- *   what is under it, none otherwise.
- * - [None]: straight into the window, whatever the glass does.
- * - [Hardware], [Software]: always a layer of that kind.
- */
-enum class WebLayer { Default, None, Hardware, Software }
-
-/**
  * The app's own settings, stored in shared preferences and observable from Compose. One instance
  * serves every window, so a switch flipped in one window changes the others at once. (Theme,
  * accent and density are the kit's and live in its own file.) A changed experiment is noted in
@@ -35,9 +26,9 @@ class AppSettings(private val prefs: SharedPreferences, private val log: AppLog?
         private set
 
     /**
-     * The glass stays while a message is open: the message's WebView draws into a layer of its
-     * own then, which the glass can blur. Off turns the glass off for as long as a message is on
-     * screen, as 0.1.0-alpha.2 did.
+     * The glass stays while a message is open, tinting instead of blurring while the message's
+     * WebView is shown ([desktopkit.theme.PauseGlassBlur]). Off turns the glass off for as long as
+     * a message is on screen, as 0.1.0-alpha.2 did.
      */
     var glassOverMessages by mutableStateOf(prefs.getBoolean(KEY_GLASS_OVER_MESSAGES, true))
         private set
@@ -48,13 +39,6 @@ class AppSettings(private val prefs: SharedPreferences, private val log: AppLog?
 
     /** On the dark themes a message is darkened; off shows it on white, as its sender made it. */
     var darkenMessages by mutableStateOf(prefs.getBoolean(KEY_DARKEN_MESSAGES, true))
-        private set
-
-    /**
-     * What the reader's WebView draws into ([WebLayer]): the app's choice unless an experiment says
-     * otherwise. For finding out on a device what the glass over a message needs.
-     */
-    var webLayer by mutableStateOf(prefs.getString(KEY_WEB_LAYER, null).let { stored -> WebLayer.entries.firstOrNull { it.name == stored } } ?: WebLayer.Default)
         private set
 
     fun updateGlass(value: Boolean) {
@@ -79,12 +63,6 @@ class AppSettings(private val prefs: SharedPreferences, private val log: AppLog?
         log?.info("settings", "darkenMessages = $value")
         darkenMessages = value
         prefs.edit().putBoolean(KEY_DARKEN_MESSAGES, value).apply()
-    }
-
-    fun updateWebLayer(value: WebLayer) {
-        log?.info("settings", "webLayer = $value")
-        webLayer = value
-        prefs.edit().putString(KEY_WEB_LAYER, value.name).apply()
     }
 
     // ------------------------------------------------------------------ the lists
@@ -170,7 +148,6 @@ class AppSettings(private val prefs: SharedPreferences, private val log: AppLog?
         KEY_READER_UNDER_BARS to readerUnderBars,
         KEY_GLASS to glass,
         KEY_GLASS_OVER_MESSAGES to glassOverMessages,
-        KEY_WEB_LAYER to webLayer.name,
         KEY_CONVERSATIONS to conversations,
     )
 
@@ -187,7 +164,6 @@ class AppSettings(private val prefs: SharedPreferences, private val log: AppLog?
         (values[KEY_READER_UNDER_BARS] as? Boolean)?.let { updateReaderUnderBars(it) }
         (values[KEY_GLASS] as? Boolean)?.let { updateGlass(it) }
         (values[KEY_GLASS_OVER_MESSAGES] as? Boolean)?.let { updateGlassOverMessages(it) }
-        (values[KEY_WEB_LAYER] as? String)?.let { name -> WebLayer.entries.firstOrNull { it.name == name } }?.let { updateWebLayer(it) }
         (values[KEY_CONVERSATIONS] as? Boolean)?.let { updateConversations(it) }
         return checkMinutes != check
     }
@@ -221,7 +197,6 @@ class AppSettings(private val prefs: SharedPreferences, private val log: AppLog?
         private const val KEY_GLASS_OVER_MESSAGES = "experiment_glass_over_messages"
         private const val KEY_READER_UNDER_BARS = "experiment_reader_under_bars"
         private const val KEY_DARKEN_MESSAGES = "experiment_darken_messages"
-        private const val KEY_WEB_LAYER = "experiment_web_layer"
         private const val KEY_UNDO_SEND = "undo_send_seconds"
         private const val KEY_CHECK_MINUTES = "check_minutes"
         private const val KEY_INSPECTOR_COLLAPSED = "inspector_collapsed"

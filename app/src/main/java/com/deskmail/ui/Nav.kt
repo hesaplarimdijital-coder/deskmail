@@ -9,18 +9,25 @@ import com.deskmail.mail.MailFolder
 import com.deskmail.mail.SavedSearch
 import desktopkit.components.DeskIcons
 import desktopkit.shell.MoreStyle
+import desktopkit.shell.NavIconBadge
 import desktopkit.shell.NavItem
+import desktopkit.shell.NavKind
 import desktopkit.shell.NavSection
 import desktopkit.shell.ShellSpec
 
 /**
  * What the shell shows: the views over every account, then one section per account with its
  * folders, Settings at the foot. The phone's bottom bar carries Inbox, Folders and Search (and
- * "⋯"); the rail adds Unread and Starred; the sidebar lists everything.
+ * "⋯"); the rail adds Unread and Starred.
  *
- * The folders are top-level screens of the shell, which is what gives them a place in the sidebar,
- * a badge and (later) a drop target. The kit builds its navigation graph from this list, so it must
- * only be built anew when the accounts or the folders really change (see docs/KIT-ISTEKLERI.md, 3).
+ * The folders are screens of the shell, which gives them a place in the sidebar, a badge and a
+ * drop target. Only the sidebar lists them: under their account's heading, which opens and shuts,
+ * and a folder of the user's inside another one indented under that one. A phone and a rail reach
+ * them through the Folders screen instead, and they are its pages ([NavItem.parent]): its entry
+ * stays marked while one of them is open. The Folders and Search screens are the bottom bar's and
+ * the rail's alone; a large window lists the folders in its sidebar and searches from its menu bar
+ * (and with "/"). The kit adds a new folder to its navigation graph without leaving the screen that
+ * is open (desktop-kit 2.8.0; docs/KIT-ISTEKLERI.md, 3).
  */
 fun buildShellSpec(
     resources: Resources,
@@ -38,8 +45,8 @@ fun buildShellSpec(
             NavItem(Routes.VIP, resources.getString(R.string.nav_vip), MailIcons.Vip),
             NavItem(Routes.AWAITING, resources.getString(R.string.nav_awaiting), MailIcons.Awaiting),
             NavItem(Routes.SNOOZED, resources.getString(R.string.nav_snoozed), MailIcons.Snooze),
-            NavItem(Routes.FOLDERS, resources.getString(R.string.nav_folders), DeskIcons.Folder),
-            NavItem(Routes.SEARCH, resources.getString(R.string.nav_search), DeskIcons.Search),
+            NavItem(Routes.FOLDERS, resources.getString(R.string.nav_folders), DeskIcons.Folder, showIn = PHONE_AND_RAIL),
+            NavItem(Routes.SEARCH, resources.getString(R.string.nav_search), DeskIcons.Search, showIn = PHONE_AND_RAIL),
             NavItem(Routes.OUTBOX, resources.getString(R.string.nav_outbox), MailIcons.Sent),
         ),
     )
@@ -51,11 +58,23 @@ fun buildShellSpec(
         ),
     )
     val perAccount = accounts.map { account ->
+        val own = folders.filter { it.accountId == account.id }
+        val byPath = own.associateBy { it.path }
         NavSection(
             title = account.name,
-            items = folders.filter { it.accountId == account.id }.map { folder ->
-                NavItem(Routes.folder(folder.id), folderPathLabel(resources, folder), folderIcon(folder.role))
+            items = own.map { folder ->
+                // a folder of the user's under the one it is in, where the account has that one (as the
+                // Folders screen shows it); else a page of the Folders screen, its path in its name
+                val outer = if (folder.role == FolderRole.Other && folder.path.size > 1) byPath[folder.path.dropLast(1)] else null
+                NavItem(
+                    route = Routes.folder(folder.id),
+                    label = if (outer != null) folderName(resources, folder) else folderPathLabel(resources, folder),
+                    icon = folderIcon(folder.role),
+                    parent = outer?.let { Routes.folder(it.id) } ?: Routes.FOLDERS,
+                    showIn = SIDEBAR_ONLY,
+                )
             },
+            collapsible = true,
         )
     }
     return ShellSpec(
@@ -69,6 +88,9 @@ fun buildShellSpec(
     )
 }
 
+private val PHONE_AND_RAIL = setOf(NavKind.BottomBar, NavKind.Rail)
+private val SIDEBAR_ONLY = setOf(NavKind.Sidebar)
+
 /**
  * The counts beside the sidebar's entries: unread messages, and what is in the outbox. The
  * unified inbox counts the inboxes; "All Mail" holds the same messages once more and is left out
@@ -77,11 +99,24 @@ fun buildShellSpec(
 fun navBadges(folders: List<MailFolder>, outbox: Int = 0): Map<String, String> = buildMap {
     // what has not left yet: drafts, and what waits or failed
     if (outbox > 0) put(Routes.OUTBOX, outbox.toString())
-    val inbox = folders.filter { it.role == FolderRole.Inbox }.sumOf { it.unread }
-    if (inbox > 0) put(Routes.INBOX, inbox.toString())
-    val unread = folders.filter { it.role != FolderRole.All && it.role != FolderRole.Junk && it.role != FolderRole.Trash && it.role != FolderRole.Snoozed }.sumOf { it.unread }
-    if (unread > 0) put(Routes.UNREAD, unread.toString())
+    unreadCounts(folders).forEach { (route, count) -> put(route, count.toString()) }
     folders.forEach { folder -> if (folder.unread > 0) put(Routes.folder(folder.id), folder.unread.toString()) }
+}
+
+/**
+ * The counts on the icons of the phone's bottom bar, the rail and a collapsed sidebar, where there
+ * is no room for the sidebar's: the unread messages on Inbox and Unread. TalkBack reads them after
+ * the entry's name ("Gelen, 4 okunmamış").
+ */
+fun navIconBadges(resources: Resources, folders: List<MailFolder>): Map<String, NavIconBadge> =
+    unreadCounts(folders).mapValues { (_, count) -> NavIconBadge(count, resources.getQuantityString(R.plurals.nav_unread_count, count, count)) }
+
+/** The unread messages of the inboxes, and of every folder but those that hold them again or hold what is not wanted. */
+private fun unreadCounts(folders: List<MailFolder>): Map<String, Int> = buildMap {
+    val inbox = folders.filter { it.role == FolderRole.Inbox }.sumOf { it.unread }
+    if (inbox > 0) put(Routes.INBOX, inbox)
+    val unread = folders.filter { it.role != FolderRole.All && it.role != FolderRole.Junk && it.role != FolderRole.Trash && it.role != FolderRole.Snoozed }.sumOf { it.unread }
+    if (unread > 0) put(Routes.UNREAD, unread)
 }
 
 /** A folder's own name: the translated name of its role, or what the user called it. */
@@ -98,8 +133,8 @@ fun folderName(resources: Resources, folder: MailFolder): String = when (folder.
 }
 
 /**
- * A folder's name where nothing shows the tree it is in (the sidebar, a title): a folder of the
- * user's inside another one is named with its path, "Projeler / 2026".
+ * A folder's name where nothing shows the tree it is in (a title, a menu, the palette): a folder of
+ * the user's inside another one is named with its path, "Projeler / 2026".
  */
 fun folderPathLabel(resources: Resources, folder: MailFolder): String =
     if (folder.role == FolderRole.Other) folder.path.joinToString(" / ") else folderName(resources, folder)

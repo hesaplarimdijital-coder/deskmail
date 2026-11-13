@@ -18,6 +18,8 @@ import com.deskmail.demo.DemoMail
 import com.deskmail.mail.Draft
 import com.deskmail.mail.DraftState
 import com.deskmail.mail.SendCheck
+import com.deskmail.newMessageButton
+import com.deskmail.pressNewMessage
 import com.deskmail.testComposer
 import com.deskmail.testMail
 import com.deskmail.testPrefs
@@ -71,14 +73,14 @@ class WriteApartTest {
     @Test
     fun aNewMessageOpensInAWindowOfItsOwn() {
         launch()
-        press("Yeni ileti")
+        compose.pressNewMessage()
 
         // begun, and handed to a window of its own: this one goes on showing the mail
         val draft = composer.outbox.single()
         assertEquals(listOf(draft.id to true), apart.opened)
         assertNull(ui.writing)
         compose.onNodeWithTag(ComposeTags.TO).assertDoesNotExist()
-        compose.onNodeWithContentDescription("Yeni ileti").assertExists()
+        compose.onNode(newMessageButton()).assertExists()
     }
 
     @Test
@@ -141,7 +143,7 @@ class WriteApartTest {
     fun awayFromADesktopTheMessageIsWrittenInThisWindow() {
         apart.desktop = false
         launch()
-        press("Yeni ileti")
+        compose.pressNewMessage()
 
         assertTrue(apart.opened.isEmpty())
         assertNotNull(ui.writing)

@@ -1,21 +1,28 @@
 package com.deskmail.core.compose
 
 /**
- * Where a kept text ("quick text") goes into a message: at the end of what the user wrote, before
- * what the app put under it (the signature, the quoted message of a reply, the forwarded one).
- * The text field gives no place of the cursor, so the place is worked out from the text alone.
+ * How a kept text ("quick text") goes into a message: where the cursor is, in place of what is
+ * selected (desktop-kit 2.8.0 tells the app where the cursor is; docs/KIT-ISTEKLERI.md, 23). And
+ * where what the user wrote ends, before what the app put under it: what "Keep as a template" keeps.
  */
 object Templates {
 
-    /** [body] with [text] put in at the end of what the user wrote in it. */
-    fun insert(body: String, text: String): String {
+    /**
+     * [body] with [text] put in at the cursor, in place of what is selected from [start] to [end],
+     * and where the cursor stands after it. Put in at the cursor, the text is a paragraph of its
+     * own: a blank line stands between it and what is written before and after it. In place of a
+     * selection it is put in as it is.
+     */
+    fun insertAt(body: String, start: Int, end: Int, text: String): Pair<String, Int> {
         val added = text.replace("\r\n", "\n").trim('\n', ' ')
-        if (added.isEmpty()) return body
-        val end = ownEnd(body)
-        val own = body.substring(0, end).trimEnd()
-        val rest = body.substring(end).trimStart('\n')
-        val written = if (own.isEmpty()) added else own + "\n\n" + added
-        return if (rest.isEmpty()) written else written + "\n\n" + rest
+        val from = minOf(start, end).coerceIn(0, body.length)
+        val to = maxOf(start, end).coerceIn(from, body.length)
+        if (added.isEmpty()) return body to to
+        val head = body.substring(0, from)
+        val tail = body.substring(to)
+        val before = if (from != to || head.isEmpty()) "" else "\n".repeat(PARAGRAPH - head.takeLastWhile { it == '\n' }.length.coerceAtMost(PARAGRAPH))
+        val after = if (from != to || tail.isEmpty()) "" else "\n".repeat(PARAGRAPH - tail.takeWhile { it == '\n' }.length.coerceAtMost(PARAGRAPH))
+        return head + before + added + after + tail to from + before.length + added.length
     }
 
     /**
@@ -34,6 +41,9 @@ object Templates {
         // front: where that line break stands there, the mark itself begins in [body]
         return starts.minOrNull()?.coerceAtMost(body.length) ?: body.length
     }
+
+    /** The line breaks between two paragraphs: a blank line. */
+    private const val PARAGRAPH = 2
 
     private val SIGNATURE = Regex("\n-- \n")
     private val QUOTE = Regex("\n[^\n]+\n>")

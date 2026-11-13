@@ -33,6 +33,7 @@ import desktopkit.components.DeskDragPayload
 import desktopkit.components.DeskListRow
 import desktopkit.components.FilterChips
 import desktopkit.components.MenuEntry
+import desktopkit.components.SwipeAction
 import desktopkit.components.TableColumn
 import desktopkit.components.TableSort
 import desktopkit.components.rememberTableColumnsState
@@ -63,13 +64,16 @@ fun MailFilterChips(selected: Set<MailFilter>, onToggle: (MailFilter) -> Unit, o
 
 /**
  * The messages as rows, for a finger: who it is from (bold while unread, with a dot before it),
- * the subject and the first words under it, the date and the marks at the end. The list lies under
- * the phone's bars and pads its ends with [contentPadding] (the shell's, which the screen asks
- * for); [header], when there is one, scrolls away with the rows as the list's first item.
+ * the subject under it and a line of the message's first words under that, the date and the marks
+ * at the end. The list lies under the phone's bars and pads its ends with [contentPadding] (the
+ * shell's, which the screen asks for); [header], when there is one, scrolls away with the rows as
+ * the list's first item.
  *
  * @param menu what can be done with a row's message: opened by a long press, a right click or the Menu key.
  * @param selection the rows that are selected; they are drawn as the open one is.
  * @param onPick set while rows are being picked: a tap adds or removes its row instead of opening it.
+ * @param swipeStart what a finger does by sliding a row toward its end (archive), [swipeEnd] toward
+ *   its start (snooze); null for a row it cannot be done to. Not while rows are being picked.
  */
 @Composable
 fun MessageRows(
@@ -84,6 +88,8 @@ fun MessageRows(
     menu: ((MailMessage) -> List<MenuEntry>)? = null,
     selection: Set<Long> = emptySet(),
     onPick: ((MailMessage) -> Unit)? = null,
+    swipeStart: ((MailMessage) -> SwipeAction?)? = null,
+    swipeEnd: ((MailMessage) -> SwipeAction?)? = null,
 ) {
     val dates = rememberDateLabels()
     LazyColumn(modifier.fillMaxSize(), state = state, contentPadding = contentPadding) {
@@ -97,24 +103,39 @@ fun MessageRows(
                 date = dates.short(message.sentAt),
                 onOpen = onPick ?: onOpen,
                 menu = menu,
+                swipeStart = if (onPick == null) swipeStart?.invoke(message) else null,
+                swipeEnd = if (onPick == null) swipeEnd?.invoke(message) else null,
             )
         }
     }
 }
 
 @Composable
-private fun MessageRow(message: MailMessage, selected: Boolean, date: String, onOpen: (MailMessage) -> Unit, menu: ((MailMessage) -> List<MenuEntry>)?) {
+private fun MessageRow(
+    message: MailMessage,
+    selected: Boolean,
+    date: String,
+    onOpen: (MailMessage) -> Unit,
+    menu: ((MailMessage) -> List<MenuEntry>)?,
+    swipeStart: SwipeAction?,
+    swipeEnd: SwipeAction?,
+) {
     val colors = DeskTheme.colors
     DeskListRow(
         title = counterpartLabel(message),
-        subtitle = previewLine(message, stringResource(R.string.message_no_subject)),
-        subtitleColor = if (message.unread) colors.textSecondary else colors.textTertiary,
+        subtitle = message.subject.ifBlank { stringResource(R.string.message_no_subject) },
+        // the subject in the text's colour while the message is unread, its first words fainter under it
+        subtitleColor = if (message.unread) colors.text else colors.textSecondary,
+        preview = message.preview.ifEmpty { null },
+        previewMaxLines = 1,
         leadingContent = { UnreadDot(message.unread) },
         trailingContent = { MessageMarks(message, date) },
         strong = message.unread,
         selected = selected,
         onClick = { onOpen(message) },
         menu = if (menu == null) null else ({ menu(message) }),
+        swipeStart = swipeStart,
+        swipeEnd = swipeEnd,
     )
 }
 
@@ -127,7 +148,7 @@ private fun counterpartLabel(message: MailMessage): String =
 private fun withCount(label: String, message: MailMessage): String =
     if (message.threadCount > 1) "$label (${message.threadCount})" else label
 
-/** The subject and the first words of the message on one line; [noSubject] stands in for a subject the mail does not have. */
+/** The subject and the first words of the message on one line (a table's cell); [noSubject] stands in for a subject the mail does not have. */
 private fun previewLine(message: MailMessage, noSubject: String): String {
     val subject = message.subject.ifBlank { noSubject }
     val preview = message.preview
@@ -176,14 +197,16 @@ private val MARK = 14.dp
 
 /**
  * The messages as a table, for a mouse: sortable columns, the header's menu chooses and orders
- * them ([prefs] remembers the choice). desktop-kit 2.4.0 draws a cell as text in its column's
- * style, so an unread message is marked by a dot in a column of its own, a star and the number of
- * attachments likewise (docs/KIT-ISTEKLERI.md, 2).
+ * them ([prefs] remembers the choice). An unread message's row is bold, with a dot in a narrow
+ * column of its own; the marks are drawn in theirs: the star, which a click turns on and off
+ * without opening the message ([onToggleStar]), answered and sent on, a paperclip
+ * (desktop-kit 2.8.0; docs/KIT-ISTEKLERI.md, 2). What a column is sorted by is its value.
  *
  * Several rows are selected the way the kit's table has it: Ctrl+click adds or removes a row,
  * Shift+click takes the rows in between, Ctrl+A all of them, Esc none; a plain click selects its
- * row alone and opens it. With [picking] every click adds or removes its row. Selected rows are
- * dragged together ([drag] says what travels).
+ * row alone and opens it. With [picking] every click adds or removes its row. Dragging from a row
+ * that is not selected draws a frame, and the rows it touches are selected (the kit's table does
+ * that); selected rows are dragged together ([drag] says what travels).
  */
 @Composable
 fun MessageTable(
@@ -201,24 +224,39 @@ fun MessageTable(
     onSelect: ((Set<Long>) -> Unit)? = null,
     picking: Boolean = false,
     drag: ((MailMessage) -> DeskDragPayload?)? = null,
+    onToggleStar: ((MailMessage) -> Unit)? = null,
 ) {
     val dates = rememberDateLabels()
     val toPrefix = stringResource(R.string.message_to, "")
     val noSubject = stringResource(R.string.message_no_subject)
+    val starLabel = stringResource(R.string.action_star)
+    val unstarLabel = stringResource(R.string.action_unstar)
     // in the order of MessageColumns
     val columns = listOf(
-        TableColumn<MailMessage>(UNREAD_MARK, ColumnWidth.Fixed(36.dp), id = "unread") { if (it.unread) UNREAD_MARK else "" },
-        TableColumn<MailMessage>(STAR_MARK, ColumnWidth.Fixed(36.dp), id = "star") { if (it.starred) STAR_MARK else "" },
+        TableColumn<MailMessage>(UNREAD_MARK, ColumnWidth.Fixed(36.dp), id = "unread", cell = { UnreadDot(it.unread) }) { if (it.unread) UNREAD_MARK else "" },
+        TableColumn<MailMessage>(
+            STAR_MARK,
+            ColumnWidth.Fixed(36.dp),
+            id = "star",
+            cell = { StarMark(it.starred) },
+            onCellClick = onToggleStar,
+            cellClickLabel = { if (it.starred) unstarLabel else starLabel },
+        ) { if (it.starred) STAR_MARK else "" },
         // answered, sent on, or both
-        TableColumn<MailMessage>(ANSWERED_MARK, ColumnWidth.Fixed(36.dp), id = "answered") { answeredMark(it) },
+        TableColumn<MailMessage>(ANSWERED_MARK, ColumnWidth.Fixed(36.dp), id = "answered", cell = { AnsweredMarks(it) }) { answeredMark(it) },
         // wide enough for a name whole, at any width of the table; the subject takes what is left
         TableColumn<MailMessage>(stringResource(R.string.column_from), ColumnWidth.Fixed(128.dp), id = "from") {
             withCount(if (it.outgoing) toPrefix + it.to else it.fromName, it)
         },
         TableColumn<MailMessage>(stringResource(R.string.column_subject), ColumnWidth.Weight(1f), id = "subject") { previewLine(it, noSubject) },
-        TableColumn<MailMessage>(stringResource(R.string.column_attachments), ColumnWidth.Fixed(48.dp), alignEnd = true, mono = true, id = "attachments") {
-            if (it.attachmentCount == 0) "" else it.attachmentCount.toString()
-        },
+        TableColumn<MailMessage>(
+            stringResource(R.string.column_attachments),
+            ColumnWidth.Fixed(48.dp),
+            alignEnd = true,
+            mono = true,
+            id = "attachments",
+            cell = { AttachmentMark(it.attachmentCount) },
+        ) { if (it.attachmentCount == 0) "" else it.attachmentCount.toString() },
         TableColumn<MailMessage>(stringResource(R.string.column_date), ColumnWidth.Fixed(104.dp), alignEnd = true, mono = true, id = "date") {
             dates.short(it.sentAt)
         },
@@ -240,7 +278,44 @@ fun MessageTable(
         toggleOnClick = picking,
         columnsState = if (prefs == null) null else rememberTableColumnsState("messages", prefs),
         rowDrag = if (drag == null) null else ({ message, _ -> drag(message) }),
+        rowEmphasis = { it.unread },
     )
+}
+
+/** A table's star: the accent star of a starred message, a faint outline to click for another one. */
+@Composable
+private fun StarMark(starred: Boolean) {
+    val colors = DeskTheme.colors
+    if (starred) {
+        Icon(MailIcons.StarFilled, contentDescription = stringResource(R.string.message_starred), tint = colors.warning, modifier = Modifier.size(MARK))
+    } else {
+        Icon(MailIcons.Star, contentDescription = null, tint = colors.textTertiary.copy(alpha = 0.5f), modifier = Modifier.size(MARK))
+    }
+}
+
+/** A table's marks of a message that was answered, sent on, or both. */
+@Composable
+private fun AnsweredMarks(message: MailMessage) {
+    val tint = DeskTheme.colors.textTertiary
+    Row(horizontalArrangement = Arrangement.spacedBy(2.dp), verticalAlignment = Alignment.CenterVertically) {
+        if (message.answered) Icon(MailIcons.Reply, contentDescription = stringResource(R.string.message_answered), tint = tint, modifier = Modifier.size(MARK))
+        if (message.forwarded) Icon(MailIcons.ForwardMail, contentDescription = stringResource(R.string.message_forwarded), tint = tint, modifier = Modifier.size(MARK))
+    }
+}
+
+/** A table's paperclip, with the number of files where there is more than one. */
+@Composable
+private fun AttachmentMark(count: Int) {
+    if (count == 0) return
+    val colors = DeskTheme.colors
+    Row(
+        Modifier.semantics(mergeDescendants = true) {},
+        horizontalArrangement = Arrangement.spacedBy(2.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        if (count > 1) Text(count.toString(), style = DeskTheme.type.mono, color = colors.textSecondary, maxLines = 1)
+        Icon(MailIcons.Attachment, contentDescription = pluralString(R.plurals.message_attachments, count), tint = colors.textTertiary, modifier = Modifier.size(MARK))
+    }
 }
 
 private const val UNREAD_MARK = "●"

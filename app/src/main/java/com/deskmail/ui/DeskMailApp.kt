@@ -151,42 +151,26 @@ fun DeskMailApp(
     val spec = remember(locales, named, tree, startRoute, saved) { buildShellSpec(resources, named, tree, startRoute, saved) }
     val waiting = composer?.outbox?.size ?: 0
     val badges = remember(folders, waiting) { navBadges(folders, waiting) }
+    val iconBadges = remember(folders, resources) { navIconBadges(resources, folders) }
     val entry by navController.currentBackStackEntryAsState()
     val currentRoute = entry?.destination?.route ?: spec.startRoute
 
-    // A new set of routes (a folder made on the server, an account added or removed) makes the
-    // kit build a new navigation graph, and the shell is back at its start screen
-    // (docs/KIT-ISTEKLERI.md, 3). The window goes back to where it was, if that is still there.
-    // While an account is being added the start screen is where to be: its mail arrives there.
+    // A new set of routes (a folder made on the server, an account added or removed) keeps the open
+    // screen: the kit adds them to its navigation graph (desktop-kit 2.8.0; docs/KIT-ISTEKLERI.md, 3).
     val routes = remember(spec) { spec.items.map { it.route } }
-    var routesSeen by remember { mutableStateOf(routes) }
-    var at by remember { mutableStateOf(spec.startRoute) }
-    if (routesSeen == routes) SideEffect { at = currentRoute }
-    LaunchedEffect(routes) {
-        if (routesSeen != routes) {
-            val back = at
-            val here = navController.currentBackStackEntry?.destination?.route
-            if (!settingsUi.setup.busy && back != here && back in routes) navigator.navigate(back)
-            routesSeen = routes
-        }
-    }
 
     val notify: (String) -> Unit = { text -> scope.launch { toasts.show(text) } }
     // a tapped link is never followed inside a message: its real address is shown instead
     val showLink: (String) -> Unit = { url -> scope.launch { toasts.show(url.take(LINK_LENGTH), duration = ToastDuration.Long) } }
     val body: @Composable (MailContent.Ready, Boolean, Modifier) -> Unit = messageBody ?: { content, showImages, modifier ->
-        // Counted while it is on screen, and whether it is too tall for a layer of its own: what
-        // the shell's glass goes by (shellGlass).
-        var tall by remember { mutableStateOf(false) }
-        WebBodyPresence(ui, tall)
+        // counted while it is on screen: what the shell's glass goes by (shellGlass)
+        WebBodyPresence(ui)
         WebMessageBody(
             content,
             modifier,
             showImages = showImages,
             darken = settings.darkenMessages,
-            layer = settings.webLayer,
             onLink = showLink,
-            onTall = { tall = it },
             // a picture of the message's own: from the device, or from its server (a WebView thread waits for it)
             picture = { part -> runBlocking { withTimeoutOrNull(PICTURE_WAIT_MS) { (mail.fetch(part) as? FetchedFile.Ready)?.file } } },
         )
@@ -419,6 +403,24 @@ fun DeskMailApp(
         },
         extra = { group -> if (group == CommonShortcuts.ViewGroup) listOf<MenuEntry>(MenuEntry.Separator) + experiments else emptyList() },
     )
+    // A screen's name: a folder's with the folders it is in ("Projeler / 2026"), where the sidebar
+    // shows that by indenting it.
+    val screenTitle: (String) -> String = { route ->
+        Routes.folderId(route)?.let { mail.folder(it) }?.let { folderPathLabel(resources, it) } ?: spec.item(route)?.label.orEmpty()
+    }
+    // The menu of a list's entry in the sidebar, the rail and the bottom bar (a right click, a long
+    // press, the Menu key): sync it, and where there is room for windows, open it in one of its own.
+    val syncLabel = stringResource(R.string.action_refresh)
+    val newWindowLabel = stringResource(R.string.nav_open_in_new_window)
+    val entryMenu: (String, WidthClass) -> List<MenuEntry> = { route, widthClass ->
+        val view = mailView(route)
+        if (view == null || view is MailView.Search) emptyList() else buildList {
+            add(MenuEntry.Item(syncLabel, { mail.refresh(view) }, icon = MailIcons.Refresh))
+            if (activity != null && widthClass != WidthClass.Compact) {
+                add(MenuEntry.Item(newWindowLabel, { DeskWindows.openNewWindow(activity, route = route) }))
+            }
+        }
+    }
     val screensGroup = stringResource(R.string.palette_group_screens)
     val messagesGroup = stringResource(R.string.palette_group_messages)
     val noSubject = stringResource(R.string.message_no_subject)
@@ -438,13 +440,16 @@ fun DeskMailApp(
                 sidebarCollapsed = prefs.sidebarCollapsed,
                 onSidebarCollapsedChange = prefs::updateSidebarCollapsed,
                 badges = badges,
+                // a phone has Unread under "⋯": its count would only leave a dot there for good
+                iconBadges = if (widthClass == WidthClass.Compact) iconBadges.filterKeys { it == Routes.INBOX } else iconBadges,
+                navMenu = { route -> entryMenu(route, widthClass) },
                 navDrop = folderDrop,
                 menus = menus,
                 onSearch = { palette.open() },
                 searchHint = stringResource(R.string.palette_hint),
                 transitions = transitions,
                 moreActions = listOf(ActionGroup(stringResource(R.string.settings_experiments), experiments)),
-                glass = shellGlass(settings.glass, settings.glassOverMessages, messageOpen, ui.webBodies, ui.tallWebBodies),
+                glass = shellGlass(settings.glass, settings.glassOverMessages, messageOpen, ui.webBodies),
                 toasts = toasts,
                 overlays = {
                     // Ctrl+K: screens and folders, the messages, and every command of the shortcut table
@@ -470,7 +475,7 @@ fun DeskMailApp(
                             val screens = spec.items.map { item ->
                                 PaletteItem(
                                     id = item.route,
-                                    title = item.label,
+                                    title = screenTitle(item.route),
                                     group = screensGroup,
                                     onSelect = { navigator.navigate(item.route) },
                                     subtitle = Routes.folderId(item.route)?.let { id -> mail.folder(id) }?.let { mail.account(it.accountId)?.name },
@@ -509,9 +514,6 @@ fun DeskMailApp(
             ) { route, _ ->
                 val navKind = LocalNavKind.current
                 val view = mailView(route, ui.searchQuery)
-                // a folder is no tab of the phone's bottom bar: it was opened from the Folders list, or from "⋯"
-                val backFromFolder: (() -> Unit)? =
-                    if (widthClass == WidthClass.Compact && view is MailView.Folder) ({ navController.popBackStack() }) else null
                 val writing = ui.writingOver(route)
                 when {
                     // a message is being written over this screen: it has the screen's place until it is sent or put away
@@ -531,12 +533,11 @@ fun DeskMailApp(
                     view != null -> MailScreen(
                         route = route,
                         view = view,
-                        title = spec.item(route)?.label.orEmpty(),
+                        title = screenTitle(route),
                         mail = mail,
                         ui = ui,
                         prefs = prefs,
-                        onBack = backFromFolder,
-                        onCompose = { perform(Commands.NEW_MESSAGE) },
+                        onCompose = if (compose == null) null else ({ perform(Commands.NEW_MESSAGE) }),
                         onWrite = compose?.let { writer -> { kind, message -> writer.begin(route, kind, message.id) } },
                         actions = actions,
                         files = files,
@@ -555,8 +556,9 @@ fun DeskMailApp(
                         onOpen = { folder ->
                             val target = Routes.folder(folder.id)
                             // The sidebar lists the folders itself and switches between them. On a phone or beside a
-                            // rail the folder opens on top of this list, and Back returns here.
-                            if (navKind == NavKind.Sidebar) navigator.navigate(target) else navController.navigate(target) { launchSingleTop = true }
+                            // rail the folder opens over this list as a page of it: its top bar has a Back button,
+                            // Back returns here, and the Folders entry stays marked (desktop-kit 2.8.0).
+                            if (navKind == NavKind.Sidebar) navigator.navigate(target) else navigator.open(target)
                         },
                     )
                     route == Routes.SETTINGS -> SettingsScreen(
@@ -572,12 +574,10 @@ fun DeskMailApp(
                         notifications = notifications,
                         onCheckChosen = onCheckChosen,
                         onAccountAdded = { address ->
-                            // To the inbox, where its mail is arriving. Said to the route keeper as
-                            // well: the account's folders are about to change the set of routes, and
-                            // whichever happens first, the inbox is where the window is to be.
+                            // To the inbox, where its mail is arriving. The account's folders change the
+                            // set of routes a moment later, and the inbox stays open (desktop-kit 2.8.0).
                             settingsUi.close()
                             notify(resources.getString(R.string.setup_added, address))
-                            at = Routes.INBOX
                             navigator.navigate(Routes.INBOX)
                         },
                     )

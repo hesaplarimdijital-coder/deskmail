@@ -36,7 +36,6 @@ import com.deskmail.mail.SenderMarks
 import com.deskmail.notify.NotifyGate
 import com.deskmail.settings.AppSettings
 import com.deskmail.settings.SettingsFile
-import com.deskmail.settings.WebLayer
 import com.deskmail.ui.MailIcons
 import com.deskmail.ui.MailScope
 import com.deskmail.ui.compose.TemplateDialog
@@ -344,7 +343,7 @@ private fun SettingsList(
     }
 }
 
-/** The accounts with how each is doing, the way to each one's page, and "Add an account". */
+/** The accounts with how each is doing, each row the way to its account's page, and "Add an account". */
 @Composable
 private fun AccountsSection(accounts: List<MailAccount>, canAdd: Boolean, onOpen: (MailAccount) -> Unit, onAdd: () -> Unit) {
     SettingsSection(stringResource(R.string.settings_accounts)) {
@@ -352,9 +351,8 @@ private fun AccountsSection(accounts: List<MailAccount>, canAdd: Boolean, onOpen
             Text(stringResource(R.string.settings_accounts_empty), style = DeskTheme.type.labelSmall, color = DeskTheme.colors.textTertiary)
         }
         accounts.forEach { account ->
-            SettingRow(account.name, subtitle = stringResource(R.string.account_summary, account.address, stateLabel(account.state))) {
-                DeskButton(stringResource(R.string.account_manage), { onOpen(account) })
-            }
+            // the whole row leads there, an arrow at its end (docs/KIT-ISTEKLERI.md, 17)
+            SettingRow(account.name, subtitle = stringResource(R.string.account_summary, account.address, stateLabel(account.state)), onClick = { onOpen(account) })
         }
         if (canAdd) {
             DeskButton(stringResource(R.string.account_add), onAdd, Modifier.padding(top = DeskTheme.dimens.gapS), icon = DeskIcons.Plus, primary = accounts.isEmpty())
@@ -566,18 +564,6 @@ private fun ExperimentsSection(settings: AppSettings) {
             onCheckedChange = settings::updateDarkenMessages,
             subtitle = stringResource(R.string.experiment_darken_note),
         )
-        SettingRow(stringResource(R.string.experiment_web_layer), subtitle = stringResource(R.string.experiment_web_layer_note)) {
-            SegmentedChoice(
-                options = listOf(
-                    WebLayer.Default to stringResource(R.string.web_layer_default),
-                    WebLayer.None to stringResource(R.string.web_layer_none),
-                    WebLayer.Hardware to stringResource(R.string.web_layer_hardware),
-                    WebLayer.Software to stringResource(R.string.web_layer_software),
-                ),
-                selected = settings.webLayer,
-                onSelect = settings::updateWebLayer,
-            )
-        }
     }
 }
 

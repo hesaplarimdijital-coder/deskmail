@@ -18,6 +18,7 @@ import androidx.compose.ui.test.performTextReplacement
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.deskmail.TestApp
 import com.deskmail.mail.MailView
+import com.deskmail.pressNewMessage
 import com.deskmail.testComposer
 import com.deskmail.testMail
 import com.deskmail.testPrefs
@@ -76,7 +77,7 @@ class ListsUiTest {
     fun aKeptTextGoesIntoTheMessageAboveTheSignature() {
         runBlocking { composer.saveTemplate(0, "Toplantı", "Perşembe 14.00'te görüşelim.") }
         launch()
-        press("Yeni ileti")
+        compose.pressNewMessage()
         compose.onNodeWithTag(ComposeTags.BODY).performTextInput("Selam,")
 
         click("Şablon")
@@ -89,7 +90,7 @@ class ListsUiTest {
     @Test
     fun whatWasWrittenIsKeptAsATemplate() {
         launch()
-        press("Yeni ileti")
+        compose.pressNewMessage()
         compose.onNodeWithTag(ComposeTags.BODY).performTextInput("Toplantı notları ekte.\nSorusu olan yazsın.")
 
         click("Şablon")

@@ -8,6 +8,7 @@ import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isSelectable
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performKeyInput
 import androidx.compose.ui.test.performTextInput
@@ -19,6 +20,7 @@ import com.deskmail.testComposer
 import com.deskmail.testMail
 import com.deskmail.testPrefs
 import com.deskmail.testSettings
+import com.deskmail.ui.mail.MailTags
 import com.deskmail.ui.mail.MailUiState
 import com.deskmail.ui.mail.PlainMessageBody
 import desktopkit.components.CommandPaletteState
@@ -92,7 +94,8 @@ class PaletteTest {
         search("kira sözleşmesi")
         assertFalse(palette.isOpen)
         assertEquals("kira sözleşmesi", ui.searchQuery)
-        compose.onNode(hasText("Ara") and isSelectable()).assertIsSelected()
+        // the search screen, which a large window's sidebar does not list: its field
+        compose.onNodeWithTag(MailTags.SEARCH).assertExists()
     }
 
     @Test
