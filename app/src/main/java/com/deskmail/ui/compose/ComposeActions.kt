@@ -76,6 +76,28 @@ class ComposeActions(
         }
     }
 
+    /**
+     * Begins a new message over [route] with what another app asked for: recipients, a subject,
+     * a text, files. Closed with nothing written into it, a message that only had its
+     * recipients is thrown away like any other that was begun and left; one that came with more
+     * stays in the outbox.
+     */
+    fun begin(route: String, request: ComposeRequest) {
+        scope.launch {
+            val accountId = Routes.folderId(route)?.let { mail.folder(it)?.accountId }
+            val id = composer.start(DraftKind.New, accountId, seed = request.seed)
+            if (id == null) {
+                toasts.show(resources.getString(R.string.compose_no_account))
+                return@launch
+            }
+            var failed = false
+            for (file in request.files) if (!composer.attach(id, file.name, file.mimeType, file.open)) failed = true
+            putAway()
+            ui.writing = Writing(id, route, fresh = !request.hasContent)
+            if (failed) toasts.show(resources.getString(R.string.compose_attach_failed))
+        }
+    }
+
     /** Takes a message of the outbox up over [route]. One that waits to be sent is taken back first. */
     fun takeUp(route: String, draft: Draft) {
         scope.launch {

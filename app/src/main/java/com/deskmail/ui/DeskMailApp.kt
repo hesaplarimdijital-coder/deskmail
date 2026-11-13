@@ -201,6 +201,15 @@ fun DeskMailApp(
             if (request.messageId > 0) openMessage(mail, ui, Routes.INBOX, request.messageId)
         }
     }
+    // Another app asked for a message to be written (a mailto link, something shared): it is
+    // begun over the screen in front.
+    val wanted = ui.composeRequest
+    LaunchedEffect(wanted) {
+        if (wanted != null) {
+            ui.composeRequest = null
+            compose?.begin(navController.currentBackStackEntry?.destination?.route ?: spec.startRoute, wanted)
+        }
+    }
     // New mail can only be told of with the user's leave. It is asked for once, unasked: when
     // there is an account whose mail could arrive.
     val hasAccounts = mail.loaded && mail.accounts.isNotEmpty()
