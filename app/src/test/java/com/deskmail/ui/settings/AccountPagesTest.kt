@@ -92,6 +92,8 @@ class AccountPagesTest {
         launch(accounts)
 
         press("Hesap ekle")
+        // a set-up of its own: the bottom navigation is away while it is open (desktop-kit 2.9.0)
+        compose.onNode(hasText("Gelen") and isSelectable()).assertDoesNotExist()
         compose.onNodeWithTag(AccountTags.ADDRESS).performTextInput("deniz.aksoy@gmail.com")
         compose.waitForIdle()
         press("Devam")
