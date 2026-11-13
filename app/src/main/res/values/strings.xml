@@ -387,7 +387,6 @@
     <string name="settings_accounts">Accounts</string>
     <string name="settings_accounts_empty">No account yet. Gmail works with an app password; Outlook arrives with the next pre-release.</string>
     <string name="account_add">Add an account</string>
-    <string name="account_manage">Manage</string>
     <string name="account_state_ok">Working</string>
     <string name="account_state_login">Has to sign in again</string>
     <string name="account_state_unreachable">Server not reached</string>

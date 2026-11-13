@@ -384,6 +384,8 @@ fun MailScreen(
                 description = stringResource(R.string.welcome_text),
                 actionLabel = stringResource(R.string.welcome_action),
                 onAction = onAddAccount,
+                // the one thing to do here (docs/KIT-ISTEKLERI.md, 16)
+                actionPrimary = true,
             )
             // nothing typed that could be looked for: what to type
             searching != null && SearchQuery.match(searching.query) == null -> MessageScreen(

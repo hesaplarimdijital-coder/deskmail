@@ -28,8 +28,8 @@ import desktopkit.components.DeskIcons
 import desktopkit.components.DeskListRow
 import desktopkit.screens.PageHeader
 import desktopkit.shell.CompactTopBar
-import desktopkit.shell.WidthClass
-import desktopkit.shell.currentWidthClass
+import desktopkit.shell.LocalNavKind
+import desktopkit.shell.NavKind
 import desktopkit.shell.rememberShellContentPadding
 import desktopkit.theme.DeskTheme
 
@@ -81,12 +81,12 @@ fun LicencesScreen(onClose: () -> Unit) {
         return
     }
     val title = stringResource(R.string.licences_title)
-    val compact = currentWidthClass() == WidthClass.Compact
-    CompactTopBar(title = title, onBack = onClose, actions = emptyList(), showSearch = false)
+    val sidebar = LocalNavKind.current == NavKind.Sidebar
+    CompactTopBar(title = title, onBack = onClose, actions = emptyList(), showSearch = false, showOnRail = true)
     val shell = rememberShellContentPadding()
     Column(Modifier.fillMaxSize().padding(top = shell.calculateTopPadding())) {
         PageHeader(title, subtitle = stringResource(R.string.licences_note)) {
-            if (!compact) DeskButton(stringResource(desktopkit.R.string.dk_back), onClose, icon = DeskIcons.ArrowLeft)
+            if (sidebar) DeskButton(stringResource(desktopkit.R.string.dk_back), onClose, icon = DeskIcons.ArrowLeft)
         }
         LazyColumn(
             Modifier.fillMaxSize().testTag(LicenceTags.LIST),
@@ -111,12 +111,12 @@ private fun LicenceText(party: ThirdParty, onBack: () -> Unit) {
         val read = { id: Int -> context.resources.openRawResource(id).bufferedReader().use { it.readText() }.trim() }
         listOfNotNull(party.notice?.let(read), read(party.licence.text)).joinToString("\n\n\n")
     }
-    val compact = currentWidthClass() == WidthClass.Compact
-    CompactTopBar(title = party.what, onBack = onBack, actions = emptyList(), showSearch = false)
+    val sidebar = LocalNavKind.current == NavKind.Sidebar
+    CompactTopBar(title = party.what, onBack = onBack, actions = emptyList(), showSearch = false, showOnRail = true)
     val shell = rememberShellContentPadding()
     Column(Modifier.fillMaxSize().padding(top = shell.calculateTopPadding())) {
         PageHeader(party.what, subtitle = party.licence.label) {
-            if (!compact) DeskButton(stringResource(desktopkit.R.string.dk_back), onBack, icon = DeskIcons.ArrowLeft)
+            if (sidebar) DeskButton(stringResource(desktopkit.R.string.dk_back), onBack, icon = DeskIcons.ArrowLeft)
         }
         // the text in pieces, a paragraph each: a long licence is drawn as it is scrolled to
         val paragraphs = remember(text) { text.split(Regex("\n\\s*\n")).map { it.trimEnd() }.filter { it.isNotBlank() } }

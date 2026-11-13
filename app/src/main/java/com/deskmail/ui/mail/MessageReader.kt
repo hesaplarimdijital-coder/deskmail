@@ -225,21 +225,17 @@ fun MessageReader(
             is MailContent.Ready -> {
                 if (content.attachments.isNotEmpty()) Attachments(content.attachments, fetchingFile, onAttachment)
                 if (content.remoteImages && !showImages) {
+                    // this message's pictures, or the sender's every time without being asked again
+                    // (docs/KIT-ISTEKLERI.md, 6)
                     StatusBanner(
                         tone = BannerTone.Info,
                         text = stringResource(R.string.reader_remote_blocked),
                         modifier = strip,
                         actionLabel = stringResource(R.string.reader_remote_show),
                         onAction = onShowRemoteImages,
+                        secondaryActionLabel = if (onAlwaysShowImages == null) null else stringResource(R.string.reader_remote_always),
+                        onSecondaryAction = onAlwaysShowImages,
                     )
-                    // the sender's pictures every time, without being asked again
-                    if (onAlwaysShowImages != null) {
-                        DeskButton(
-                            stringResource(R.string.reader_remote_always),
-                            onAlwaysShowImages,
-                            Modifier.padding(horizontal = dimens.pagePadding).padding(bottom = dimens.gapM),
-                        )
-                    }
                 }
                 // a view of its own for every message
                 key(message.id) { body(content, showImages, Modifier.fillMaxWidth()) }

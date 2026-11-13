@@ -50,8 +50,8 @@ import desktopkit.components.StatusBanner
 import desktopkit.screens.PageHeader
 import desktopkit.settings.SettingsSection
 import desktopkit.shell.CompactTopBar
-import desktopkit.shell.WidthClass
-import desktopkit.shell.currentWidthClass
+import desktopkit.shell.LocalNavKind
+import desktopkit.shell.NavKind
 import desktopkit.shell.rememberShellContentPadding
 import desktopkit.theme.DeskTheme
 import kotlinx.coroutines.CoroutineScope
@@ -66,17 +66,18 @@ object AccountTags {
 }
 
 /**
- * The frame of a page that opens over the settings: its title and Back in the phone's top bar, a
- * header with Back on wider windows, and the content scrolling beneath the bars.
+ * The frame of a page that opens over the settings: its title and Back in the top bar of a phone
+ * and of a rail (desktop-kit 2.8.0; docs/KIT-ISTEKLERI.md, 15), a header with Back in a large
+ * window, and the content scrolling beneath the bars.
  */
 @Composable
 internal fun SettingsPageFrame(title: String, onClose: () -> Unit, content: @Composable ColumnScope.() -> Unit) {
-    val compact = currentWidthClass() == WidthClass.Compact
-    CompactTopBar(title = title, onBack = onClose, showSearch = false)
+    val sidebar = LocalNavKind.current == NavKind.Sidebar
+    CompactTopBar(title = title, onBack = onClose, showSearch = false, showOnRail = true)
     val shell = rememberShellContentPadding()
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(shell)) {
         PageHeader(title) {
-            if (!compact) DeskButton(stringResource(desktopkit.R.string.dk_back), onClose, icon = DeskIcons.ArrowLeft)
+            if (sidebar) DeskButton(stringResource(desktopkit.R.string.dk_back), onClose, icon = DeskIcons.ArrowLeft)
         }
         content()
         Spacer(Modifier.height(DeskTheme.dimens.gapXl))
@@ -481,7 +482,8 @@ fun AccountPage(
         }
         SettingsSection(stringResource(R.string.account_remove)) {
             Note(stringResource(R.string.account_remove_note))
-            DeskButton(stringResource(R.string.account_remove), { confirmRemove = true }, Modifier.padding(top = dimens.gapM), icon = DeskIcons.Delete)
+            // in the colour of what cannot be undone; the window that asks first stays
+            DeskButton(stringResource(R.string.account_remove), { confirmRemove = true }, Modifier.padding(top = dimens.gapM), icon = DeskIcons.Delete, danger = true)
         }
     }
     if (confirmRemove) {
@@ -500,7 +502,7 @@ fun AccountPage(
                             onRemoved(name)
                         }
                     },
-                    primary = true,
+                    danger = true,
                 )
             },
         ) {

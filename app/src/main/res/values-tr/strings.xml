@@ -366,7 +366,6 @@
     <string name="settings_accounts">Hesaplar</string>
     <string name="settings_accounts_empty">Henüz hesap yok. Gmail uygulama şifresiyle çalışır; Outlook bir sonraki ön sürümle geliyor.</string>
     <string name="account_add">Hesap ekle</string>
-    <string name="account_manage">Yönet</string>
     <string name="account_state_ok">Çalışıyor</string>
     <string name="account_state_login">Yeniden giriş gerekiyor</string>
     <string name="account_state_unreachable">Sunucuya ulaşılamadı</string>
