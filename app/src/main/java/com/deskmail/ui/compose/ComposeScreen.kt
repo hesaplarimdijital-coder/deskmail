@@ -50,6 +50,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.deskmail.R
 import com.deskmail.core.compose.Templates
+import com.deskmail.mail.AWAIT_DAYS
 import com.deskmail.mail.Draft
 import com.deskmail.mail.DraftFile
 import com.deskmail.mail.DraftState
@@ -200,6 +201,7 @@ object ComposeTags {
     const val BODY = "compose-body"
     const val ATTACHING = "compose-attaching"
     const val TEMPLATES = "compose-templates"
+    const val AWAIT = "compose-await"
 }
 
 /**
@@ -498,13 +500,17 @@ fun ComposeScreen(
                     modifier = Modifier.testTag(ComposeTags.ATTACHING),
                 )
             }
-            // the kept texts: put in where the user's own writing ends; what was written, kept as one
-            TemplateMenu(
-                templates = composer.templates,
-                body = fields.body,
-                onInsert = { text -> fields.body = Templates.insert(fields.body, text) },
-                onKeep = { naming = true },
-            )
+            Row(horizontalArrangement = Arrangement.spacedBy(dimens.gapS), verticalAlignment = Alignment.CenterVertically) {
+                // the kept texts: put in where the user's own writing ends; what was written, kept as one
+                TemplateMenu(
+                    templates = composer.templates,
+                    body = fields.body,
+                    onInsert = { text -> fields.body = Templates.insert(fields.body, text) },
+                    onKeep = { naming = true },
+                )
+                // how long an answer is waited for once it was sent: should none come by then, a reminder
+                AwaitMenu(days = draft?.awaitDays ?: 0, onChoose = { days -> scope.launch { composer.awaitReply(draftId, days) } })
+            }
             DeskTextField(
                 value = fields.body,
                 onValueChange = { fields.body = it },
@@ -536,6 +542,22 @@ private fun TemplateMenu(templates: List<MessageTemplate>, body: String, onInser
         },
         modifier = Modifier.keepsKeyboardOpen().testTag(ComposeTags.TEMPLATES),
         icon = MailIcons.Template,
+    )
+}
+
+/**
+ * "Await reply": none, or how many days an answer is waited for once the message was sent; the
+ * button says what was chosen.
+ */
+@Composable
+private fun AwaitMenu(days: Int, onChoose: (Int) -> Unit) {
+    val none = stringResource(R.string.await_none)
+    val choices = listOf(0 to none) + AWAIT_DAYS.map { it to pluralStringResource(R.plurals.await_days, it, it) }
+    MenuButton(
+        text = if (days > 0) pluralStringResource(R.plurals.compose_await_days, days, days) else stringResource(R.string.compose_await),
+        entries = { choices.map { (count, label) -> MenuEntry.Item(label, { onChoose(count) }, checked = count == days) } },
+        modifier = Modifier.keepsKeyboardOpen().testTag(ComposeTags.AWAIT),
+        icon = MailIcons.Awaiting,
     )
 }
 

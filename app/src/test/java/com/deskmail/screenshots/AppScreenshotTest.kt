@@ -208,6 +208,14 @@ class AppScreenshotTest {
         capture("phone-conversation-light")
     }
 
+    /** A message of the user's whose answer did not come in time, among those waited for. */
+    @Test @Config(qualifiers = PHONE)
+    fun phoneAwaitingLight() {
+        open(Routes.AWAITING, "Kitap ayırtma")
+        launch(ThemeMode.Light, startRoute = Routes.AWAITING)
+        capture("phone-awaiting-light")
+    }
+
     @Test @Config(qualifiers = PHONE)
     fun phoneFoldersDark() {
         launch(ThemeMode.Dark, startRoute = Routes.FOLDERS)

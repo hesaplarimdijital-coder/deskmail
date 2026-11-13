@@ -13,6 +13,9 @@ object Routes {
     /** The mail of the senders the user called VIPs. */
     const val VIP = "vip"
 
+    /** The user's messages that answers are waited for. */
+    const val AWAITING = "awaiting"
+
     /** Every account's folders; how a phone or a tablet's rail reaches them. */
     const val FOLDERS = "folders"
     const val SEARCH = "search"

@@ -31,6 +31,7 @@ import com.deskmail.mail.MailContent
 import com.deskmail.mail.MailSource
 import com.deskmail.mail.MailView
 import com.deskmail.notify.NotifyGate
+import com.deskmail.notify.OpenRequest
 import com.deskmail.settings.AppSettings
 import com.deskmail.ui.compose.ComposeActions
 import com.deskmail.ui.compose.ComposeScreen
@@ -229,15 +230,17 @@ fun DeskMailApp(
         settingsUi.page = SettingsPage.Account(id)
         navigator.navigate(Routes.SETTINGS)
     }
-    // A notification was tapped: its message opens in the inbox, in front of whatever the window showed.
+    // A notification was tapped: its message opens in the inbox (a reminder's, among those an
+    // answer is waited for), in front of whatever the window showed.
     val request = ui.openRequest
     LaunchedEffect(request) {
         if (request != null) {
             ui.openRequest = null
-            if (ui.writingOver(Routes.INBOX) != null) compose?.close()
+            val target = if (request.place == OpenRequest.Place.Awaiting) Routes.AWAITING else Routes.INBOX
+            if (ui.writingOver(target) != null) compose?.close()
             val here = navController.currentBackStackEntry?.destination?.route
-            if (here != null && here != Routes.INBOX) navigator.navigate(Routes.INBOX)
-            if (request.messageId > 0) openMessage(mail, ui, Routes.INBOX, request.messageId)
+            if (here != null && here != target) navigator.navigate(target)
+            if (request.messageId > 0) openMessage(mail, ui, target, request.messageId)
         }
     }
     // Another app asked for a message to be written (a mailto link, something shared): it is
@@ -614,6 +617,7 @@ fun mailView(route: String, search: String = ""): MailView? = when (route) {
     Routes.UNREAD -> MailView.Unread
     Routes.STARRED -> MailView.Starred
     Routes.VIP -> MailView.Vip
+    Routes.AWAITING -> MailView.Awaiting
     Routes.SEARCH -> MailView.Search(search)
     else -> Routes.folderId(route)?.let { MailView.Folder(it) } ?: Routes.savedId(route)?.let { MailView.Saved(it) }
 }
