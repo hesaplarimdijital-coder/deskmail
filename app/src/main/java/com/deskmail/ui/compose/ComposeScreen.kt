@@ -213,6 +213,7 @@ object ComposeTags {
  * @param onDiscard the message is to be thrown away, and the screen with it.
  * @param onSent the message was handed over and waits out its time to be taken back.
  * @param onNotify shows a short notice.
+ * @param ownWindow the screen is all of a window of its own (DeX), with no shell around it.
  */
 @Composable
 fun ComposeScreen(
@@ -226,12 +227,15 @@ fun ComposeScreen(
     onSent: (SendCheck.Queued) -> Unit,
     onNotify: (String) -> Unit,
     modifier: Modifier = Modifier,
+    ownWindow: Boolean = false,
 ) {
     val colors = DeskTheme.colors
     val dimens = DeskTheme.dimens
     val resources = appResources()
     val context = LocalContext.current
-    val compact = currentWidthClass() == WidthClass.Compact
+    // A phone's layout: the actions in the shell's top bar. A window of its own has no shell, so it
+    // keeps them on the page however narrow it is made.
+    val compact = currentWidthClass() == WidthClass.Compact && !ownWindow
     val draftId = writing.draftId
     val fields = writing.fields
     // what the phone's bars cover: asked for here, so the page scrolls beneath them
