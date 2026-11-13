@@ -70,6 +70,14 @@ Sürümler [SemVer](https://semver.org/lang/tr/) kuralına uyar; 0.1.0'a kadar o
 - **Gönderen başına uzak görsel izni.** Uzak görselleri engellenmiş bir iletide, şeritteki **Bu göndericinin görsellerini hep göster**, o göndericinin bütün iletilerinde görselleri sormadan yükler. Ayarlar › Göndericiler VIP'leri ve görselleri hep gösterilenleri listeler; her biri oradan geri alınır.
 - Bunlar veritabanında üç yeni tabloda tutulur (sürüm 4'e eklendi; güncellemede kendiliğinden taşınır) ve ayarlarla birlikte başka bir cihaza taşınır.
 
+### Yanıt bekleyenler
+- **Yanıt bekle.** Yazarken metnin üstündeki **Yanıt bekle** menüsünden bir süre seç (1, 2, 3 ya da 7 gün): ileti gönderildikten sonra o sürede yanıt gelmezse DeskMail hatırlatır. Gönderilmiş bir iletiyi açınca başlığın altında da aynı düğme var (süre o andan sayılır); başka bir posta programından gönderdiğin iletiler için de çalışır.
+- **Yanıt bekleyenler klasörü.** Kenar çubuğunda (telefonda "Daha fazla"da) yeni klasör: yanıtı beklenen iletiler, süresi önce dolan üstte. İletiyi açınca başlığın altında ne zamana kadar beklendiği yazar, süre dolduysa "Yanıt gelmedi"; **Beklemeyi bırak** iletiyi listeden çıkarır.
+- **Yanıt gelince** ileti kendiliğinden listeden çıkar. Yanıt, iletiyi In-Reply-To ya da References başlığında anan ve senden başka birinden gelen bir iletidir; senin sonradan yazdığın ek ileti yanıt sayılmaz. Cihazdaki klasörlerde aranır (gelen kutusu ve açtığın klasörler).
+- **Hatırlatma.** Süre dolunca DeskMail önce hesapları eşitler (ağ gerekir; o arada gelen yanıt hatırlatmayı önler), sonra "Yanıt gelmedi" bildirimini gösterir: konu, kime gittiği, kaç gün önce gönderildiği. Dokununca ileti Yanıt bekleyenler'de açılır; **Beklemeyi bırak** bildirimden de çalışır. Hatırlatma bir kez gelir; kendi bildirim kanalı var ("Yanıt bekleyenler").
+- Bu bilgi yalnızca bu cihazda tutulur: sunucuya yazılmaz, başka bir cihaza taşınmaz.
+- Veritabanı: yanıtı beklenen iletiler için yeni bir tablo, giden kutusunda seçilen süre için bir alan (sürüm 4'e eklendi; güncellemede kendiliğinden taşınır).
+
 ### Başka bir cihaza taşıma
 - **Ayarları başka bir cihaza taşı.** Ayarlar'da yeni bölüm: **Dışa aktar**, hesapları (adresleri, sunucuları, kullanıcı adları, adları, imzaları), uygulamanın seçimlerini (geri alma süresi, yeni postayı denetleme sıklığı, deneyler), görünümü (tema, vurgu, yoğunluk), şablonları, kayıtlı aramaları ve göndericiler için verdiğin kararları (VIP, görselleri hep göster) bir dosyaya yazar; dosyanın yerini sen seçersin. **Şifreler ve jetonlar dosyaya yazılmaz:** dosyada onlara yer yok.
 - **İçe aktar** öbür cihazda o dosyayı okur: cihazda olmayan hesaplar eklenir, her biri şifresini bekler (hesabın sayfasında "Yeniden bağlan"); cihazda olan hesaplara dokunulmaz. Seçimler ve görünüm alınır; cihazda zaten olan şablon ve kayıtlı arama ikinci kez eklenmez, göndericiler için verilen kararlar cihazdakilere eklenir.
