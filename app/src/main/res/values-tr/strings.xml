@@ -284,8 +284,19 @@
         <item quantity="one">%d yeni ileti</item>
         <item quantity="other">%d yeni ileti</item>
     </plurals>
+    <string name="settings_notifications">Bildirimler</string>
+    <string name="settings_notify_on">Yeni iletiler bildiriliyor</string>
+    <string name="settings_notify_on_note">Her hesabın kendi bildirim kanalı var: sesini ya da sessizliğini sistem ayarlarından seçersin.</string>
+    <string name="settings_notify_system">Sistem ayarları</string>
+    <string name="settings_notify_off">Yeni iletiler bildirilmiyor</string>
+    <string name="settings_notify_off_note">Sistem, DeskMail’in bildirim göstermesine izin vermiyor.</string>
+    <string name="settings_notify_allow">İzin ver</string>
+    <string name="settings_check">Yeni iletileri denetle</string>
+    <string name="settings_check_note">DeskMail kapalıyken gelen kutularına ne sıklıkla bakılacağı. Sistem pil için geciktirebilir. Anlık bildirim sonraki bir ön sürümle gelecek.</string>
+    <string name="settings_check_minutes">%1$d dk</string>
+    <string name="settings_check_manual">Elle</string>
 
     <string name="settings_about">Hakkında</string>
     <string name="settings_version">Sürüm</string>
-    <string name="settings_about_note">Postanı okuyan, düzenleyen, gönderen ve arayan bir ön sürüm. Bildirimler sonraki ön sürümlerle gelir.</string>
+    <string name="settings_about_note">Postanı okuyan, düzenleyen, gönderen, arayan ve yeni iletileri bildiren bir ön sürüm. Outlook hesapları sonraki ön sürümlerle gelir.</string>
 </resources>

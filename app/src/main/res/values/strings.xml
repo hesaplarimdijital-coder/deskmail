@@ -315,8 +315,19 @@
         <item quantity="one">%d new message</item>
         <item quantity="other">%d new messages</item>
     </plurals>
+    <string name="settings_notifications">Notifications</string>
+    <string name="settings_notify_on">New mail is announced</string>
+    <string name="settings_notify_on_note">Each account has a channel of its own: its sound, or its silence, is chosen in the system’s settings.</string>
+    <string name="settings_notify_system">System settings</string>
+    <string name="settings_notify_off">New mail is not announced</string>
+    <string name="settings_notify_off_note">The system does not let DeskMail show notifications.</string>
+    <string name="settings_notify_allow">Allow</string>
+    <string name="settings_check">Look for new mail</string>
+    <string name="settings_check_note">How often the inboxes are looked at while DeskMail is closed. The system may wait longer to save the battery. Instant delivery arrives with a later pre-release.</string>
+    <string name="settings_check_minutes">%1$d min</string>
+    <string name="settings_check_manual">By hand</string>
 
     <string name="settings_about">About</string>
     <string name="settings_version">Version</string>
-    <string name="settings_about_note">A pre-release that reads, files, sends and searches your mail. Notifications arrive with the next ones.</string>
+    <string name="settings_about_note">A pre-release that reads, files, sends and searches your mail, and tells you of new mail. Outlook accounts arrive with the next ones.</string>
 </resources>

@@ -13,8 +13,10 @@ import com.deskmail.mail.AccountDraft
 import com.deskmail.mail.MailComposer
 import com.deskmail.mail.MailContent
 import com.deskmail.mail.MailSource
+import com.deskmail.mail.MailView
 import com.deskmail.mail.SetupPlan
 import com.deskmail.mail.SetupResult
+import com.deskmail.notify.NotifyGate
 import com.deskmail.settings.AppSettings
 import com.deskmail.ui.DeskMailApp
 import com.deskmail.ui.mail.MailClock
@@ -77,6 +79,9 @@ fun TestApp(
     accounts: AccountActions? = null,
     settingsUi: SettingsUiState = remember { SettingsUiState() },
     messageBody: @Composable (MailContent.Ready, Boolean, Modifier) -> Unit = { content, _, modifier -> PlainMessageBody(content, modifier) },
+    notifications: NotifyGate? = null,
+    onFrontList: ((MailView?) -> Unit)? = null,
+    onCheckChosen: () -> Unit = {},
 ) {
     DeskMailApp(
         mail = mail,
@@ -91,6 +96,9 @@ fun TestApp(
         clock = TEST_CLOCK,
         transitions = ShellTransitions.None,
         messageBody = messageBody,
+        notifications = notifications,
+        onFrontList = onFrontList,
+        onCheckChosen = onCheckChosen,
     )
 }
 
