@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.ui.ShellNavigationTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-11-13T01:10:26.977Z" hostname="runnervmwuk1x" time="0.427">
+  <properties/>
+  <testcase name="aPhoneOpensAFolderOnTopOfTheFolderList" classname="com.deskmail.ui.ShellNavigationTest" time="0.169"/>
+  <testcase name="aNewFolderSendsTheShellBackToItsStartScreen" classname="com.deskmail.ui.ShellNavigationTest" time="0.124"/>
+  <testcase name="aLargeWindowListsTheFoldersInTheSidebar" classname="com.deskmail.ui.ShellNavigationTest" time="0.131"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

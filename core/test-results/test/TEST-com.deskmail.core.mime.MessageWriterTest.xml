@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.core.mime.MessageWriterTest" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-11-13T01:08:46.691Z" hostname="runnervmwuk1x" time="0.054">
+  <properties/>
+  <testcase name="theTextArrivesAsItWasWritten" classname="com.deskmail.core.mime.MessageWriterTest" time="0.007"/>
+  <testcase name="theHeadersSayWhoWhatAndWhen" classname="com.deskmail.core.mime.MessageWriterTest" time="0.005"/>
+  <testcase name="manyRecipientsDoNotMakeALongLine" classname="com.deskmail.core.mime.MessageWriterTest" time="0.01"/>
+  <testcase name="aMessageWithoutTextStillHasABody" classname="com.deskmail.core.mime.MessageWriterTest" time="0.007"/>
+  <testcase name="aLineBreakInWhatWasTypedDoesNotStartAHeader" classname="com.deskmail.core.mime.MessageWriterTest" time="0.002"/>
+  <testcase name="aLongSubjectInAnotherAlphabetIsFoldedAndReadWhole" classname="com.deskmail.core.mime.MessageWriterTest" time="0.005"/>
+  <testcase name="hiddenRecipientsAreWrittenOnlyIntoTheCopyThatIsKept" classname="com.deskmail.core.mime.MessageWriterTest" time="0.006"/>
+  <testcase name="filesTravelWithTheirNamesAndTheirBytes" classname="com.deskmail.core.mime.MessageWriterTest" time="0.009"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
