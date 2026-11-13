@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.work.SyncWorkerTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-11-13T07:25:08.292Z" hostname="runnervmwuk1x" time="0.132">
+  <properties/>
+  <testcase name="withNothingToTellTheServersTheWorkEndsWell" classname="com.deskmail.work.SyncWorkerTest" time="0.027"/>
+  <testcase name="withNoAccountALookForMailEndsWell" classname="com.deskmail.work.SyncWorkerTest" time="0.029"/>
+  <testcase name="lookingForMailIsOnePeriodicPieceOfWorkThatFollowsTheIntervalChosen" classname="com.deskmail.work.SyncWorkerTest" time="0.025"/>
+  <testcase name="whatWasDoneFromANotificationIsToldByWorkThatWaitsForANetwork" classname="com.deskmail.work.SyncWorkerTest" time="0.05"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
