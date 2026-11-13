@@ -83,8 +83,9 @@ class ListsTest {
         db.close()
     }
 
-    private suspend fun folder(path: String, role: FolderRole): Long =
-        store.saveFolders(account, listOf(RemoteFolder(path, '/', emptySet(), selectable = true, role = role))).single { it.path == path }.id
+    /** The account's folders, as the server lists them all at once: their ids, by path. */
+    private suspend fun folders(vararg folders: Pair<String, FolderRole>): Map<String, Long> =
+        store.saveFolders(account, folders.map { (path, role) -> RemoteFolder(path, '/', emptySet(), selectable = true, role = role) }).associate { it.path to it.id }
 
     private fun message(uid: Long, subject: String, name: String, address: String) = RemoteMessage(
         uid = uid,
@@ -125,7 +126,7 @@ class ListsTest {
     /** A saved search is a folder of its own: what the search finds now, as the search now stands. */
     @Test
     fun aSavedSearchListsWhatItsSearchFinds() = runBlocking {
-        val inbox = folder("INBOX", FolderRole.Inbox)
+        val inbox = folders("INBOX" to FolderRole.Inbox).getValue("INBOX")
         store.insert(
             inbox,
             listOf(
@@ -155,8 +156,9 @@ class ListsTest {
     /** The VIPs' folder: the mail of the senders called VIPs, in the inboxes; whatever capitals their addresses come in. */
     @Test
     fun theVipsMailHasAFolderOfItsOwn() = runBlocking {
-        val inbox = folder("INBOX", FolderRole.Inbox)
-        val archive = folder("Archive", FolderRole.Archive)
+        val ids = folders("INBOX" to FolderRole.Inbox, "Archive" to FolderRole.Archive)
+        val inbox = ids.getValue("INBOX")
+        val archive = ids.getValue("Archive")
         store.insert(
             inbox,
             listOf(

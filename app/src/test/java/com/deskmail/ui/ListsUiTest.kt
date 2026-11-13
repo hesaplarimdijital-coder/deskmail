@@ -79,8 +79,7 @@ class ListsUiTest {
         press("Yeni ileti")
         compose.onNodeWithTag(ComposeTags.BODY).performTextInput("Selam,")
 
-        compose.onNodeWithTag(ComposeTags.TEMPLATES).performSemanticsAction(SemanticsActions.OnClick)
-        compose.waitForIdle()
+        click("Şablon")
         click("Toplantı")
 
         val body = ui.writing!!.fields.body
@@ -93,8 +92,7 @@ class ListsUiTest {
         press("Yeni ileti")
         compose.onNodeWithTag(ComposeTags.BODY).performTextInput("Toplantı notları ekte.\nSorusu olan yazsın.")
 
-        compose.onNodeWithTag(ComposeTags.TEMPLATES).performSemanticsAction(SemanticsActions.OnClick)
-        compose.waitForIdle()
+        click("Şablon")
         click("Yazdığını şablon olarak kaydet")
         // its first line is offered as its name
         compose.onNodeWithTag(TemplateTags.NAME).performTextReplacement("Notlar")
@@ -158,12 +156,16 @@ class ListsUiTest {
         openMessage(mail, ui, Routes.INBOX, plan)
         launch()
 
-        press("Göndereni VIP yap")
+        // a phone's top bar has room for two: the rest are under "More options"
+        press("Diğer seçenekler")
+        click("Göndereni VIP yap")
 
-        assertTrue(mail.sender("mehmet.demir@isyeri.example").vip)
+        compose.waitUntil(5_000) { mail.sender("mehmet.demir@isyeri.example").vip }
         assertTrue(plan in mail.messages(MailView.Vip))
         // and back
-        press("Göndereni VIP'lerden çıkar")
+        press("Diğer seçenekler")
+        click("Göndereni VIP'lerden çıkar")
+        compose.waitUntil(5_000) { !mail.sender("mehmet.demir@isyeri.example").vip }
         assertFalse(mail.sender("mehmet.demir@isyeri.example").vip)
     }
 
@@ -185,7 +187,7 @@ class ListsUiTest {
 
         assertTrue(mail.sender("bulten@sahaf.example").images)
         compose.onNodeWithText("Uzak görseller yüklenmedi.").assertDoesNotExist()
-        // another of the sender's messages shows them as well, without being asked
+        // shown for the sender, and so for every message of theirs: not only for this one
         assertFalse(ui.showsImages(newsletter.id))
     }
 }
