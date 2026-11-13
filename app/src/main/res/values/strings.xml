@@ -254,7 +254,7 @@
     <string name="settings_sender_images">Remote pictures always shown</string>
     <string name="settings_sender_ask">Ask again</string>
     <string name="transfer_title">Move to another device</string>
-    <string name="transfer_note">The accounts (their addresses, servers, names, signatures) and the app\'s settings are written to a file; no password is. Imported on the other device, the accounts are added, and each waits for its password.</string>
+    <string name="transfer_note">The accounts (their addresses, servers, names, signatures), the templates, the saved searches, the senders and the app\'s settings are written to a file; no password is. Imported on the other device, the accounts are added, and each waits for its password.</string>
     <string name="transfer_export">Export</string>
     <string name="transfer_import">Import</string>
     <string name="transfer_file_name">deskmail-settings.json</string>
