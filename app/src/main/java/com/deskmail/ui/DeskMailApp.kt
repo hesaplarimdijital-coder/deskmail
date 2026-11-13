@@ -543,6 +543,7 @@ fun DeskMailApp(
                         body = body,
                         resumes = resumes,
                         onNotify = notify,
+                        conversations = settings.conversations,
                     )
                     route == Routes.FOLDERS -> FoldersScreen(
                         accounts = mail.accounts,

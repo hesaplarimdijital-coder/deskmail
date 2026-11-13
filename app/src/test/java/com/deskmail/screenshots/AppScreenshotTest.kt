@@ -200,6 +200,14 @@ class AppScreenshotTest {
         capture("phone-reader-light")
     }
 
+    /** The first draft of a plan opened in the archive, and the rest of its conversation under it. */
+    @Test @Config(qualifiers = PHONE)
+    fun phoneConversationLight() {
+        open(Routes.folder(14), "Proje planı (v1)")
+        launch(ThemeMode.Light, startRoute = Routes.folder(14))
+        capture("phone-conversation-light")
+    }
+
     @Test @Config(qualifiers = PHONE)
     fun phoneFoldersDark() {
         launch(ThemeMode.Dark, startRoute = Routes.FOLDERS)

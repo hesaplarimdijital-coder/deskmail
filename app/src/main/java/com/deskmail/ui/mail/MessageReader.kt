@@ -115,6 +115,7 @@ fun MessageReader(
     onAlwaysShowImages: (() -> Unit)? = null,
     vip: Boolean? = null,
     onToggleVip: () -> Unit = {},
+    conversation: @Composable () -> Unit = {},
 ) {
     val colors = DeskTheme.colors
     val dimens = DeskTheme.dimens
@@ -233,6 +234,8 @@ fun MessageReader(
                 modifier = strip,
             )
         }
+        // the other messages of its conversation, to go on to once it is read
+        conversation()
     }
 }
 

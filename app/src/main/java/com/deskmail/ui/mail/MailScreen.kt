@@ -136,6 +136,7 @@ fun MailScreen(
     body: @Composable (MailContent.Ready, Boolean, Modifier) -> Unit,
     resumes: Int = 0,
     onNotify: (String) -> Unit = {},
+    conversations: Boolean = false,
 ) {
     val sidebar = LocalNavKind.current == NavKind.Sidebar
     val compact = currentWidthClass() == WidthClass.Compact
@@ -153,6 +154,12 @@ fun MailScreen(
     val reading = known == null || !mail.loaded
     val noAccount = !reading && mail.accounts.isEmpty()
     val filtered = remember(all, filters) { filterMessages(all, filters) }
+    // A conversation is one row where the settings say so: the newest of its messages, standing for
+    // all of them. Not in a search: what is found is listed as it was found.
+    val threads = remember(filtered, conversations, searching) {
+        if (conversations && searching == null) Threads.group(filtered) else Threads.single(filtered)
+    }
+    val listedRows = threads.rows
     val openedId = ui.openedId(route)
     // from the store, so a message stays open when a filter takes it off the list
     val opened = if (openedId == null) null else key(openedId) { watchedMessage(mail, openedId, all.firstOrNull { it.id == openedId }) }
@@ -164,6 +171,11 @@ fun MailScreen(
     val chosenIds = ui.selection(route)
     val picking = ui.picking(route)
     val chosen = remember(all, chosenIds) { if (chosenIds.isEmpty()) emptyList() else all.filter { it.id in chosenIds } }
+    // what is done to the chosen rows is done to every message they stand for
+    val acted = remember(all, chosen, threads) {
+        val ids = chosen.flatMapTo(HashSet()) { threads.of(it.id) }
+        all.filter { it.id in ids }
+    }
     // a message that left the list (moved or deleted, here or elsewhere) is selected no longer
     LaunchedEffect(known, chosenIds) {
         if (known != null && chosen.size != chosenIds.size) ui.select(route, chosen.mapTo(HashSet()) { it.id })
@@ -171,16 +183,16 @@ fun MailScreen(
     val several = chosen.size > 1 || (picking && chosen.isNotEmpty())
     val bulk = BulkActions(
         // read them all while one is unread; unread only when all were read
-        onToggleUnread = { mail.markUnread(chosen.map { it.id }, unread = chosen.none { it.unread }) },
-        onToggleStar = { mail.markStarred(chosen.map { it.id }, starred = !chosen.all { it.starred }) },
-        onArchive = if (chosen.any { archivable(mail, it) }) ({ actions.archive(chosen.map { it.id }) }) else null,
-        onMove = chosen.firstOrNull { mail.moveTargets(it).isNotEmpty() }?.let { anchor -> { ui.moveSeveral(anchor, chosen.map { it.id }) } },
-        onDelete = { actions.delete(chosen.map { it.id }) },
+        onToggleUnread = { mail.markUnread(acted.map { it.id }, unread = acted.none { it.unread }) },
+        onToggleStar = { mail.markStarred(acted.map { it.id }, starred = !acted.all { it.starred }) },
+        onArchive = if (acted.any { archivable(mail, it) }) ({ actions.archive(acted.map { it.id }) }) else null,
+        onMove = acted.firstOrNull { mail.moveTargets(it).isNotEmpty() }?.let { anchor -> { ui.moveSeveral(anchor, acted.map { it.id }) } },
+        onDelete = { actions.delete(acted.map { it.id }) },
         onClear = { ui.clearSelection(route) },
     )
     // what travels when a row is dragged to a folder: the selection when the row is part of it
     val drag: (MailMessage) -> DeskDragPayload? = { message ->
-        val ids = if (message.id in chosenIds) chosen.map { it.id } else listOf(message.id)
+        val ids = if (message.id in chosenIds) acted.map { it.id } else threads.of(message.id)
         DeskDragPayload(MESSAGE_DRAG, ids.map { it.toString() }, resources.getQuantityString(R.plurals.message_count, ids.size, ids.size))
     }
     val composeLabel = stringResource(R.string.action_new_message)
@@ -212,8 +224,10 @@ fun MailScreen(
             }
         } else buildList {
             add(MenuEntry.Item(openLabel, { open(message) }))
-            add(MenuEntry.Item(if (message.unread) markReadLabel else markUnreadLabel, { mail.toggleUnread(message.id) }, shortcut = "U"))
-            add(MenuEntry.Item(if (message.starred) unstarLabel else starLabel, { mail.toggleStarred(message.id) }, shortcut = "S"))
+            // a conversation's row: what is done is done to all of its messages here
+            val ids = threads.of(message.id)
+            add(MenuEntry.Item(if (message.unread) markReadLabel else markUnreadLabel, { mail.markUnread(ids, unread = !message.unread) }, shortcut = "U"))
+            add(MenuEntry.Item(if (message.starred) unstarLabel else starLabel, { mail.markStarred(ids, starred = !message.starred) }, shortcut = "S"))
             add(MenuEntry.Separator)
             if (onWrite != null && isDraft(mail, message)) {
                 // a draft is gone on with, not answered
@@ -225,9 +239,11 @@ fun MailScreen(
                 add(MenuEntry.Item(forwardLabel, { onWrite(DraftKind.Forward, message) }, shortcut = "F", icon = MailIcons.ForwardMail))
                 add(MenuEntry.Separator)
             }
-            if (archivable(mail, message)) add(MenuEntry.Item(archiveLabel, { actions.archive(listOf(message.id)) }, shortcut = "E", icon = MailIcons.Archive))
-            if (mail.moveTargets(message).isNotEmpty()) add(MenuEntry.Item(moveLabel, { ui.moving = message }, shortcut = "V", icon = MailIcons.MoveTo))
-            add(MenuEntry.Item(deleteLabel, { actions.delete(listOf(message.id)) }, shortcut = "Delete", icon = DeskIcons.Delete, destructive = true))
+            if (archivable(mail, message)) add(MenuEntry.Item(archiveLabel, { actions.archive(ids) }, shortcut = "E", icon = MailIcons.Archive))
+            if (mail.moveTargets(message).isNotEmpty()) {
+                add(MenuEntry.Item(moveLabel, { if (ids.size > 1) ui.moveSeveral(message, ids) else ui.moving = message }, shortcut = "V", icon = MailIcons.MoveTo))
+            }
+            add(MenuEntry.Item(deleteLabel, { actions.delete(ids) }, shortcut = "Delete", icon = DeskIcons.Delete, destructive = true))
             add(MenuEntry.Separator)
             // from here on a tap adds or removes a row: how several are chosen with a finger
             add(MenuEntry.Item(selectLabel, { ui.pick(route, message.id) }))
@@ -375,6 +391,7 @@ fun MailScreen(
             onToggleVip = {
                 screenScope.launch { mail.markSender(message.fromAddress, marks.copy(vip = !marks.vip)) }
             },
+            conversation = { ConversationStrip(mail, message, onOpen = { other -> openMessage(mail, ui, route, other.id) }) },
             onAttachment = files::handle,
             onRetry = { mail.retryContent(message.id) },
             barsPadding = bars,
@@ -411,7 +428,7 @@ fun MailScreen(
         )
         Box(Modifier.fillMaxSize()) {
             MessageRows(
-                messages = filtered,
+                messages = listedRows,
                 openedId = opened?.id,
                 state = ui.listState(route),
                 onOpen = open,
@@ -432,7 +449,7 @@ fun MailScreen(
         // Back ends the picking before it does anything else
         BackHandler(enabled = picking) { ui.clearSelection(route) }
     }
-    if (!sidebar) SideEffect { ui.setShown(route, filtered.map { it.id }, leadingItems = 1) }
+    if (!sidebar) SideEffect { ui.setShown(route, listedRows.map { it.id }, leadingItems = 1) }
 
     BoxWithConstraints(Modifier.fillMaxSize()) {
         // what the list and the reader have between them
@@ -453,7 +470,7 @@ fun MailScreen(
                                     route = route,
                                     title = title,
                                     count = all.size,
-                                    messages = filtered,
+                                    messages = listedRows,
                                     openedId = opened?.id,
                                     ui = ui,
                                     prefs = prefs,
@@ -713,6 +730,39 @@ private fun SaveSearchDialog(query: String, onDismiss: () -> Unit, onSave: (Stri
     }
 }
 
+/**
+ * The conversation of the open message under it, where it has more than one: each of its messages
+ * on a line (who, when, the first words), oldest first, the open one marked; another opens on a tap.
+ * Under the message, not above it: the subject stays where the eye looks first, and a long
+ * conversation does not push the message down.
+ */
+@Composable
+private fun ConversationStrip(mail: MailSource, message: MailMessage, onOpen: (MailMessage) -> Unit) {
+    val conversation by remember(mail, message.id, message.thread) { mail.observeThread(message) }.collectAsState(initial = emptyList())
+    if (conversation.size < 2) return
+    val dates = rememberDateLabels()
+    val dimens = DeskTheme.dimens
+    Column(Modifier.fillMaxWidth().padding(horizontal = dimens.pagePadding).padding(top = dimens.gapS, bottom = dimens.gapXl).testTag(MailTags.CONVERSATION)) {
+        Text(
+            pluralString(R.plurals.conversation_count, conversation.size),
+            style = DeskTheme.type.labelSmall,
+            color = DeskTheme.colors.textTertiary,
+            modifier = Modifier.padding(bottom = dimens.gapXs),
+        )
+        conversation.forEach { other ->
+            DeskListRow(
+                // the user's own messages say whom they went to, as the lists say it
+                title = if (other.outgoing) stringResource(R.string.message_to, other.to) else other.fromName,
+                subtitle = other.preview.ifBlank { other.subject },
+                trailing = dates.short(other.sentAt),
+                selected = other.id == message.id,
+                strong = other.unread,
+                onClick = { if (other.id != message.id) onOpen(other) },
+            )
+        }
+    }
+}
+
 /** Whether the message is a draft that lies in its account's Drafts folder: one to go on writing, not one to answer. */
 fun isDraft(mail: MailSource, message: MailMessage): Boolean = mail.folder(message.folderId)?.role == FolderRole.Drafts
 
@@ -737,6 +787,7 @@ object MailTags {
     const val SEARCH = "mail-search"
     const val SECURITY = "mail-security"
     const val HEADERS = "mail-headers"
+    const val CONVERSATION = "mail-conversation"
 }
 
 /**

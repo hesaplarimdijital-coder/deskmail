@@ -237,6 +237,12 @@ class LiveMail(
         lists[view] = list
     }
 
+    override fun observeThread(message: MailMessage): Flow<List<MailMessage>> {
+        val root = message.thread.substringAfter(' ', "")
+        if (root.isEmpty()) return flowOf(listOf(message))
+        return shown(db.messages().observeThread(message.accountId, root).map { once(it, stored) })
+    }
+
     override fun observeMessage(id: Long): Flow<MailMessage?> =
         db.messages().observe(id)
             .combine(outgoing.filterNotNull()) { row, written -> row?.toMessage(row.folderId in written) }

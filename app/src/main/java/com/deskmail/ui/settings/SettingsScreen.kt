@@ -321,6 +321,7 @@ private fun SettingsList(
         item(key = "header") { PageHeader(stringResource(desktopkit.R.string.dk_settings)) }
         item(key = "accounts") { AccountsSection(accounts, canAdd, onOpenAccount, onAddAccount) }
         item(key = "notifications") { NotificationsSection(settings, notifications, onCheckChosen) }
+        item(key = "lists") { ListsSection(settings) }
         item(key = "writing") { WritingSection(settings) }
         if (templates != null) item(key = "templates") { TemplatesSection(templates, onTemplate) }
         item(key = "searches") { SavedSearchesSection(searches, onSearch) }
@@ -406,6 +407,19 @@ private fun NotificationsSection(settings: AppSettings, gate: NotifyGate?, onChe
                 }
             }
         }
+    }
+}
+
+/** The lists of mail: a conversation as one row, or every message on its own. */
+@Composable
+private fun ListsSection(settings: AppSettings) {
+    SettingsSection(stringResource(R.string.settings_lists)) {
+        SwitchRow(
+            title = stringResource(R.string.settings_conversations),
+            checked = settings.conversations,
+            onCheckedChange = settings::updateConversations,
+            subtitle = stringResource(R.string.settings_conversations_note),
+        )
     }
 }
 

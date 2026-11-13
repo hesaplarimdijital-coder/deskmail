@@ -288,6 +288,11 @@ Her biri ayrı PR; sıra, cihazda en çok denenmesi gerekenden başlar.
 8. Aşama 2, brifteki sırayla: konuşma dizileri · erteleme · şablonlar · kayıtlı aramalar · yanıt
    bekleyenler · VIP ve gönderen başına uzak görsel izni · ayrıntı paneli sekmeleri (Ayrıntılar, Ekler,
    Güvenlik, Ham başlıklar) · biçimli yazma · ayarları taşıma · bildirimden hızlı yanıt.
+   - **Konuşma dizileri: yapıldı.** İletinin konuşması References'ın ilk adı, yoksa In-Reply-To, yoksa kendi
+     Message-ID'si (`threadOf`; hesap başına). Liste satırları `Threads.group` ile kurulur; satıra yapılan, o
+     listedeki bütün iletilerine yapılır. Açılan iletinin altında konuşmanın iletileri (`MessageDao.observeThread`;
+     Çöp ve Spam dışında). Şerit iletinin üstünde değil: konu yerinde kalsın, uzun bir konuşma iletiyi itmesin.
+     Ayar `AppSettings.conversations` (varsayılan açık), ayar dosyasıyla taşınır.
    - **Ayrıntı paneli sekmeleri (Güvenlik, Ham başlıklar): yapıldı.** Başlık satırları iletinin metniyle
      birlikte alınır ve `body.headers`'ta durur (şema 4; en çok 64 000 karakter); daha önce gelmiş iletininki
      sekme açılınca alınır (`MailSync.headers`). Sonuçlar en üstteki `Authentication-Results` başlığından
