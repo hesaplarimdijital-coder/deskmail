@@ -105,7 +105,7 @@ class AppSettingsTest {
     @Test
     fun theChoicesGoToAnotherDevice() {
         val here = AppSettings(prefs).apply {
-            updateUndoSendSeconds(20)
+            updateUndoSendSeconds(15)
             updateCheckMinutes(30)
             updateDarkenMessages(false)
             updateWebLayer(WebLayer.Software)
@@ -118,13 +118,13 @@ class AppSettingsTest {
         val there = AppSettings(elsewhere)
         // how often the mail is looked for changed: the background work has to hear of it
         assertTrue(there.adopt(portable))
-        assertEquals(20, there.undoSendSeconds)
+        assertEquals(15, there.undoSendSeconds)
         assertEquals(30, there.checkMinutes)
         assertFalse(there.darkenMessages)
         assertEquals(WebLayer.Software, there.webLayer)
         assertEquals(0.45f, there.listShare, 0f)
         // kept, as any choice is
-        assertEquals(20, AppSettings(elsewhere).undoSendSeconds)
+        assertEquals(15, AppSettings(elsewhere).undoSendSeconds)
         // the same again: nothing for the background work
         assertFalse(there.adopt(portable))
     }

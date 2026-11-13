@@ -206,7 +206,7 @@ class SettingsScreenTest {
         val settings = testSettings()
         val accounts = FakeAccounts().apply { portableAccounts = listOf(ayse) }
         compose.setContent { TestApp(testMail(), prefs, settings, startRoute = Routes.SETTINGS, accounts = accounts) }
-        settings.updateUndoSendSeconds(20)
+        settings.updateUndoSendSeconds(15)
 
         press("Dışa aktar")
         val asked = shadowOf(compose.activity).nextStartedActivityForResult.intent
@@ -221,7 +221,7 @@ class SettingsScreenTest {
         compose.waitUntil(5_000) { compose.onAllNodesWithText("Ayarlar dosyaya yazıldı.").fetchSemanticsNodes().isNotEmpty() }
         val written = SettingsFile.read(file.toString(Charsets.UTF_8))!!
         assertEquals(listOf(ayse), written.accounts)
-        assertEquals(20, written.settings["undo_send_seconds"])
+        assertEquals(15, written.settings["undo_send_seconds"])
         assertEquals(prefs.themeMode.name, written.look!!.theme)
     }
 
