@@ -76,8 +76,21 @@ internal fun MessageEntity.toMessage(outgoing: Boolean): MailMessage {
         cc = MailAddress.labels(MailAddress.decode(ccList)),
         answered = answered,
         forwarded = forwarded,
+        thread = threadOf(accountId, refs, inReplyTo, globalId),
     )
 }
+
+/**
+ * The conversation a message belongs to: the message it began with, as the first of its References
+ * names it, else the one it answers (In-Reply-To), else the message itself. Within its account
+ * ("3 <id@host>"); empty for a message without a Message-ID, which is a conversation of its own.
+ */
+internal fun threadOf(accountId: Long, refs: String, inReplyTo: String, globalId: String): String {
+    val root = refs.trim().split(WHITESPACE).firstOrNull { it.isNotEmpty() } ?: inReplyTo.trim().ifEmpty { globalId.trim() }
+    return if (root.isEmpty()) "" else "$accountId $root"
+}
+
+private val WHITESPACE = Regex("\\s+")
 
 /**
  * [found] with every message once. Gmail's "All Mail" holds every message of the account once

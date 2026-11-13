@@ -204,6 +204,18 @@ abstract class MessageDao {
     )
     abstract fun observeVip(): Flow<List<MessageEntity>>
 
+    /**
+     * The messages of a conversation in an account, oldest first: the one it began with ([root], its
+     * Message-ID) and those that answer it, by their References or In-Reply-To. Not in Trash or Spam.
+     */
+    @Query(
+        "SELECT message.* FROM message JOIN folder ON folder.id = message.folderId " +
+            "WHERE message.accountId = :accountId AND folder.role NOT IN ('Trash', 'Junk') AND $STAYING " +
+            "AND (message.globalId = :root OR message.inReplyTo = :root OR instr(message.refs, :root) > 0) " +
+            "ORDER BY message.date, message.id",
+    )
+    abstract fun observeThread(accountId: Long, root: String): Flow<List<MessageEntity>>
+
     /** The newest messages of every account, each once: "All Mail" holds the same messages once more. */
     @Query(
         "SELECT message.* FROM message JOIN folder ON folder.id = message.folderId " +

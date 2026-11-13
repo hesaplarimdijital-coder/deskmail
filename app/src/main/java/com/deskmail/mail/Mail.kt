@@ -97,6 +97,13 @@ data class MailMessage(
     /** It was answered, here or by another mail program; [forwarded] likewise for sending it on. */
     val answered: Boolean = false,
     val forwarded: Boolean = false,
+    /**
+     * The conversation it belongs to, in its account: the message the conversation began with, as
+     * its References (or In-Reply-To) name it. Empty for one that is a conversation of its own.
+     */
+    val thread: String = "",
+    /** How many messages of its conversation a list's row of it stands for ([com.deskmail.ui.mail.Threads]). */
+    val threadCount: Int = 1,
 )
 
 /** What a message says, as far as the device has it. */
