@@ -22,8 +22,8 @@ import kotlinx.coroutines.delay
 
 /**
  * The field of the search screen, above what it finds. What is looked for follows the typing
- * after a short pause, or at once with the keyboard's search key. The field takes the focus when
- * the screen opens with nothing typed yet, and whenever "/" asks for it.
+ * after a short pause, or at once with the keyboard's search key. The field asks for the focus
+ * when the screen opens with nothing typed yet, and whenever "/" asks for it.
  *
  * What is typed is the window's ([MailUiState.searchText]): it is still there when the screen is
  * come back to.
