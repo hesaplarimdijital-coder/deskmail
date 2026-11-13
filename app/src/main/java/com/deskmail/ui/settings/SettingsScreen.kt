@@ -474,6 +474,10 @@ private fun SendersSection(senders: Map<String, SenderMarks>, onChange: (String,
             SettingRow(address, subtitle = stringResource(R.string.settings_sender_images)) {
                 DeskButton(stringResource(R.string.settings_sender_ask), { onChange(address, marks.copy(images = false)) })
             }
+        }
+    }
+}
+
 /** The settings to another device: what goes into the file, and the two ways, out and in. */
 @Composable
 private fun TransferSection(onExport: () -> Unit, onImport: () -> Unit) {
