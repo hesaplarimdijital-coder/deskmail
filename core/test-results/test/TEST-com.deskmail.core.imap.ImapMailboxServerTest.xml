@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.core.imap.ImapMailboxServerTest" tests="13" skipped="0" failures="0" errors="0" timestamp="2026-11-13T07:58:36.978Z" hostname="runnervmwuk1x" time="4.212">
+  <properties/>
+  <testcase name="flagsAreReadAsTheyAreNow" classname="com.deskmail.core.imap.ImapMailboxServerTest" time="0.238"/>
+  <testcase name="aMessageInPartsGivesItsTextItsHtmlAndItsFiles" classname="com.deskmail.core.imap.ImapMailboxServerTest" time="0.359"/>
+  <testcase name="aTextLargerThanTheLimitStaysOnTheServer" classname="com.deskmail.core.imap.ImapMailboxServerTest" time="0.248"/>
+  <testcase name="foldersAreCountedWithoutOpeningThem" classname="com.deskmail.core.imap.ImapMailboxServerTest" time="0.223"/>
+  <testcase name="aMessageThatIsGoneHasNoBody" classname="com.deskmail.core.imap.ImapMailboxServerTest" time="0.147"/>
+  <testcase name="aFileIsFetchedDecoded" classname="com.deskmail.core.imap.ImapMailboxServerTest" time="0.865"/>
+  <testcase name="aFolderThatDoesNotExistIsTheServersNo" classname="com.deskmail.core.imap.ImapMailboxServerTest" time="0.098"/>
+  <testcase name="theFolderSaysWhatItHoldsAndWhichMessagesAreRecent" classname="com.deskmail.core.imap.ImapMailboxServerTest" time="0.387"/>
+  <testcase name="plainTextIsDecodedFromItsCharset" classname="com.deskmail.core.imap.ImapMailboxServerTest" time="0.332"/>
+  <testcase name="aMessagesHeaderIsReadWithItsTurkishLetters" classname="com.deskmail.core.imap.ImapMailboxServerTest" time="0.235"/>
+  <testcase name="readingAMessageDoesNotMarkItRead" classname="com.deskmail.core.imap.ImapMailboxServerTest" time="0.546"/>
+  <testcase name="anHtmlPageIsDecodedByTheCharsetItDeclares" classname="com.deskmail.core.imap.ImapMailboxServerTest" time="0.311"/>
+  <testcase name="headersComeForTheUidsThatExist" classname="com.deskmail.core.imap.ImapMailboxServerTest" time="0.223"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

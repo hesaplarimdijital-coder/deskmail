@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.data.RoomSyncStoreTest" tests="11" skipped="0" failures="0" errors="0" timestamp="2026-11-13T08:00:31.567Z" hostname="runnervmwuk1x" time="0.297">
+  <properties/>
+  <testcase name="aRoleTheUserGaveAFolderStays" classname="com.deskmail.data.RoomSyncStoreTest" time="0.021"/>
+  <testcase name="anAnsweredMarkThatWaitsForTheServerIsNotOverwritten" classname="com.deskmail.data.RoomSyncStoreTest" time="0.026"/>
+  <testcase name="theFoldersBecomeThoseTheServerLists" classname="com.deskmail.data.RoomSyncStoreTest" time="0.032"/>
+  <testcase name="aSearchShowsAMessageOnceThoughAllMailHoldsItAgain" classname="com.deskmail.data.RoomSyncStoreTest" time="0.028"/>
+  <testcase name="aMarkThatWaitsForTheServerIsNotOverwritten" classname="com.deskmail.data.RoomSyncStoreTest" time="0.029"/>
+  <testcase name="messagesAreKeptOnceAndFoundByTheirWords" classname="com.deskmail.data.RoomSyncStoreTest" time="0.026"/>
+  <testcase name="whatLeavesTheDeviceLeavesTheIndex" classname="com.deskmail.data.RoomSyncStoreTest" time="0.023"/>
+  <testcase name="aTextIsKeptWithItsFilesAndFound" classname="com.deskmail.data.RoomSyncStoreTest" time="0.031"/>
+  <testcase name="theUnifiedViewsLeaveOutWhatDoesNotBelong" classname="com.deskmail.data.RoomSyncStoreTest" time="0.028"/>
+  <testcase name="whatASearchFindsIsListedNewestFirstWhileItStaysWhereItIs" classname="com.deskmail.data.RoomSyncStoreTest" time="0.028"/>
+  <testcase name="marksAreBroughtUpToDate" classname="com.deskmail.data.RoomSyncStoreTest" time="0.023"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
