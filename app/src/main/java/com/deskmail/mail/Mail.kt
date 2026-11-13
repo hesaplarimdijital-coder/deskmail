@@ -94,6 +94,9 @@ data class MailMessage(
     val outgoing: Boolean = false,
     /** Who else it went to ("Cc"), as one line; empty for nobody. */
     val cc: String = "",
+    /** It was answered, here or by another mail program; [forwarded] likewise for sending it on. */
+    val answered: Boolean = false,
+    val forwarded: Boolean = false,
 )
 
 /** What a message says, as far as the device has it. */
@@ -105,12 +108,15 @@ sealed interface MailContent {
      * @param text the message as plain text: shown where HTML cannot be.
      * @param html the message as HTML, cleaned, when it has such a part.
      * @param remoteImages the HTML asks for images from the network, which are not loaded unless the reader says so.
+     * @param pictures the pictures the HTML shows in its own place ("cid:…"), by the name it refers
+     *   to them by. They are the message's own: fetched from its server when the page asks for them.
      */
     data class Ready(
         val text: String,
         val html: String? = null,
         val remoteImages: Boolean = false,
         val attachments: List<MailAttachment> = emptyList(),
+        val pictures: Map<String, MailAttachment> = emptyMap(),
     ) : MailContent
 
     /** It could not be fetched; [kind] says why, as far as that is known. */

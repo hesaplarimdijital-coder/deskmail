@@ -50,7 +50,7 @@ class WebViewWarmUp(private val log: AppLog) {
         val started = SystemClock.elapsedRealtime()
         return runCatching {
             val themed = ContextThemeWrapper(context.applicationContext, R.style.DeskMailWebLight)
-            val web = createMessageWebView(themed) {}
+            val web = createMessageWebView(themed, onLink = {})
             web.loadDataWithBaseURL(null, EMPTY_PAGE, "text/html", "utf-8", null)
             Handler(Looper.getMainLooper()).postDelayed({ runCatching { web.destroy() } }, KEEP_MS)
         }.onSuccess {

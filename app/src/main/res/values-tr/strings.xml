@@ -32,6 +32,8 @@
     </plurals>
     <string name="message_unread">Okunmamış</string>
     <string name="message_starred">Yıldızlı</string>
+    <string name="message_answered">Yanıtlandı</string>
+    <string name="message_forwarded">İletildi</string>
     <plurals name="message_attachments">
         <item quantity="one">%d ek</item>
         <item quantity="other">%d ek</item>

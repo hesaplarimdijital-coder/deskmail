@@ -176,7 +176,7 @@ class LiveMail(
             val failure = failed[id]
             when {
                 message == null -> MailContent.Unavailable
-                message.bodyState == MessageEntity.BODY_KEPT && body != null -> MailContent.Ready(body.text, body.html, body.remoteImages, files.toFiles())
+                message.bodyState == MessageEntity.BODY_KEPT && body != null -> MailContent.Ready(body.text, body.html, body.remoteImages, files.toFiles(), files.toPictures())
                 message.bodyState == MessageEntity.BODY_NONE -> MailContent.Unavailable
                 failure != null -> MailContent.Failed(failure)
                 else -> MailContent.Loading

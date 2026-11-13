@@ -3,10 +3,12 @@ package com.deskmail.ui.mail
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
+import android.net.Uri
 import android.view.ContextThemeWrapper
 import android.view.View
 import android.view.ViewGroup
 import android.webkit.WebResourceRequest
+import android.webkit.WebResourceResponse
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
@@ -33,12 +35,16 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.viewinterop.AndroidView
 import com.deskmail.R
 import com.deskmail.deskMail
+import com.deskmail.mail.MailAttachment
 import com.deskmail.mail.MailContent
 import com.deskmail.settings.WebLayer
 import desktopkit.theme.DeskTheme
 import desktopkit.theme.GlassMode
 import desktopkit.theme.LocalGlassMode
 import kotlinx.coroutines.delay
+import java.io.ByteArrayInputStream
+import java.io.File
+import java.io.FileInputStream
 import kotlin.math.roundToInt
 
 /**
@@ -59,6 +65,10 @@ import kotlin.math.roundToInt
  *
  * Where the device has no usable WebView (it is being updated, or disabled), the message's plain
  * text is shown instead.
+ *
+ * The pictures the message shows in its own place ("cid:…", [MailContent.Ready.pictures]) are the
+ * message's own parts: [picture] has one on the device (fetching it from the server if it must)
+ * when the page asks for it. It is called on a thread of the WebView's that may wait.
  */
 @Composable
 fun WebMessageBody(
@@ -69,13 +79,21 @@ fun WebMessageBody(
     layer: WebLayer = WebLayer.Default,
     onLink: (String) -> Unit = {},
     onTall: (Boolean) -> Unit = {},
+    picture: (MailAttachment) -> File? = { null },
 ) {
     val context = LocalContext.current
     val dark = DeskTheme.colors.isDark
     val latestOnLink by rememberUpdatedState(onLink)
+    val latestPictures by rememberUpdatedState(content.pictures)
+    val latestPicture by rememberUpdatedState(picture)
     val web = remember(context, dark) {
         val themed = ContextThemeWrapper(context, if (dark) R.style.DeskMailWebDark else R.style.DeskMailWebLight)
-        runCatching { createMessageWebView(themed) { url -> latestOnLink(url) } }
+        runCatching {
+            createMessageWebView(themed, onLink = { url -> latestOnLink(url) }) { name ->
+                val part = pictureNamed(latestPictures, name)
+                part?.let { latestPicture(it) }?.let { file -> part to file }
+            }
+        }
             .onSuccess {
                 logWebViewOnce(context)
                 // the device's WebView is going now: nothing is left to warm up
@@ -291,7 +309,11 @@ internal const val PLAIN_TEXT_EMS = 42
  * A WebView for mail: everything a message does not need is off. [context]'s theme decides whether
  * the page is light or dark (android:isLightTheme).
  */
-internal fun createMessageWebView(context: Context, onLink: (String) -> Unit): WebView = MessageWebView(context).apply {
+internal fun createMessageWebView(
+    context: Context,
+    onLink: (String) -> Unit,
+    picture: (String) -> Pair<MailAttachment, File>? = { null },
+): WebView = MessageWebView(context).apply {
     // as tall as its content: the reader scrolls, not the view
     layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
     setBackgroundColor(Color.TRANSPARENT)
@@ -319,7 +341,33 @@ internal fun createMessageWebView(context: Context, onLink: (String) -> Unit): W
             onLink(request.url.toString())
             return true
         }
+
+        // A picture of the message's own ("cid:…") is handed over from the device; nothing else is
+        // answered here, and the page's policy and the blocked network keep everything else out.
+        override fun shouldInterceptRequest(view: WebView, request: WebResourceRequest): WebResourceResponse? {
+            val url = request.url
+            if (!url.scheme.equals("cid", ignoreCase = true)) return null
+            val found = try {
+                picture(Uri.decode(url.schemeSpecificPart.orEmpty()))
+            } catch (e: Exception) {
+                null
+            }
+            if (found == null) return WebResourceResponse("text/plain", "utf-8", 404, "Not Found", emptyMap(), ByteArrayInputStream(ByteArray(0)))
+            val (part, file) = found
+            return WebResourceResponse(part.mimeType.substringBefore(';').trim().ifEmpty { "application/octet-stream" }, null, FileInputStream(file))
+        }
     }
+}
+
+/**
+ * The picture a message's HTML asks for by [name] ("cid:" and what follows it, decoded): the
+ * part with that Content-ID, angle brackets or not, with the case the sender's program wrote or
+ * another (some write the reference and the header differently).
+ */
+internal fun pictureNamed(pictures: Map<String, MailAttachment>, name: String): MailAttachment? {
+    val id = name.trim().removePrefix("<").removeSuffix(">")
+    if (id.isEmpty()) return null
+    return pictures[id] ?: pictures.entries.firstOrNull { it.key.equals(id, ignoreCase = true) }?.value
 }
 
 /** The WebView a message is shown in. Being drawn, it tells [LayerLimits] what the device's graphics allow. */

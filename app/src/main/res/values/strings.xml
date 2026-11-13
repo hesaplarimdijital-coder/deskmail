@@ -40,6 +40,8 @@
     <!-- What a row says of its message, for TalkBack -->
     <string name="message_unread">Unread</string>
     <string name="message_starred">Starred</string>
+    <string name="message_answered">Answered</string>
+    <string name="message_forwarded">Forwarded</string>
     <plurals name="message_attachments">
         <item quantity="one">%d attachment</item>
         <item quantity="other">%d attachments</item>

@@ -454,6 +454,25 @@ class LiveMailTest {
         assertTrue(mail.observe(MailView.Inbox).first().single().unread)
     }
 
+    /** A picture the message shows in its own place is no file to offer: the page asks for it by its name, and it is fetched like a file. */
+    @Test
+    fun aPictureInsideTheMessageIsKeptApartFromItsFiles() = runBlocking {
+        val png = ByteArray(300) { (it * 7 % 251).toByte() }
+        server.deliverWithPicture("Bülten", "<p>Merhaba</p><img src=\"cid:logo@bulten.example\">", "logo@bulten.example", png, hoursAgo(1))
+        val id = account()
+        assertEquals(MailSync.Outcome.Done, sync.account(id))
+        val message = mail.observe(MailView.Inbox).first().single()
+
+        val content = withTimeout(15_000) { mail.observeContent(message.id).first { it is MailContent.Ready } } as MailContent.Ready
+
+        assertTrue(content.attachments.isEmpty())
+        assertEquals(setOf("logo@bulten.example"), content.pictures.keys)
+        // the page still shows it: the cleaning lets a picture of the message's own through
+        assertTrue(content.html.orEmpty(), content.html.orEmpty().contains("cid:logo@bulten.example"))
+        val fetched = mail.fetch(content.pictures.getValue("logo@bulten.example")) as FetchedFile.Ready
+        assertArrayEquals(png, fetched.file.readBytes())
+    }
+
     @Test
     fun aFilesNameCannotLeadOutOfItsDirectory() {
         assertEquals("rapor.pdf", safeFileName("rapor.pdf"))
