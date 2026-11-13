@@ -37,6 +37,18 @@ class WriteActivityTest {
         assertTrue(activity.isFinishing)
     }
 
+    /**
+     * A window the system makes anew after it ended the app's process reads its message as it was
+     * kept, with what was typed into it: that is no message begun just now, to be thrown away when
+     * it is closed as it was read.
+     */
+    @Test
+    fun aWindowMadeAnewKeepsItsMessage() {
+        assertTrue(WriteActivity.fresh(restored = false, begunFresh = true))
+        assertFalse(WriteActivity.fresh(restored = true, begunFresh = true))
+        assertFalse(WriteActivity.fresh(restored = false, begunFresh = false))
+    }
+
     @Test
     fun aMessageIsWrittenInOneWindowAtMost() {
         val windows = WriteWindows()

@@ -59,7 +59,8 @@ class WriteActivity : ComponentActivity() {
             finishAndRemoveTask()
             return
         }
-        val writing = state.writing ?: Writing(draftId, Routes.OUTBOX, fresh = intent.getBooleanExtra(EXTRA_FRESH, false)).also { state.writing = it }
+        val begunFresh = intent.getBooleanExtra(EXTRA_FRESH, false)
+        val writing = state.writing ?: Writing(draftId, Routes.OUTBOX, fresh = fresh(restored = savedInstanceState != null, begunFresh)).also { state.writing = it }
         deskMail.writeWindows.opened(draftId, taskId)
         setContent {
             WriteWindow(
@@ -131,6 +132,14 @@ class WriteActivity : ComponentActivity() {
     }
 
     companion object {
+        /**
+         * Whether the window writes a message begun just now, to be thrown away when it is closed
+         * untouched: only as it was first opened. A window the system makes anew, after it ended the
+         * app's process, reads the message as it was kept, with what was typed into it, and would
+         * take that for "untouched": the message, and its copy among the server's drafts, would go.
+         */
+        internal fun fresh(restored: Boolean, begunFresh: Boolean): Boolean = begunFresh && !restored
+
         private const val EXTRA_DRAFT = "com.deskmail.extra.DRAFT"
         private const val EXTRA_FRESH = "com.deskmail.extra.FRESH"
         private const val EXTRA_OPENER = "com.deskmail.extra.OPENER"
