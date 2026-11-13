@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.ui.mail.MailStatesTest" tests="14" skipped="0" failures="0" errors="0" timestamp="2026-11-13T06:11:10.937Z" hostname="ip-10-0-129-250" time="1.162">
+  <properties/>
+  <testcase name="aMessageWhoseTextIsNotOnTheDeviceSaysSo" classname="com.deskmail.ui.mail.MailStatesTest" time="0.069"/>
+  <testcase name="aScreenThatComesToTheFrontAsksForItsMail" classname="com.deskmail.ui.mail.MailStatesTest" time="0.066"/>
+  <testcase name="anAccountThatHasToSignInAgainSaysSoAboveTheList" classname="com.deskmail.ui.mail.MailStatesTest" time="0.106"/>
+  <testcase name="aMessageTooTallForALayerTakesTheGlassAway" classname="com.deskmail.ui.mail.MailStatesTest" time="0.13"/>
+  <testcase name="aListWhoseMailIsOnItsWayDoesNotSayItIsEmpty" classname="com.deskmail.ui.mail.MailStatesTest" time="0.112"/>
+  <testcase name="withTheExperimentOffNoMessageIsUnderGlass" classname="com.deskmail.ui.mail.MailStatesTest" time="0.123"/>
+  <testcase name="howTallAMessageMayBeForALayerOfItsOwn" classname="com.deskmail.ui.mail.MailStatesTest" time="0.088"/>
+  <testcase name="withoutAnAccountTheInboxOffersToAddOne" classname="com.deskmail.ui.mail.MailStatesTest" time="0.089"/>
+  <testcase name="remoteImagesStayOutUntilTheyAreAskedFor" classname="com.deskmail.ui.mail.MailStatesTest" time="0.067"/>
+  <testcase name="whenTheShellsGlassIsOn" classname="com.deskmail.ui.mail.MailStatesTest" time="0.028"/>
+  <testcase name="whatAMessagesWebViewDrawsInto" classname="com.deskmail.ui.mail.MailStatesTest" time="0.027"/>
+  <testcase name="theGlassStaysOverAMessage" classname="com.deskmail.ui.mail.MailStatesTest" time="0.087"/>
+  <testcase name="anAccountThatCouldNotBeReachedOffersToTryAgain" classname="com.deskmail.ui.mail.MailStatesTest" time="0.081"/>
+  <testcase name="aTextThatCouldNotBeFetchedOffersToTryAgain" classname="com.deskmail.ui.mail.MailStatesTest" time="0.086"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

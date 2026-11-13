@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.core.log.LogRedactorTest" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-11-13T05:51:37.344Z" hostname="runnervmccnms" time="0.006">
+  <properties/>
+  <testcase name="oauthFieldsInJson" classname="com.deskmail.core.log.LogRedactorTest" time="0.001"/>
+  <testcase name="oauthFieldsInUrlsAndForms" classname="com.deskmail.core.log.LogRedactorTest" time="0.0"/>
+  <testcase name="ordinaryLinesStayAsTheyAre" classname="com.deskmail.core.log.LogRedactorTest" time="0.001"/>
+  <testcase name="imapLoginKeepsTheUserAndDropsThePassword" classname="com.deskmail.core.log.LogRedactorTest" time="0.0"/>
+  <testcase name="authenticateAndAuthDropTheirResponse" classname="com.deskmail.core.log.LogRedactorTest" time="0.001"/>
+  <testcase name="nothingOfASecretSurvives" classname="com.deskmail.core.log.LogRedactorTest" time="0.002"/>
+  <testcase name="aJsonWebTokenAnywhere" classname="com.deskmail.core.log.LogRedactorTest" time="0.0"/>
+  <testcase name="httpAuthorizationAndDecodedXoauth2" classname="com.deskmail.core.log.LogRedactorTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
