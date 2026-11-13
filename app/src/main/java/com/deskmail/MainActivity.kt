@@ -23,6 +23,7 @@ import com.deskmail.notify.OpenRequest
 import com.deskmail.ui.CommandHost
 import com.deskmail.ui.DeskMailApp
 import com.deskmail.ui.KeyRouter
+import com.deskmail.ui.compose.ComposeRequest
 import com.deskmail.ui.isTyping
 import com.deskmail.ui.mail.MailUiState
 import com.deskmail.ui.settings.SettingsUiState
@@ -90,6 +91,8 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         // started by a tapped notification: the message it told of is opened
         if (savedInstanceState == null) OpenRequest.from(intent)?.let { state.mail.openRequest = it }
+        // started by a mailto link or by something shared with the app: a message is begun with it
+        if (savedInstanceState == null) ComposeRequest.from(this, intent)?.let { state.mail.composeRequest = it }
         setContent {
             DeskMailApp(
                 mail = deskMail.mail,
@@ -121,6 +124,7 @@ class MainActivity : ComponentActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         OpenRequest.from(intent)?.let { state.mail.openRequest = it }
+        ComposeRequest.from(this, intent)?.let { state.mail.composeRequest = it }
     }
 
     /** Back in front: the screen that shows mail looks for what is new, unless it just did. */

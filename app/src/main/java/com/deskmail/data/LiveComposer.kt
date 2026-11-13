@@ -115,7 +115,7 @@ class LiveComposer(
             state = OutboxEntity.DRAFT,
             toText = seed.to,
             ccText = seed.cc,
-            bccText = "",
+            bccText = seed.bcc,
             subject = seed.subject,
             body = seed.body + signed(account),
             messageId = "<" + UUID.randomUUID() + "@" + account.address.substringAfterLast('@', "deskmail.invalid") + ">",

@@ -66,7 +66,7 @@ class DemoComposer(private val mail: DemoMail, private val now: Instant = Instan
         val id = nextId++
         val signed = if (account.signature.isBlank()) "" else "\n\n-- \n" + account.signature + "\n"
         val draft = if (source == null) {
-            Draft(id, account.id, to = seed.to, cc = seed.cc, subject = seed.subject, body = seed.body + signed)
+            Draft(id, account.id, to = seed.to, cc = seed.cc, bcc = seed.bcc, subject = seed.subject, body = seed.body + signed)
         } else {
             val text = (mail.observeContent(source.id).first() as? MailContent.Ready)?.text.orEmpty()
             val sender = AddressList.format(listOf(MailAddress(source.fromName, source.fromAddress)))

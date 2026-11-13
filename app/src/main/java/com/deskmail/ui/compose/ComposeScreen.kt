@@ -432,7 +432,7 @@ private fun DraftFiles(files: List<DraftFile>, context: Context, onRemove: (Draf
 }
 
 /** What a chosen file is called and what kind it is, as the app that offers it says. */
-private fun describe(context: Context, uri: Uri): Pair<String, String> {
+internal fun describe(context: Context, uri: Uri): Pair<String, String> {
     var name = uri.lastPathSegment?.substringAfterLast('/').orEmpty()
     runCatching {
         context.contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use { cursor ->

@@ -52,7 +52,7 @@ data class Draft(
 }
 
 /** What a new message starts with when something outside asked for it: a mailto link, something shared. */
-data class DraftSeed(val to: String = "", val cc: String = "", val subject: String = "", val body: String = "")
+data class DraftSeed(val to: String = "", val cc: String = "", val subject: String = "", val body: String = "", val bcc: String = "")
 
 /** What became of handing a message over to be sent. */
 sealed interface SendCheck {

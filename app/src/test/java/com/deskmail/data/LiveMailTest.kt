@@ -19,7 +19,6 @@ import jakarta.mail.Flags
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
@@ -79,7 +78,7 @@ class LiveMailTest {
 
     @After
     fun close() {
-        scope.cancel()
+        endAndWait(scope)
         db.close()
     }
 

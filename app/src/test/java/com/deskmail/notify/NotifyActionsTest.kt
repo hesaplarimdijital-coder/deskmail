@@ -10,13 +10,13 @@ import com.deskmail.data.AccountStore
 import com.deskmail.data.LiveMail
 import com.deskmail.data.MailSync
 import com.deskmail.data.TestImapServer
+import com.deskmail.data.endAndWait
 import com.deskmail.data.testBox
 import com.deskmail.db.DeskMailDatabase
 import jakarta.mail.Flags
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -76,7 +76,7 @@ class NotifyActionsTest {
 
     @After
     fun close() {
-        scope.cancel()
+        endAndWait(scope)
         db.close()
     }
 
