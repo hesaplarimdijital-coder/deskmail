@@ -14,7 +14,12 @@ import jakarta.mail.Flags
 import jakarta.mail.Multipart
 import jakarta.mail.internet.MimeMessage
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.Runnable
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeoutOrNull
 import org.junit.rules.ExternalResource
 import java.io.ByteArrayInputStream
 import java.time.Instant
@@ -205,6 +210,16 @@ fun MimeMessage.sentText(): String {
 fun MimeMessage.sentFiles(): List<Pair<String, ByteArray>> {
     val whole = content as? Multipart ?: return emptyList()
     return (0 until whole.count).map { whole.getBodyPart(it) }.filter { it.fileName != null }.map { it.fileName to it.inputStream.readBytes() }
+}
+
+/**
+ * Ends what [scope] runs and waits until it is over, so that nothing of it reaches for a database
+ * that is closed right after. (Cut off in the middle of a query it would fail there with nobody
+ * left to hear it, and the next test that runs coroutines would be blamed for it.)
+ */
+fun endAndWait(scope: CoroutineScope) {
+    val job = scope.coroutineContext[Job] ?: return
+    runBlocking { withTimeoutOrNull(10_000) { job.cancelAndJoin() } }
 }
 
 /** Waits until [check] holds: for what the app does on threads of its own. */

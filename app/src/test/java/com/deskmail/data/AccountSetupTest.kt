@@ -17,7 +17,6 @@ import com.deskmail.mail.SetupPlan
 import com.deskmail.mail.SetupResult
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -68,7 +67,7 @@ class AccountSetupTest {
 
     @After
     fun close() {
-        background.cancel()
+        endAndWait(background)
         db.close()
     }
 

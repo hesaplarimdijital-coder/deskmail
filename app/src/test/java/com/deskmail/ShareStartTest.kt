@@ -4,7 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
-import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.lifecycle.ViewModelProvider
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
@@ -34,7 +34,8 @@ class ShareStartTest {
         val link = Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:ayse@example.org?subject=Merhaba")).setClass(context, MainActivity::class.java)
 
         ActivityScenario.launch<MainActivity>(link).use { scenario ->
-            compose.waitForIdle()
+            // the database is asked on a thread of its own who there is to write from; then the window says there is nobody
+            compose.waitUntil(timeoutMillis = 15_000) { compose.onAllNodesWithText("Önce bir hesap ekle.").fetchSemanticsNodes().isNotEmpty() }
 
             scenario.onActivity { activity ->
                 val window = ViewModelProvider(activity)[WindowState::class.java]
@@ -42,7 +43,6 @@ class ShareStartTest {
                 assertNull(window.mail.composeRequest)
                 assertNull(window.mail.writing)
             }
-            compose.onNodeWithText("Önce bir hesap ekle.").assertExists()
         }
     }
 }

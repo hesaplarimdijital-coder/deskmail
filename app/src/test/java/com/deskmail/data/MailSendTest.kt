@@ -17,7 +17,6 @@ import jakarta.mail.internet.InternetAddress
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.After
@@ -106,7 +105,7 @@ class MailSendTest {
 
     @After
     fun close() {
-        scope.cancel()
+        endAndWait(scope)
         db.close()
     }
 

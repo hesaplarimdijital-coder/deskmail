@@ -12,7 +12,6 @@ import com.deskmail.mail.AccountState
 import com.deskmail.mail.SetupResult
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.After
@@ -56,7 +55,7 @@ class MailSyncTest {
 
     @After
     fun close() {
-        background.cancel()
+        endAndWait(background)
         db.close()
     }
 
