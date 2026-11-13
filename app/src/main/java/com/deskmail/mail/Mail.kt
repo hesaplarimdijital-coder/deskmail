@@ -104,6 +104,8 @@ data class MailMessage(
     val thread: String = "",
     /** How many messages of its conversation a list's row of it stands for ([com.deskmail.ui.mail.Threads]). */
     val threadCount: Int = 1,
+    /** Its Message-ID, the same for every copy of it; empty for one that has none. */
+    val globalId: String = "",
 )
 
 /** What a message says, as far as the device has it. */
@@ -166,6 +168,37 @@ sealed interface MailView {
 
     /** A search kept as a folder of its own ([SavedSearch]): what the search finds for its query as it now stands. */
     data class Saved(val id: Long) : MailView
+
+    /** The user's messages that answers are waited for ([AwaitedReply]): their copies under Sent, the one due first on top. */
+    data object Awaiting : MailView
+}
+
+/**
+ * A message of the user's that an answer is waited for: sent from [accountId] under [messageId]
+ * (its Message-ID, as [MailMessage.globalId] has it) to [recipients]. Should none come by [dueAt],
+ * the user is reminded of it; [told] once that was done. It is forgotten when an answer comes.
+ */
+data class AwaitedReply(
+    val id: Long,
+    val accountId: Long,
+    val messageId: String,
+    val subject: String,
+    val recipients: String,
+    val sentAt: Instant,
+    val dueAt: Instant,
+    val told: Boolean = false,
+)
+
+/** What came of asking to wait for an answer to a message. */
+enum class AwaitOutcome {
+    /** It is waited for now. */
+    Waiting,
+
+    /** An answer to it is here already: there is nothing to wait for. */
+    Answered,
+
+    /** The message is gone, or it has no Message-ID an answer could name. */
+    Gone,
 }
 
 /** A search kept as a folder of its own in the sidebar: [query] as it was typed, [name] what the folder is called. */

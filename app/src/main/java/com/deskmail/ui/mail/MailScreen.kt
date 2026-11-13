@@ -43,6 +43,7 @@ import com.deskmail.core.mail.AuthResults
 import com.deskmail.core.mail.FolderRole
 import com.deskmail.core.text.SearchQuery
 import com.deskmail.mail.AccountState
+import com.deskmail.mail.AwaitOutcome
 import com.deskmail.mail.DraftKind
 import com.deskmail.mail.MailAccount
 import com.deskmail.mail.MailContent
@@ -361,6 +362,13 @@ fun MailScreen(
                 modifier = Modifier.padding(top = 48.dp),
                 description = stringResource(R.string.vip_none_text),
             )
+            // no answer is waited for: how one comes to be
+            view == MailView.Awaiting && mail.awaited.isEmpty() -> MessageScreen(
+                title = stringResource(R.string.awaiting_none_title),
+                icon = MailIcons.Awaiting,
+                modifier = Modifier.padding(top = 48.dp),
+                description = stringResource(R.string.awaiting_none_text),
+            )
             else -> MessageScreen(
                 title = stringResource(if (filters.isEmpty()) R.string.list_empty_title else R.string.list_empty_filtered),
                 icon = MailIcons.Mail,
@@ -368,9 +376,12 @@ fun MailScreen(
             )
         }
     }
+    val answeredText = stringResource(R.string.awaiting_answered)
     val reader: @Composable (MailMessage, (() -> Unit)?, @Composable () -> Unit) -> Unit = { message, onClose, trailing ->
         // what the user said of its sender: a VIP, whose remote images are shown without being asked
         val marks = mail.sender(message.fromAddress)
+        // one of the user's messages under Sent: an answer to it can be waited for
+        val awaitable = message.globalId.isNotEmpty() && mail.folder(message.folderId)?.role == FolderRole.Sent
         MessageReader(
             message = message,
             // watched here, by the reader that shows it: a message that is being closed keeps its text while it leaves
@@ -392,6 +403,11 @@ fun MailScreen(
                 screenScope.launch { mail.markSender(message.fromAddress, marks.copy(vip = !marks.vip)) }
             },
             conversation = { ConversationStrip(mail, message, onOpen = { other -> openMessage(mail, ui, route, other.id) }) },
+            awaiting = mail.awaitedOf(message),
+            onAwait = if (awaitable) ({ days ->
+                screenScope.launch { if (mail.awaitReply(message.id, days) == AwaitOutcome.Answered) onNotify(answeredText) }
+            }) else null,
+            onStopAwaiting = { id -> screenScope.launch { mail.stopAwaiting(id) } },
             onAttachment = files::handle,
             onRetry = { mail.retryContent(message.id) },
             barsPadding = bars,
@@ -788,6 +804,10 @@ object MailTags {
     const val SECURITY = "mail-security"
     const val HEADERS = "mail-headers"
     const val CONVERSATION = "mail-conversation"
+
+    /** Under a message of the user's: the answer that is waited for, and "Await reply". */
+    const val AWAITING = "mail-awaiting"
+    const val AWAIT = "mail-await"
 }
 
 /**

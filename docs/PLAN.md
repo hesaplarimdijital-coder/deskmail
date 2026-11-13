@@ -71,6 +71,8 @@ Room 3; şema dışa aktarılır, v1'den itibaren göç testi vardır.
   alanlar, Message-ID, yanıtlanan iletinin kimliği ve dizisi, kaynak ileti (gönderilince yanıtlandı/iletildi diye
   işaretlenir), `sendAfter` (gönderiyi geri alma süresi), sunucunun hata yanıtı. Dosyaların kopyası uygulamanın
   kendi deposunda durur (önbellekte değil: ileti gidene kadar orada olmalı).
+- `awaiting` (şema 4): yanıtı beklenen iletiler; hesap, Message-ID (hesapta tekil), konu, alıcılar, gönderildiği ve
+  beklemenin bittiği zaman, hatırlatıldığı zaman. Yazılan iletide seçilen süre `outbox.awaitDays`'te.
 - Ayrı bir adres tablosu yok: alıcı önerileri en yeni 500 iletinin adreslerinden okunur.
 
 ## Senkron
@@ -304,6 +306,12 @@ Her biri ayrı PR; sıra, cihazda en çok denenmesi gerekenden başlar.
      ekranının sorgusudur ve her açılışta yeniden aranır (`MailView.Saved`). VIP klasörü gelen kutularındaki
      VIP postasıdır (`MessageDao.observeVip`; gönderenin adresi küçük harfe çevrilmiş olarak tutulur ve
      öyle karşılaştırılır). Üçü de ayar dosyasıyla taşınır.
+   - **Yanıt bekleyenler: yapıldı.** `awaiting` tablosu (şema 4; hesapta Message-ID tekil) ve yazılan iletide
+     seçilen süre (`outbox.awaitDays`). Gönderilen ileti beklemeye alınır; Gönderilmiş'teki bir ileti de sonradan
+     beklenebilir, süre o andan sayılır. Yanıt: iletiyi In-Reply-To ya da References'ta anan ve kullanıcının
+     kendi adresinden gelmeyen ileti (`answered`; cihazdaki iletilerde aranır). Her eşitlemeden sonra
+     `ReplyReminder` bakar; süre dolunca `RemindWorker` önce eşitler, sonra bir kez bildirir. Yalnızca bu
+     cihazda tutulur.
    - **Ayarları taşıma: yapıldı.** `SettingsFile` (JSON; `kind`, `format`), şifre ve jeton için yeri yok. İçe
      aktarılan hesap şifresiz eklenir (`AccountStore.addWaiting`, durumu `NeedsLogin`), "Yeniden bağlan" ile açılır.
    - **Bildirimden hızlı yanıt: yapıldı.** `RemoteInput`; yanıt `DraftKind.Reply` ile başlar, yazılan en üste
