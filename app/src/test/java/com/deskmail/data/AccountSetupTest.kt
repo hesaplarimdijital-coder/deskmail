@@ -220,4 +220,19 @@ class AccountSetupTest {
         assertEquals(0, db.messages().count())
         assertTrue(db.messages().search("aranacak").isEmpty())
     }
+
+    /** Whoever keeps something of an account outside the database (its notifications) hears of its removal, with its folders. */
+    @Test
+    fun whoeverKeepsSomethingOfAnAccountHearsOfItsRemoval() = runBlocking {
+        val removed = ArrayList<Pair<Long, List<Long>>>()
+        val told = AccountSetup(db, accounts, sync, Autoconfig(fetch = { null }), log, background, onRemoved = { account, folders -> removed += account to folders })
+        val id = (told.add(draft()) as SetupResult.Done).accountId
+        assertEquals(MailSync.Outcome.Done, sync.account(id))
+        val folders = db.folders().ofAccount(id).map { it.id }
+        assertTrue(folders.isNotEmpty())
+
+        told.remove(id)
+
+        assertEquals(listOf(id to folders), removed)
+    }
 }

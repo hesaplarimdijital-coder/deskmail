@@ -207,6 +207,24 @@ abstract class MessageDao {
     @Query("SELECT * FROM body WHERE messageId = :messageId")
     abstract suspend fun bodyOf(messageId: Long): BodyEntity?
 
+    // ------------------------------------------------------------------ what new mail is told of
+
+    /** The highest UID the device has of a folder; null for one it has nothing of. */
+    @Query("SELECT MAX(uid) FROM message WHERE folderId = :folderId")
+    abstract suspend fun highestUid(folderId: Long): Long?
+
+    /** A folder's unread messages that arrived after the one numbered [uid] and are still there, the newest first. */
+    @Query("SELECT * FROM message WHERE folderId = :folderId AND uid > :uid AND seen = 0 AND $STAYING ORDER BY uid DESC LIMIT :limit")
+    abstract suspend fun unreadAfter(folderId: Long, uid: Long, limit: Int): List<MessageEntity>
+
+    /** Which of the messages [ids] are still unread and still where they were. */
+    @Query("SELECT id FROM message WHERE id IN (:ids) AND seen = 0 AND $STAYING")
+    abstract suspend fun stillUnread(ids: List<Long>): List<Long>
+
+    /** How many unread messages there are that are still where they were: changes whenever one is read, moved or arrives. */
+    @Query("SELECT COUNT(*) FROM message WHERE seen = 0 AND $STAYING")
+    abstract fun observeUnreadCount(): Flow<Int>
+
     // ------------------------------------------------------------------ what the sync reads and writes
 
     @Query("SELECT * FROM message WHERE id = :id")

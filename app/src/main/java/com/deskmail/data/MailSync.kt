@@ -83,14 +83,30 @@ class MailSync(
     /** The accounts whose lists are being brought up to date right now. */
     val syncing: StateFlow<Set<Long>> get() = listing
 
+    /** Told after an account was brought up to date, whoever asked for it: what tells of new mail hangs here. */
+    @Volatile
+    var onSynced: (suspend (accountId: Long) -> Unit)? = null
+
     /**
      * Brings an account up to date: its folders with the server's counts, its inbox, and the
      * folders at the paths [also].
      */
-    suspend fun account(accountId: Long, also: Set<String> = emptySet()): Outcome =
-        listed(accountId) { account, remote ->
+    suspend fun account(accountId: Long, also: Set<String> = emptySet()): Outcome {
+        val outcome = listed(accountId) { account, remote ->
             accountSync.sync(remote, accountId, account.syncDays, clock(), also, FIRST_BODIES)
         }
+        if (outcome == Outcome.Done) {
+            try {
+                onSynced?.invoke(accountId)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                // what follows a sync is not the sync: it worked
+                log.error(TAG, "account $accountId was synced, but what follows that failed", e)
+            }
+        }
+        return outcome
+    }
 
     /** Brings one folder up to date. */
     suspend fun folder(folderId: Long): Outcome {

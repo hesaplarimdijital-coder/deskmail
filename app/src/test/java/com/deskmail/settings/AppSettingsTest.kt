@@ -23,6 +23,7 @@ class AppSettingsTest {
         assertTrue(settings.darkenMessages)
         assertEquals(WebLayer.Default, settings.webLayer)
         assertEquals(10, settings.undoSendSeconds)
+        assertEquals(15, settings.checkMinutes)
         assertTrue(settings.inspectorCollapsed)
         assertEquals(0.45f, settings.listShare, 0f)
     }
@@ -36,6 +37,7 @@ class AppSettingsTest {
             updateDarkenMessages(false)
             updateWebLayer(WebLayer.Software)
             updateUndoSendSeconds(15)
+            updateCheckMinutes(60)
             updateInspector(width = 380f, collapsed = false)
             updateListShare(0.6f)
         }
@@ -47,6 +49,7 @@ class AppSettingsTest {
         assertFalse(restarted.darkenMessages)
         assertEquals(WebLayer.Software, restarted.webLayer)
         assertEquals(15, restarted.undoSendSeconds)
+        assertEquals(60, restarted.checkMinutes)
         assertFalse(restarted.inspectorCollapsed)
         assertEquals(380f, restarted.inspectorWidth, 0f)
         assertEquals(0.6f, restarted.listShare, 0f)
@@ -77,5 +80,19 @@ class AppSettingsTest {
         assertEquals(5, AppSettings(prefs).undoSendSeconds)
         settings.updateUndoSendSeconds(0)
         assertEquals(10, AppSettings(prefs).undoSendSeconds)
+    }
+
+    /** How often the mail is looked for is one of the choices; "by hand" (0) is one of them. */
+    @Test
+    fun howOftenTheMailIsLookedForIsOneOfTheChoices() {
+        val settings = AppSettings(prefs)
+        settings.updateCheckMinutes(0)
+        assertEquals(0, AppSettings(prefs).checkMinutes)
+
+        // the system allows nothing shorter than a quarter of an hour
+        settings.updateCheckMinutes(5)
+        assertEquals(15, settings.checkMinutes)
+        prefs.edit().putInt("check_minutes", 7).commit()
+        assertEquals(15, AppSettings(prefs).checkMinutes)
     }
 }
