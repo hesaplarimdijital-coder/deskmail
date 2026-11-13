@@ -48,7 +48,7 @@ kitten istenenler `docs/KIT-ISTEKLERI.md`'de durur.
   arayüz (yalnızca desktop-kit).
 - **Araçlar** desktop-kit ile aynı: AGP 9.4.1, Gradle 9.8.2, Kotlin 2.4.20, Robolectric 4.17 (API 36),
   Java 21; ek olarak KSP 2.3.13.
-- **Çalışma zamanı:** desktop-kit 2.8.0, Angus Mail 2.0.5, jsoup 1.24.1, Room 3.0.3, WorkManager 2.12.0,
+- **Çalışma zamanı:** desktop-kit 2.9.0, Angus Mail 2.0.5, jsoup 1.24.1, Room 3.0.3, WorkManager 2.12.0,
   activity-compose 1.13.0, lifecycle 2.11.0, coroutines 1.11.0.
 - **Test:** JUnit 4.13.2, GreenMail 2.1.15 (IDLE, MOVE, XOAUTH2 girişi var; CONDSTORE ve SPECIAL-USE
   yok, onlar için betikli sahte sunucu).
@@ -157,7 +157,8 @@ Room 3; şema dışa aktarılır, v1'den itibaren göç testi vardır.
   önizleme; sağa kaydırmak arşivler, sola kaydırmak erteler), `PullToRefresh` ile, üstte `FilterChips`,
   yüklenirken `SkeletonList`. Çoklu seçimde `SelectionBar` listenin altında. Okuma `DetailTransition` ve
   `CompactTopBar` ile; uzak görseller için `StatusBanner`. Yeni ileti kabuğun yüzen düğmesi
-  (`ShellPrimaryAction`). Yazma tam ekran.
+  (`ShellPrimaryAction`). Yazma tam ekran; alt çubuk kalır (yazılan ileti başka ekrana bakıp dönülünce yerinde). Hesap
+  eklerken alt çubuk yok (`HideBottomNavigation`).
 - **Tablet (ray):** rayın yanındaki alan 880 dp'den genişse `HorizontalSplitPane` ile liste ve okuma yan
   yana, darsa `DetailTransition` (Tab S11 Ultra dik tutulunca 924 dp: liste → ileti).
 - **DeX ve büyük pencere:** menü çubuğu kısayol tablosundan; kenar çubuğunun en üstünde "Yeni ileti",
@@ -383,6 +384,11 @@ ve rayda okunmamış sayısı, satırda önizleme, tabloda kalın okunmamış ve
 değişir), fareyle çerçeve çizerek seçme, şablonun imlecin olduğu yere eklenmesi, değişen klasör listesinde
 açık ekranın korunması, klasörlerin yalnız kenar çubuğunda ve iç içe durması. Ayrıntısı
 `docs/KIT-ISTEKLERI.md`'nin "2.8.0" satırlarında.
+
+**desktop-kit 2.9.0 (beta.3):** camın telefonun alt kenarındaki hatası düzeldi (sistem düğmelerinin altında
+son piksel satırı bulanıksızdı); telefonda hesap eklerken alt gezinme çubuğu yok (`HideBottomNavigation`).
+Yazma ekranı çubuğu tutar: yazılan ileti başka bir ekrana bakıp dönülünce yerinde durur ve telefonda oraya
+gidip gelmenin yolu o çubuk.
 
 **Kiti bekleyenler** (uygulamada yamanmaz; `docs/KIT-ISTEKLERI.md`): çipli alıcı alanı ve önerileri (4;
 kitin `TokenField`'ı bitirilmemiş yazıyı uygulamaya vermiyor, 26), biçimli metin düzenleyici (24),

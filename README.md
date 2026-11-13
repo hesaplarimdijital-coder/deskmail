@@ -4,7 +4,7 @@ Kişisel kullanım için Android e-posta uygulaması: telefon, tablet ve Samsung
 e-posta yapan bir istemci. Arayüzün tamamı [desktop-kit](https://github.com/hesaplarimdijital-coder/desktop-kit)
 ile çizilir. Play'de değildir; APK olarak kurulur.
 
-> **Durum:** 0.1.0'a giden ön sürümler; şimdiki `0.1.0-beta.2`. Hesap eklenir (Gmail uygulama şifresiyle;
+> **Durum:** 0.1.0'a giden ön sürümler; şimdiki `0.1.0-beta.3`. Hesap eklenir (Gmail uygulama şifresiyle;
 > başka sağlayıcılar şifreyle), klasörler ve iletiler eşitlenir, iletiler güvenli biçimde ve konuşmalarıyla
 > gösterilir; okundu ve yıldız sunucuya yazılır, iletiler arşivlenir, taşınır, silinir, ertelenir (hepsi geri
 > alınır; birden çok ileti seçilip birlikte de), ekler açılır ve kaydedilir; ileti yazılır, yanıtlanır,
@@ -77,7 +77,7 @@ Her karar uygulamanın yılda bir güncellemeyle yaşayabilmesine göre verilir:
 | `docs/KIT-ISTEKLERI.md` | desktop-kit'ten istenen parçalar: kitin getirdikleri ve DeskMail'in onlarla yaptığı, açık olanlar için şimdilik izlenen yol. |
 | `CHANGELOG.md` | Sürüm sürüm değişiklikler. |
 
-Araçlar desktop-kit 2.8.0 ile aynıdır: Android Gradle eklentisi 9.4.1, Gradle 9.8.2, Kotlin 2.4.20;
+Araçlar desktop-kit 2.9.0 ile aynıdır: Android Gradle eklentisi 9.4.1, Gradle 9.8.2, Kotlin 2.4.20;
 `minSdk` 34, `compileSdk` 37, `targetSdk` 36. Testler Java 21 ister (Robolectric 4.17, API 36).
 
 ## Derleme ve testler

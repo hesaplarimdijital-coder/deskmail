@@ -2,6 +2,17 @@
 
 Sürümler [SemVer](https://semver.org/lang/tr/) kuralına uyar; 0.1.0'a kadar olanlar ön sürümdür (`0.1.0-alpha.N`, ardından `0.1.0-beta.N`). Her sürümün imzalı APK'sı GitHub'daki sürüm sayfasına eklenir.
 
+## 0.1.0-beta.3 (14 Kasım 2026)
+
+desktop-kit 2.9.0'a geçiş. Outlook girişi sıradaki sürümde.
+
+### Telefon
+- **Hesap eklerken alt çubuk yok.** Ayarlar › Hesap ekle açıkken alttaki gezinme çubuğu (Gelen, Klasörler, Ara, Daha fazla) gizlenir: sayfa sistem düğmelerine kadar uzar, kurulum yarıda bırakılıp başka sekmeye geçilmez. Hesap eklenince ya da Geri ile çubuk geri gelir. İleti yazarken çubuk yerinde kalır: yazılan ileti başka bir ekrana bakıp dönülünce yerinde durur, telefonda oraya gidip gelmenin yolu o çubuk. Tablette ve DeX'te değişiklik yok.
+- **Ekranın en alt satırı.** Üç düğmeli gezinmede, sistem düğmelerinin altında ekranın en alt piksel satırında alttaki liste bulanıksız görünüyordu; artık orada camın rengi var (kitin düzeltmesi).
+
+### Altyapı
+- desktop-kit 2.8.0 → 2.9.0; derleme araçları aynı.
+
 ## 0.1.0-beta.2 (13 Kasım 2026)
 
 desktop-kit 2.8.0'a geçiş. Kit, DeskMail'in istediği 23 parçanın hepsini bu sürümle getirdi: kitin yeni parçaları uygulamaya bağlandı, uygulamanın onları beklerken izlediği geçici yollar kalktı. Outlook girişi sıradaki sürümde.
