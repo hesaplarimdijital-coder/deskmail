@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.core.compose.MailtoLinkTest" tests="9" skipped="0" failures="0" errors="0" timestamp="2026-11-13T01:16:15.161Z" hostname="runnervmwuk1x" time="0.067">
+  <properties/>
+  <testcase name="otherHeadersAreLeftOut" classname="com.deskmail.core.compose.MailtoLinkTest" time="0.03"/>
+  <testcase name="whatIsNoMailtoLinkIsNotRead" classname="com.deskmail.core.compose.MailtoLinkTest" time="0.002"/>
+  <testcase name="recipientsNamedAsHeadersJoinTheOthers" classname="com.deskmail.core.compose.MailtoLinkTest" time="0.001"/>
+  <testcase name="anAddressAloneIsWhoItGoesTo" classname="com.deskmail.core.compose.MailtoLinkTest" time="0.001"/>
+  <testcase name="recipientsSubjectAndTextAreTakenAsTheyWereEncoded" classname="com.deskmail.core.compose.MailtoLinkTest" time="0.008"/>
+  <testcase name="whatIsBrokenIsReadAsFarAsItGoes" classname="com.deskmail.core.compose.MailtoLinkTest" time="0.001"/>
+  <testcase name="aPlusIsAPlusAndAnEncodedSeparatorIsText" classname="com.deskmail.core.compose.MailtoLinkTest" time="0.006"/>
+  <testcase name="aValueThatTriesToBreakItsLineStaysOneLine" classname="com.deskmail.core.compose.MailtoLinkTest" time="0.001"/>
+  <testcase name="lettersThatWereNotEncodedAreKept" classname="com.deskmail.core.compose.MailtoLinkTest" time="0.002"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
