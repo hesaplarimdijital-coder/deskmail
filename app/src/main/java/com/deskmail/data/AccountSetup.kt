@@ -9,11 +9,13 @@ import com.deskmail.core.net.Credentials
 import com.deskmail.core.net.ServerAddress
 import com.deskmail.core.provider.AuthKind
 import com.deskmail.core.provider.Autoconfig
+import com.deskmail.core.provider.MailSettings
 import com.deskmail.core.provider.ProviderTable
 import com.deskmail.db.DeskMailDatabase
 import com.deskmail.mail.AccountActions
 import com.deskmail.mail.AccountDraft
 import com.deskmail.mail.AccountState
+import com.deskmail.mail.PortableAccount
 import com.deskmail.mail.SetupPlan
 import com.deskmail.mail.SetupResult
 import kotlinx.coroutines.CancellationException
@@ -100,6 +102,25 @@ class AccountSetup(
 
     override suspend fun saveWriting(accountId: Long, senderName: String, signature: String) = withContext(io) {
         accounts.saveWriting(accountId, senderName, signature)
+    }
+
+    override suspend fun portable(): List<PortableAccount> = withContext(io) {
+        accounts.all().map { account ->
+            PortableAccount(
+                address = account.address,
+                name = account.name,
+                senderName = account.senderName,
+                provider = account.provider,
+                settings = MailSettings(account.imapServer(), account.smtpServer(), account.username, account.auth()),
+                syncDays = account.syncDays,
+                notifyMode = account.notifyMode,
+                signature = account.signature,
+            )
+        }
+    }
+
+    override suspend fun adopt(accounts: List<PortableAccount>): Int = withContext(io) {
+        accounts.count { account -> this@AccountSetup.accounts.addWaiting(account) != null }
     }
 
     override suspend fun remove(accountId: Long) = withContext(io) {

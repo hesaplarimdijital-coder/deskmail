@@ -145,6 +145,39 @@ class AppSettings(private val prefs: SharedPreferences, private val log: AppLog?
         prefs.edit().putFloat(KEY_LIST_SHARE, listShare).apply()
     }
 
+    // ------------------------------------------------------------------ to another device
+
+    /**
+     * The settings that go along to another device ("Move settings"), by name: what the user chose,
+     * not how the panes of this device's windows happen to be laid out.
+     */
+    fun portable(): Map<String, Any> = linkedMapOf(
+        KEY_UNDO_SEND to undoSendSeconds,
+        KEY_CHECK_MINUTES to checkMinutes,
+        KEY_DARKEN_MESSAGES to darkenMessages,
+        KEY_READER_UNDER_BARS to readerUnderBars,
+        KEY_GLASS to glass,
+        KEY_GLASS_OVER_MESSAGES to glassOverMessages,
+        KEY_WEB_LAYER to webLayer.name,
+    )
+
+    /**
+     * Takes what another device's [portable] gave: each setting this version knows, when it is of
+     * the right kind; anything else is passed over. True when how often the mail is looked for
+     * changed, which the background work has to hear of.
+     */
+    fun adopt(values: Map<String, Any?>): Boolean {
+        val check = checkMinutes
+        (values[KEY_UNDO_SEND] as? Number)?.let { updateUndoSendSeconds(it.toInt()) }
+        (values[KEY_CHECK_MINUTES] as? Number)?.let { updateCheckMinutes(it.toInt()) }
+        (values[KEY_DARKEN_MESSAGES] as? Boolean)?.let { updateDarkenMessages(it) }
+        (values[KEY_READER_UNDER_BARS] as? Boolean)?.let { updateReaderUnderBars(it) }
+        (values[KEY_GLASS] as? Boolean)?.let { updateGlass(it) }
+        (values[KEY_GLASS_OVER_MESSAGES] as? Boolean)?.let { updateGlassOverMessages(it) }
+        (values[KEY_WEB_LAYER] as? String)?.let { name -> WebLayer.entries.firstOrNull { it.name == name } }?.let { updateWebLayer(it) }
+        return checkMinutes != check
+    }
+
     companion object {
         /** The file the app's settings are kept in. */
         const val FILE = "deskmail"

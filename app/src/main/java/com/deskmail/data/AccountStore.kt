@@ -11,6 +11,7 @@ import com.deskmail.db.AccountEntity
 import com.deskmail.db.CredentialEntity
 import com.deskmail.db.DeskMailDatabase
 import com.deskmail.mail.AccountState
+import com.deskmail.mail.PortableAccount
 
 /**
  * The accounts and what they sign in with. A password is sealed ([SecretBox]) before it is stored
@@ -90,6 +91,44 @@ class AccountStore(db: DeskMailDatabase, private val box: SecretBox, private val
         accounts.setWriting(accountId, name, signature.replace("\r\n", "\n").trim().take(MAX_SIGNATURE))
     }
 
+    /**
+     * Adds an account that came in a settings file from another device, with nothing to sign in
+     * with: it waits for its password ("Reconnect"), and nothing is fetched for it before. What can
+     * be checked of the file's word is: an address, servers, a name and a signature of sensible
+     * length. Null when the device has an account with its address already, or the file's word
+     * would not do.
+     */
+    suspend fun addWaiting(account: PortableAccount): Long? {
+        val address = account.address.trim()
+        if (address.isEmpty() || address.any { it.isWhitespace() } || '@' !in address) return null
+        if (account.settings.imap.host.isBlank() || account.settings.smtp.host.isBlank()) return null
+        if (byAddress(address) != null) return null
+        val entity = AccountEntity(
+            address = address,
+            name = account.name.replace(CONTROLS, " ").trim().take(MAX_NAME).ifBlank { address },
+            senderName = account.senderName.replace(CONTROLS, " ").trim().take(MAX_SENDER_NAME),
+            provider = account.provider,
+            imapHost = account.settings.imap.host.trim(),
+            imapPort = account.settings.imap.port,
+            imapSecurity = account.settings.imap.security.name,
+            smtpHost = account.settings.smtp.host.trim(),
+            smtpPort = account.settings.smtp.port,
+            smtpSecurity = account.settings.smtp.security.name,
+            username = account.settings.username,
+            authKind = account.settings.auth.name,
+            syncDays = account.syncDays.takeIf { it > 0 } ?: DEFAULT_SYNC_DAYS,
+            notifyMode = account.notifyMode.ifBlank { DEFAULT_NOTIFY_MODE },
+            signature = account.signature.replace("\r\n", "\n").trim().take(MAX_SIGNATURE),
+            state = AccountState.NeedsLogin.name,
+            stateDetail = "",
+            position = accounts.nextPosition(),
+            createdAt = now(),
+        )
+        val id = accounts.insert(entity)
+        log?.info(TAG, "account $id taken from a settings file: ${entity.address} at ${entity.imapHost}; it waits for its password")
+        return id
+    }
+
     /** Removes the account from the device with everything that was kept of its mail. The mail stays on its server. */
     suspend fun remove(accountId: Long) {
         accounts.delete(accountId)
@@ -112,8 +151,9 @@ class AccountStore(db: DeskMailDatabase, private val box: SecretBox, private val
         /** Line breaks, tabs and the like, however many in a row. */
         private val CONTROLS = Regex("\\p{Cntrl}+")
 
-        /** A sender's name and a signature are kept up to these lengths. */
+        /** A sender's name and a signature are kept up to these lengths; an account's name too. */
         const val MAX_SENDER_NAME = 100
+        const val MAX_NAME = 100
         const val MAX_SIGNATURE = 2000
 
         /** How far back mail is kept until the user says otherwise. */
