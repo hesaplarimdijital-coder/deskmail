@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.ui.mail.InspectorTabsTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-11-13T11:56:12.358Z" hostname="runnervmwuk1x" time="0.413">
+  <properties/>
+  <testcase name="theHeaderLinesAreShownAsTheyArrived" classname="com.deskmail.ui.mail.InspectorTabsTest" time="0.229"/>
+  <testcase name="aVerifiedSenderIsSaidSoInTheProvidersWords" classname="com.deskmail.ui.mail.InspectorTabsTest" time="0.106"/>
+  <testcase name="aMessageThatFailedIsSaidToBeSuspect" classname="com.deskmail.ui.mail.InspectorTabsTest" time="0.076"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

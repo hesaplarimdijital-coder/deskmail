@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.data.SnoozeSyncTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-11-13T11:55:32.378Z" hostname="runnervmwuk1x" time="8.443">
+  <properties/>
+  <testcase name="aSnoozedMessageWaitsOnTheServerAndComesBackUnread" classname="com.deskmail.data.SnoozeSyncTest" time="2.4"/>
+  <testcase name="aSnoozedMessageCanBeBroughtBackNow" classname="com.deskmail.data.SnoozeSyncTest" time="2.658"/>
+  <testcase name="anotherDeviceLearnsOfTheSnoozeFromTheServer" classname="com.deskmail.data.SnoozeSyncTest" time="3.383"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

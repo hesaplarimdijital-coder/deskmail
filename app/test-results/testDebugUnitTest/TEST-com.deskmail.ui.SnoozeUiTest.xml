@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.ui.SnoozeUiTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-11-13T11:56:08.283Z" hostname="runnervmwuk1x" time="0.392">
+  <properties/>
+  <testcase name="aMessageIsSnoozedUntilTomorrowMorning" classname="com.deskmail.ui.SnoozeUiTest" time="0.199"/>
+  <testcase name="aSnoozedMessageSaysWhenItComesBackAndComesBackNow" classname="com.deskmail.ui.SnoozeUiTest" time="0.122"/>
+  <testcase name="nothingSnoozedSaysWhatSnoozingIs" classname="com.deskmail.ui.SnoozeUiTest" time="0.069"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

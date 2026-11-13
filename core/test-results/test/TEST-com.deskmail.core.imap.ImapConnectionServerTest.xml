@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.core.imap.ImapConnectionServerTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-11-13T11:53:42.987Z" hostname="runnervmwuk1x" time="0.879">
+  <properties/>
+  <testcase name="aServerWithoutStartTlsIsNotSpokenToInTheClear" classname="com.deskmail.core.imap.ImapConnectionServerTest" time="0.327"/>
+  <testcase name="aPortNobodyListensOnIsANetworkFailure" classname="com.deskmail.core.imap.ImapConnectionServerTest" time="0.041"/>
+  <testcase name="aWrongPasswordIsAnAuthenticationFailureAndStaysOutOfTheLog" classname="com.deskmail.core.imap.ImapConnectionServerTest" time="0.062"/>
+  <testcase name="aCertificateNobodyVouchesForIsRefused" classname="com.deskmail.core.imap.ImapConnectionServerTest" time="0.296"/>
+  <testcase name="signsInAndListsTheFoldersWithTheirRoles" classname="com.deskmail.core.imap.ImapConnectionServerTest" time="0.153"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[SLF4J: Failed to load class "org.slf4j.impl.StaticLoggerBinder".
+SLF4J: Defaulting to no-operation (NOP) logger implementation
+SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further details.
+Exception in thread "imaps:127.0.0.1:36015<-/127.0.0.1:36636" java.lang.IllegalStateException: Can not handle IMAP connection
+	at com.icegreen.greenmail.imap.ImapHandler.run(ImapHandler.java:72)
+	at com.icegreen.greenmail.server.AbstractServer.lambda$handleClientSocket$0(AbstractServer.java:174)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+Caused by: java.net.SocketException: Connection or outbound has closed
+	at java.base/sun.security.ssl.SSLSocketImpl$AppOutputStream.write(SSLSocketImpl.java:1297)
+	at java.base/java.io.BufferedOutputStream.flushBuffer(BufferedOutputStream.java:125)
+	at java.base/java.io.BufferedOutputStream.implFlush(BufferedOutputStream.java:252)
+	at java.base/java.io.BufferedOutputStream.flush(BufferedOutputStream.java:240)
+	at java.base/java.io.FilterOutputStream.close(FilterOutputStream.java:184)
+	at com.icegreen.greenmail.imap.ImapHandler.run(ImapHandler.java:70)
+	... 2 more
+]]></system-err>
+</testsuite>

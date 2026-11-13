@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.ui.AwaitingUiTest" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-11-13T11:56:01.699Z" hostname="runnervmwuk1x" time="1.292">
+  <properties/>
+  <testcase name="aReceivedMessageOffersNoWait" classname="com.deskmail.ui.AwaitingUiTest" time="0.278"/>
+  <testcase name="anAnswerToASentMessageIsWaitedForUntilTheUserStops" classname="com.deskmail.ui.AwaitingUiTest" time="0.259"/>
+  <testcase name="aTappedReminderOpensTheAwaitingList" classname="com.deskmail.ui.AwaitingUiTest" time="0.245"/>
+  <testcase name="theAwaitedAreListedAndTheOverdueSaySo" classname="com.deskmail.ui.AwaitingUiTest" time="0.155"/>
+  <testcase name="howLongAnAnswerIsWaitedForIsChosenWhileWriting" classname="com.deskmail.ui.AwaitingUiTest" time="0.257"/>
+  <testcase name="withNothingAwaitedTheListSaysHowSomethingComesToBe" classname="com.deskmail.ui.AwaitingUiTest" time="0.095"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
