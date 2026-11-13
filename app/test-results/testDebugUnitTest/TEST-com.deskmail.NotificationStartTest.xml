@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.NotificationStartTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-11-13T08:44:08.756Z" hostname="runnervmccnms" time="0.588">
+  <properties/>
+  <testcase name="aTappedNotificationReachesTheWindowAtItsStartAndWhileItIsThere" classname="com.deskmail.NotificationStartTest" time="0.221"/>
+  <testcase name="anOrdinaryStartAsksForNothing" classname="com.deskmail.NotificationStartTest" time="0.189"/>
+  <testcase name="anotherAppsRequestToOpenAMessageIsNotHeard" classname="com.deskmail.NotificationStartTest" time="0.175"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[System.logW: A resource failed to call close. 
+System.logW: A resource failed to call close. 
+]]></system-err>
+</testsuite>

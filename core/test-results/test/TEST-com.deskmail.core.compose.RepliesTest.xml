@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.core.compose.RepliesTest" tests="9" skipped="0" failures="0" errors="0" timestamp="2026-11-13T08:42:46.757Z" hostname="runnervmccnms" time="0.07">
+  <properties/>
+  <testcase name="aReplysSubjectSaysSoOnce" classname="com.deskmail.core.compose.RepliesTest" time="0.031"/>
+  <testcase name="whereTheSenderAsksForAnotherAddressTheReplyGoesThere" classname="com.deskmail.core.compose.RepliesTest" time="0.003"/>
+  <testcase name="aForwardedSubjectSaysSoOnce" classname="com.deskmail.core.compose.RepliesTest" time="0.001"/>
+  <testcase name="aReplyToOnesOwnMessageGoesToItsRecipients" classname="com.deskmail.core.compose.RepliesTest" time="0.001"/>
+  <testcase name="aForwardedMessageKeepsItsTextAsItIs" classname="com.deskmail.core.compose.RepliesTest" time="0.014"/>
+  <testcase name="aReplyGoesToTheSender" classname="com.deskmail.core.compose.RepliesTest" time="0.0"/>
+  <testcase name="theThreadIsCarriedOnInTheReferences" classname="com.deskmail.core.compose.RepliesTest" time="0.007"/>
+  <testcase name="theQuotedTextIsMarkedLineByLine" classname="com.deskmail.core.compose.RepliesTest" time="0.01"/>
+  <testcase name="aReplyToEverybodyLeavesOutTheWriterHimself" classname="com.deskmail.core.compose.RepliesTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

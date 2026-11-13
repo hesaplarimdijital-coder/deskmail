@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.data.MailSyncTest" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-11-13T08:44:44.668Z" hostname="runnervmccnms" time="5.898">
+  <properties/>
+  <testcase name="aRefusedSignInAsksForSigningInAgain" classname="com.deskmail.data.MailSyncTest" time="0.644"/>
+  <testcase name="aFirstSyncBringsTheFoldersTheInboxAndItsTexts" classname="com.deskmail.data.MailSyncTest" time="0.704"/>
+  <testcase name="aServerThatDoesNotAnswerIsUnreachable" classname="com.deskmail.data.MailSyncTest" time="0.273"/>
+  <testcase name="whatIsNewOrChangedElsewhereShowsAfterTheNextSync" classname="com.deskmail.data.MailSyncTest" time="0.861"/>
+  <testcase name="theTextsASyncLeavesAreFetchedAfterwards" classname="com.deskmail.data.MailSyncTest" time="1.956"/>
+  <testcase name="whatFollowsASyncIsToldOnceItWorkedAndCannotFailIt" classname="com.deskmail.data.MailSyncTest" time="0.738"/>
+  <testcase name="aFolderIsSyncedWhenItIsAskedFor" classname="com.deskmail.data.MailSyncTest" time="0.693"/>
+  <testcase name="aPasswordThisDeviceCannotOpenAsksForSigningInAgain" classname="com.deskmail.data.MailSyncTest" time="0.023"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[System.logW: A resource failed to call close. 
+System.logW: A resource failed to call close. 
+System.logW: A resource failed to call SQLiteConnection.close. 
+System.logW: A resource failed to call SQLiteConnection.close. 
+System.logW: A resource failed to call SQLiteConnection.close. 
+System.logW: A resource failed to call SQLiteConnection.close. 
+System.logW: A resource failed to call SQLiteConnectionPool.close. 
+System.logW: A resource failed to call close. 
+]]></system-err>
+</testsuite>

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.ui.PaletteTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-11-13T08:45:18.476Z" hostname="runnervmccnms" time="0.906">
+  <properties/>
+  <testcase name="aCommandOfTheTableRunsFromThePalette" classname="com.deskmail.ui.PaletteTest" time="0.224"/>
+  <testcase name="whatIsTypedIsLookedForInTheMail" classname="com.deskmail.ui.PaletteTest" time="0.216"/>
+  <testcase name="aFolderIsFoundByItsNameAndOpened" classname="com.deskmail.ui.PaletteTest" time="0.184"/>
+  <testcase name="aMessageIsFoundByItsSubjectAndOpenedInItsFolder" classname="com.deskmail.ui.PaletteTest" time="0.28"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

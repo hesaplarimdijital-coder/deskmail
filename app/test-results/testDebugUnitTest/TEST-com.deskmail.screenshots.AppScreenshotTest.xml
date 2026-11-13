@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.screenshots.AppScreenshotTest" tests="34" skipped="0" failures="0" errors="0" timestamp="2026-11-13T08:44:57.966Z" hostname="runnervmccnms" time="16.304">
+  <properties/>
+  <testcase name="dexWorkstationDark" classname="com.deskmail.screenshots.AppScreenshotTest" time="5.54"/>
+  <testcase name="tabletPortraitInboxDark" classname="com.deskmail.screenshots.AppScreenshotTest" time="0.538"/>
+  <testcase name="dexWorkstationLight" classname="com.deskmail.screenshots.AppScreenshotTest" time="0.581"/>
+  <testcase name="twoPanesBesideTheRailDark" classname="com.deskmail.screenshots.AppScreenshotTest" time="0.444"/>
+  <testcase name="phoneAccountNoticeDark" classname="com.deskmail.screenshots.AppScreenshotTest" time="0.356"/>
+  <testcase name="phoneSearchDark" classname="com.deskmail.screenshots.AppScreenshotTest" time="0.33"/>
+  <testcase name="phoneComposeDark" classname="com.deskmail.screenshots.AppScreenshotTest" time="0.326"/>
+  <testcase name="dexSelectionDark" classname="com.deskmail.screenshots.AppScreenshotTest" time="0.547"/>
+  <testcase name="phoneMoreSheetDark" classname="com.deskmail.screenshots.AppScreenshotTest" time="0.443"/>
+  <testcase name="phoneLogDark" classname="com.deskmail.screenshots.AppScreenshotTest" time="0.489"/>
+  <testcase name="phoneOutboxLight" classname="com.deskmail.screenshots.AppScreenshotTest" time="0.231"/>
+  <testcase name="dexComposeLight" classname="com.deskmail.screenshots.AppScreenshotTest" time="0.311"/>
+  <testcase name="phoneReaderDark" classname="com.deskmail.screenshots.AppScreenshotTest" time="0.27"/>
+  <testcase name="tabletLandscapeInspectorLight" classname="com.deskmail.screenshots.AppScreenshotTest" time="0.464"/>
+  <testcase name="tabletPortraitServersLight" classname="com.deskmail.screenshots.AppScreenshotTest" time="0.298"/>
+  <testcase name="phonePaletteDark" classname="com.deskmail.screenshots.AppScreenshotTest" time="0.342"/>
+  <testcase name="phoneWelcomeLight" classname="com.deskmail.screenshots.AppScreenshotTest" time="0.174"/>
+  <testcase name="phoneFoldersDark" classname="com.deskmail.screenshots.AppScreenshotTest" time="0.226"/>
+  <testcase name="phoneReaderLight" classname="com.deskmail.screenshots.AppScreenshotTest" time="0.206"/>
+  <testcase name="dexSettingsDark" classname="com.deskmail.screenshots.AppScreenshotTest" time="0.305"/>
+  <testcase name="dexSearchLight" classname="com.deskmail.screenshots.AppScreenshotTest" time="0.28"/>
+  <testcase name="tabletLandscapeWithAMouseDark" classname="com.deskmail.screenshots.AppScreenshotTest" time="0.413"/>
+  <testcase name="tabletLandscapeDark" classname="com.deskmail.screenshots.AppScreenshotTest" time="0.328"/>
+  <testcase name="dexFolderOled" classname="com.deskmail.screenshots.AppScreenshotTest" time="0.256"/>
+  <testcase name="phoneAddAccountDark" classname="com.deskmail.screenshots.AppScreenshotTest" time="0.205"/>
+  <testcase name="dexAccountLight" classname="com.deskmail.screenshots.AppScreenshotTest" time="0.248"/>
+  <testcase name="dexPaletteDark" classname="com.deskmail.screenshots.AppScreenshotTest" time="0.459"/>
+  <testcase name="phoneInboxDark" classname="com.deskmail.screenshots.AppScreenshotTest" time="0.229"/>
+  <testcase name="phoneInboxOled" classname="com.deskmail.screenshots.AppScreenshotTest" time="0.248"/>
+  <testcase name="phoneSettingsLight" classname="com.deskmail.screenshots.AppScreenshotTest" time="0.219"/>
+  <testcase name="phoneInboxLight" classname="com.deskmail.screenshots.AppScreenshotTest" time="0.23"/>
+  <testcase name="phoneReaderFailedLight" classname="com.deskmail.screenshots.AppScreenshotTest" time="0.173"/>
+  <testcase name="phoneSelectionLight" classname="com.deskmail.screenshots.AppScreenshotTest" time="0.212"/>
+  <testcase name="tabletPortraitReaderLight" classname="com.deskmail.screenshots.AppScreenshotTest" time="0.282"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

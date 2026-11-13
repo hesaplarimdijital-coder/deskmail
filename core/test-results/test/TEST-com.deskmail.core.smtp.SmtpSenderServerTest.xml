@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.core.smtp.SmtpSenderServerTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-11-13T08:42:58.617Z" hostname="runnervmccnms" time="0.149">
+  <properties/>
+  <testcase name="aServerThatIsNotThereIsANetworkFailure" classname="com.deskmail.core.smtp.SmtpSenderServerTest" time="0.028"/>
+  <testcase name="aMessageIsHandedOverForEverybodyItGoesTo" classname="com.deskmail.core.smtp.SmtpSenderServerTest" time="0.066"/>
+  <testcase name="aServerWithoutTlsIsRefusedWhereTlsIsAskedFor" classname="com.deskmail.core.smtp.SmtpSenderServerTest" time="0.055"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
