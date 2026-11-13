@@ -5,6 +5,7 @@ import com.deskmail.core.mail.MessageFlags
 import com.deskmail.core.mail.OpenMailbox
 import com.deskmail.core.mail.RemoteBody
 import com.deskmail.core.mail.RemoteFlags
+import com.deskmail.core.mail.RemoteMailbox
 import com.deskmail.core.mail.RemoteMessage
 import com.deskmail.core.text.SearchField
 import com.deskmail.core.text.SearchTerm
@@ -115,7 +116,12 @@ class ImapMailbox internal constructor(
 
     override fun body(uid: Long, maxTextBytes: Int): RemoteBody? = connection.call("fetch body") {
         val message = folder.getMessageByUID(uid) as IMAPMessage? ?: return@call null
-        MessageParts.read(message, maxTextBytes)
+        MessageParts.read(message, maxTextBytes).copy(headers = headerLines(message))
+    }
+
+    override fun headers(uid: Long): String? = connection.call("fetch headers") {
+        val message = folder.getMessageByUID(uid) as IMAPMessage? ?: return@call null
+        headerLines(message)
     }
 
     override fun attachment(uid: Long, part: String, into: OutputStream): Boolean = connection.call("fetch attachment") {
@@ -150,6 +156,10 @@ class ImapMailbox internal constructor(
             attachments = runCatching { MessageParts.attachmentCount(message) }.getOrDefault(0),
         )
     }
+
+    /** The message's header lines as they travelled, one after the other; a long block is cut where it reaches its limit. */
+    private fun headerLines(message: IMAPMessage): String =
+        runCatching { message.allHeaderLines.toList().joinToString("\n") }.getOrDefault("").take(RemoteMailbox.MAX_HEADERS)
 
     /** The subject with its encoded words read; a subject the library cannot decode is shown as it travelled. */
     private fun subject(message: IMAPMessage): String {

@@ -485,6 +485,16 @@ class AppScreenshotTest {
             id
         }
 
+    /** The inspector's "Security" on DeX: the provider's word on where the open message came from. */
+    @Test @Config(qualifiers = DEX)
+    fun dexSecurityLight() {
+        open(Routes.INBOX, "Re: Proje planı (v3)")
+        ui.inspector.updateCollapsed(false)
+        ui.inspector.selectedTab = 2
+        launch(ThemeMode.Light, DensityPreference.Pointer)
+        capture("dex-security-light")
+    }
+
     /** An account's page, for one the server no longer lets in. */
     @Test @Config(qualifiers = DEX)
     fun dexAccountLight() {

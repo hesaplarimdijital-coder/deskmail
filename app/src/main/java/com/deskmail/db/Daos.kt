@@ -229,6 +229,10 @@ abstract class MessageDao {
     @Query("SELECT * FROM body WHERE messageId = :messageId")
     abstract suspend fun bodyOf(messageId: Long): BodyEntity?
 
+    /** The header lines of a message whose text was fetched before they were kept with it. */
+    @Query("UPDATE body SET headers = :headers WHERE messageId = :messageId")
+    abstract suspend fun setHeaders(messageId: Long, headers: String)
+
     // ------------------------------------------------------------------ what new mail is told of
 
     /** The highest UID the device has of a folder; null for one it has nothing of. */

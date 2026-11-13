@@ -39,6 +39,12 @@ Sürümler [SemVer](https://semver.org/lang/tr/) kuralına uyar; 0.1.0'a kadar o
 - **İletinin içindeki resimler görünür.** Bültenlerdeki logolar, imzalardaki resimler gibi iletiye gömülü resimler (`cid:`) boş kalıyordu; artık gösterilir. Cihazda yoksa ek gibi sunucudan alınır. Bunlar iletinin kendi parçalarıdır: uzak görseller kapalıyken de görünürler, ağdan hiçbir şey yüklenmez. İletinin ekleri arasında da artık sayılmazlar.
 - **Yanıtlandı ve iletildi işaretleri.** Yanıtlanan ileti listede tarihin altında ↩, iletilen → ile görünür; geniş penceredeki tabloda dar bir sütunda ("↩", "→"), o sütuna göre sıralanabilir. Başka bir posta programında yanıtlanan ileti de işaretli görünür.
 
+### İletinin ayrıntıları
+- **Güvenlik sekmesi.** Geniş pencerelerdeki (DeX, yatay tablet) ayrıntı panelinde yeni **Güvenlik** sekmesi: iletinin SPF, DKIM ve DMARC sonuçları, üstte tek satırlık bir yargıyla ("Gönderici doğrulandı", "Doğrulama tam değil" ya da "Gönderici doğrulanamadı: ileti göründüğü yerden gelmemiş olabilir"). Sonuçlar, senin sağlayıcının iletiye eklediği `Authentication-Results` başlığından okunur: en üstteki, yani sağlayıcının kendisininki; iletiyle birlikte gelen daha alttakilere güvenilmez. DeskMail doğrulamayı kendisi yapmaz; sağlayıcı bir sonuç eklememişse sekme bunu söyler.
+- **Ham başlıklar sekmesi.** İletinin başlık satırları geldiği gibi; seçilip kopyalanabilir, **Kopyala** hepsini alır.
+- Başlıklar iletinin metniyle birlikte cihaza alınır. Bu sürümden önce cihaza gelmiş iletilerin başlıkları, sekme ilk açıldığında sunucudan alınır.
+- Veritabanı: iletinin metninin yanında başlıkları için bir alan (sürüm 4'e eklendi; güncellemede kendiliğinden taşınır).
+
 ### Arama
 - **Sunucuda da ara.** Ara ekranında, aramanın altında **Sunucuda da ara** düğmesi var: cihazda olmayan eski postayı hesapların sunucularına sorar (Gmail'de Tüm postalar; öbür hesaplarda Taslaklar, Çöp ve Spam dışındaki bütün klasörler). Bulunanlar cihazdakilerle aynı listede görünür; başlıkları cihaza alınır, açınca içeriği iner. Bir gün hatırlanırlar; o sürede eşitleme onları cihazdan silmez. Yeni bir şey bulunmazsa ya da bir sunucuya ulaşılamazsa ekran bunu söyler.
 - **Nerede aranacağı yazılabilir.** `kimden:ayşe` (ya da `from:`) yalnızca gönderende, `kime:elif` (`to:`) alıcılarda (Kime ve Bilgi), `konu:fatura` (`subject:`) yalnızca konuda arar. İki noktadan sonra boşluk olabilir (`kimden: ayşe`); tırnak içi tek parça sayılır (`konu:"kasım faturası"` iki sözcüğü de konuda arar). Cihazdaki aramada da sunucudakinde de geçer; geri kalanı her yerde aranır.
