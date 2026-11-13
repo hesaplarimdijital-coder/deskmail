@@ -1,6 +1,7 @@
 package com.deskmail.ui.compose
 
 import android.app.Activity
+import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -78,9 +79,11 @@ import desktopkit.shell.keepsKeyboardOpen
 import desktopkit.shell.rememberShellContentPadding
 import desktopkit.theme.DeskTheme
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * A message of the user's own that is being written in a window: which one (its id in the
@@ -309,6 +312,30 @@ fun ComposeScreen(
             }
         }
     }
+    // Recipients from the device's contacts: the system's picker hands over what was chosen, and only that.
+    val contactsFailed = stringResource(R.string.compose_contacts_failed)
+    val pickContacts = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        val uri = if (result.resultCode == Activity.RESULT_OK) result.data?.data else null
+        if (uri != null) {
+            scope.launch {
+                // read at once: the system lets it be read only for a while
+                val picked = withContext(Dispatchers.IO) { runCatching { ContactPick.read(context, uri) }.getOrDefault(emptyList()) }
+                if (picked.isEmpty()) {
+                    onNotify(contactsFailed)
+                } else {
+                    fields.to = ContactPick.append(fields.to, picked)
+                    fields.recipientsError = null
+                }
+            }
+        }
+    }
+    val chooseContacts: () -> Unit = {
+        try {
+            pickContacts.launch(ContactPick.intent())
+        } catch (e: ActivityNotFoundException) {
+            onNotify(contactsFailed)
+        }
+    }
     val attach: () -> Unit = {
         val open = Intent(Intent.ACTION_OPEN_DOCUMENT)
             .addCategory(Intent.CATEGORY_OPENABLE)
@@ -385,6 +412,8 @@ fun ComposeScreen(
                 modifier = Modifier.fillMaxWidth().testTag(ComposeTags.TO),
                 hint = recipientsHint,
                 label = stringResource(R.string.compose_to),
+                // from the contacts, without leave to read them
+                trailingContent = { DeskIconButton(MailIcons.Account, stringResource(R.string.compose_contacts), chooseContacts) },
                 error = fields.recipientsError != null,
                 supportingText = fields.recipientsError,
                 keyboardType = KeyboardType.Email,

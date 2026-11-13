@@ -468,6 +468,14 @@ class ComposeTest {
         assertEquals(DraftState.Waiting, composer.outbox.single().state)
     }
 
+    /** The contacts are offered beside "To": the system's picker, without leave to read them. */
+    @Test
+    fun recipientsCanBeTakenFromTheContacts() {
+        launch()
+        press("Yeni ileti")
+        compose.onNodeWithContentDescription("Rehberden ekle").assertExists()
+    }
+
     /** A draft that lies in its account's Drafts folder is gone on with, not answered. */
     @Test
     fun aDraftInItsFolderIsTakenUpToBeWrittenOn() {
