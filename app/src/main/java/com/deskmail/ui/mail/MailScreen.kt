@@ -1,5 +1,7 @@
 package com.deskmail.ui.mail
 
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.text.format.Formatter
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
@@ -13,6 +15,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -34,6 +39,7 @@ import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.deskmail.R
+import com.deskmail.core.mail.AuthResults
 import com.deskmail.core.mail.FolderRole
 import com.deskmail.core.text.SearchQuery
 import com.deskmail.mail.AccountState
@@ -729,6 +735,117 @@ object MailTags {
     const val SELECTION = "mail-selection"
     const val SERVER_SEARCH = "mail-server-search"
     const val SEARCH = "mail-search"
+    const val SECURITY = "mail-security"
+    const val HEADERS = "mail-headers"
+}
+
+/**
+ * The inspector's "Security" and "Headers": what the user's provider found of the message (SPF,
+ * DKIM, DMARC, from its Authentication-Results header; the app checks nothing itself), and the
+ * header lines as they arrived. A message whose text came before its header lines were kept with
+ * it has them fetched when they are looked at.
+ */
+@Composable
+private fun HeaderTabs(message: MailMessage, mail: MailSource, security: Boolean) {
+    val content = watchedContent(mail, message.id) as? MailContent.Ready
+    val headers = content?.headers.orEmpty()
+    var failed by remember(message.id) { mutableStateOf(false) }
+    LaunchedEffect(message.id, content != null && headers.isEmpty()) {
+        if (content != null && headers.isEmpty()) failed = !mail.fetchHeaders(message.id)
+    }
+    when {
+        content == null -> ContentNotHere()
+        headers.isEmpty() -> MessageScreen(
+            title = stringResource(if (failed) R.string.headers_failed else R.string.headers_loading),
+            icon = MailIcons.Log,
+        )
+        security -> SecurityTab(AuthResults.read(headers))
+        else -> RawHeaders(headers)
+    }
+}
+
+/** What the inspector says while a message's text is not on the device: its headers come with it. */
+@Composable
+private fun ContentNotHere() = MessageScreen(title = stringResource(R.string.headers_loading), icon = MailIcons.Log)
+
+/** The provider's word on the message: a line on the whole, then each check, then whose word it is. */
+@Composable
+private fun SecurityTab(results: AuthResults.Results?) {
+    val dimens = DeskTheme.dimens
+    val checks = results?.checks.orEmpty()
+    if (checks.isEmpty()) {
+        MessageScreen(title = stringResource(R.string.security_none_title), icon = MailIcons.Shield, description = stringResource(R.string.security_none_text))
+        return
+    }
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = dimens.gapL, vertical = dimens.gapS).testTag(MailTags.SECURITY)) {
+        val dmarc = checks.filter { it.method == "dmarc" }.map { it.result }
+        val passed = { method: String -> checks.any { it.method == method && it.result == "pass" } }
+        val (tone, verdict) = when {
+            "fail" in dmarc -> BannerTone.Error to R.string.security_failed
+            "pass" in dmarc || (passed("spf") && passed("dkim")) -> BannerTone.Success to R.string.security_verified
+            else -> BannerTone.Warning to R.string.security_mixed
+        }
+        StatusBanner(tone = tone, text = stringResource(verdict), modifier = Modifier.padding(bottom = dimens.gapS))
+        for (method in AuthResults.METHODS) {
+            val found = checks.filter { it.method == method }
+            val label = method.uppercase()
+            if (found.isEmpty()) {
+                KeyValueRow(label, stringResource(R.string.security_missing))
+            } else {
+                found.forEach { check ->
+                    val result = resultLabel(check.result)
+                    KeyValueRow(label, if (check.subject.isEmpty()) result else result + "\n" + check.subject, selectable = true)
+                }
+            }
+        }
+        val by = results?.server.orEmpty()
+        Text(
+            if (by.isEmpty()) stringResource(R.string.security_by_unnamed) else stringResource(R.string.security_by, by),
+            style = DeskTheme.type.labelSmall,
+            color = DeskTheme.colors.textTertiary,
+            modifier = Modifier.padding(top = dimens.gapM),
+        )
+    }
+}
+
+/** A check's result in words; one the app has no word for, as the provider wrote it. */
+@Composable
+private fun resultLabel(result: String): String = when (result) {
+    "pass" -> stringResource(R.string.security_pass)
+    "fail", "hardfail" -> stringResource(R.string.security_fail)
+    "softfail" -> stringResource(R.string.security_softfail)
+    "neutral" -> stringResource(R.string.security_neutral)
+    "none" -> stringResource(R.string.security_result_none)
+    "temperror" -> stringResource(R.string.security_temperror)
+    "permerror" -> stringResource(R.string.security_permerror)
+    "policy" -> stringResource(R.string.security_policy)
+    else -> result
+}
+
+/** The header lines as they arrived, to read and to select; "Copy" takes them all. */
+@Composable
+private fun RawHeaders(headers: String) {
+    val context = LocalContext.current
+    val dimens = DeskTheme.dimens
+    val title = stringResource(R.string.inspector_headers)
+    Column(Modifier.fillMaxSize()) {
+        DeskButton(
+            stringResource(R.string.headers_copy),
+            {
+                context.getSystemService(ClipboardManager::class.java).setPrimaryClip(ClipData.newPlainText(title, headers))
+            },
+            Modifier.padding(horizontal = dimens.gapL, vertical = dimens.gapS),
+            icon = MailIcons.Copy,
+        )
+        SelectionContainer(Modifier.weight(1f).fillMaxWidth()) {
+            Text(
+                headers,
+                style = DeskTheme.type.mono,
+                color = DeskTheme.colors.textSecondary,
+                modifier = Modifier.verticalScroll(rememberScrollState()).padding(horizontal = dimens.gapL, vertical = dimens.gapS).testTag(MailTags.HEADERS),
+            )
+        }
+    }
 }
 
 /** The inspector of a large window: the open message's details, and its attachments (a click opens one, its menu saves or shares it). */
@@ -741,6 +858,8 @@ private fun MessageInspector(message: MailMessage?, mail: MailSource, files: Att
     val tabs = listOf(
         InspectorTab("details", stringResource(R.string.inspector_details)),
         InspectorTab("attachments", stringResource(R.string.inspector_attachments), MailIcons.Attachment),
+        InspectorTab("security", stringResource(R.string.inspector_security), MailIcons.Shield),
+        InspectorTab("headers", stringResource(R.string.inspector_headers), MailIcons.Log),
     )
     val openLabel = stringResource(R.string.attachment_open)
     val saveLabel = stringResource(R.string.attachment_save)
@@ -758,6 +877,7 @@ private fun MessageInspector(message: MailMessage?, mail: MailSource, files: Att
                 KeyValueRow(stringResource(R.string.detail_account), mail.account(message.accountId)?.name.orEmpty())
                 if (folder != null) KeyValueRow(stringResource(R.string.detail_folder), folderPathLabel(resources, folder))
             }
+            tab.id == "security" || tab.id == "headers" -> HeaderTabs(message, mail, security = tab.id == "security")
             else -> {
                 val attachments = (watchedContent(mail, message.id) as? MailContent.Ready)?.attachments.orEmpty()
                 if (attachments.isEmpty()) {
