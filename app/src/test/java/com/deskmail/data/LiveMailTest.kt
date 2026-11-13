@@ -7,6 +7,9 @@ import com.deskmail.core.imap.ImapConnection
 import com.deskmail.core.log.AppLog
 import com.deskmail.core.mail.FolderRole
 import com.deskmail.core.mail.MailException
+import com.deskmail.core.mail.OpenMailbox
+import com.deskmail.core.mail.RemoteAccount
+import com.deskmail.core.text.SearchTerm
 import com.deskmail.db.DeskMailDatabase
 import com.deskmail.db.MessageEntity
 import com.deskmail.mail.AccountState
@@ -36,6 +39,7 @@ import org.junit.runner.RunWith
 import java.io.File
 import java.time.Duration
 import java.time.Instant
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
 
@@ -53,6 +57,9 @@ class LiveMailTest {
     private val log = AppLog()
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private val connections = AtomicInteger()
+
+    /** The server says no to every search (and is itself otherwise): see [Refusing]. */
+    private val refuseSearch = AtomicBoolean(false)
     private val clock = AtomicLong(1_000_000)
     private lateinit var db: DeskMailDatabase
     private lateinit var accounts: AccountStore
@@ -69,7 +76,8 @@ class LiveMailTest {
             db, accounts, log, scope,
             connect = { address, credentials ->
                 connections.incrementAndGet()
-                ImapConnection.open(address, credentials, log)
+                val connection = ImapConnection.open(address, credentials, log)
+                if (refuseSearch.get()) Refusing(connection) else connection
             },
             clock = { now },
         )
@@ -81,6 +89,13 @@ class LiveMailTest {
     fun close() {
         endAndWait(scope)
         db.close()
+    }
+
+    /** A server that says no to every search, as one does to a character set it does not know, and is otherwise itself. */
+    private class Refusing(private val real: RemoteAccount) : RemoteAccount by real {
+        override fun open(path: String): OpenMailbox = object : OpenMailbox by real.open(path) {
+            override fun search(terms: List<SearchTerm>): List<Long> = throw MailException(MailException.Kind.Server, "NO [BADCHARSET] (US-ASCII) not supported")
+        }
     }
 
     private fun hoursAgo(hours: Long): Instant = now.minus(Duration.ofHours(hours))
@@ -226,6 +241,20 @@ class LiveMailTest {
         mail.searchServers("olmayan")
         assertEquals(MailSync.Outcome.Done, sync.account(id))
         assertTrue(found("2025").isEmpty())
+    }
+
+    /** A folder its server will not search is left out; the account is none the worse for it. */
+    @Test
+    fun aFolderTheServerWillNotSearchIsLeftOut() = runBlocking {
+        server.deliver("Rapor 2025: geçen yılın özeti", "Eski bir rapor.", hoursAgo(24 * 120))
+        val id = account()
+        assertEquals(MailSync.Outcome.Done, sync.account(id))
+
+        refuseSearch.set(true)
+        assertEquals(ServerSearch(added = 0, unreachable = 0), mail.searchServers("2025"))
+
+        assertEquals(AccountState.Ok.name, accounts.byId(id)!!.state)
+        assertTrue(mail.observe(MailView.Search("2025")).first().isEmpty())
     }
 
     /** A server that cannot be reached is said so; what the device has is still found. */

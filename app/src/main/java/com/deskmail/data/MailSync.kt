@@ -351,7 +351,16 @@ class MailSync(
                     // the folder's UIDs mean something else than what the device knows them as: its next sync starts over first
                     if (folder.uidValidity != 0L && folder.uidValidity != box.uidValidity) return@use
                     if (folder.uidValidity == 0L) db.folders().setState(folder.id, box.uidValidity, folder.uidNext, folder.highestModSeq)
-                    val matched = box.search(terms).takeLast(MATCHES_KEPT)
+                    val matched = try {
+                        box.search(terms)
+                    } catch (e: MailException) {
+                        // A server that will not search this folder for this (a word it does not take, a
+                        // character set it does not know): the folder is left out, and the account is not
+                        // the worse for it. A connection that is gone is the account's business.
+                        if (e.kind != MailException.Kind.Server) throw e
+                        log.warn(TAG, "account $accountId: ${folder.path}: the server would not search it (${e.message})")
+                        emptyList()
+                    }.takeLast(MATCHES_KEPT)
                     if (matched.isEmpty()) return@use
                     val have = store.uids(folder.id).toHashSet()
                     val missing = matched.filter { it !in have }.sortedDescending().take(left.coerceAtLeast(0))
