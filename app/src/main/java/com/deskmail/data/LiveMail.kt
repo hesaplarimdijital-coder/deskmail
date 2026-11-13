@@ -10,10 +10,13 @@ import com.deskmail.core.mail.MailException
 import com.deskmail.core.text.SearchField
 import com.deskmail.core.text.SearchQuery
 import com.deskmail.core.text.SearchTerm
+import com.deskmail.db.AwaitingEntity
 import com.deskmail.db.DeskMailDatabase
 import com.deskmail.db.FolderEntity
 import com.deskmail.db.MessageEntity
 import com.deskmail.db.SavedSearchEntity
+import com.deskmail.mail.AwaitOutcome
+import com.deskmail.mail.AwaitedReply
 import com.deskmail.mail.FetchedFile
 import com.deskmail.mail.MailAccount
 import com.deskmail.mail.MailAttachment
@@ -64,6 +67,8 @@ import java.util.concurrent.ConcurrentHashMap
  * @param undoMs how long a move or a removal waits before the server is told, unless the screen
  *   says sooner that it stands ([commit]): for that long it is simply taken back.
  * @param tellAfterMs how long a change waits for others to go along with it on one connection.
+ * @param awaitingChanged something came to be waited for, or no longer is ([awaitReply], [stopAwaiting]):
+ *   the reminders are arranged anew.
  */
 @Stable
 class LiveMail(
@@ -76,6 +81,7 @@ class LiveMail(
     private val mapping: CoroutineDispatcher = Dispatchers.Default,
     private val undoMs: Long = UNDO_MS,
     private val tellAfterMs: Long = TELL_AFTER_MS,
+    private val awaitingChanged: suspend () -> Unit = {},
 ) : MailSource {
 
     override var accounts: List<MailAccount> by mutableStateOf(emptyList())
@@ -97,6 +103,9 @@ class LiveMail(
         private set
 
     override var senders: Map<String, SenderMarks> by mutableStateOf(emptyMap())
+        private set
+
+    override var awaited: List<AwaitedReply> by mutableStateOf(emptyList())
         private set
 
     /** The folders as they are stored: their paths and whose they are, for asking the sync. */
@@ -140,6 +149,7 @@ class LiveMail(
         scope.launch { sync.syncing.collect { syncing = it.isNotEmpty() } }
         scope.launch { db.lists().observeSearches().collect { rows -> savedSearches = rows.map { SavedSearch(it.id, it.name, it.query) } } }
         scope.launch { db.lists().observeSenders().collect { rows -> senders = rows.associate { it.address to SenderMarks(it.vip, it.images) } } }
+        scope.launch { db.awaiting().observeAll().collect { rows -> awaited = rows.map { it.toAwaited() } } }
         // what an earlier run did and could not tell its server any more
         scope.launch { db.pending().accounts().forEach { tellSoon(it) } }
         scope.launch(Dispatchers.IO) { forgetOldFiles() }
@@ -153,6 +163,7 @@ class LiveMail(
             MailView.Unread -> messages.observeUnread()
             MailView.Starred -> messages.observeStarred()
             MailView.Vip -> messages.observeVip()
+            MailView.Awaiting -> messages.observeAwaiting()
             is MailView.Folder -> messages.observeFolder(view.id)
             // what is typed changes with every letter: nothing of it is worth keeping for the next time
             is MailView.Search -> return found(view.query)
@@ -204,6 +215,33 @@ class LiveMail(
         val key = address.trim().lowercase()
         if (key.isEmpty()) return
         db.lists().setSender(key, marks.vip, marks.images)
+    }
+
+    override suspend fun awaitReply(id: Long, days: Int): AwaitOutcome {
+        val message = db.messages().byId(id) ?: return AwaitOutcome.Gone
+        val account = db.accounts().byId(message.accountId) ?: return AwaitOutcome.Gone
+        // an answer names the message by its Message-ID: without one, none could be told apart
+        if (message.globalId.isBlank()) return AwaitOutcome.Gone
+        if (db.answered(account.id, account.address, message.globalId)) return AwaitOutcome.Answered
+        val time = now()
+        db.awaiting().insert(
+            AwaitingEntity(
+                accountId = account.id,
+                messageId = message.globalId,
+                subject = message.subject,
+                recipients = recipientsOf(message.toList, message.ccList),
+                sentAt = message.sentAt.takeIf { it > 0 } ?: message.date,
+                // from now: the message may have been sent long ago
+                dueAt = time + days.coerceAtLeast(1) * DAY_MS,
+            ),
+        )
+        awaitingChanged()
+        return AwaitOutcome.Waiting
+    }
+
+    override suspend fun stopAwaiting(id: Long) {
+        db.awaiting().delete(id)
+        awaitingChanged()
     }
 
     override suspend fun searchServers(query: String): ServerSearch? {

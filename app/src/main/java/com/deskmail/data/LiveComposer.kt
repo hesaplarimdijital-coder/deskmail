@@ -335,6 +335,10 @@ class LiveComposer(
 
     override suspend fun removeTemplate(id: Long) = db.lists().deleteTemplate(id)
 
+    override suspend fun awaitReply(id: Long, days: Int) {
+        db.outbox().setAwait(id, days.coerceAtLeast(0))
+    }
+
     companion object {
         private const val TAG = "compose"
 
@@ -390,4 +394,5 @@ internal fun OutboxEntity.toDraft(kept: List<OutboxFileEntity>) = Draft(
     },
     error = error,
     updatedAt = Instant.ofEpochMilli(updatedAt),
+    awaitDays = awaitDays,
 )
