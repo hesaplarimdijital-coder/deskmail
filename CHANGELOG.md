@@ -34,6 +34,13 @@ Sürümler [SemVer](https://semver.org/lang/tr/) kuralına uyar; 0.1.0'a kadar o
 - **İletinin içindeki resimler görünür.** Bültenlerdeki logolar, imzalardaki resimler gibi iletiye gömülü resimler (`cid:`) boş kalıyordu; artık gösterilir. Cihazda yoksa ek gibi sunucudan alınır. Bunlar iletinin kendi parçalarıdır: uzak görseller kapalıyken de görünürler, ağdan hiçbir şey yüklenmez. İletinin ekleri arasında da artık sayılmazlar.
 - **Yanıtlandı ve iletildi işaretleri.** Yanıtlanan ileti listede tarihin altında ↩, iletilen → ile görünür; geniş penceredeki tabloda dar bir sütunda ("↩", "→"), o sütuna göre sıralanabilir. Başka bir posta programında yanıtlanan ileti de işaretli görünür.
 
+### Arama
+- **Sunucuda da ara.** Ara ekranında, aramanın altında **Sunucuda da ara** düğmesi var: cihazda olmayan eski postayı hesapların sunucularına sorar (Gmail'de Tüm postalar; öbür hesaplarda Taslaklar, Çöp ve Spam dışındaki bütün klasörler). Bulunanlar cihazdakilerle aynı listede görünür; başlıkları cihaza alınır, açınca içeriği iner. Bir gün hatırlanırlar; o sürede eşitleme onları cihazdan silmez. Yeni bir şey bulunmazsa ya da bir sunucuya ulaşılamazsa ekran bunu söyler.
+- **Nerede aranacağı yazılabilir.** `kimden:ayşe` (ya da `from:`) yalnızca gönderende, `kime:elif` (`to:`) alıcılarda (Kime ve Bilgi), `konu:fatura` (`subject:`) yalnızca konuda arar. İki noktadan sonra boşluk olabilir (`kimden: ayşe`); tırnak içi tek parça sayılır (`konu:"kasım faturası"` iki sözcüğü de konuda arar). Cihazdaki aramada da sunucudakinde de geçer; geri kalanı her yerde aranır.
+- **Komut paletinden iletilerde ara.** Ctrl+K'da yazdığın, paletteki **İletilerde ara** ile Ara ekranında aranır.
+- Sunucu bir aramayı reddederse posta kitaplığının yedek yolu (klasörün bütün iletilerini cihaza indirip taramak) kullanılmaz; o klasör atlanır.
+- Sunucuda bulunanlar veritabanında yeni bir tabloda tutulur (sürüm 4'e eklendi; güncellemede kendiliğinden taşınır).
+
 ### Düzeltmeler
 - **Paylaşılan dosyayla yazma ekranı hemen açılır.** Başka bir uygulamadan dosya paylaşınca yazma ekranı, dosya uygulamaya kopyalanana dek açılmıyordu; büyük bir videoda o süre boyunca yalnızca Gelen görünüyordu. Ekran artık hemen açılır ve dosya arkada eklenir: ekran "Dosya ekleniyor…" der, dosya iletiye girmeden Gönder çalışmaz (ekranı kapatıp taslağı Giden kutusu'ndan yeniden açsan da). Yazma ekranındaki ataşla eklenen büyük dosyalarda da böyle.
 - **Yazma ekranı kendiliğinden kapanmaz.** Bir ileti yazarken başka bir ekrana bakıp geri dönünce yazma ekranı "Taslak Giden kutusu'nda duruyor" diyerek kapanıyordu (taslak kaybolmuyordu, Giden kutusu'ndan açmak gerekiyordu). Yazılan ileti artık ekranına dönüldüğünde bırakıldığı gibi durur.
