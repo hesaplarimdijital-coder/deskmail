@@ -345,7 +345,7 @@ private fun TransferSection(onExport: () -> Unit, onImport: () -> Unit) {
     SettingsSection(stringResource(R.string.transfer_title)) {
         Text(stringResource(R.string.transfer_note), style = DeskTheme.type.labelSmall, color = DeskTheme.colors.textTertiary)
         Row(Modifier.padding(top = DeskTheme.dimens.gapS), horizontalArrangement = Arrangement.spacedBy(DeskTheme.dimens.gapS)) {
-            DeskButton(stringResource(R.string.transfer_export), onExport, icon = MailIcons.Export)
+            DeskButton(stringResource(R.string.transfer_export), onExport, icon = MailIcons.Share)
             DeskButton(stringResource(R.string.transfer_import), onImport, icon = MailIcons.Import)
         }
     }

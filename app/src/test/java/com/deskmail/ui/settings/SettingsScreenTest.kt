@@ -1,29 +1,46 @@
 package com.deskmail.ui.settings
 
+import android.app.Activity
+import android.content.Intent
+import android.net.Uri
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.hasScrollToNodeAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performSemanticsAction
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.deskmail.FakeAccounts
 import com.deskmail.TestApp
+import com.deskmail.core.net.Security
+import com.deskmail.core.net.ServerAddress
+import com.deskmail.core.provider.AuthKind
+import com.deskmail.core.provider.MailSettings
+import com.deskmail.mail.PortableAccount
 import com.deskmail.notify.NotifyGate
 import com.deskmail.settings.AppSettings
+import com.deskmail.settings.SettingsFile
 import com.deskmail.testMail
 import com.deskmail.testPrefs
 import com.deskmail.testSettings
 import com.deskmail.ui.Routes
+import desktopkit.theme.DensityPreference
+import desktopkit.theme.ThemeMode
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
+import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
+import java.time.Instant
 
 /** Settings on a phone: the kit's sections, then the experiments, whose switches change the app's settings. */
 @RunWith(AndroidJUnit4::class)
@@ -181,4 +198,88 @@ class SettingsScreenTest {
         compose.onNodeWithText("İzin ver").assertDoesNotExist()
         compose.onNodeWithText("Sistem ayarları").assertDoesNotExist()
     }
+
+    /** The settings go to a file the user picks a place for; nothing that signs in goes with them. */
+    @Test
+    fun theSettingsAreWrittenToAFileToTakeToAnotherDevice() {
+        val prefs = testPrefs()
+        val settings = testSettings()
+        val accounts = FakeAccounts().apply { portableAccounts = listOf(ayse) }
+        compose.setContent { TestApp(testMail(), prefs, settings, startRoute = Routes.SETTINGS, accounts = accounts) }
+        settings.updateUndoSendSeconds(20)
+
+        press("Dışa aktar")
+        val asked = shadowOf(compose.activity).nextStartedActivityForResult.intent
+        assertEquals(Intent.ACTION_CREATE_DOCUMENT, asked.action)
+        assertEquals("deskmail-ayarlar.json", asked.getStringExtra(Intent.EXTRA_TITLE))
+        // the place picked: a document of the system's, as the app is handed it
+        val picked = Uri.parse("content://com.deskmail.test/moved.json")
+        val file = ByteArrayOutputStream()
+        shadowOf(compose.activity.contentResolver).registerOutputStream(picked, file)
+        compose.runOnUiThread { shadowOf(compose.activity).receiveResult(asked, Activity.RESULT_OK, Intent().setData(picked)) }
+
+        compose.waitUntil(5_000) { compose.onAllNodesWithText("Ayarlar dosyaya yazıldı.").fetchSemanticsNodes().isNotEmpty() }
+        val written = SettingsFile.read(file.toString(Charsets.UTF_8))!!
+        assertEquals(listOf(ayse), written.accounts)
+        assertEquals(20, written.settings["undo_send_seconds"])
+        assertEquals(prefs.themeMode.name, written.look!!.theme)
+    }
+
+    /** A file from another device: its accounts are added (to wait for their passwords), its choices taken. */
+    @Test
+    fun theSettingsOfAnotherDeviceAreTakenFromItsFile() {
+        val prefs = testPrefs()
+        val settings = testSettings()
+        val accounts = FakeAccounts()
+        var chosen = 0
+        compose.setContent { TestApp(testMail(), prefs, settings, startRoute = Routes.SETTINGS, accounts = accounts, onCheckChosen = { chosen++ }) }
+        val text = SettingsFile.write(SettingsFile.Contents(listOf(ayse), mapOf("check_minutes" to 60), SettingsFile.Look("Oled", prefs.accent.name, "Pointer")), Instant.EPOCH)
+        val picked = Uri.parse("content://com.deskmail.test/from-elsewhere.json")
+        shadowOf(compose.activity.contentResolver).registerInputStream(picked, ByteArrayInputStream(text.encodeToByteArray()))
+
+        press("İçe aktar")
+        val asked = shadowOf(compose.activity).nextStartedActivityForResult.intent
+        assertEquals(Intent.ACTION_OPEN_DOCUMENT, asked.action)
+        compose.runOnUiThread { shadowOf(compose.activity).receiveResult(asked, Activity.RESULT_OK, Intent().setData(picked)) }
+
+        compose.waitUntil(5_000) { compose.onAllNodesWithText("1 hesap eklendi; şifresini hesabın sayfasında gir.").fetchSemanticsNodes().isNotEmpty() }
+        assertEquals(listOf(ayse), accounts.adopted)
+        assertEquals(60, settings.checkMinutes)
+        assertEquals(1, chosen)
+        assertEquals(ThemeMode.Oled, prefs.themeMode)
+        assertEquals(DensityPreference.Pointer, prefs.density)
+    }
+
+    @Test
+    fun whatIsNoSettingsFileIsSaidSo() {
+        val accounts = FakeAccounts()
+        compose.setContent { TestApp(testMail(), testPrefs(), testSettings(), startRoute = Routes.SETTINGS, accounts = accounts) }
+        val picked = Uri.parse("content://com.deskmail.test/photo.json")
+        shadowOf(compose.activity.contentResolver).registerInputStream(picked, ByteArrayInputStream("not settings".encodeToByteArray()))
+
+        press("İçe aktar")
+        val asked = shadowOf(compose.activity).nextStartedActivityForResult.intent
+        compose.runOnUiThread { shadowOf(compose.activity).receiveResult(asked, Activity.RESULT_OK, Intent().setData(picked)) }
+
+        compose.waitUntil(5_000) { compose.onAllNodesWithText("Bu bir DeskMail ayar dosyası değil.").fetchSemanticsNodes().isNotEmpty() }
+        assertTrue(accounts.adopted.isEmpty())
+    }
+
+    /** Presses the button named [label], scrolled into view first. */
+    private fun press(label: String) {
+        compose.onNode(hasScrollToNodeAction()).performScrollToNode(hasText(label))
+        compose.onNodeWithText(label).performSemanticsAction(SemanticsActions.OnClick)
+        compose.waitForIdle()
+    }
+
+    private val ayse = PortableAccount(
+        address = "ayse@posta.example",
+        name = "Posta",
+        senderName = "Ayşe Yılmaz",
+        provider = "",
+        settings = MailSettings(ServerAddress("imap.posta.example", 993, Security.Tls), ServerAddress("smtp.posta.example", 465, Security.Tls), "ayse", AuthKind.Password),
+        syncDays = 30,
+        notifyMode = "push",
+        signature = "",
+    )
 }

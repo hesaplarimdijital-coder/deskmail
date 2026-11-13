@@ -14,6 +14,7 @@ import com.deskmail.mail.MailComposer
 import com.deskmail.mail.MailContent
 import com.deskmail.mail.MailSource
 import com.deskmail.mail.MailView
+import com.deskmail.mail.PortableAccount
 import com.deskmail.mail.SetupPlan
 import com.deskmail.mail.SetupResult
 import com.deskmail.notify.NotifyGate
@@ -136,5 +137,16 @@ class FakeAccounts(var plan: SetupPlan = SetupPlan.Manual, var result: SetupResu
 
     override suspend fun remove(accountId: Long) {
         removed += accountId
+    }
+
+    /** What the accounts carry to another device; and what was taken from a settings file. */
+    var portableAccounts: List<PortableAccount> = emptyList()
+    val adopted = ArrayList<PortableAccount>()
+
+    override suspend fun portable(): List<PortableAccount> = portableAccounts
+
+    override suspend fun adopt(accounts: List<PortableAccount>): Int {
+        adopted += accounts
+        return accounts.size
     }
 }

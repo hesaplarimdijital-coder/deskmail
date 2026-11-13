@@ -100,4 +100,54 @@ class AppSettingsTest {
         prefs.edit().putInt("check_minutes", 7).commit()
         assertEquals(AppSettings.CHECK_INSTANT, AppSettings(prefs).checkMinutes)
     }
+
+    /** What the user chose goes to another device and is taken there; how this device's panes are laid out stays. */
+    @Test
+    fun theChoicesGoToAnotherDevice() {
+        val here = AppSettings(prefs).apply {
+            updateUndoSendSeconds(20)
+            updateCheckMinutes(30)
+            updateDarkenMessages(false)
+            updateWebLayer(WebLayer.Software)
+            updateListShare(0.6f)
+        }
+        val portable = here.portable()
+        assertFalse("list_share" in portable)
+
+        val elsewhere = ApplicationProvider.getApplicationContext<Context>().getSharedPreferences("settings-test-elsewhere", Context.MODE_PRIVATE)
+        val there = AppSettings(elsewhere)
+        // how often the mail is looked for changed: the background work has to hear of it
+        assertTrue(there.adopt(portable))
+        assertEquals(20, there.undoSendSeconds)
+        assertEquals(30, there.checkMinutes)
+        assertFalse(there.darkenMessages)
+        assertEquals(WebLayer.Software, there.webLayer)
+        assertEquals(0.45f, there.listShare, 0f)
+        // kept, as any choice is
+        assertEquals(20, AppSettings(elsewhere).undoSendSeconds)
+        // the same again: nothing for the background work
+        assertFalse(there.adopt(portable))
+    }
+
+    /** What is of the wrong kind, or no choice there is, is passed over. */
+    @Test
+    fun whatWouldNotDoIsPassedOver() {
+        val settings = AppSettings(prefs)
+        val changed = settings.adopt(
+            mapOf(
+                "undo_send_seconds" to "twenty",
+                "check_minutes" to null,
+                "experiment_darken_messages" to 1,
+                "experiment_web_layer" to "Holographic",
+                "unknown" to true,
+            ),
+        )
+        assertFalse(changed)
+        assertEquals(10, settings.undoSendSeconds)
+        assertTrue(settings.darkenMessages)
+        assertEquals(WebLayer.Default, settings.webLayer)
+        // a number that is none of the choices is the choice a fresh install starts with, as anywhere
+        settings.adopt(mapOf("undo_send_seconds" to 3600))
+        assertEquals(10, settings.undoSendSeconds)
+    }
 }

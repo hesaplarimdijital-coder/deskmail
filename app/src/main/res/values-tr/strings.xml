@@ -198,6 +198,19 @@
     <string name="settings_log">Günlük</string>
     <string name="settings_log_note">Uygulamanın yaptıkları ve ters giden şeyler. Şifreler ve jetonlar satır saklanmadan önce maskelenir. Bir şey bozulunca paylaş.</string>
     <string name="settings_log_open">Günlüğü aç</string>
+    <string name="transfer_title">Başka bir cihaza taşı</string>
+    <string name="transfer_note">Hesaplar (adresleri, sunucuları, adları, imzaları) ve uygulamanın ayarları bir dosyaya yazılır; şifreler yazılmaz. Dosyayı öbür cihazda içe aktarınca hesaplar eklenir, her biri şifresini bekler.</string>
+    <string name="transfer_export">Dışa aktar</string>
+    <string name="transfer_import">İçe aktar</string>
+    <string name="transfer_file_name">deskmail-ayarlar.json</string>
+    <string name="transfer_exported">Ayarlar dosyaya yazıldı.</string>
+    <string name="transfer_export_failed">Dosya yazılamadı.</string>
+    <string name="transfer_not_a_file">Bu bir DeskMail ayar dosyası değil.</string>
+    <string name="transfer_imported_none">Ayarlar alındı; eklenecek yeni hesap yoktu.</string>
+    <plurals name="transfer_imported">
+        <item quantity="one">%d hesap eklendi; şifresini hesabın sayfasında gir.</item>
+        <item quantity="other">%d hesap eklendi; her birinin şifresini hesabın sayfasında gir.</item>
+    </plurals>
     <string name="log_copy">Kopyala</string>
     <string name="log_share">Dosya olarak paylaş</string>
     <string name="log_clear">Günlüğü temizle</string>

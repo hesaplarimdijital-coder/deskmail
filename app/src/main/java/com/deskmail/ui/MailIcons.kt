@@ -134,6 +134,15 @@ object MailIcons {
         )
     }
 
+    /** An arrow into a tray: take something in from a file. */
+    val Import: ImageVector by lazy {
+        DeskIcons.build(
+            "Import",
+            DeskIcons.stroke("M8 2.5v8M5 7.7 8 10.6l3-2.9"),
+            DeskIcons.stroke("M3.5 8.5v4a1 1 0 0 0 1 1h7a1 1 0 0 0 1-1v-4"),
+        )
+    }
+
     val Copy: ImageVector by lazy {
         DeskIcons.build(
             "Copy",
