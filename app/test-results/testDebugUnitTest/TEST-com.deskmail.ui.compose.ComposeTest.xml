@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.ui.compose.ComposeTest" tests="15" skipped="0" failures="0" errors="0" timestamp="2026-11-13T00:48:25.170Z" hostname="runnervmwuk1x" time="2.258">
+  <properties/>
+  <testcase name="theButtonsUnderAMessageAnswerEverybodyOrSendItOn" classname="com.deskmail.ui.compose.ComposeTest" time="0.215"/>
+  <testcase name="whatAnotherAppAsksForBeginsAMessageWithIt" classname="com.deskmail.ui.compose.ComposeTest" time="0.168"/>
+  <testcase name="withoutAnAccountWhatAnotherAppAsksForIsAnsweredWithANotice" classname="com.deskmail.ui.compose.ComposeTest" time="0.063"/>
+  <testcase name="aReplyBeginsWithTheSenderTheSubjectAndTheQuotedMessage" classname="com.deskmail.ui.compose.ComposeTest" time="0.129"/>
+  <testcase name="closingKeepsWhatWasWrittenAndSaysWhereItIs" classname="com.deskmail.ui.compose.ComposeTest" time="0.207"/>
+  <testcase name="aMessageThatOnlyHasItsRecipientIsNotKeptWhenItIsLeftUntouched" classname="com.deskmail.ui.compose.ComposeTest" time="0.089"/>
+  <testcase name="aMessageThatWasBegunAndLeftEmptyIsNotKept" classname="com.deskmail.ui.compose.ComposeTest" time="0.115"/>
+  <testcase name="aWaitingMessageIsSentNowOrTakenBackFromTheOutbox" classname="com.deskmail.ui.compose.ComposeTest" time="0.166"/>
+  <testcase name="theOutboxListsWhatHasNotLeftAndWhereItStands" classname="com.deskmail.ui.compose.ComposeTest" time="0.09"/>
+  <testcase name="theDraftIsThrownAwayFromTheScreenItIsWrittenOn" classname="com.deskmail.ui.compose.ComposeTest" time="0.263"/>
+  <testcase name="aNewMessageIsWrittenHandedOverAndSentWhenItsTimeIsUp" classname="com.deskmail.ui.compose.ComposeTest" time="0.192"/>
+  <testcase name="undoBringsTheMessageBackToBeWrittenOn" classname="com.deskmail.ui.compose.ComposeTest" time="0.165"/>
+  <testcase name="sendSaysWhatIsWrongWithWhoItGoesTo" classname="com.deskmail.ui.compose.ComposeTest" time="0.121"/>
+  <testcase name="aFailedMessageIsTriedAgainOrThrownAway" classname="com.deskmail.ui.compose.ComposeTest" time="0.111"/>
+  <testcase name="aMessageThatHasLeftCannotBeTakenBack" classname="com.deskmail.ui.compose.ComposeTest" time="0.159"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

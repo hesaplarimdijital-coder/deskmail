@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.notify.NotifyActionsTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-11-13T00:48:03.850Z" hostname="runnervmwuk1x" time="4.898">
+  <properties/>
+  <testcase name="mailThatArrivesIsToldOfByTheSyncThatBringsIt" classname="com.deskmail.notify.NotifyActionsTest" time="1.198"/>
+  <testcase name="aNotificationThatWasSweptAwayLeavesItsMessageAsItIs" classname="com.deskmail.notify.NotifyActionsTest" time="0.857"/>
+  <testcase name="aButtonForAMessageThatIsNoLongerThereDoesNothing" classname="com.deskmail.notify.NotifyActionsTest" time="0.024"/>
+  <testcase name="aNotificationsButtonsAreCarriedOutOnTheDeviceAtOnceAndToldToTheServer" classname="com.deskmail.notify.NotifyActionsTest" time="1.945"/>
+  <testcase name="aServerThatCannotBeReachedKeepsWhatWasDoneWaiting" classname="com.deskmail.notify.NotifyActionsTest" time="0.871"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

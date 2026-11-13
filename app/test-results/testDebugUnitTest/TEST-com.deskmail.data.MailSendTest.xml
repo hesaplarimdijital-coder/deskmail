@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.data.MailSendTest" tests="17" skipped="0" failures="0" errors="0" timestamp="2026-11-13T00:46:41.899Z" hostname="runnervmwuk1x" time="4.061">
+  <properties/>
+  <testcase name="aReplyGoesToItsSenderQuotesTheMessageAndMarksItAnswered" classname="com.deskmail.data.MailSendTest" time="0.821"/>
+  <testcase name="aMessageThatIsToGoNowDoesNotWait" classname="com.deskmail.data.MailSendTest" time="0.094"/>
+  <testcase name="aProviderThatFilesSentMailItselfGetsNoSecondCopy" classname="com.deskmail.data.MailSendTest" time="0.407"/>
+  <testcase name="theSentMessageIsFiledUnderSentWithItsHiddenRecipients" classname="com.deskmail.data.MailSendTest" time="0.66"/>
+  <testcase name="aMessageThatWasBeingSentWhenTheAppEndedIsNotSentASecondTimeUnasked" classname="com.deskmail.data.MailSendTest" time="0.051"/>
+  <testcase name="theOutboxListsWhatHasNotLeftAndForgetsWhatIsThrownAway" classname="com.deskmail.data.MailSendTest" time="0.051"/>
+  <testcase name="aMessageThatIsTakenBackIsNotSent" classname="com.deskmail.data.MailSendTest" time="0.029"/>
+  <testcase name="aMessageWaitsOutItsTimeAndIsThenSent" classname="com.deskmail.data.MailSendTest" time="0.081"/>
+  <testcase name="aFileIsAttachedAndTakenOutAgain" classname="com.deskmail.data.MailSendTest" time="0.078"/>
+  <testcase name="whoItGoesToIsCheckedBeforeAnythingIsHandedOver" classname="com.deskmail.data.MailSendTest" time="0.029"/>
+  <testcase name="aMessageBegunWithNoAccountIsNotBegun" classname="com.deskmail.data.MailSendTest" time="0.03"/>
+  <testcase name="whatAnEarlierRunLeftIsLookedAtOnceAndBeforeAnythingIsSent" classname="com.deskmail.data.MailSendTest" time="0.028"/>
+  <testcase name="aForwardedMessageTakesItsFilesAlong" classname="com.deskmail.data.MailSendTest" time="1.063"/>
+  <testcase name="aMessageTheServerWillNotTakeIsKeptAsFailedAndCanBeTriedAgain" classname="com.deskmail.data.MailSendTest" time="0.122"/>
+  <testcase name="whatIsTypedAfterAMessageWasHandedOverDoesNotReachIt" classname="com.deskmail.data.MailSendTest" time="0.072"/>
+  <testcase name="theSignatureEndsANewMessageAndStandsAboveWhatIsQuoted" classname="com.deskmail.data.MailSendTest" time="0.404"/>
+  <testcase name="aServerThatCannotBeReachedLeavesTheMessageWaiting" classname="com.deskmail.data.MailSendTest" time="0.031"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
