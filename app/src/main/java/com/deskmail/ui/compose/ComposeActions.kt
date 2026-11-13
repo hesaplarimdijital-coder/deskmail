@@ -18,7 +18,9 @@ import desktopkit.components.ToastDuration
 import desktopkit.components.ToastResult
 import desktopkit.components.ToastState
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 
 /**
@@ -81,6 +83,10 @@ class ComposeActions(
      * a text, files. Closed with nothing written into it, a message that only had its
      * recipients is thrown away like any other that was begun and left; one that came with more
      * stays in the outbox.
+     *
+     * The screen opens at once and the files are copied into the message behind it: a video takes
+     * its time, and until it is in the message there would be nothing to see of what was asked
+     * for. The screen says that files are on their way, and does not send before they are in.
      */
     fun begin(route: String, request: ComposeRequest) {
         scope.launch {
@@ -90,11 +96,21 @@ class ComposeActions(
                 toasts.show(resources.getString(R.string.compose_no_account))
                 return@launch
             }
-            var failed = false
-            for (file in request.files) if (!composer.attach(id, file.name, file.mimeType, file.open)) failed = true
             putAway()
-            ui.writing = Writing(id, route, fresh = !request.hasContent)
-            if (failed) toasts.show(resources.getString(R.string.compose_attach_failed))
+            val writing = Writing(id, route, fresh = !request.hasContent)
+            ui.writing = writing
+            if (request.files.isEmpty()) return@launch
+            val fields = writing.fields
+            fields.attachBegun(request.files.size)
+            var failed = false
+            for (file in request.files) {
+                // to its end, whatever becomes of the window meanwhile: half a file is of no use to the message
+                val added = withContext(NonCancellable) { composer.attach(id, file.name, file.mimeType, file.open) }
+                fields.attachEnded(added)
+                if (!added) failed = true
+            }
+            // thrown away meanwhile: there is nothing to say about its files
+            if (failed && !fields.thrownAway) toasts.show(resources.getString(R.string.compose_attach_failed))
         }
     }
 

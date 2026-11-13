@@ -112,6 +112,11 @@
     <string name="compose_bad_addresses">Adres değil: %1$s</string>
     <string name="compose_file_remove">Çıkar</string>
     <string name="compose_attach_failed">Dosya eklenemedi.</string>
+    <plurals name="compose_attaching">
+        <item quantity="one">Dosya ekleniyor…</item>
+        <item quantity="other">%d dosya ekleniyor…</item>
+    </plurals>
+    <string name="compose_wait_files">Dosyalar eklenince gönderebilirsin.</string>
     <string name="compose_sending">Gönderiliyor…</string>
     <string name="compose_too_late">Geri alınamadı: ileti çoktan gitti.</string>
     <string name="compose_discarded">Taslak silindi.</string>

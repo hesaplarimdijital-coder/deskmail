@@ -188,6 +188,9 @@ birkaç PR'dan sonra çıkar (13 Kasım 2026'dan beri her PR'dan sonra beklenmiy
 o ön sürümün ilk PR'ında artar, sonraki PR'lar CHANGELOG'da aynı başlığın altına yazar. Barış Releases'ta
 `main` üzerinde etiketi açar (README, "Sürüm çıkarma"); iş akışı imzalı APK'yı ve sürüm notlarını ekler.
 
+**13 Kasım 2026, Barış'ın kararı:** alpha.4 çıkmıyor. Aşağıda "kalan" diye duran her şey (Outlook dışında)
+`0.1.0-beta.1`'de toplanır; Outlook `0.1.0-beta.2`'de gelir. Aşama 2 beta'ya girmez.
+
 1. **İskelet ve erken denemeler (alpha.1):** Gradle iskeleti ve CI · imza ve etiket iş akışı · kit
    kabuğu · sahte veriyle liste ve okuma · WebView deneme ekranı · kısayollar, menü çubuğu, palet ·
    günlük · ekran görüntüsü testleri ve kenar çubuğu testi.

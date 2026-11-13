@@ -3,6 +3,10 @@ package com.deskmail.ui.compose
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.isSelectable
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -26,6 +30,7 @@ import com.deskmail.testSettings
 import com.deskmail.ui.Routes
 import com.deskmail.ui.mail.MailUiState
 import com.deskmail.ui.mail.openMessage
+import kotlinx.coroutines.CompletableDeferred
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -341,29 +346,93 @@ class ComposeTest {
 
     // ------------------------------------------------------------------ asked for by another app
 
-    /** A mailto link, or something shared with the app: a new message begins with it over the screen in front. */
+    /**
+     * A mailto link, or something shared with the app: a new message begins with it over the
+     * screen in front. At once: a file that came along is copied into the message behind the
+     * screen, which says so and does not send before the file is in.
+     */
     @Test
-    fun whatAnotherAppAsksForBeginsAMessageWithIt() {
+    fun whatAnotherAppAsksForBeginsAMessageWithItAtOnce() {
         launch()
         val seed = DraftSeed(to = "ayse.yilmaz@posta.example", cc = "elif@posta.example", subject = "Rapor", body = "Ekte.")
-        val file = SharedFile("rapor.pdf", "application/pdf") { ByteArray(12).inputStream() }
+        val file = SharedFile("tatil.mp4", "video/mp4") { ByteArray(12).inputStream() }
+        // a video takes its time on its way into the message
+        val held = CompletableDeferred<Unit>()
+        composer.filesHeld = held
 
         compose.runOnUiThread { ui.composeRequest = ComposeRequest(seed, listOf(file)) }
         compose.waitForIdle()
 
-        // taken up once, over the inbox
+        // taken up once, over the inbox: the screen is there before the file is
         assertNull(ui.composeRequest)
         val writing = ui.writingOver(Routes.INBOX)!!
+        compose.onNodeWithTag(ComposeTags.SUBJECT).assertExists()
+        compose.onNodeWithTag(ComposeTags.CC).assertExists()
         val draft = composer.draft(writing.draftId)!!
         assertEquals("ayse.yilmaz@posta.example", draft.to)
         assertEquals("elif@posta.example", draft.cc)
         assertEquals("Rapor", draft.subject)
         assertTrue(draft.body.startsWith("Ekte."))
-        assertEquals(listOf("rapor.pdf"), draft.files.map { it.name })
+        assertTrue(draft.files.isEmpty())
+        assertEquals(1, writing.fields.attaching)
+        compose.onNodeWithText("Dosya ekleniyor…").assertExists()
+        compose.onNodeWithContentDescription("Gönder").assertIsNotEnabled()
         // it came with something to say: closed untouched, it is kept
         assertFalse(writing.fresh)
+
+        held.complete(Unit)
+        compose.waitForIdle()
+
+        assertEquals(listOf("tatil.mp4"), composer.draft(writing.draftId)!!.files.map { it.name })
+        assertEquals(0, writing.fields.attaching)
+        compose.onNodeWithTag(ComposeTags.ATTACHING).assertDoesNotExist()
+        compose.onNodeWithContentDescription("Gönder").assertIsEnabled()
+        compose.onNodeWithText("tatil.mp4").assertExists()
+    }
+
+    /** Thrown away while its file was still on its way: nothing is said about the file. */
+    @Test
+    fun aMessageThatIsThrownAwayWhileItsFileIsOnItsWaySaysNothingOfTheFile() {
+        launch()
+        val held = CompletableDeferred<Unit>()
+        composer.filesHeld = held
+        compose.runOnUiThread { ui.composeRequest = ComposeRequest(DraftSeed(subject = "Video"), listOf(SharedFile("tatil.mp4", "video/mp4") { ByteArray(12).inputStream() })) }
+        compose.waitForIdle()
+        val writing = ui.writing!!
+
+        press("Taslağı sil")
+        held.complete(Unit)
+        compose.waitForIdle()
+
+        assertNull(ui.writing)
+        assertNull(composer.draft(writing.draftId))
+        compose.onNodeWithText("Dosya eklenemedi.").assertDoesNotExist()
+    }
+
+    /**
+     * Another screen is looked at while a message is being written: back on its own screen, the
+     * message is still being written, with what was typed. (The screen is drawn anew then, and
+     * has not heard of its message yet: that is not the message being gone.)
+     */
+    @Test
+    fun aMessageBeingWrittenIsStillThereAfterAnotherScreenWasLookedAt() {
+        launch()
+        write(subject = "Yarım kalan")
+
+        compose.onNode(hasText("Klasörler") and isSelectable()).performClick()
+        compose.waitForIdle()
+        compose.onNodeWithTag(ComposeTags.SUBJECT).assertDoesNotExist()
+        compose.onNode(hasText("Gelen") and isSelectable()).performClick()
+        compose.waitForIdle()
+
+        val writing = ui.writingOver(Routes.INBOX)
+        assertNotNull(writing)
+        assertEquals("Yarım kalan", writing!!.fields.subject)
         compose.onNodeWithTag(ComposeTags.SUBJECT).assertExists()
-        compose.onNodeWithTag(ComposeTags.CC).assertExists()
+        compose.onNodeWithText("Taslak Giden kutusu'nda duruyor.").assertDoesNotExist()
+        // and it is sent from there as if nothing had happened
+        press("Gönder")
+        assertEquals(DraftState.Waiting, composer.outbox.single().state)
     }
 
     /** A link that only names who to write to begins a message that is not worth keeping empty. */
