@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.ui.compose.ComposeTest" tests="18" skipped="0" failures="0" errors="0" timestamp="2026-11-13T06:21:14.996Z" hostname="runnervmccnms" time="3.217">
+  <properties/>
+  <testcase name="whatAnotherAppAsksForBeginsAMessageWithItAtOnce" classname="com.deskmail.ui.compose.ComposeTest" time="0.296"/>
+  <testcase name="theButtonsUnderAMessageAnswerEverybodyOrSendItOn" classname="com.deskmail.ui.compose.ComposeTest" time="0.245"/>
+  <testcase name="aMessageThatIsTakenUpAgainWhileItsFileIsOnItsWayStillWaitsForIt" classname="com.deskmail.ui.compose.ComposeTest" time="0.155"/>
+  <testcase name="withoutAnAccountWhatAnotherAppAsksForIsAnsweredWithANotice" classname="com.deskmail.ui.compose.ComposeTest" time="0.077"/>
+  <testcase name="aReplyBeginsWithTheSenderTheSubjectAndTheQuotedMessage" classname="com.deskmail.ui.compose.ComposeTest" time="0.159"/>
+  <testcase name="closingKeepsWhatWasWrittenAndSaysWhereItIs" classname="com.deskmail.ui.compose.ComposeTest" time="0.21"/>
+  <testcase name="aMessageThatOnlyHasItsRecipientIsNotKeptWhenItIsLeftUntouched" classname="com.deskmail.ui.compose.ComposeTest" time="0.128"/>
+  <testcase name="aMessageThatWasBegunAndLeftEmptyIsNotKept" classname="com.deskmail.ui.compose.ComposeTest" time="0.132"/>
+  <testcase name="aMessageBeingWrittenIsStillThereAfterAnotherScreenWasLookedAt" classname="com.deskmail.ui.compose.ComposeTest" time="0.235"/>
+  <testcase name="aWaitingMessageIsSentNowOrTakenBackFromTheOutbox" classname="com.deskmail.ui.compose.ComposeTest" time="0.228"/>
+  <testcase name="theOutboxListsWhatHasNotLeftAndWhereItStands" classname="com.deskmail.ui.compose.ComposeTest" time="0.104"/>
+  <testcase name="theDraftIsThrownAwayFromTheScreenItIsWrittenOn" classname="com.deskmail.ui.compose.ComposeTest" time="0.201"/>
+  <testcase name="aNewMessageIsWrittenHandedOverAndSentWhenItsTimeIsUp" classname="com.deskmail.ui.compose.ComposeTest" time="0.173"/>
+  <testcase name="undoBringsTheMessageBackToBeWrittenOn" classname="com.deskmail.ui.compose.ComposeTest" time="0.197"/>
+  <testcase name="sendSaysWhatIsWrongWithWhoItGoesTo" classname="com.deskmail.ui.compose.ComposeTest" time="0.136"/>
+  <testcase name="aFailedMessageIsTriedAgainOrThrownAway" classname="com.deskmail.ui.compose.ComposeTest" time="0.141"/>
+  <testcase name="aMessageThatIsThrownAwayWhileItsFileIsOnItsWaySaysNothingOfTheFile" classname="com.deskmail.ui.compose.ComposeTest" time="0.166"/>
+  <testcase name="aMessageThatHasLeftCannotBeTakenBack" classname="com.deskmail.ui.compose.ComposeTest" time="0.222"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
