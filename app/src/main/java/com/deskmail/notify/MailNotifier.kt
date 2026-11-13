@@ -25,6 +25,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 
 /**
  * Tells of new mail with the system's notifications. After an account was synced, [check] looks
@@ -78,8 +79,10 @@ class MailNotifier(
     }
 
     /** Tells of the mail that arrived in the account's inboxes since they were last looked at. */
-    suspend fun check(accountId: Long) = lock.withLock {
-        val account = db.accounts().byId(accountId) ?: return@withLock
+    suspend fun check(accountId: Long) = withContext(Dispatchers.Default) { lock.withLock { look(accountId) } }
+
+    private suspend fun look(accountId: Long) {
+        val account = db.accounts().byId(accountId) ?: return
         val folders = db.folders().ofAccount(accountId)
         val archive = folders.any { folderRole(it.role) == FolderRole.Archive || folderRole(it.role) == FolderRole.All }
         for (inbox in folders) {

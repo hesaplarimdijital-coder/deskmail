@@ -49,13 +49,15 @@ class MailNotifierTest {
     private var inbox = 0L
 
     @Before
-    fun open() = runBlocking {
+    fun open() {
         db = DeskMailDatabase.inMemory(context)
         store = NotifyStore(context.getSharedPreferences("notify-test", Context.MODE_PRIVATE))
         notifier = MailNotifier(context, db, store, front, AppLog())
-        account = db.accounts().insert(testAccount("deniz@example.org", name = "Posta"))
-        inbox = db.folders().insert(testFolder(account, "INBOX", role = "Inbox").copy(uidValidity = 7))
-        db.folders().insert(testFolder(account, "Archive", role = "Archive", position = 1))
+        runBlocking {
+            account = db.accounts().insert(testAccount("deniz@example.org", name = "Posta"))
+            inbox = db.folders().insert(testFolder(account, "INBOX", role = "Inbox").copy(uidValidity = 7))
+            db.folders().insert(testFolder(account, "Archive", role = "Archive", position = 1))
+        }
     }
 
     @After
