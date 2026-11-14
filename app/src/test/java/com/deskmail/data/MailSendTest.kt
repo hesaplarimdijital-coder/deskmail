@@ -4,9 +4,13 @@ import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.deskmail.core.log.AppLog
+import com.deskmail.core.mail.MailException
+import com.deskmail.core.oauth.Tokens
+import com.deskmail.core.provider.AuthKind
 import com.deskmail.core.provider.ProviderTable
 import com.deskmail.db.DeskMailDatabase
 import com.deskmail.db.OutboxEntity
+import com.deskmail.mail.AccountState
 import com.deskmail.mail.Draft
 import com.deskmail.mail.DraftKind
 import com.deskmail.mail.DraftState
@@ -419,6 +423,47 @@ class MailSendTest {
         eventually("it waits again") { runBlocking { db.outbox().byId(id)?.state } == OutboxEntity.QUEUED }
         sender.sendDue()
         assertEquals("Reddedilen", server.inboxOf("ayse@example.org").single().subject)
+    }
+
+    /** An account that signs in at Microsoft: its access token sends the mail (the test's server takes it for the password). */
+    @Test
+    fun anAccountThatSignsInAtMicrosoftSendsWithItsAccessToken() = runBlocking {
+        val account = accounts.addSignedIn(TestImapServer.ADDRESS, "Outlook", "outlook", server.settings.copy(auth = AuthKind.MicrosoftOAuth), Tokens(TestImapServer.PASSWORD, "M.C5-refresh", 3600))
+        val id = composer.start()!!
+        composer.save(id, account, "ayse@example.org", "", "", "Belirteçle", "XOAUTH2 ile gider.")
+        composer.send(id)
+
+        sendWhatIsDue()
+
+        assertEquals("Belirteçle", server.inboxOf("ayse@example.org").single().subject)
+        assertNull(db.outbox().byId(id))
+    }
+
+    /**
+     * The sending server refuses an access token the mailbox takes: Microsoft keeps SMTP off for
+     * some mailboxes. The message fails with the server's words; signing in again would not help,
+     * so the account is not sent to do so.
+     */
+    @Test
+    fun aSendingServerThatRefusesTheAccessTokenFailsTheMessageOnly() = runBlocking {
+        val refusal = "535 5.7.139 Authentication unsuccessful, SmtpClientAuthentication is disabled for the Mailbox."
+        val refusing = MailSend(
+            db, accounts, sync, log, work = File(files.parentFile, "outgoing-refused"), files = files,
+            send = { _, _, _, _, _ -> throw MailException(MailException.Kind.Authentication, refusal) },
+            now = { clock.get() }, zone = { ZoneOffset.UTC },
+        )
+        val outlook = accounts.addSignedIn(TestImapServer.ADDRESS, "Outlook", "outlook", server.settings.copy(auth = AuthKind.MicrosoftOAuth), Tokens(TestImapServer.PASSWORD, "M.C5-refresh", 3600))
+        val id = composer.start()!!
+        composer.save(id, outlook, "ayse@example.org", "", "", "Gitmeyecek", "SMTP kapalı.")
+        composer.send(id)
+        clock.addAndGet(UNDO_MS)
+
+        refusing.sendDue()
+
+        val failed = draft(id)!!
+        assertEquals(DraftState.Failed, failed.state)
+        assertTrue(failed.error, failed.error.contains("SmtpClientAuthentication is disabled"))
+        assertEquals(AccountState.Ok, accounts.byId(outlook)!!.accountState())
     }
 
     @Test

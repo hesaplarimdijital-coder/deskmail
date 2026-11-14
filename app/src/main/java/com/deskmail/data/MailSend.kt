@@ -161,7 +161,13 @@ class MailSend(
     /** Sends one message; null when the server took it, else why it did not. */
     private suspend fun sendOne(row: OutboxEntity): MailException? {
         val account = accounts.byId(row.accountId) ?: return MailException(MailException.Kind.Server, "the account is gone")
-        val credentials = accounts.credentials(account)
+        val credentials = try {
+            accounts.credentials(account)
+        } catch (e: MailException) {
+            // the provider handed out no new access token (why is in the log): signing in again, or another try later
+            if (e.kind == MailException.Kind.Authentication) accounts.setState(account.id, AccountState.NeedsLogin, e.message.orEmpty())
+            return e
+        }
         if (credentials == null) {
             accounts.setState(account.id, AccountState.NeedsLogin)
             return MailException(MailException.Kind.Authentication, "the account has to sign in again")
@@ -178,7 +184,13 @@ class MailSend(
             send(account.smtpServer(), credentials, account.address, message.recipients, file)
         } catch (e: MailException) {
             file.delete()
-            if (e.kind == MailException.Kind.Authentication) accounts.setState(account.id, AccountState.NeedsLogin, e.message.orEmpty())
+            // A password the sending server refuses is no longer the account's. An access token it
+            // refuses is the provider's word on sending (Microsoft can keep SMTP off for a mailbox
+            // that takes the same token for IMAP): the message says so, and signing in again would
+            // change nothing. A token that is no longer good shows at the next sync.
+            if (e.kind == MailException.Kind.Authentication && credentials !is Credentials.OAuth) {
+                accounts.setState(account.id, AccountState.NeedsLogin, e.message.orEmpty())
+            }
             return e
         } catch (e: IOException) {
             // a file that was attached is no longer where it was kept

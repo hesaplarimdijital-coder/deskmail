@@ -291,6 +291,11 @@
     <string name="experiment_under_bars_note">Telefon. Kapalıyken ileti üst ve alt çubuğun arasında kalır.</string>
     <string name="experiment_darken">Koyu temada iletiyi karart</string>
     <string name="experiment_darken_note">Kapalıyken ileti, gönderenin yaptığı gibi beyaz zeminde görünür.</string>
+    <string name="settings_microsoft">Microsoft girişi</string>
+    <string name="settings_microsoft_note">Outlook hesapları DeskMail\'in Microsoft\'taki kaydıyla giriş yapar. Microsoft o kaydı bir gün kabul etmezse aynı adımlarla kendi kaydını yap, uygulama kimliğini buraya yaz ve Outlook hesaplarına yeniden giriş yap. Boşken DeskMail\'in kaydı kullanılır.</string>
+    <string name="settings_microsoft_client_id">Uygulama (istemci) kimliği</string>
+    <string name="settings_microsoft_client_id_hint">DeskMail\'in kendi kaydı</string>
+    <string name="settings_microsoft_client_id_invalid">Bu bir uygulama kimliği değil: Microsoft onu 8-4-4-4-12 harf ve rakamla yazar.</string>
 
     <string name="settings_log">Günlük</string>
     <string name="settings_log_note">Uygulamanın yaptıkları ve ters giden şeyler. Şifreler ve jetonlar satır saklanmadan önce maskelenir. Bir şey bozulunca paylaş.</string>
@@ -379,6 +384,12 @@
     <string name="setup_duplicate">Bu hesap zaten ekli.</string>
     <string name="setup_gmail_note">Gmail, posta uygulamalarından hesap şifresini kabul etmez. İki adımlı doğrulama açıkken Google hesabında bir uygulama şifresi üret (myaccount.google.com/apppasswords) ve 16 harfini buraya yaz ya da yapıştır.</string>
     <string name="setup_outlook_note">Outlook, Hotmail ve Live hesapları Microsoft\'ta, tarayıcıdan giriş yapar. Bu henüz hazır değil; sonraki ön sürümlerden biriyle geliyor.</string>
+    <string name="setup_hosted_note">Bu adresin postası Microsoft 365\'te: bir iş ya da okul hesabı. Bu sürüm yalnızca kişisel Microsoft hesaplarına (Outlook.com, Hotmail, Live) giriş yapabiliyor.</string>
+    <string name="setup_microsoft_note">Hesap Microsoft\'ta, tarayıcıda giriş yapar: şifren DeskMail\'e hiç girmez, Microsoft da DeskMail\'e postanı okuma ve gönderme izni verir. Outlook.com ayarlarında IMAP açık olmalı (Ayarlar › Posta › İletme ve IMAP).</string>
+    <string name="setup_microsoft_sign_in">Microsoft\'ta giriş yap</string>
+    <string name="setup_microsoft_waiting">Tarayıcıda giriş bekleniyor. Bitince DeskMail\'e dönülür.</string>
+    <string name="setup_not_signed_in">Microsoft\'ta giriş tamamlanmadı. Yeniden dene.</string>
+    <string name="setup_no_browser">Giriş sayfasını açacak bir tarayıcı yok.</string>
     <string name="setup_found">Sunucular bulundu</string>
     <string name="setup_receiving">Alma (IMAP)</string>
     <string name="setup_sending">Gönderme (SMTP)</string>
@@ -399,10 +410,12 @@
     <string name="setup_servers_incomplete">Bir sunucu adı, bir port ya da kullanıcı adı eksik.</string>
     <string name="setup_failed_login">Sunucu girişi reddetti. Adresi ve şifreyi denetle.</string>
     <string name="setup_failed_login_app_password">Sunucu girişi reddetti. Hesabın kendi şifresi değil uygulama şifresi gerekir; hesap ayarlarında IMAP açık olmalı.</string>
+    <string name="setup_failed_login_microsoft">Microsoft girişi kabul etti, Outlook sunucusu reddetti. Outlook.com ayarlarında IMAP açık olmalı (Ayarlar › Posta › İletme ve IMAP).</string>
     <string name="setup_failed_network">Sunucuya ulaşılamadı. Bağlantıyı ve sunucu adını denetle.</string>
     <string name="setup_failed_security">Sunucuyla güvenli bağlantı kurulamadı.</string>
     <string name="setup_failed_server">Sunucu hata verdi.</string>
     <string name="setup_server_said">Sunucunun yanıtı: %1$s</string>
+    <string name="setup_provider_said">Microsoft\'un yanıtı: %1$s</string>
     <string name="setup_added">%1$s eklendi. Postası geliyor.</string>
 
     <string name="account_address">Adres</string>
@@ -410,6 +423,7 @@
     <string name="account_state">Durum</string>
     <string name="account_sync_now">Şimdi eşitle</string>
     <string name="account_reconnect_note">Şifreyi yeniden gir (Gmail için uygulama şifresi). Hesabın geri kalanı olduğu gibi kalır.</string>
+    <string name="account_reconnect_microsoft_note">Microsoft\'ta, tarayıcıda yeniden giriş yap. Hesabın geri kalanı olduğu gibi kalır.</string>
     <string name="account_reconnected">Yeniden giriş yapıldı.</string>
     <string name="account_writing">Yazarken</string>
     <string name="account_writing_note">Yazdığın kişilerin adresinin yanında göreceği ad ve iletilerinin sonuna eklenen imza.</string>

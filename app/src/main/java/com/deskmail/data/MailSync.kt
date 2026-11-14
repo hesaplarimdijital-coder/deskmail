@@ -448,12 +448,13 @@ class MailSync(
      */
     private suspend fun connected(accountId: Long, work: suspend (AccountEntity, RemoteAccount) -> Unit): Outcome = withContext(io) {
         val account = accounts.byId(accountId) ?: return@withContext Outcome.Gone
-        val credentials = accounts.credentials(account)
-        if (credentials == null) {
-            accounts.setState(accountId, AccountState.NeedsLogin)
-            return@withContext Outcome.Failed(MailException.Kind.Authentication, "")
-        }
         try {
+            // an account that signs in in the browser may have its access token renewed first
+            val credentials = accounts.credentials(account)
+            if (credentials == null) {
+                accounts.setState(accountId, AccountState.NeedsLogin)
+                return@withContext Outcome.Failed(MailException.Kind.Authentication, "")
+            }
             connect(account.imapServer(), credentials).use { remote -> work(account, remote) }
             accounts.setState(accountId, AccountState.Ok)
             Outcome.Done

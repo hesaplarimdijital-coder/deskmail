@@ -307,6 +307,11 @@
     <string name="experiment_under_bars_note">Phone. Off: the message stays between the top and the bottom bar.</string>
     <string name="experiment_darken">Darken messages on dark themes</string>
     <string name="experiment_darken_note">Off: a message is shown on white, as its sender made it.</string>
+    <string name="settings_microsoft">Signing in at Microsoft</string>
+    <string name="settings_microsoft_note">Outlook accounts sign in with DeskMail\'s registration at Microsoft. Should Microsoft one day no longer take it, make a registration of your own the same way, type its application ID here, and sign in to the Outlook accounts again. Empty: DeskMail\'s registration.</string>
+    <string name="settings_microsoft_client_id">Application (client) ID</string>
+    <string name="settings_microsoft_client_id_hint">DeskMail\'s own</string>
+    <string name="settings_microsoft_client_id_invalid">That is no application ID: Microsoft writes them as 8-4-4-4-12 letters and digits.</string>
 
     <!-- Settings › Log -->
     <string name="settings_log">Log</string>
@@ -403,6 +408,12 @@
     <string name="setup_duplicate">This account is already added.</string>
     <string name="setup_gmail_note">Gmail takes no account password from mail programs. With 2-Step Verification on, make an app password in your Google account (myaccount.google.com/apppasswords) and enter or paste its 16 letters here.</string>
     <string name="setup_outlook_note">Outlook, Hotmail and Live accounts sign in at Microsoft, in the browser. That is not ready yet; it arrives with one of the next pre-releases.</string>
+    <string name="setup_hosted_note">This address\'s mail is at Microsoft 365: a work or school account. This version signs in to personal Microsoft accounts only (Outlook.com, Hotmail, Live).</string>
+    <string name="setup_microsoft_note">The account signs in at Microsoft, in the browser: the password never reaches DeskMail, and Microsoft lets it read and send the mail. IMAP has to be on in Outlook.com\'s settings (Settings › Mail › Forwarding and IMAP).</string>
+    <string name="setup_microsoft_sign_in">Sign in at Microsoft</string>
+    <string name="setup_microsoft_waiting">Waiting for the sign-in in the browser. DeskMail comes back once it is done.</string>
+    <string name="setup_not_signed_in">The sign-in at Microsoft was not finished. Try again.</string>
+    <string name="setup_no_browser">There is no browser to open the sign-in page with.</string>
     <string name="setup_found">Servers found</string>
     <string name="setup_receiving">Receiving (IMAP)</string>
     <string name="setup_sending">Sending (SMTP)</string>
@@ -427,10 +438,12 @@
     <string name="setup_servers_incomplete">A server\'s name, a port or the user name is missing.</string>
     <string name="setup_failed_login">The server refused the sign-in. Check the address and the password.</string>
     <string name="setup_failed_login_app_password">The server refused the sign-in. It takes an app password, not the account\'s own, and IMAP has to be on in the account\'s settings.</string>
+    <string name="setup_failed_login_microsoft">Microsoft took the sign-in, and the Outlook server refused it. IMAP has to be on in Outlook.com\'s settings (Settings › Mail › Forwarding and IMAP).</string>
     <string name="setup_failed_network">The server could not be reached. Check the connection and the server\'s name.</string>
     <string name="setup_failed_security">No secure connection could be made to the server.</string>
     <string name="setup_failed_server">The server answered with an error.</string>
     <string name="setup_server_said">The server\'s words: %1$s</string>
+    <string name="setup_provider_said">Microsoft\'s words: %1$s</string>
     <string name="setup_added">%1$s added. Its mail is arriving.</string>
 
     <!-- Settings › Accounts › an account -->
@@ -439,6 +452,7 @@
     <string name="account_state">State</string>
     <string name="account_sync_now">Sync now</string>
     <string name="account_reconnect_note">Enter the password again (for Gmail: an app password). Everything else about the account stays.</string>
+    <string name="account_reconnect_microsoft_note">Sign in at Microsoft again, in the browser. Everything else about the account stays.</string>
     <string name="account_reconnected">Signed in again.</string>
     <string name="account_writing">Writing</string>
     <string name="account_writing_note">The name the people you write to see beside your address, and what your messages end with.</string>

@@ -63,7 +63,8 @@ class AccountSetupTest {
         accounts = AccountStore(db, testBox(), log)
         sync = MailSync(db, accounts, log, background)
         val autoconfig = Autoconfig(fetch = { url -> asked += url; if (url.endsWith("/posta.example")) database else null })
-        setup = AccountSetup(db, accounts, sync, autoconfig, log, background)
+        // as a version without a registration at Microsoft (AccountSignInTest has one)
+        setup = AccountSetup(db, accounts, sync, autoconfig, log, background, signIns = { null })
     }
 
     @After

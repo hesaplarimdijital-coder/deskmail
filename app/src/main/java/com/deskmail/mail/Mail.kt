@@ -2,6 +2,7 @@ package com.deskmail.mail
 
 import com.deskmail.core.mail.FolderRole
 import com.deskmail.core.mail.MailException
+import com.deskmail.core.provider.AuthKind
 import java.time.Instant
 
 /** An account as the screens show it. */
@@ -19,6 +20,8 @@ data class MailAccount(
     val senderName: String = "",
     /** What its messages are signed with; empty for nothing. */
     val signature: String = "",
+    /** How it signs in: with a password, or at its provider in the browser. */
+    val auth: AuthKind = AuthKind.Password,
 )
 
 /** A folder of an account as the screens show it. */

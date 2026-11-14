@@ -20,6 +20,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -31,12 +32,12 @@ import com.deskmail.core.mail.MailException
 import com.deskmail.core.net.Security
 import com.deskmail.core.net.ServerAddress
 import com.deskmail.core.provider.AuthKind
-import com.deskmail.core.provider.Provider
 import com.deskmail.mail.AccountActions
 import com.deskmail.mail.AccountState
 import com.deskmail.mail.MailAccount
 import com.deskmail.mail.SetupPlan
 import com.deskmail.mail.SetupResult
+import com.deskmail.ui.BrowserTab
 import desktopkit.components.BannerTone
 import desktopkit.components.DeskButton
 import desktopkit.components.DeskDialog
@@ -56,6 +57,7 @@ import desktopkit.shell.NavKind
 import desktopkit.shell.rememberShellContentPadding
 import desktopkit.theme.DeskTheme
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
 /** Names the tests find the fields of the account pages by. */
@@ -96,10 +98,16 @@ internal fun SettingsPageFrame(title: String, onClose: () -> Unit, content: @Com
  */
 @Composable
 fun AccountSetupPage(form: AccountSetupForm, actions: AccountActions, scope: CoroutineScope, onClose: () -> Unit, onAdded: (String) -> Unit) {
+    val context = LocalContext.current
     val lookUp: () -> Unit = { scope.launch { form.lookUp(actions) } }
     val add: () -> Unit = {
         scope.launch {
             if (form.add(actions) != null) onAdded(form.address.trim())
+        }
+    }
+    val signIn: () -> Unit = {
+        scope.launch {
+            if (form.signIn(actions) { url -> BrowserTab.open(context, url) } != null) onAdded(form.address.trim())
         }
     }
     // a set-up of its own on a phone: no tabs to leave it by half-way, and no bar under its buttons
@@ -109,7 +117,8 @@ fun AccountSetupPage(form: AccountSetupForm, actions: AccountActions, scope: Cor
         when (val step = form.step) {
             AccountSetupForm.Step.Address -> AddressStep(form, lookUp)
             is AccountSetupForm.Step.Password -> PasswordStep(form, step.plan, add)
-            is AccountSetupForm.Step.NotYet -> NotYetStep(form, step.provider)
+            is AccountSetupForm.Step.SignIn -> SignInStep(form, step.plan, signIn)
+            is AccountSetupForm.Step.NotYet -> NotYetStep(form, step)
             AccountSetupForm.Step.Manual -> ManualStep(form, add)
         }
     }
@@ -168,7 +177,7 @@ private fun PasswordStep(form: AccountSetupForm, plan: SetupPlan.Found, onAdd: (
             )
         }
         PasswordField(form, stringResource(if (appPassword) R.string.setup_app_password else R.string.setup_password), onAdd)
-        Problem(form, appPassword)
+        Problem(form, plan.settings.auth)
         Waiting(form.busy)
         Row(Modifier.padding(top = dimens.gapM), horizontalArrangement = Arrangement.spacedBy(dimens.gapS)) {
             DeskButton(stringResource(R.string.setup_add), onAdd, primary = true, enabled = !form.busy && form.password.isNotEmpty())
@@ -186,10 +195,36 @@ private fun PasswordStep(form: AccountSetupForm, plan: SetupPlan.Found, onAdd: (
     }
 }
 
+/**
+ * An account that signs in at its provider: the browser opens the provider's page, and the app
+ * waits until it comes back. Waiting, the user can give the sign-in up.
+ */
 @Composable
-private fun NotYetStep(form: AccountSetupForm, provider: Provider) {
-    SettingsSection(provider.name) {
-        StatusBanner(tone = BannerTone.Info, text = stringResource(R.string.setup_outlook_note))
+private fun SignInStep(form: AccountSetupForm, plan: SetupPlan.SignIn, onSignIn: () -> Unit) {
+    val dimens = DeskTheme.dimens
+    SettingsSection(plan.provider.name) {
+        KeyValueRow(stringResource(R.string.account_address), form.address.trim(), selectable = true)
+        KeyValueRow(stringResource(R.string.setup_receiving), serverLabel(plan.settings.imap), mono = true)
+        KeyValueRow(stringResource(R.string.setup_sending), serverLabel(plan.settings.smtp), mono = true)
+        Note(stringResource(R.string.setup_microsoft_note), Modifier.padding(top = dimens.gapS))
+        Problem(form, plan.settings.auth)
+        if (form.busy) {
+            Note(stringResource(R.string.setup_microsoft_waiting), Modifier.padding(top = dimens.gapM))
+            Waiting(true)
+            DeskButton(stringResource(R.string.action_cancel), form::stopSignIn, Modifier.padding(top = dimens.gapM))
+        } else {
+            Row(Modifier.padding(top = dimens.gapM), horizontalArrangement = Arrangement.spacedBy(dimens.gapS)) {
+                DeskButton(stringResource(R.string.setup_microsoft_sign_in), onSignIn, primary = true, icon = DeskIcons.OpenWindow)
+                DeskButton(stringResource(R.string.setup_other_address), form::startOver)
+            }
+        }
+    }
+}
+
+@Composable
+private fun NotYetStep(form: AccountSetupForm, step: AccountSetupForm.Step.NotYet) {
+    SettingsSection(step.provider.name) {
+        StatusBanner(tone = BannerTone.Info, text = stringResource(if (step.hosted) R.string.setup_hosted_note else R.string.setup_outlook_note))
         DeskButton(stringResource(R.string.setup_other_address), form::startOver, Modifier.padding(top = DeskTheme.dimens.gapM))
     }
 }
@@ -308,29 +343,56 @@ private fun PasswordField(form: AccountSetupForm, label: String, onDone: () -> U
 
 /** What stood in the way at the last try, in words that say what to do about it. */
 @Composable
-private fun Problem(form: AccountSetupForm, appPassword: Boolean = false) {
+private fun Problem(form: AccountSetupForm, auth: AuthKind = AuthKind.Password) {
     val problem = form.problem ?: return
     val text = when (problem) {
         AccountSetupForm.Problem.NotAnAddress -> stringResource(R.string.setup_not_address)
         AccountSetupForm.Problem.Duplicate -> stringResource(R.string.setup_duplicate)
         AccountSetupForm.Problem.Servers -> stringResource(R.string.setup_servers_incomplete)
-        is AccountSetupForm.Problem.Failed -> failureText(problem.kind, problem.detail, appPassword)
+        is AccountSetupForm.Problem.Failed -> failureText(problem.kind, problem.detail, auth)
+        is AccountSetupForm.Problem.NotSignedIn -> notSignedInText(problem.detail)
+        AccountSetupForm.Problem.NoBrowser -> stringResource(R.string.setup_no_browser)
     }
     StatusBanner(tone = BannerTone.Error, text = text, modifier = Modifier.padding(top = DeskTheme.dimens.gapM))
 }
 
-/** Why a sign-in did not work, and under it what the server itself said. */
+/**
+ * Why a sign-in did not work, and under it what the server itself said. [auth] is how the account
+ * signs in: what to look at differs.
+ */
 @Composable
-internal fun failureText(kind: MailException.Kind, detail: String, appPassword: Boolean): String {
+internal fun failureText(kind: MailException.Kind, detail: String, auth: AuthKind): String {
     val summary = stringResource(
         when (kind) {
-            MailException.Kind.Authentication -> if (appPassword) R.string.setup_failed_login_app_password else R.string.setup_failed_login
+            MailException.Kind.Authentication -> when (auth) {
+                AuthKind.Password -> R.string.setup_failed_login
+                AuthKind.AppPassword -> R.string.setup_failed_login_app_password
+                // the provider took the sign-in, and its mail server did not
+                AuthKind.MicrosoftOAuth -> R.string.setup_failed_login_microsoft
+            }
             MailException.Kind.Network -> R.string.setup_failed_network
             MailException.Kind.Security -> R.string.setup_failed_security
             MailException.Kind.Server -> R.string.setup_failed_server
         },
     )
     return if (detail.isBlank()) summary else summary + "\n" + stringResource(R.string.setup_server_said, detail.take(DETAIL_LENGTH))
+}
+
+/** A sign-in in the browser that came to nothing, and under it what the provider said. */
+@Composable
+private fun notSignedInText(detail: String): String {
+    val summary = stringResource(R.string.setup_not_signed_in)
+    return if (detail.isBlank()) summary else summary + "\n" + stringResource(R.string.setup_provider_said, detail.take(DETAIL_LENGTH))
+}
+
+/** What became of signing in to an account again, when it was not done. */
+@Composable
+private fun resultText(result: SetupResult, auth: AuthKind): String = when (result) {
+    is SetupResult.Failed -> failureText(result.kind, result.detail, auth)
+    is SetupResult.NotSignedIn -> notSignedInText(result.detail)
+    SetupResult.NoBrowser -> stringResource(R.string.setup_no_browser)
+    SetupResult.Duplicate -> stringResource(R.string.setup_duplicate)
+    is SetupResult.Done -> ""
 }
 
 /** A server's own words are shown up to this length. */
@@ -362,7 +424,8 @@ internal fun stateLabel(state: AccountState): String = stringResource(
 
 /**
  * One account: how it is doing, syncing it now, the name and the signature its mail is written
- * with, signing in again with another password, and taking it off the device.
+ * with, signing in again (with another password, or at its provider in the browser), and taking
+ * it off the device.
  *
  * @param scope where the server is asked; as for [AccountSetupPage], it outlives the page.
  * @param onSync asks the servers for what is new.
@@ -380,9 +443,12 @@ fun AccountPage(
 ) {
     val dimens = DeskTheme.dimens
     val colors = DeskTheme.colors
+    val context = LocalContext.current
     var password by remember(account.id) { mutableStateOf("") }
     var busy by remember(account.id) { mutableStateOf(false) }
-    var failure by remember(account.id) { mutableStateOf<SetupResult.Failed?>(null) }
+    var failure by remember(account.id) { mutableStateOf<SetupResult?>(null) }
+    // the sign-in in the browser under way, which "Cancel" gives up
+    var signingIn by remember(account.id) { mutableStateOf<Job?>(null) }
     var confirmRemove by remember(account.id) { mutableStateOf(false) }
     // what is typed; the account's own until then
     var senderName by remember(account.id) { mutableStateOf(account.senderName) }
@@ -396,13 +462,30 @@ fun AccountPage(
             scope.launch {
                 try {
                     when (val result = actions.reconnect(account.id, password)) {
-                        is SetupResult.Failed -> failure = result
-                        else -> {
+                        is SetupResult.Done -> {
                             password = ""
                             onNotify(reconnected)
                         }
+                        else -> failure = result
                     }
                 } finally {
+                    busy = false
+                }
+            }
+        }
+    }
+    val signInAgain: () -> Unit = {
+        if (!busy) {
+            busy = true
+            failure = null
+            signingIn = scope.launch {
+                try {
+                    when (val result = actions.reconnectSignedIn(account.id) { url -> BrowserTab.open(context, url) }) {
+                        is SetupResult.Done -> onNotify(reconnected)
+                        else -> failure = result
+                    }
+                } finally {
+                    signingIn = null
                     busy = false
                 }
             }
@@ -453,37 +536,37 @@ fun AccountPage(
             )
         }
         SettingsSection(stringResource(R.string.account_action_reconnect)) {
-            Note(stringResource(R.string.account_reconnect_note))
-            DeskTextField(
-                value = password,
-                onValueChange = {
-                    password = it
-                    failure = null
-                },
-                modifier = Modifier.fillMaxWidth().padding(top = dimens.gapM).testTag(AccountTags.PASSWORD),
-                label = stringResource(R.string.setup_password),
-                password = true,
-                error = failure != null,
-                enabled = !busy,
-                keyboardType = KeyboardType.Password,
-                imeAction = ImeAction.Done,
-                onImeAction = reconnect,
-            )
-            failure?.let { failed ->
-                StatusBanner(
-                    tone = BannerTone.Error,
-                    text = failureText(failed.kind, failed.detail, appPassword = false),
-                    modifier = Modifier.padding(top = dimens.gapM),
+            if (account.auth == AuthKind.MicrosoftOAuth) {
+                SignInAgain(busy, failure, signInAgain, onCancel = { signingIn?.cancel() })
+            } else {
+                Note(stringResource(R.string.account_reconnect_note))
+                DeskTextField(
+                    value = password,
+                    onValueChange = {
+                        password = it
+                        failure = null
+                    },
+                    modifier = Modifier.fillMaxWidth().padding(top = dimens.gapM).testTag(AccountTags.PASSWORD),
+                    label = stringResource(R.string.setup_password),
+                    password = true,
+                    error = failure != null,
+                    enabled = !busy,
+                    keyboardType = KeyboardType.Password,
+                    imeAction = ImeAction.Done,
+                    onImeAction = reconnect,
+                )
+                failure?.let { failed ->
+                    StatusBanner(tone = BannerTone.Error, text = resultText(failed, account.auth), modifier = Modifier.padding(top = dimens.gapM))
+                }
+                Waiting(busy)
+                DeskButton(
+                    stringResource(R.string.account_action_reconnect),
+                    reconnect,
+                    Modifier.padding(top = dimens.gapM),
+                    primary = true,
+                    enabled = !busy && password.isNotEmpty(),
                 )
             }
-            Waiting(busy)
-            DeskButton(
-                stringResource(R.string.account_action_reconnect),
-                reconnect,
-                Modifier.padding(top = dimens.gapM),
-                primary = true,
-                enabled = !busy && password.isNotEmpty(),
-            )
         }
         SettingsSection(stringResource(R.string.account_remove)) {
             Note(stringResource(R.string.account_remove_note))
@@ -513,5 +596,22 @@ fun AccountPage(
         ) {
             Text(stringResource(R.string.account_remove_note), style = DeskTheme.type.body, color = colors.text)
         }
+    }
+}
+
+/** Signing in to an account at its provider again, in the browser; waiting, the user can give it up. */
+@Composable
+private fun SignInAgain(busy: Boolean, failure: SetupResult?, onSignIn: () -> Unit, onCancel: () -> Unit) {
+    val dimens = DeskTheme.dimens
+    Note(stringResource(R.string.account_reconnect_microsoft_note))
+    failure?.let { failed ->
+        StatusBanner(tone = BannerTone.Error, text = resultText(failed, AuthKind.MicrosoftOAuth), modifier = Modifier.padding(top = dimens.gapM))
+    }
+    if (busy) {
+        Note(stringResource(R.string.setup_microsoft_waiting), Modifier.padding(top = dimens.gapM))
+        Waiting(true)
+        DeskButton(stringResource(R.string.action_cancel), onCancel, Modifier.padding(top = dimens.gapM))
+    } else {
+        DeskButton(stringResource(R.string.setup_microsoft_sign_in), onSignIn, Modifier.padding(top = dimens.gapM), primary = true, icon = DeskIcons.OpenWindow)
     }
 }

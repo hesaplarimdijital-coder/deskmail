@@ -5,20 +5,50 @@ import com.deskmail.core.mail.MailException
 import com.deskmail.core.net.Credentials
 import com.deskmail.core.net.Security
 import com.deskmail.core.net.ServerAddress
+import com.deskmail.core.oauth.OAuthConfig
+import com.deskmail.core.oauth.TokenClient
+import com.deskmail.core.oauth.Tokens
 import com.deskmail.core.provider.AuthKind
 import com.deskmail.core.provider.MailSettings
+import com.deskmail.core.provider.browserSignIn
 import com.deskmail.db.AccountEntity
 import com.deskmail.db.CredentialEntity
 import com.deskmail.db.DeskMailDatabase
 import com.deskmail.mail.AccountState
 import com.deskmail.mail.PortableAccount
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import java.util.concurrent.ConcurrentHashMap
 
 /**
- * The accounts and what they sign in with. A password is sealed ([SecretBox]) before it is stored
- * and opened only to sign in; it is never written anywhere else, the log included.
+ * The accounts and what they sign in with. A password, or the refresh token of an account that
+ * signs in at its provider in the browser, is sealed ([SecretBox]) before it is stored and opened
+ * only to sign in; it is never written anywhere else, the log included. The access tokens a
+ * refresh token is traded for are good for about an hour, and are kept in memory only.
+ *
+ * @param signIns where the accounts of a kind sign in in the browser: [browserSignIn], but in the tests.
+ * @param tokenClient asks a provider's token endpoint: [TokenClient], but in the tests.
  */
-class AccountStore(db: DeskMailDatabase, private val box: SecretBox, private val log: AppLog? = null, private val now: () -> Long = System::currentTimeMillis) {
+class AccountStore(
+    db: DeskMailDatabase,
+    private val box: SecretBox,
+    private val log: AppLog? = null,
+    private val now: () -> Long = System::currentTimeMillis,
+    private val signIns: (AuthKind) -> OAuthConfig? = { browserSignIn(it) },
+    private val tokenClient: (OAuthConfig) -> TokenClient = { TokenClient(it) },
+) {
     private val accounts = db.accounts()
+
+    /** The access token each account that signs in in the browser was handed last, and until when it is good. */
+    private val accessTokens = ConcurrentHashMap<Long, AccessToken>()
+
+    /**
+     * One renewal at a time: a renewal spends the refresh token and leaves a new one, and two at
+     * once could each spend the one the other needs.
+     */
+    private val renewal = Mutex()
+
+    private class AccessToken(val value: String, val goodUntil: Long)
 
     suspend fun all(): List<AccountEntity> = accounts.all()
 
@@ -32,7 +62,23 @@ class AccountStore(db: DeskMailDatabase, private val box: SecretBox, private val
      * @param name what the user knows it by; [provider] is the provider table's id, empty for servers set up by hand.
      * @return the account's id.
      */
-    suspend fun add(address: String, name: String, provider: String, settings: MailSettings, password: String): Long {
+    suspend fun add(address: String, name: String, provider: String, settings: MailSettings, password: String): Long =
+        insert(address, name, provider, settings) { accountId -> sealed(accountId, KIND_PASSWORD, password) }
+
+    /**
+     * Adds an account that signs in at its provider in the browser. What is kept of the sign-in is
+     * the refresh token; the access token that came with it is used for as long as it is good.
+     *
+     * @throws IllegalArgumentException when [tokens] have no refresh token: such a sign-in cannot be kept.
+     */
+    suspend fun addSignedIn(address: String, name: String, provider: String, settings: MailSettings, tokens: Tokens): Long {
+        val refreshToken = requireNotNull(tokens.refreshToken) { "a sign-in without a refresh token cannot be kept" }
+        val id = insert(address, name, provider, settings) { accountId -> sealed(accountId, KIND_OAUTH, refreshToken) }
+        hold(id, tokens)
+        return id
+    }
+
+    private suspend fun insert(address: String, name: String, provider: String, settings: MailSettings, credential: (accountId: Long) -> CredentialEntity): Long {
         val account = AccountEntity(
             address = address.trim(),
             name = name,
@@ -54,30 +100,96 @@ class AccountStore(db: DeskMailDatabase, private val box: SecretBox, private val
             position = 0,
             createdAt = now(),
         )
-        val id = accounts.add(account) { accountId -> sealPassword(accountId, password) }
+        val id = accounts.add(account, credential)
         log?.info(TAG, "account $id added: ${account.address} at ${account.imapHost}")
         return id
     }
 
     /** Replaces what the account signs in with ("Reconnect"). */
     suspend fun savePassword(accountId: Long, password: String) {
-        accounts.saveCredential(sealPassword(accountId, password))
+        accounts.saveCredential(sealed(accountId, KIND_PASSWORD, password))
+    }
+
+    /**
+     * Replaces the sign-in of an account that signs in in the browser ("Reconnect").
+     *
+     * @throws IllegalArgumentException when [tokens] have no refresh token.
+     */
+    suspend fun saveTokens(accountId: Long, tokens: Tokens) {
+        val refreshToken = requireNotNull(tokens.refreshToken) { "a sign-in without a refresh token cannot be kept" }
+        renewal.withLock {
+            accounts.saveCredential(sealed(accountId, KIND_OAUTH, refreshToken))
+            hold(accountId, tokens)
+        }
     }
 
     /**
      * What the account signs in with, or null when there is nothing stored that this device can
-     * open (the keystore's key is gone): the user has to sign in again.
+     * open (the keystore's key is gone), or the app has no way to sign in to it: the user has to
+     * sign in again.
+     *
+     * For an account that signs in in the browser, that is an access token: the one at hand while
+     * it is good for a few minutes more, else a new one for the refresh token. Then the provider is
+     * asked, and the call blocks until it answers.
+     *
+     * @throws MailException when the provider hands out no new access token: the refresh token is
+     *   no longer good ([MailException.Kind.Authentication]: the user has to sign in again), or the
+     *   provider could not be asked.
      */
     suspend fun credentials(account: AccountEntity): Credentials? {
         val stored = accounts.credential(account.id) ?: return null
-        if (stored.kind != KIND_PASSWORD) return null
-        return try {
-            val password = String(box.open(Sealed(stored.iv, stored.secret), purpose(account.id)), Charsets.UTF_8)
-            Credentials.Password(account.username, password)
-        } catch (e: Exception) {
-            log?.warn(TAG, "account ${account.id}: the stored sign-in could not be opened (${MailException.trail(e)})")
-            null
+        return when (stored.kind) {
+            KIND_PASSWORD -> opened(stored, account.id)?.let { Credentials.Password(account.username, it) }
+            KIND_OAUTH -> accessToken(account)
+            // written by a newer version
+            else -> null
         }
+    }
+
+    private suspend fun accessToken(account: AccountEntity): Credentials? = renewal.withLock {
+        accessTokens[account.id]?.takeIf { now() < it.goodUntil - RENEW_EARLY_MS }?.let { held ->
+            return@withLock Credentials.OAuth(account.username, held.value)
+        }
+        val config = signIns(account.auth())
+        if (config == null) {
+            log?.warn(TAG, "account ${account.id}: this version has no way to sign in to it")
+            return@withLock null
+        }
+        // read again under the lock: a renewal that went before may have left a new refresh token
+        val stored = accounts.credential(account.id)?.takeIf { it.kind == KIND_OAUTH } ?: return@withLock null
+        val refreshToken = opened(stored, account.id) ?: return@withLock null
+        val renewed = try {
+            tokenClient(config).refresh(refreshToken)
+        } catch (e: MailException) {
+            log?.warn(TAG, "account ${account.id}: no new access token (${e.kind}): ${e.message}")
+            throw e
+        }
+        // the provider hands out a new refresh token with most renewals; it takes the old one's place
+        val next = renewed.refreshToken
+        if (next != null && next != refreshToken) {
+            try {
+                accounts.saveCredential(sealed(account.id, KIND_OAUTH, next))
+            } catch (e: Exception) {
+                // the access token is good all the same; the old refresh token stays, for as long as the provider takes it
+                log?.error(TAG, "account ${account.id}: the new refresh token could not be kept", e)
+            }
+        }
+        hold(account.id, renewed)
+        log?.info(TAG, "account ${account.id}: a new access token, good for ${renewed.lifetimeSeconds / 60} minutes")
+        Credentials.OAuth(account.username, renewed.accessToken)
+    }
+
+    /** The access token that came with [tokens], from now until it is no longer good. */
+    private fun hold(accountId: Long, tokens: Tokens) {
+        accessTokens[accountId] = AccessToken(tokens.accessToken, now() + tokens.lifetimeSeconds * 1000)
+    }
+
+    /** What [stored] keeps, or null when this device cannot open it. */
+    private fun opened(stored: CredentialEntity, accountId: Long): String? = try {
+        String(box.open(Sealed(stored.iv, stored.secret), purpose(accountId)), Charsets.UTF_8)
+    } catch (e: Exception) {
+        log?.warn(TAG, "account $accountId: the stored sign-in could not be opened (${MailException.trail(e)})")
+        null
     }
 
     suspend fun setState(accountId: Long, state: AccountState, detail: String = "") = accounts.setState(accountId, state.name, detail)
@@ -93,7 +205,8 @@ class AccountStore(db: DeskMailDatabase, private val box: SecretBox, private val
 
     /**
      * Adds an account that came in a settings file from another device, with nothing to sign in
-     * with: it waits for its password ("Reconnect"), and nothing is fetched for it before. What can
+     * with: it waits for its password or its sign-in in the browser ("Reconnect"), and nothing is
+     * fetched for it before. What can
      * be checked of the file's word is: an address, servers, a name and a signature of sensible
      * length. Null when the device has an account with its address already, or the file's word
      * would not do.
@@ -125,19 +238,20 @@ class AccountStore(db: DeskMailDatabase, private val box: SecretBox, private val
             createdAt = now(),
         )
         val id = accounts.insert(entity)
-        log?.info(TAG, "account $id taken from a settings file: ${entity.address} at ${entity.imapHost}; it waits for its password")
+        log?.info(TAG, "account $id taken from a settings file: ${entity.address} at ${entity.imapHost}; it waits to be signed in to")
         return id
     }
 
     /** Removes the account from the device with everything that was kept of its mail. The mail stays on its server. */
     suspend fun remove(accountId: Long) {
         accounts.delete(accountId)
+        accessTokens.remove(accountId)
         log?.info(TAG, "account $accountId removed")
     }
 
-    private fun sealPassword(accountId: Long, password: String): CredentialEntity {
-        val sealed = box.seal(password.toByteArray(Charsets.UTF_8), purpose(accountId))
-        return CredentialEntity(accountId, KIND_PASSWORD, sealed.iv, sealed.data, now())
+    private fun sealed(accountId: Long, kind: String, secret: String): CredentialEntity {
+        val sealed = box.seal(secret.toByteArray(Charsets.UTF_8), purpose(accountId))
+        return CredentialEntity(accountId, kind, sealed.iv, sealed.data, now())
     }
 
     private fun purpose(accountId: Long) = "credential/$accountId"
@@ -145,8 +259,14 @@ class AccountStore(db: DeskMailDatabase, private val box: SecretBox, private val
     companion object {
         private const val TAG = "accounts"
 
-        /** How a stored credential says what it is; OAuth tokens get a name of their own. */
+        /** How a stored credential says what it is: a password (or an app password)… */
         const val KIND_PASSWORD = "password"
+
+        /** …or the refresh token of a sign-in in the browser (OAuth 2.0). */
+        const val KIND_OAUTH = "oauth"
+
+        /** An access token is renewed this long before it runs out: a sync begun with it is not cut off half-way. */
+        const val RENEW_EARLY_MS = 5 * 60_000L
 
         /** Line breaks, tabs and the like, however many in a row. */
         private val CONTROLS = Regex("\\p{Cntrl}+")

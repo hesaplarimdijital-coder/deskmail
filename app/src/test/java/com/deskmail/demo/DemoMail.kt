@@ -8,6 +8,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import com.deskmail.core.mail.FolderRole
+import com.deskmail.core.provider.AuthKind
 import com.deskmail.core.text.SearchField
 import com.deskmail.core.text.SearchQuery
 import com.deskmail.mail.AccountState
@@ -45,7 +46,8 @@ class DemoMail(private val now: Instant = Instant.now(), empty: Boolean = false)
 
     private val accountList = mutableStateListOf<MailAccount>().apply {
         if (!empty) {
-            add(MailAccount(OUTLOOK, "Outlook", "deniz@outlook.example", server = "outlook.office365.com"))
+            // Outlook signs in at Microsoft, in the browser
+            add(MailAccount(OUTLOOK, "Outlook", "deniz@outlook.example", server = "outlook.office365.com", auth = AuthKind.MicrosoftOAuth))
             add(MailAccount(GMAIL, "Gmail", "deniz@gmail.example", server = "imap.gmail.com"))
         }
     }

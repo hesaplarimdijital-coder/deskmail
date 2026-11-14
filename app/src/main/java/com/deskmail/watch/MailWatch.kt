@@ -206,10 +206,18 @@ class MailWatch(
 
         private suspend fun session(): Session {
             val account = accounts.byId(accountId) ?: return Session.Over
-            val credentials = accounts.credentials(account)
+            val credentials = try {
+                accounts.credentials(account)
+            } catch (e: MailException) {
+                // the provider handed out no new access token; why is in the log
+                if (e.kind != MailException.Kind.Authentication) return Session.Failed
+                accounts.setState(accountId, AccountState.NeedsLogin, e.message.orEmpty())
+                log.warn(TAG, "account $accountId: its provider would not renew the sign-in; it is watched again once it was reconnected")
+                return Session.Over
+            }
             if (credentials == null) {
                 accounts.setState(accountId, AccountState.NeedsLogin)
-                log.warn(TAG, "account $accountId: its password cannot be read; it is watched again once it was reconnected")
+                log.warn(TAG, "account $accountId: what it signs in with cannot be read; it is watched again once it was reconnected")
                 return Session.Over
             }
             val inbox = db.folders().ofAccount(accountId).firstOrNull { folderRole(it.role) == FolderRole.Inbox }?.path ?: DEFAULT_INBOX

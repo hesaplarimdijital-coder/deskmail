@@ -21,10 +21,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.core.content.FileProvider
 import com.deskmail.R
 import com.deskmail.core.log.AppLog
+import com.deskmail.core.provider.MicrosoftSignIn
 import com.deskmail.deskMail
 import com.deskmail.mail.AccountActions
 import com.deskmail.mail.MailAccount
@@ -338,6 +342,7 @@ private fun SettingsList(
         }
         if (onExport != null && onImport != null) item(key = "transfer") { TransferSection(onExport, onImport) }
         item(key = "experiments") { ExperimentsSection(settings) }
+        item(key = "microsoft") { MicrosoftSection(settings) }
         item(key = "log") { LogSection(onOpenLog) }
         item(key = "about") { AboutSection(onOpenLicences) }
     }
@@ -563,6 +568,46 @@ private fun ExperimentsSection(settings: AppSettings) {
             checked = settings.darkenMessages,
             onCheckedChange = settings::updateDarkenMessages,
             subtitle = stringResource(R.string.experiment_darken_note),
+        )
+    }
+}
+
+/** Names the tests find the fields of the settings by. */
+object SettingsTags {
+    const val MICROSOFT_CLIENT_ID = "settings-microsoft-client-id"
+}
+
+/**
+ * The registration at Microsoft that Outlook accounts sign in with: the app's own, or one of the
+ * user's, for the day the app's is no longer taken ([AppSettings.microsoftClientId]).
+ */
+@Composable
+private fun MicrosoftSection(settings: AppSettings) {
+    val dimens = DeskTheme.dimens
+    // what is typed; the setting's until then
+    var typed by remember(settings.microsoftClientId) { mutableStateOf(settings.microsoftClientId) }
+    val valid = typed.isBlank() || MicrosoftSignIn.isClientId(typed)
+    val save = { if (valid) settings.updateMicrosoftClientId(typed) }
+    SettingsSection(stringResource(R.string.settings_microsoft)) {
+        Text(stringResource(R.string.settings_microsoft_note), style = DeskTheme.type.labelSmall, color = DeskTheme.colors.textTertiary)
+        DeskTextField(
+            value = typed,
+            onValueChange = { typed = it },
+            modifier = Modifier.fillMaxWidth().padding(top = dimens.gapM).testTag(SettingsTags.MICROSOFT_CLIENT_ID),
+            label = stringResource(R.string.settings_microsoft_client_id),
+            hint = stringResource(R.string.settings_microsoft_client_id_hint),
+            error = !valid,
+            supportingText = if (valid) null else stringResource(R.string.settings_microsoft_client_id_invalid),
+            mono = true,
+            keyboardType = KeyboardType.Ascii,
+            imeAction = ImeAction.Done,
+            onImeAction = save,
+        )
+        DeskButton(
+            stringResource(R.string.account_writing_save),
+            save,
+            Modifier.padding(top = dimens.gapM),
+            enabled = valid && typed.trim() != settings.microsoftClientId,
         )
     }
 }

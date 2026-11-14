@@ -88,6 +88,27 @@
                 android:minWidth="360dp" />
         </activity>
 
+        <!-- Where the browser comes back after a sign-in at Microsoft (Outlook.com accounts): the
+             address registered with Microsoft for DeskMail. Any app could send something here; only
+             the answer to the sign-in under way, with its random state, is taken. It shows nothing
+             and is gone at once. (Not excludeFromRecents: should it be the first of a task, which
+             happens when the app was not open, the window it brings would be left out of the recent
+             apps with it.) -->
+        <activity
+            android:name=".OAuthRedirectActivity"
+            android:exported="true"
+            android:noHistory="true"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:host="oauth2redirect"
+                    android:scheme="com.deskmail" />
+            </intent-filter>
+        </activity>
+
         <!-- WorkManager (which sends what waits in the outbox, and looks for new mail while no
              window is open) is set up when it is first asked for, by the application class, not
              at every start of the process. -->
