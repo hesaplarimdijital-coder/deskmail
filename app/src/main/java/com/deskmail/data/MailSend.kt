@@ -161,7 +161,13 @@ class MailSend(
     /** Sends one message; null when the server took it, else why it did not. */
     private suspend fun sendOne(row: OutboxEntity): MailException? {
         val account = accounts.byId(row.accountId) ?: return MailException(MailException.Kind.Server, "the account is gone")
-        val credentials = accounts.credentials(account)
+        val credentials = try {
+            accounts.credentials(account)
+        } catch (e: MailException) {
+            // the provider handed out no new access token (why is in the log): signing in again, or another try later
+            if (e.kind == MailException.Kind.Authentication) accounts.setState(account.id, AccountState.NeedsLogin, e.message.orEmpty())
+            return e
+        }
         if (credentials == null) {
             accounts.setState(account.id, AccountState.NeedsLogin)
             return MailException(MailException.Kind.Authentication, "the account has to sign in again")

@@ -4,9 +4,14 @@ import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.deskmail.core.log.AppLog
+import com.deskmail.core.mail.MailException
 import com.deskmail.core.net.Credentials
 import com.deskmail.core.net.Security
 import com.deskmail.core.net.ServerAddress
+import com.deskmail.core.oauth.HttpForm
+import com.deskmail.core.oauth.OAuthConfig
+import com.deskmail.core.oauth.TokenClient
+import com.deskmail.core.oauth.Tokens
 import com.deskmail.core.provider.AuthKind
 import com.deskmail.core.provider.ProviderTable
 import com.deskmail.db.DeskMailDatabase
@@ -19,6 +24,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -167,5 +173,124 @@ class AccountStoreTest {
         assertNull(accounts.addWaiting(portable.copy(address = "deniz")))
         assertNull(accounts.addWaiting(portable.copy(address = "ayse@posta.example", settings = gmail.copy(imap = ServerAddress(" ", 993, Security.Tls)))))
         assertEquals(2, accounts.all().size)
+    }
+
+    /** A sign-in at a provider in the browser, as a test makes it up: what its token endpoint is asked, and what it answers. */
+    private val signIn = OAuthConfig("https://login.example/authorize", "https://login.example/token", "client", "com.deskmail://oauth2redirect", listOf("offline_access"))
+    private val outlook = ProviderTable.Outlook.settingsFor("deniz@outlook.com")
+    private val asked = ArrayList<Map<String, String>>()
+    private val answers = ArrayDeque<HttpForm.Answer>()
+    private var clock = 5_000L
+
+    private fun signedInStore(signIns: (AuthKind) -> OAuthConfig? = { if (it == AuthKind.MicrosoftOAuth) signIn else null }) = AccountStore(
+        db, testBox(), log, now = { clock }, signIns = signIns,
+        tokenClient = { config ->
+            TokenClient(config) { _, fields ->
+                asked += fields
+                answers.removeFirst()
+            }
+        },
+    )
+
+    private fun granted(access: String, refresh: String?): HttpForm.Answer {
+        val refreshField = if (refresh != null) ",\"refresh_token\":\"$refresh\"" else ""
+        return HttpForm.Answer(200, "{\"token_type\":\"Bearer\",\"expires_in\":3600,\"access_token\":\"$access\"$refreshField}")
+    }
+
+    @Test
+    fun aSignInKeepsItsRefreshTokenSealedAndUsesItsAccessTokenAtOnce() = runBlocking {
+        val store = signedInStore()
+        val id = store.addSignedIn("deniz@outlook.com", "Outlook", "outlook", outlook, Tokens("EwB-first", "M.C5-first", 3600))
+
+        val stored = store.byId(id)!!
+        assertEquals(AuthKind.MicrosoftOAuth, stored.auth())
+        val credential = db.accounts().credential(id)!!
+        assertEquals(AccountStore.KIND_OAUTH, credential.kind)
+        assertFalse(String(credential.secret, Charsets.ISO_8859_1).contains("M.C5-first"))
+
+        // the access token that came with the sign-in: the provider is not asked
+        val credentials = store.credentials(stored) as Credentials.OAuth
+        assertEquals("deniz@outlook.com", credentials.username)
+        assertEquals("EwB-first", credentials.accessToken)
+        assertTrue(asked.isEmpty())
+        assertTrue(log.lines().none { it.contains("EwB-first") || it.contains("M.C5-first") })
+
+        // a sign-in without a refresh token cannot be kept
+        assertThrows(IllegalArgumentException::class.java) {
+            runBlocking { store.addSignedIn("ayse@outlook.com", "Outlook", "outlook", outlook, Tokens("EwB", null, 3600)) }
+        }
+    }
+
+    @Test
+    fun anAccessTokenNearItsEndIsRenewedAndTheNewRefreshTokenKept() = runBlocking {
+        val store = signedInStore()
+        val id = store.addSignedIn("deniz@outlook.com", "Outlook", "outlook", outlook, Tokens("EwB-first", "M.C5-first", 3600))
+        val account = store.byId(id)!!
+
+        // fifty-six minutes on, a sync could outlast the token: a new one is asked for
+        clock += 56 * 60_000L
+        answers += granted("EwB-second", "M.C5-second")
+        assertEquals("EwB-second", (store.credentials(account) as Credentials.OAuth).accessToken)
+        assertEquals("refresh_token", asked.single()["grant_type"])
+        assertEquals("M.C5-first", asked.single()["refresh_token"])
+
+        // the next renewal goes with the refresh token that came last; until then nobody is asked
+        assertEquals("EwB-second", (store.credentials(account) as Credentials.OAuth).accessToken)
+        assertEquals(1, asked.size)
+        clock += 60 * 60_000L
+        answers += granted("EwB-third", null)
+        assertEquals("EwB-third", (store.credentials(account) as Credentials.OAuth).accessToken)
+        assertEquals("M.C5-second", asked.last()["refresh_token"])
+
+        // an answer without a refresh token leaves the last one in its place
+        clock += 60 * 60_000L
+        answers += granted("EwB-fourth", "M.C5-fourth")
+        store.credentials(account)
+        assertEquals("M.C5-second", asked.last()["refresh_token"])
+        assertTrue(log.lines().any { it.contains("account $id: a new access token, good for 60 minutes") })
+        assertTrue(log.lines().none { "EwB-" in it || "M.C5-" in it })
+    }
+
+    @Test
+    fun aRefreshTokenTheProviderNoLongerTakesMeansSigningInAgain() = runBlocking {
+        val store = signedInStore()
+        val id = store.addSignedIn("deniz@outlook.com", "Outlook", "outlook", outlook, Tokens("EwB-first", "M.C5-first", 3600))
+        clock += 2 * 60 * 60_000L
+        answers += HttpForm.Answer(400, """{"error":"invalid_grant","error_description":"AADSTS70000: The grant is expired."}""")
+
+        val error = assertThrows(MailException::class.java) { runBlocking { store.credentials(store.byId(id)!!) } }
+
+        assertEquals(MailException.Kind.Authentication, error.kind)
+        assertEquals("invalid_grant: AADSTS70000: The grant is expired.", error.message)
+        assertTrue(log.lines().any { it.contains("account $id: no new access token (Authentication)") })
+
+        // signed in again: the new sign-in is used, the old refresh token is gone
+        store.saveTokens(id, Tokens("EwB-again", "M.C5-again", 3600))
+        assertEquals("EwB-again", (store.credentials(store.byId(id)!!) as Credentials.OAuth).accessToken)
+        clock += 2 * 60 * 60_000L
+        answers += granted("EwB-later", "M.C5-later")
+        store.credentials(store.byId(id)!!)
+        assertEquals("M.C5-again", asked.last()["refresh_token"])
+    }
+
+    @Test
+    fun withoutAWayToSignInThereIsNothingToSignInWith() = runBlocking {
+        val id = signedInStore().addSignedIn("deniz@outlook.com", "Outlook", "outlook", outlook, Tokens("EwB-first", "M.C5-first", 3600))
+        clock += 2 * 60 * 60_000L
+
+        // a version that has no registration at the provider
+        assertNull(signedInStore(signIns = { null }).credentials(db.accounts().byId(id)!!))
+        assertTrue(asked.isEmpty())
+    }
+
+    @Test
+    fun anAccountLeavesWithItsAccessToken() = runBlocking {
+        val store = signedInStore()
+        val id = store.addSignedIn("deniz@outlook.com", "Outlook", "outlook", outlook, Tokens("EwB-first", "M.C5-first", 3600))
+        val account = store.byId(id)!!
+        store.remove(id)
+
+        assertNull(store.credentials(account))
+        assertNull(db.accounts().credential(id))
     }
 }

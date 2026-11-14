@@ -5,6 +5,11 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.deskmail.core.log.AppLog
 import com.deskmail.core.mail.MailException
+import com.deskmail.core.oauth.HttpForm
+import com.deskmail.core.oauth.OAuthConfig
+import com.deskmail.core.oauth.TokenClient
+import com.deskmail.core.oauth.Tokens
+import com.deskmail.core.provider.AuthKind
 import com.deskmail.core.provider.Autoconfig
 import com.deskmail.db.DeskMailDatabase
 import com.deskmail.db.MessageEntity
@@ -228,6 +233,45 @@ class MailSyncTest {
 
         assertEquals(MailException.Kind.Authentication, (outcome as MailSync.Outcome.Failed).kind)
         assertEquals(AccountState.NeedsLogin, accounts.byId(id)!!.accountState())
+    }
+
+    /**
+     * An account that signs in at its provider in the browser: its access token signs in (the
+     * test's server takes it for the password), and what becomes of renewing it is written on the
+     * account like any sign-in's.
+     */
+    @Test
+    fun anAccessTokenSignsInAndItsRenewalIsTheAccountsBusiness() = runBlocking {
+        server.deliver("ilk", "Birinci ileti.", hoursAgo(4))
+        val answers = ArrayDeque<HttpForm.Answer>()
+        var clock = 1_000L
+        val signIn = OAuthConfig("https://login.example/authorize", "https://login.example/token", "client", "com.deskmail://oauth2redirect", listOf("offline_access"))
+        val store = AccountStore(db, testBox(), log, now = { clock }, signIns = { signIn }, tokenClient = { TokenClient(it) { _, _ -> answers.removeFirst() } })
+        val signedIn = MailSync(db, store, log, background, clock = { now })
+        val id = store.addSignedIn(TestImapServer.ADDRESS, "Posta", "", server.settings.copy(auth = AuthKind.MicrosoftOAuth), Tokens(TestImapServer.PASSWORD, "refresh-1", 3600))
+
+        assertEquals(MailSync.Outcome.Done, signedIn.account(id))
+        assertEquals(1, db.messages().count())
+
+        // two hours on the provider cannot be reached: the account is unreachable, not signed out
+        clock += 2 * 60 * 60_000L
+        answers += HttpForm.Answer(503, "")
+        assertEquals(MailException.Kind.Network, (signedIn.account(id) as MailSync.Outcome.Failed).kind)
+        assertEquals(AccountState.Unreachable, store.byId(id)!!.accountState())
+
+        // a new access token: the sync goes on
+        answers += HttpForm.Answer(200, "{\"access_token\":\"${TestImapServer.PASSWORD}\",\"refresh_token\":\"refresh-2\",\"expires_in\":3600}")
+        assertEquals(MailSync.Outcome.Done, signedIn.account(id))
+        assertEquals(AccountState.Ok, store.byId(id)!!.accountState())
+
+        // the refresh token is no longer good: the user signs in again
+        clock += 2 * 60 * 60_000L
+        answers += HttpForm.Answer(400, "{\"error\":\"invalid_grant\",\"error_description\":\"AADSTS70000: The grant is expired.\"}")
+        assertEquals(MailException.Kind.Authentication, (signedIn.account(id) as MailSync.Outcome.Failed).kind)
+        val stored = store.byId(id)!!
+        assertEquals(AccountState.NeedsLogin, stored.accountState())
+        assertEquals("invalid_grant: AADSTS70000: The grant is expired.", stored.stateDetail)
+        assertTrue(log.lines().none { it.contains("refresh-1") || it.contains("refresh-2") })
     }
 
     /** What tells of new mail hangs on every sync of an account that worked; what it does is not the sync's. */
