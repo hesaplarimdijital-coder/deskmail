@@ -291,6 +291,11 @@
     <string name="experiment_under_bars_note">Telefon. Kapalıyken ileti üst ve alt çubuğun arasında kalır.</string>
     <string name="experiment_darken">Koyu temada iletiyi karart</string>
     <string name="experiment_darken_note">Kapalıyken ileti, gönderenin yaptığı gibi beyaz zeminde görünür.</string>
+    <string name="settings_microsoft">Microsoft girişi</string>
+    <string name="settings_microsoft_note">Outlook hesapları DeskMail\'in Microsoft\'taki kaydıyla giriş yapar. Microsoft o kaydı bir gün kabul etmezse aynı adımlarla kendi kaydını yap, uygulama kimliğini buraya yaz ve Outlook hesaplarına yeniden giriş yap. Boşken DeskMail\'in kaydı kullanılır.</string>
+    <string name="settings_microsoft_client_id">Uygulama (istemci) kimliği</string>
+    <string name="settings_microsoft_client_id_hint">DeskMail\'in kendi kaydı</string>
+    <string name="settings_microsoft_client_id_invalid">Bu bir uygulama kimliği değil: Microsoft onu 8-4-4-4-12 harf ve rakamla yazar.</string>
 
     <string name="settings_log">Günlük</string>
     <string name="settings_log_note">Uygulamanın yaptıkları ve ters giden şeyler. Şifreler ve jetonlar satır saklanmadan önce maskelenir. Bir şey bozulunca paylaş.</string>

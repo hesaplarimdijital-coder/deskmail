@@ -34,7 +34,7 @@ class AccountStore(
     private val box: SecretBox,
     private val log: AppLog? = null,
     private val now: () -> Long = System::currentTimeMillis,
-    private val signIns: (AuthKind) -> OAuthConfig? = ::browserSignIn,
+    private val signIns: (AuthKind) -> OAuthConfig? = { browserSignIn(it) },
     private val tokenClient: (OAuthConfig) -> TokenClient = { TokenClient(it) },
 ) {
     private val accounts = db.accounts()

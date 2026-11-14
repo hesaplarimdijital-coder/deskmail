@@ -65,6 +65,27 @@ class AppSettings(private val prefs: SharedPreferences, private val log: AppLog?
         prefs.edit().putBoolean(KEY_DARKEN_MESSAGES, value).apply()
     }
 
+    // ------------------------------------------------------------------ signing in at Microsoft
+
+    /**
+     * The ID of a registration at Microsoft of the user's own, which Outlook accounts sign in with
+     * in place of the app's ([com.deskmail.core.provider.MicrosoftSignIn]); empty for the app's. For
+     * the day the app's is no longer taken (Microsoft can block a directory nobody signed in to for
+     * long): a registration made the same way is typed in here, and the Outlook accounts are signed
+     * in to again, since their refresh tokens belong to the registration they were made with.
+     */
+    var microsoftClientId by mutableStateOf(prefs.getString(KEY_MICROSOFT_CLIENT_ID, null).orEmpty())
+        private set
+
+    fun updateMicrosoftClientId(value: String) {
+        val id = value.trim()
+        if (id == microsoftClientId) return
+        // not a secret: a registration's ID is in every request to sign in
+        log?.info("settings", "microsoftClientId = " + id.ifEmpty { "the app's own" })
+        microsoftClientId = id
+        prefs.edit().putString(KEY_MICROSOFT_CLIENT_ID, id).apply()
+    }
+
     // ------------------------------------------------------------------ the lists
 
     /** A conversation is one row of a list ([com.deskmail.ui.mail.Threads]); off lists every message on its own. */
@@ -203,5 +224,6 @@ class AppSettings(private val prefs: SharedPreferences, private val log: AppLog?
         private const val KEY_INSPECTOR_WIDTH = "inspector_width"
         private const val KEY_LIST_SHARE = "list_share"
         private const val KEY_CONVERSATIONS = "conversations"
+        private const val KEY_MICROSOFT_CLIENT_ID = "microsoft_client_id"
     }
 }

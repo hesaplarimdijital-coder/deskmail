@@ -62,7 +62,7 @@ class AccountSetup(
     private val startSync: (accountId: Long) -> Unit = { accountId -> scope.launch { sync.account(accountId) } },
     private val onRemoved: (accountId: Long, folderIds: List<Long>) -> Unit = { _, _ -> },
     private val browser: BrowserSignIn = BrowserSignIn(log),
-    private val signIns: (AuthKind) -> OAuthConfig? = ::browserSignIn,
+    private val signIns: (AuthKind) -> OAuthConfig? = { browserSignIn(it) },
     private val tokenClient: (OAuthConfig) -> TokenClient = { TokenClient(it) },
 ) : AccountActions {
     private val store = RoomSyncStore(db)

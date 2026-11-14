@@ -5,13 +5,18 @@ import android.content.Intent
 import android.net.Uri
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasScrollToNodeAction
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performSemanticsAction
+import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performTextReplacement
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.deskmail.FakeAccounts
 import com.deskmail.TestApp
@@ -77,6 +82,26 @@ class SettingsScreenTest {
         assertTrue(settings.darkenMessages)
         toggle("Koyu temada iletiyi karart")
         assertFalse(settings.darkenMessages)
+    }
+
+    /** A registration at Microsoft of the user's own: only what can be one is kept. */
+    @Test
+    fun aMicrosoftRegistrationOfTheUsersOwnIsTypedIn() {
+        val prefs = testPrefs()
+        val settings = testSettings()
+        compose.setContent { TestApp(testMail(), prefs, settings, startRoute = Routes.SETTINGS) }
+        compose.onNode(hasScrollToNodeAction()).performScrollToNode(hasTestTag(SettingsTags.MICROSOFT_CLIENT_ID))
+
+        compose.onNodeWithTag(SettingsTags.MICROSOFT_CLIENT_ID).performTextInput("DeskMail")
+        compose.waitForIdle()
+        compose.onNodeWithText("Bu bir uygulama kimliği değil", substring = true).assertExists()
+        compose.onNodeWithTag(SettingsTags.MICROSOFT_CLIENT_ID).performTextReplacement("0f6e2c1a-1111-2222-3333-444455556666")
+        compose.waitForIdle()
+        compose.onNodeWithText("Bu bir uygulama kimliği değil", substring = true).assertDoesNotExist()
+        compose.onNode(hasText("Kaydet") and hasClickAction()).performSemanticsAction(SemanticsActions.OnClick)
+        compose.waitForIdle()
+
+        assertEquals("0f6e2c1a-1111-2222-3333-444455556666", settings.microsoftClientId)
     }
 
     /** How long "Send" can be taken back is chosen among a few times. */

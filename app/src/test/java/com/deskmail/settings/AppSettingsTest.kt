@@ -3,6 +3,7 @@ package com.deskmail.settings
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.deskmail.core.log.AppLog
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -51,6 +52,24 @@ class AppSettingsTest {
         assertFalse(restarted.inspectorCollapsed)
         assertEquals(380f, restarted.inspectorWidth, 0f)
         assertEquals(0.6f, restarted.listShare, 0f)
+    }
+
+    /** A registration at Microsoft of the user's own is kept, and noted in the log; empty is the app's. */
+    @Test
+    fun aMicrosoftRegistrationOfTheUsersOwnIsKept() {
+        val log = AppLog()
+        val settings = AppSettings(prefs, log)
+        assertEquals("", settings.microsoftClientId)
+
+        settings.updateMicrosoftClientId(" 0f6e2c1a-1111-2222-3333-444455556666 ")
+
+        assertEquals("0f6e2c1a-1111-2222-3333-444455556666", settings.microsoftClientId)
+        assertEquals("0f6e2c1a-1111-2222-3333-444455556666", AppSettings(prefs).microsoftClientId)
+        assertTrue(log.lines().any { it.contains("microsoftClientId = 0f6e2c1a-1111-2222-3333-444455556666") })
+
+        settings.updateMicrosoftClientId("")
+        assertEquals("", AppSettings(prefs).microsoftClientId)
+        assertTrue(log.lines().any { it.contains("microsoftClientId = the app's own") })
     }
 
     /** Whatever a share was stored as, both the list and the reader keep some room. */

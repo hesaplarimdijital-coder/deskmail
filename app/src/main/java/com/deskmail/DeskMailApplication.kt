@@ -5,7 +5,10 @@ import android.content.Context
 import android.os.Build
 import androidx.work.Configuration
 import com.deskmail.core.log.AppLog
+import com.deskmail.core.oauth.OAuthConfig
+import com.deskmail.core.provider.AuthKind
 import com.deskmail.core.provider.Autoconfig
+import com.deskmail.core.provider.browserSignIn
 import com.deskmail.data.AccountSetup
 import com.deskmail.data.AccountStore
 import com.deskmail.data.BrowserSignIn
@@ -76,7 +79,10 @@ class DeskMailApplication : Application(), Configuration.Provider {
     /** The accounts and what is kept of their mail. */
     val database: DeskMailDatabase by lazy { DeskMailDatabase.open(this) }
 
-    private val accountStore: AccountStore by lazy { AccountStore(database, DeviceSecretBox(), log) }
+    private val accountStore: AccountStore by lazy { AccountStore(database, DeviceSecretBox(), log, signIns = ::signIns) }
+
+    /** Where the accounts of a kind sign in in the browser: at Microsoft, with the app's registration or the user's own. */
+    private fun signIns(auth: AuthKind): OAuthConfig? = browserSignIn(auth, settings.microsoftClientId)
 
     private val sync: MailSync by lazy {
         // whoever has an account synced, new mail is told of afterwards, answers that did not come,
@@ -147,6 +153,7 @@ class DeskMailApplication : Application(), Configuration.Provider {
         AccountSetup(
             database, accountStore, sync, autoconfig, log, background,
             browser = signIn,
+            signIns = ::signIns,
             startSync = { accountId ->
                 mail.sync(accountId)
                 // from now on there is mail to look for in the background

@@ -307,6 +307,11 @@
     <string name="experiment_under_bars_note">Phone. Off: the message stays between the top and the bottom bar.</string>
     <string name="experiment_darken">Darken messages on dark themes</string>
     <string name="experiment_darken_note">Off: a message is shown on white, as its sender made it.</string>
+    <string name="settings_microsoft">Signing in at Microsoft</string>
+    <string name="settings_microsoft_note">Outlook accounts sign in with DeskMail\'s registration at Microsoft. Should Microsoft one day no longer take it, make a registration of your own the same way, type its application ID here, and sign in to the Outlook accounts again. Empty: DeskMail\'s registration.</string>
+    <string name="settings_microsoft_client_id">Application (client) ID</string>
+    <string name="settings_microsoft_client_id_hint">DeskMail\'s own</string>
+    <string name="settings_microsoft_client_id_invalid">That is no application ID: Microsoft writes them as 8-4-4-4-12 letters and digits.</string>
 
     <!-- Settings › Log -->
     <string name="settings_log">Log</string>

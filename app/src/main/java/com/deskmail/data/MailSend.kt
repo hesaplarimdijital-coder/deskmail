@@ -184,7 +184,13 @@ class MailSend(
             send(account.smtpServer(), credentials, account.address, message.recipients, file)
         } catch (e: MailException) {
             file.delete()
-            if (e.kind == MailException.Kind.Authentication) accounts.setState(account.id, AccountState.NeedsLogin, e.message.orEmpty())
+            // A password the sending server refuses is no longer the account's. An access token it
+            // refuses is the provider's word on sending (Microsoft can keep SMTP off for a mailbox
+            // that takes the same token for IMAP): the message says so, and signing in again would
+            // change nothing. A token that is no longer good shows at the next sync.
+            if (e.kind == MailException.Kind.Authentication && credentials !is Credentials.OAuth) {
+                accounts.setState(account.id, AccountState.NeedsLogin, e.message.orEmpty())
+            }
             return e
         } catch (e: IOException) {
             // a file that was attached is no longer where it was kept

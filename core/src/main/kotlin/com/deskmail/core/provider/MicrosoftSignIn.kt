@@ -30,6 +30,17 @@ object MicrosoftSignIn {
     /** What the sign-in goes by; null while the app has no registration. */
     val config: OAuthConfig? = configFor(CLIENT_ID)
 
+    /**
+     * What the sign-in goes by with the user's own registration [clientId] (a setting, for the day
+     * the app's is no longer taken), or with the app's while that is empty.
+     */
+    fun config(clientId: String): OAuthConfig? = configFor(clientId.trim().ifEmpty { CLIENT_ID })
+
+    /** Whether [text] can be a registration's ID: a GUID, as Microsoft makes them. */
+    fun isClientId(text: String): Boolean = GUID.matches(text.trim())
+
+    private val GUID = Regex("[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}")
+
     internal fun configFor(clientId: String): OAuthConfig? =
         clientId.trim().takeIf { it.isNotEmpty() }?.let { OAuthConfig("$ENDPOINTS/authorize", "$ENDPOINTS/token", it, REDIRECT_URI, SCOPES) }
 }
@@ -37,8 +48,10 @@ object MicrosoftSignIn {
 /**
  * The sign-in in the browser that accounts of [auth] go through; null for those with a password,
  * and for a way the app has no registration for (yet).
+ *
+ * @param microsoftClientId the user's own registration at Microsoft; empty for the app's.
  */
-fun browserSignIn(auth: AuthKind): OAuthConfig? = when (auth) {
-    AuthKind.MicrosoftOAuth -> MicrosoftSignIn.config
+fun browserSignIn(auth: AuthKind, microsoftClientId: String = ""): OAuthConfig? = when (auth) {
+    AuthKind.MicrosoftOAuth -> MicrosoftSignIn.config(microsoftClientId)
     AuthKind.Password, AuthKind.AppPassword -> null
 }
