@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.data.RoomSyncStoreTest" tests="11" skipped="0" failures="0" errors="0" timestamp="2026-11-14T07:40:07.984Z" hostname="runnervmccnms" time="0.33">
+  <properties/>
+  <testcase name="aRoleTheUserGaveAFolderStays" classname="com.deskmail.data.RoomSyncStoreTest" time="0.019"/>
+  <testcase name="anAnsweredMarkThatWaitsForTheServerIsNotOverwritten" classname="com.deskmail.data.RoomSyncStoreTest" time="0.018"/>
+  <testcase name="theFoldersBecomeThoseTheServerLists" classname="com.deskmail.data.RoomSyncStoreTest" time="0.019"/>
+  <testcase name="aSearchShowsAMessageOnceThoughAllMailHoldsItAgain" classname="com.deskmail.data.RoomSyncStoreTest" time="0.019"/>
+  <testcase name="aMarkThatWaitsForTheServerIsNotOverwritten" classname="com.deskmail.data.RoomSyncStoreTest" time="0.052"/>
+  <testcase name="messagesAreKeptOnceAndFoundByTheirWords" classname="com.deskmail.data.RoomSyncStoreTest" time="0.026"/>
+  <testcase name="whatLeavesTheDeviceLeavesTheIndex" classname="com.deskmail.data.RoomSyncStoreTest" time="0.024"/>
+  <testcase name="aTextIsKeptWithItsFilesAndFound" classname="com.deskmail.data.RoomSyncStoreTest" time="0.054"/>
+  <testcase name="theUnifiedViewsLeaveOutWhatDoesNotBelong" classname="com.deskmail.data.RoomSyncStoreTest" time="0.039"/>
+  <testcase name="whatASearchFindsIsListedNewestFirstWhileItStaysWhereItIs" classname="com.deskmail.data.RoomSyncStoreTest" time="0.032"/>
+  <testcase name="marksAreBroughtUpToDate" classname="com.deskmail.data.RoomSyncStoreTest" time="0.022"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[System.logW: A resource failed to call SQLiteConnection.close. 
+System.logW: A resource failed to call SQLiteConnectionPool.close. 
+System.logW: A resource failed to call SQLiteConnection.close. 
+System.logW: A resource failed to call SQLiteConnection.close. 
+System.logW: A resource failed to call SQLiteConnection.close. 
+System.logW: A resource failed to call SQLiteConnection.close. 
+System.logW: A resource failed to call SQLiteConnectionPool.close. 
+System.logW: A resource failed to call SQLiteConnection.close. 
+System.logW: A resource failed to call SQLiteConnection.close. 
+System.logW: A resource failed to call SQLiteConnection.close. 
+System.logW: A resource failed to call SQLiteConnection.close. 
+System.logW: A resource failed to call SQLiteConnectionPool.close. 
+System.logW: A resource failed to call SQLiteConnection.close. 
+System.logW: A resource failed to call SQLiteConnection.close. 
+System.logW: A resource failed to call SQLiteConnection.close. 
+System.logW: A resource failed to call SQLiteConnection.close. 
+System.logW: A resource failed to call SQLiteConnectionPool.close. 
+]]></system-err>
+</testsuite>

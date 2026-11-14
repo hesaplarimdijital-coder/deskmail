@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.core.oauth.TokenClientTest" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-11-14T07:37:57.427Z" hostname="runnervmccnms" time="0.007">
+  <properties/>
+  <testcase name="aRefreshTokenThatIsNoLongerGoodMeansSigningInAgain" classname="com.deskmail.core.oauth.TokenClientTest" time="0.002"/>
+  <testcase name="anAnswerThatSaysNothingOfItsLifetimeIsTakenForAnHour" classname="com.deskmail.core.oauth.TokenClientTest" time="0.0"/>
+  <testcase name="aRegistrationTheProviderWillNotDealWithIsTheServersFault" classname="com.deskmail.core.oauth.TokenClientTest" time="0.0"/>
+  <testcase name="theNetworksFailuresAreItsOwn" classname="com.deskmail.core.oauth.TokenClientTest" time="0.001"/>
+  <testcase name="theRefreshTokenBringsANewAccessToken" classname="com.deskmail.core.oauth.TokenClientTest" time="0.0"/>
+  <testcase name="aProviderThatCannotAnswerNowIsAskedAgainLater" classname="com.deskmail.core.oauth.TokenClientTest" time="0.0"/>
+  <testcase name="theCodeIsTradedWithTheVerifier" classname="com.deskmail.core.oauth.TokenClientTest" time="0.003"/>
+  <testcase name="anAnswerWithoutAToken" classname="com.deskmail.core.oauth.TokenClientTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

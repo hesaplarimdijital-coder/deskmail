@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.data.AccountStoreTest" tests="12" skipped="0" failures="0" errors="0" timestamp="2026-11-14T07:39:22.225Z" hostname="runnervmccnms" time="0.338">
+  <properties/>
+  <testcase name="anAccountFromAnotherDeviceWaitsForItsPassword" classname="com.deskmail.data.AccountStoreTest" time="0.03"/>
+  <testcase name="aPasswordThisDeviceCannotOpenIsNone" classname="com.deskmail.data.AccountStoreTest" time="0.028"/>
+  <testcase name="howAnAccountIsDoingIsWrittenOnIt" classname="com.deskmail.data.AccountStoreTest" time="0.025"/>
+  <testcase name="withoutAWayToSignInThereIsNothingToSignInWith" classname="com.deskmail.data.AccountStoreTest" time="0.027"/>
+  <testcase name="aNewPasswordTakesTheOldOnesPlace" classname="com.deskmail.data.AccountStoreTest" time="0.028"/>
+  <testcase name="anAccountIsKeptWithItsServersAndItsSealedPassword" classname="com.deskmail.data.AccountStoreTest" time="0.026"/>
+  <testcase name="anAccountLeavesWithEverythingOfIts" classname="com.deskmail.data.AccountStoreTest" time="0.033"/>
+  <testcase name="anAccessTokenNearItsEndIsRenewedAndTheNewRefreshTokenKept" classname="com.deskmail.data.AccountStoreTest" time="0.031"/>
+  <testcase name="accountsStandInTheOrderTheyWereAdded" classname="com.deskmail.data.AccountStoreTest" time="0.023"/>
+  <testcase name="anAccountLeavesWithItsAccessToken" classname="com.deskmail.data.AccountStoreTest" time="0.023"/>
+  <testcase name="aRefreshTokenTheProviderNoLongerTakesMeansSigningInAgain" classname="com.deskmail.data.AccountStoreTest" time="0.033"/>
+  <testcase name="aSignInKeepsItsRefreshTokenSealedAndUsesItsAccessTokenAtOnce" classname="com.deskmail.data.AccountStoreTest" time="0.028"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

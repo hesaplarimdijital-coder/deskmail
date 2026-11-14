@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.core.oauth.AuthorizationRequestTest" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-11-14T07:37:57.377Z" hostname="runnervmccnms" time="0.005">
+  <properties/>
+  <testcase name="thePageAsksForACodeWithTheChallenge" classname="com.deskmail.core.oauth.AuthorizationRequestTest" time="0.002"/>
+  <testcase name="theAnswerCarriesTheCode" classname="com.deskmail.core.oauth.AuthorizationRequestTest" time="0.0"/>
+  <testcase name="withoutAHintThereIsNoHint" classname="com.deskmail.core.oauth.AuthorizationRequestTest" time="0.001"/>
+  <testcase name="anAndroidRedirectWithTheSignatureHashInItsPath" classname="com.deskmail.core.oauth.AuthorizationRequestTest" time="0.0"/>
+  <testcase name="aRefusalSaysWhy" classname="com.deskmail.core.oauth.AuthorizationRequestTest" time="0.001"/>
+  <testcase name="anAnswerToAnotherRequestIsNoneOfItsBusiness" classname="com.deskmail.core.oauth.AuthorizationRequestTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

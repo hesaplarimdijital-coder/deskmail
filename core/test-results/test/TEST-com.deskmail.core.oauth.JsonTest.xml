@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.core.oauth.JsonTest" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-11-14T07:37:57.418Z" hostname="runnervmccnms" time="0.003">
+  <properties/>
+  <testcase name="aHostileNestingEndsWithNoStackSpent" classname="com.deskmail.core.oauth.JsonTest" time="0.001"/>
+  <testcase name="whatIsNoObjectIsRefused" classname="com.deskmail.core.oauth.JsonTest" time="0.001"/>
+  <testcase name="anErrorWithArraysAndNestedObjects" classname="com.deskmail.core.oauth.JsonTest" time="0.001"/>
+  <testcase name="aTokenAnswerIsReadMemberByMember" classname="com.deskmail.core.oauth.JsonTest" time="0.0"/>
+  <testcase name="aNumberAsAStringCountsToo" classname="com.deskmail.core.oauth.JsonTest" time="0.0"/>
+  <testcase name="escapesAreUndone" classname="com.deskmail.core.oauth.JsonTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

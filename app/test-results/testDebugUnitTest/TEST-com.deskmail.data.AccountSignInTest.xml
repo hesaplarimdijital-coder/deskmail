@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.data.AccountSignInTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-11-14T07:39:21.260Z" hostname="runnervmccnms" time="0.962">
+  <properties/>
+  <testcase name="anOutlookAddressSignsInInTheBrowserWhereTheAppHasARegistration" classname="com.deskmail.data.AccountSignInTest" time="0.031"/>
+  <testcase name="anAnswerToAnotherSignInIsNotTaken" classname="com.deskmail.data.AccountSignInTest" time="0.335"/>
+  <testcase name="aSignInThatComesToNothingKeepsNothing" classname="com.deskmail.data.AccountSignInTest" time="0.088"/>
+  <testcase name="anAccountSignsInAgainInTheBrowser" classname="com.deskmail.data.AccountSignInTest" time="0.338"/>
+  <testcase name="theBrowserComesBackWithACodeAndTheAccountIsKept" classname="com.deskmail.data.AccountSignInTest" time="0.164"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.data.BrowserSignInTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-11-14T07:39:22.857Z" hostname="runnervmccnms" time="0.139">
+  <properties/>
+  <testcase name="theAnswerGoesToTheSignInItBelongsTo" classname="com.deskmail.data.BrowserSignInTest" time="0.03"/>
+  <testcase name="withoutABrowserOrAnAnswerThereIsNoSignIn" classname="com.deskmail.data.BrowserSignInTest" time="0.106"/>
+  <testcase name="aNewSignInGivesUpTheOneBefore" classname="com.deskmail.data.BrowserSignInTest" time="0.003"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

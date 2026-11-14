@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.deskmail.core.oauth.HttpFormServerTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-11-14T07:37:57.385Z" hostname="runnervmccnms" time="0.032">
+  <properties/>
+  <testcase name="theWholeWayThroughTheTokenClient" classname="com.deskmail.core.oauth.HttpFormServerTest" time="0.027"/>
+  <testcase name="theFieldsArriveEncoded" classname="com.deskmail.core.oauth.HttpFormServerTest" time="0.003"/>
+  <testcase name="aRefusalIsReadToo" classname="com.deskmail.core.oauth.HttpFormServerTest" time="0.002"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
