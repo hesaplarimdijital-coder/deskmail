@@ -198,7 +198,7 @@ class AccountStoreTest {
     }
 
     @Test
-    fun aSignInKeepsItsRefreshTokenSealedAndUsesItsAccessTokenAtOnce() = runBlocking {
+    fun aSignInKeepsItsRefreshTokenSealedAndUsesItsAccessTokenAtOnce() = runBlocking<Unit> {
         val store = signedInStore()
         val id = store.addSignedIn("deniz@outlook.com", "Outlook", "outlook", outlook, Tokens("EwB-first", "M.C5-first", 3600))
 
