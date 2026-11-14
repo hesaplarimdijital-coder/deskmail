@@ -1,5 +1,6 @@
 package com.deskmail.ui.settings
 
+import android.content.Intent
 import androidx.activity.ComponentActivity
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.platform.LocalUriHandler
@@ -30,6 +31,7 @@ import com.deskmail.testMail
 import com.deskmail.testPrefs
 import com.deskmail.testSettings
 import com.deskmail.ui.Routes
+import kotlinx.coroutines.CompletableDeferred
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertSame
@@ -37,6 +39,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
@@ -148,6 +151,111 @@ class AccountPagesTest {
         press("Devam")
         compose.onNodeWithText("Bu henüz hazır değil", substring = true).assertExists()
         assertTrue(accounts.added.isEmpty())
+    }
+
+    private val outlook = SetupPlan.SignIn(ProviderTable.Outlook.settingsFor("deniz@outlook.com"), ProviderTable.Outlook)
+
+    /** The page the browser was last asked to open, and whether as a tab over the app (Custom Tabs). */
+    private fun browserOpened(): Intent = shadowOf(compose.activity).nextStartedActivity
+
+    @Test
+    fun anOutlookAccountSignsInAtMicrosoftInTheBrowser() {
+        val accounts = FakeAccounts(plan = outlook, result = SetupResult.Done(7))
+        accounts.browserAway = CompletableDeferred()
+        launch(accounts)
+        press("Hesap ekle")
+        compose.onNodeWithTag(AccountTags.ADDRESS).performTextInput("deniz@outlook.com")
+        compose.waitForIdle()
+        press("Devam")
+
+        // where its servers are, and that the password never reaches the app
+        compose.onNodeWithText("outlook.office365.com:993").assertExists()
+        compose.onNodeWithText("şifren DeskMail'e hiç girmez", substring = true).assertExists()
+        compose.onNodeWithTag(AccountTags.PASSWORD).assertDoesNotExist()
+        press("Microsoft'ta giriş yap")
+
+        assertEquals("deniz@outlook.com", accounts.signedIn.single().first)
+        val page = browserOpened()
+        assertEquals(Intent.ACTION_VIEW, page.action)
+        assertEquals(accounts.signInPage, page.dataString)
+        assertTrue(page.hasExtra("android.support.customtabs.extra.SESSION"))
+        // the browser is away: the page waits for it, and can give up
+        compose.onNodeWithText("Tarayıcıda giriş bekleniyor", substring = true).assertExists()
+        compose.onNodeWithText("Vazgeç").assertExists()
+
+        accounts.browserAway!!.complete(Unit)
+        compose.waitForIdle()
+
+        // back at the inbox, where the mail arrives
+        assertNull(settingsUi.page)
+        compose.onNodeWithText("deniz@outlook.com eklendi. Postası geliyor.").assertExists()
+    }
+
+    @Test
+    fun aSignInWaitingForTheBrowserIsGivenUp() {
+        val accounts = FakeAccounts(plan = outlook, result = SetupResult.Done(7))
+        accounts.browserAway = CompletableDeferred()
+        launch(accounts)
+        press("Hesap ekle")
+        compose.onNodeWithTag(AccountTags.ADDRESS).performTextInput("deniz@outlook.com")
+        compose.waitForIdle()
+        press("Devam")
+        press("Microsoft'ta giriş yap")
+
+        press("Vazgeç")
+
+        // still on the page, ready to begin again; nothing was added
+        assertEquals(SettingsPage.AddAccount, settingsUi.page)
+        compose.onNodeWithText("Tarayıcıda giriş bekleniyor", substring = true).assertDoesNotExist()
+        compose.onNodeWithText("Microsoft'ta giriş yap").assertExists()
+        compose.onNodeWithText("eklendi", substring = true).assertDoesNotExist()
+    }
+
+    @Test
+    fun aSignInThatCameToNothingSaysWhatMicrosoftSaid() {
+        val accounts = FakeAccounts(plan = outlook, result = SetupResult.NotSignedIn("The user has denied access to the scope requested by the client application."))
+        launch(accounts)
+        press("Hesap ekle")
+        compose.onNodeWithTag(AccountTags.ADDRESS).performTextInput("deniz@outlook.com")
+        compose.waitForIdle()
+        press("Devam")
+        press("Microsoft'ta giriş yap")
+
+        compose.onNodeWithText("Microsoft'ta giriş tamamlanmadı", substring = true).assertExists()
+        compose.onNodeWithText("Microsoft'un yanıtı: The user has denied access", substring = true).assertExists()
+
+        // the provider took it, and the mail server did not: IMAP is to be looked at
+        accounts.result = SetupResult.Failed(MailException.Kind.Authentication, "AUTHENTICATE failed.")
+        press("Microsoft'ta giriş yap")
+        compose.onNodeWithText("Outlook sunucusu reddetti", substring = true).assertExists()
+        assertEquals(SettingsPage.AddAccount, settingsUi.page)
+    }
+
+    @Test
+    fun aWorkAccountAtMicrosoftIsNotForThisVersion() {
+        launch(FakeAccounts(plan = SetupPlan.NotYet(ProviderTable.Outlook, hosted = true)))
+        press("Hesap ekle")
+        compose.onNodeWithTag(AccountTags.ADDRESS).performTextInput("deniz@sirket.example")
+        compose.waitForIdle()
+        press("Devam")
+        compose.onNodeWithText("bir iş ya da okul hesabı", substring = true).assertExists()
+        compose.onNodeWithText("Microsoft'ta giriş yap").assertDoesNotExist()
+    }
+
+    @Test
+    fun anOutlookAccountSignsInAgainInTheBrowser() {
+        val accounts = FakeAccounts(result = SetupResult.Done(DemoMail.OUTLOOK))
+        settingsUi.page = SettingsPage.Account(DemoMail.OUTLOOK)
+        launch(accounts)
+
+        // no password to type: Microsoft is signed in at
+        compose.onNodeWithTag(AccountTags.PASSWORD).assertDoesNotExist()
+        compose.onNodeWithText("Microsoft'ta, tarayıcıda yeniden giriş yap", substring = true).assertExists()
+        press("Microsoft'ta giriş yap")
+
+        assertEquals(listOf(DemoMail.OUTLOOK), accounts.signedInAgain)
+        assertEquals(accounts.signInPage, browserOpened().dataString)
+        compose.onNodeWithText("Yeniden giriş yapıldı.").assertExists()
     }
 
     @Test

@@ -39,11 +39,14 @@ class SettingsUiState {
 
     /** Opens "Add an account" with nothing typed. */
     fun addAccount() {
+        setup.stopSignIn()
         setup = AccountSetupForm()
         page = SettingsPage.AddAccount
     }
 
+    /** Back to the list, whichever way: a sign-in in the browser that "Add an account" waits for is given up. */
     fun close() {
+        setup.stopSignIn()
         page = null
     }
 }

@@ -299,6 +299,17 @@ class AppScreenshotTest {
         capture("phone-add-account-dark")
     }
 
+    /** "Add an account" at the step Outlook calls for: signing in at Microsoft, in the browser. */
+    @Test @Config(qualifiers = PHONE)
+    fun phoneAddOutlookLight() {
+        val outlook = FakeAccounts(plan = SetupPlan.SignIn(ProviderTable.Outlook.settingsFor("deniz@outlook.com"), ProviderTable.Outlook))
+        settingsUi.addAccount()
+        settingsUi.setup.address = "deniz@outlook.com"
+        runBlocking { settingsUi.setup.lookUp(outlook) }
+        launch(ThemeMode.Light, startRoute = Routes.SETTINGS, accounts = outlook)
+        capture("phone-add-outlook-light")
+    }
+
     /** A message whose text could not be fetched: the header is there, and a way to try again. */
     @Test @Config(qualifiers = PHONE)
     fun phoneReaderFailedLight() {

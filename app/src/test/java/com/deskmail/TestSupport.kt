@@ -36,6 +36,7 @@ import desktopkit.settings.DeskPreferences
 import desktopkit.shell.ShellTransitions
 import desktopkit.theme.DensityPreference
 import desktopkit.theme.ThemeMode
+import kotlinx.coroutines.CompletableDeferred
 import java.time.Instant
 import java.time.ZoneId
 
@@ -151,6 +152,30 @@ class FakeAccounts(var plan: SetupPlan = SetupPlan.Manual, var result: SetupResu
 
     override suspend fun reconnect(accountId: Long, password: String): SetupResult {
         reconnected += accountId to password
+        return result
+    }
+
+    /** The sign-ins in the browser: the address and what it was found to be; the accounts signed in to again. */
+    val signedIn = ArrayList<Pair<String, SetupPlan.SignIn>>()
+    val signedInAgain = ArrayList<Long>()
+
+    /** The page a sign-in in the browser opens. */
+    var signInPage = "https://login.example/authorize?client_id=deskmail"
+
+    /** Until the test completes it, a sign-in in the browser waits here, as for the browser to come back. */
+    var browserAway: CompletableDeferred<Unit>? = null
+
+    override suspend fun addSignedIn(address: String, plan: SetupPlan.SignIn, open: suspend (url: String) -> Boolean): SetupResult {
+        signedIn += address to plan
+        if (!open(signInPage)) return SetupResult.NoBrowser
+        browserAway?.await()
+        return result
+    }
+
+    override suspend fun reconnectSignedIn(accountId: Long, open: suspend (url: String) -> Boolean): SetupResult {
+        signedInAgain += accountId
+        if (!open(signInPage)) return SetupResult.NoBrowser
+        browserAway?.await()
         return result
     }
 

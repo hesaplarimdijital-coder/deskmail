@@ -15,7 +15,7 @@ import java.time.Instant
 
 // What is stored, as the screens show it.
 
-internal fun AccountEntity.toAccount() = MailAccount(id, name, address, accountState(), stateDetail, imapHost, senderName, signature)
+internal fun AccountEntity.toAccount() = MailAccount(id, name, address, accountState(), stateDetail, imapHost, senderName, signature, auth())
 
 internal fun FolderEntity.toFolder() = MailFolder(id, accountId, displayPath(path, delimiter), folderRole(role), unread, total)
 

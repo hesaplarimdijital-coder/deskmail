@@ -11,6 +11,9 @@ import com.deskmail.mail.AccountDraft
 import com.deskmail.mail.PortableAccount
 import com.deskmail.mail.SetupPlan
 import com.deskmail.mail.SetupResult
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -38,6 +41,19 @@ class AccountSetupFormTest {
         }
 
         override suspend fun reconnect(accountId: Long, password: String): SetupResult = result
+
+        /** The addresses signed in for in the browser; until [browserAway] is completed, the browser has not come back. */
+        val signedIn = ArrayList<String>()
+        var browserAway: CompletableDeferred<Unit>? = null
+
+        override suspend fun addSignedIn(address: String, plan: SetupPlan.SignIn, open: suspend (url: String) -> Boolean): SetupResult {
+            signedIn += address
+            if (!open("https://login.example/authorize")) return SetupResult.NoBrowser
+            browserAway?.await()
+            return result
+        }
+
+        override suspend fun reconnectSignedIn(accountId: Long, open: suspend (url: String) -> Boolean): SetupResult = result
 
         override suspend fun saveWriting(accountId: Long, senderName: String, signature: String) = Unit
 
@@ -204,5 +220,84 @@ class AccountSetupFormTest {
         actions.result = SetupResult.Duplicate
         assertNull(form.add(actions))
         assertEquals(AccountSetupForm.Problem.Duplicate, form.problem)
+    }
+
+    private val outlook = SetupPlan.SignIn(ProviderTable.Outlook.settingsFor("deniz@outlook.com"), ProviderTable.Outlook)
+
+    @Test
+    fun anOutlookAddressSignsInInTheBrowser() = runBlocking {
+        val actions = Actions(plan = outlook)
+        val form = AccountSetupForm()
+        form.address = " deniz@outlook.com "
+
+        form.lookUp(actions)
+        assertEquals(AccountSetupForm.Step.SignIn(outlook), form.step)
+
+        val opened = ArrayList<String>()
+        assertEquals(7L, form.signIn(actions) { url -> opened += url; true })
+        assertEquals(listOf("deniz@outlook.com"), actions.signedIn)
+        assertEquals(listOf("https://login.example/authorize"), opened)
+        assertFalse(form.busy)
+        assertNull(form.problem)
+    }
+
+    @Test
+    fun aSignInThatCameToNothingSaysWhy() = runBlocking {
+        val actions = Actions(plan = outlook, result = SetupResult.NotSignedIn("The user has denied access."))
+        val form = AccountSetupForm()
+        form.address = "deniz@outlook.com"
+        form.lookUp(actions)
+
+        assertNull(form.signIn(actions) { true })
+        assertEquals(AccountSetupForm.Problem.NotSignedIn("The user has denied access."), form.problem)
+
+        // no browser to show the page
+        assertNull(form.signIn(actions) { false })
+        assertEquals(AccountSetupForm.Problem.NoBrowser, form.problem)
+
+        // the provider's server said no
+        actions.result = SetupResult.Failed(MailException.Kind.Authentication, "AUTHENTICATE failed.")
+        assertNull(form.signIn(actions) { true })
+        assertEquals(AccountSetupForm.Problem.Failed(MailException.Kind.Authentication, "AUTHENTICATE failed."), form.problem)
+        // still at the sign-in, to try again
+        assertEquals(AccountSetupForm.Step.SignIn(outlook), form.step)
+    }
+
+    @Test
+    fun aSignInWaitingForTheBrowserCanBeGivenUp() = runBlocking {
+        val actions = Actions(plan = outlook)
+        actions.browserAway = CompletableDeferred()
+        val form = AccountSetupForm()
+        form.address = "deniz@outlook.com"
+        form.lookUp(actions)
+
+        var added: Long? = -1
+        val signingIn = launch(start = CoroutineStart.UNDISPATCHED) { added = form.signIn(actions) { true } }
+        // the browser is away: the page waits
+        assertTrue(form.busy)
+
+        form.stopSignIn()
+        signingIn.join()
+
+        assertTrue(signingIn.isCancelled)
+        assertEquals(-1L, added)
+        assertFalse(form.busy)
+        // given up is no problem; the sign-in can be begun again
+        assertNull(form.problem)
+        assertEquals(AccountSetupForm.Step.SignIn(outlook), form.step)
+    }
+
+    @Test
+    fun aWorkAccountAtMicrosoftIsNotForThisVersion() = runBlocking {
+        val actions = Actions(plan = SetupPlan.NotYet(ProviderTable.Outlook, hosted = true))
+        val form = AccountSetupForm()
+        form.address = "deniz@sirket.example"
+
+        form.lookUp(actions)
+
+        assertEquals(AccountSetupForm.Step.NotYet(ProviderTable.Outlook, hosted = true), form.step)
+        // nothing to sign in to
+        assertNull(form.signIn(actions) { true })
+        assertTrue(actions.signedIn.isEmpty())
     }
 }

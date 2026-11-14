@@ -27,8 +27,16 @@ sealed interface SetupPlan {
      */
     data class Found(val settings: MailSettings, val provider: Provider? = null) : SetupPlan
 
-    /** A provider whose way of signing in this version does not have yet (Microsoft's, until the next pre-release). */
-    data class NotYet(val provider: Provider) : SetupPlan
+    /** The servers are known; the account signs in at its provider, in the browser (Microsoft's). */
+    data class SignIn(val settings: MailSettings, val provider: Provider) : SetupPlan
+
+    /**
+     * A provider whose way of signing in this version does not have.
+     *
+     * @param hosted the address is at a domain of its own whose mail the provider takes (Microsoft
+     *   365): a work or school account, which the app's registration at Microsoft does not take.
+     */
+    data class NotYet(val provider: Provider, val hosted: Boolean = false) : SetupPlan
 
     /** Nobody knows the domain's servers: they are entered by hand. */
     data object Manual : SetupPlan
@@ -51,6 +59,15 @@ sealed interface SetupResult {
     data class Failed(val kind: MailException.Kind, val detail: String) : SetupResult
 
     data object Duplicate : SetupResult
+
+    /**
+     * The sign-in in the browser came to nothing: it was given up, refused at the provider, or not
+     * finished in time. [detail] is the provider's own word, where it said one.
+     */
+    data class NotSignedIn(val detail: String) : SetupResult
+
+    /** No app on the device can show the provider's page to sign in at. */
+    data object NoBrowser : SetupResult
 }
 
 /**
@@ -80,6 +97,16 @@ interface AccountActions {
     /** Signs in to an account again with a new password ("Reconnect"), and keeps it when the server takes it. */
     suspend fun reconnect(accountId: Long, password: String): SetupResult
 
+    /**
+     * Signs in at the provider in the browser ([SetupPlan.SignIn]) and keeps the account when its
+     * server takes the sign-in. [open] shows the provider's page (false: nothing could); the call
+     * waits until the browser comes back to the app, and cancelling it gives the sign-in up.
+     */
+    suspend fun addSignedIn(address: String, plan: SetupPlan.SignIn, open: suspend (url: String) -> Boolean): SetupResult
+
+    /** Signs in to an account that signs in in the browser again ("Reconnect"), as [addSignedIn] does. */
+    suspend fun reconnectSignedIn(accountId: Long, open: suspend (url: String) -> Boolean): SetupResult
+
     /** Keeps the name the account's mail is sent under, and what its messages are signed with. */
     suspend fun saveWriting(accountId: Long, senderName: String, signature: String)
 
@@ -91,7 +118,7 @@ interface AccountActions {
 
     /**
      * Adds the accounts of a settings file that the device does not have yet, by their addresses;
-     * each waits for its password ("Reconnect"). Those it has are left as they are. How many were added.
+     * each waits to be signed in to ("Reconnect"). Those it has are left as they are. How many were added.
      */
     suspend fun adopt(accounts: List<PortableAccount>): Int
 }

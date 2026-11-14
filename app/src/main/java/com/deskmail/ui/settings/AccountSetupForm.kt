@@ -15,12 +15,14 @@ import com.deskmail.mail.AccountActions
 import com.deskmail.mail.AccountDraft
 import com.deskmail.mail.SetupPlan
 import com.deskmail.mail.SetupResult
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.currentCoroutineContext
 
 /**
  * "Add an account" as the user goes through it: the address, then what the search for its
- * servers came to (a password to enter, a provider this version cannot sign in to yet, or the
- * servers by hand), then the sign-in. What is typed and where the user stands are kept here,
- * outside the page that shows them.
+ * servers came to (a password to enter, a sign-in at the provider in the browser, a provider this
+ * version cannot sign in to, or the servers by hand), then the sign-in. What is typed and where
+ * the user stands are kept here, outside the page that shows them.
  */
 @Stable
 class AccountSetupForm {
@@ -42,14 +44,20 @@ class AccountSetupForm {
     /** The servers as they are typed by hand. */
     val servers = ManualServers()
 
+    /** The sign-in in the browser under way, until it is done or given up ([stopSignIn]). */
+    private var signingIn: Job? = null
+
     sealed interface Step {
         data object Address : Step
 
         /** The servers are known; the password is asked for. */
         data class Password(val plan: SetupPlan.Found) : Step
 
-        /** A provider this version cannot sign in to yet. */
-        data class NotYet(val provider: Provider) : Step
+        /** The servers are known; the account signs in at its provider, in the browser. */
+        data class SignIn(val plan: SetupPlan.SignIn) : Step
+
+        /** A provider this version cannot sign in to; [hosted]: a work or school account at it. */
+        data class NotYet(val provider: Provider, val hosted: Boolean = false) : Step
 
         /** The servers are entered by hand. */
         data object Manual : Step
@@ -65,6 +73,12 @@ class AccountSetupForm {
 
         /** The server was asked and said no, or could not be asked. */
         data class Failed(val kind: MailException.Kind, val detail: String) : Problem
+
+        /** The sign-in in the browser came to nothing; [detail] is the provider's word, where it said one. */
+        data class NotSignedIn(val detail: String) : Problem
+
+        /** No app on the device can show the provider's page. */
+        data object NoBrowser : Problem
     }
 
     /** Something was typed: the last try's problem is no longer about what is there. */
@@ -85,7 +99,8 @@ class AccountSetupForm {
                     password = ""
                     step = Step.Password(plan)
                 }
-                is SetupPlan.NotYet -> step = Step.NotYet(plan.provider)
+                is SetupPlan.SignIn -> step = Step.SignIn(plan)
+                is SetupPlan.NotYet -> step = Step.NotYet(plan.provider, plan.hosted)
                 SetupPlan.Manual -> byHand(null)
             }
         } finally {
@@ -114,20 +129,46 @@ class AccountSetupForm {
         busy = true
         problem = null
         try {
-            return when (val result = actions.add(draft)) {
-                is SetupResult.Done -> result.accountId
-                SetupResult.Duplicate -> {
-                    problem = Problem.Duplicate
-                    null
-                }
-                is SetupResult.Failed -> {
-                    problem = Problem.Failed(result.kind, result.detail)
-                    null
-                }
-            }
+            val result = actions.add(draft)
+            problem = problemOf(result)
+            return (result as? SetupResult.Done)?.accountId
         } finally {
             busy = false
         }
+    }
+
+    /**
+     * Signs in at the provider in the browser and adds the account: [open] shows the provider's
+     * page, and the call waits until the browser comes back to the app. Returns the account's id;
+     * null when it was not added, and [problem] says why (nothing, when it was given up).
+     */
+    suspend fun signIn(actions: AccountActions, open: suspend (url: String) -> Boolean): Long? {
+        val at = step as? Step.SignIn ?: return null
+        if (busy) return null
+        busy = true
+        problem = null
+        signingIn = currentCoroutineContext()[Job]
+        try {
+            val result = actions.addSignedIn(address.trim(), at.plan, open)
+            problem = problemOf(result)
+            return (result as? SetupResult.Done)?.accountId
+        } finally {
+            signingIn = null
+            busy = false
+        }
+    }
+
+    /** Gives up the sign-in in the browser: what the browser brings back after that is not taken. */
+    fun stopSignIn() {
+        signingIn?.cancel()
+    }
+
+    private fun problemOf(result: SetupResult): Problem? = when (result) {
+        is SetupResult.Done -> null
+        SetupResult.Duplicate -> Problem.Duplicate
+        is SetupResult.Failed -> Problem.Failed(result.kind, result.detail)
+        is SetupResult.NotSignedIn -> Problem.NotSignedIn(result.detail)
+        SetupResult.NoBrowser -> Problem.NoBrowser
     }
 
     private fun draft(): AccountDraft? = when (val at = step) {

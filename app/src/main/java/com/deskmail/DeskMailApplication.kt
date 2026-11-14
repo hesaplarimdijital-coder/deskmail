@@ -8,6 +8,7 @@ import com.deskmail.core.log.AppLog
 import com.deskmail.core.provider.Autoconfig
 import com.deskmail.data.AccountSetup
 import com.deskmail.data.AccountStore
+import com.deskmail.data.BrowserSignIn
 import com.deskmail.data.ComposeWords
 import com.deskmail.data.DeviceSecretBox
 import com.deskmail.data.DraftSync
@@ -134,11 +135,18 @@ class DeskMailApplication : Application(), Configuration.Provider {
         )
     }
 
+    /**
+     * The sign-in under way in the browser (Outlook.com accounts): the browser comes back to the app
+     * at [OAuthRedirectActivity], which hands what it brought on to here.
+     */
+    val signIn: BrowserSignIn by lazy { BrowserSignIn(log) }
+
     /** Adding, reconnecting and removing accounts. */
     val accounts: AccountActions by lazy {
         val autoconfig = Autoconfig(fetch = HttpsText::get, mailHosts = DnsLookup::mailHosts, services = DnsLookup::services, log = log)
         AccountSetup(
             database, accountStore, sync, autoconfig, log, background,
+            browser = signIn,
             startSync = { accountId ->
                 mail.sync(accountId)
                 // from now on there is mail to look for in the background
