@@ -90,11 +90,12 @@
 
         <!-- Where the browser comes back after a sign-in at Microsoft (Outlook.com accounts): the
              address registered with Microsoft for DeskMail. Any app could send something here; only
-             the answer to the sign-in under way, with its random state, is taken. It shows nothing,
-             and leaves nothing behind among the recent apps. -->
+             the answer to the sign-in under way, with its random state, is taken. It shows nothing
+             and is gone at once. (Not excludeFromRecents: should it be the first of a task, which
+             happens when the app was not open, the window it brings would be left out of the recent
+             apps with it.) -->
         <activity
             android:name=".OAuthRedirectActivity"
-            android:excludeFromRecents="true"
             android:exported="true"
             android:noHistory="true"
             android:theme="@android:style/Theme.Translucent.NoTitleBar">
